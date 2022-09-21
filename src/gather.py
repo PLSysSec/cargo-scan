@@ -7,7 +7,7 @@ import subprocess
 PACKAGES_DIR = "packages"
 
 def download_crate(name):
-    subprocess.run(["cargo", "download", "-x", name], cwd=PACKAGES_DIR)
+    subprocess.run(["cargo", "download", "-x", name, "-o", f"{PACKAGES_DIR}/{name}"])
 
 download_crate("rand")
 download_crate("syn")
