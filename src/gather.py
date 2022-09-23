@@ -12,13 +12,13 @@ SRC_DIR = "src"
 
 RESULTS_DIR = "results"
 
-def download_crate(name):
-    target = os.path.join(PACKAGES_DIR, name)
+def download_crate(crate):
+    target = os.path.join(PACKAGES_DIR, crate)
     if os.path.exists(target):
         print(f"found existing crate: {target}")
     else:
         print(f"downloading crate: {target}")
-        subprocess.run(["cargo", "download", "-x", name, "-o", target])
+        subprocess.run(["cargo", "download", "-x", crate, "-o", target])
 
 def save_results(crate, results):
     timestr = time.strftime("%Y%m%d_%H%M%S")
@@ -29,22 +29,22 @@ def save_results(crate, results):
         for line in results:
             fh.write(line)
 
-def scan_file(root, file, results):
+def scan_file(crate, root, file, results):
     filepath = os.path.join(root, file)
     print(f"scanning file: {filepath}")
     with open(filepath) as fh:
         for line in fh:
-            if re.match("use .*", line):
-                results.append(f"{root}, {line}")
+            if re.match("use .*$", line):
+                results.append(f"{crate}, {root}, {file}, {line}")
 
-def scan_crate(name):
+def scan_crate(crate):
     results = []
-    print(f"scanning crate: {name}")
-    src = os.path.join(PACKAGES_DIR, name, SRC_DIR)
+    print(f"scanning crate: {crate}")
+    src = os.path.join(PACKAGES_DIR, crate, SRC_DIR)
     for root, dirs, files in os.walk(src):
         for file in files:
             if os.path.splitext(file)[1] == ".rs":
-                scan_file(root, file, results)
+                scan_file(crate, root, file, results)
     return results
 
 CRATES = ["rand"]
