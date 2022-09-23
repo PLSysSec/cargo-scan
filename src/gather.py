@@ -11,7 +11,11 @@ SRC_DIR = "src"
 
 def download_crate(name):
     target = os.path.join(PACKAGES_DIR, name)
-    subprocess.run(["cargo", "download", "-x", name, "-o", target])
+    if os.path.exists(target):
+        print(f"found existing crate: {target}")
+    else:
+        print(f"downloading crate: {target}")
+        subprocess.run(["cargo", "download", "-x", name, "-o", target])
 
 def scan_file(root, file):
     filepath = os.path.join(root, file)
@@ -29,7 +33,7 @@ def scan_crate(name):
             if os.path.splitext(file)[1] == ".rs":
                 scan_file(root, file)
 
-# download_crate("rand")
-# download_crate("syn")
+download_crate("rand")
+download_crate("syn")
 scan_crate("rand")
-# scan_rate("syn")
+# scan_crate("syn")
