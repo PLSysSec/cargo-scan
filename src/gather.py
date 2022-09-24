@@ -265,15 +265,17 @@ def save_summary(crate_summary, pattern_summary):
 
     logging.info(f"Saving summary to {results_path}")
     with open(results_path, 'w') as fh:
-        fh.write("===== Crate Summary =====\n")
-        crate_sorted = sort_summary_dict(crate_summary)
-        for c, n in crate_sorted:
-            fh.write(f"{c}: {n}\n")
-
-        fh.write("===== Pattern Summary =====\n")
+        fh.write("===== Patterns =====\n")
+        fh.write("Total instances of each import pattern:\n")
         pattern_sorted = sort_summary_dict(pattern_summary)
         for p, n in pattern_sorted:
             fh.write(f"{p}: {n}\n")
+
+        fh.write("===== Crate Summary =====\n")
+        fh.write("Total dangerous imports by crate:\n")
+        crate_sorted = sort_summary_dict(crate_summary)
+        for c, n in crate_sorted:
+            fh.write(f"{c}: {n}\n")
 
 def of_interest(line):
     found = None
