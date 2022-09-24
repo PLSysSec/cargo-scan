@@ -246,11 +246,34 @@ def save_results(results):
     timestr = time.strftime("%Y%m%d_%H%M%S")
     results_file = f"{timestr}_all.csv"
     results_path = os.path.join(RESULTS_DIR, results_file)
-    logging.info(f"Saving results to {results_path}")
-    with open(results_path, 'a') as fh:
+    logging.info(f"Saving full results to {results_path}")
+    with open(results_path, 'w') as fh:
         fh.write(CSV_HEADER)
         for line in results:
             fh.write(line + '\n')
+
+def sort_summary_dict(d):
+    return sorted(d.items(), key=lambda x: x[1], reverse=True)
+
+def save_summary(crate_summary, pattern_summary):
+    timestr = time.strftime("%Y%m%d_%H%M%S")
+    results_file = f"{timestr}_summary.csv"
+    results_path = os.path.join(RESULTS_DIR, results_file)
+
+    # Sanity check
+    assert sum(crate_summary.values()) == sum(pattern_summary.values())
+
+    logging.info(f"Saving summary to {results_path}")
+    with open(results_path, 'w') as fh:
+        fh.write("===== Crate Summary =====\n")
+        crate_sorted = sort_summary_dict(crate_summary)
+        for c, n in crate_sorted:
+            fh.write(f"{c}: {n}\n")
+
+        fh.write("===== Pattern Summary =====\n")
+        pattern_sorted = sort_summary_dict(pattern_summary)
+        for p, n in pattern_sorted:
+            fh.write(f"{p}: {n}\n")
 
 def of_interest(line):
     found = None
@@ -263,39 +286,65 @@ def of_interest(line):
             found = p
     return found
 
-def parse_use(crate, root, file, line, results):
-    interest = of_interest(line)
-    if interest is None:
+def parse_use(crate, root, file, line):
+    """
+    Parse a single use ...; line.
+    Return the pattern and the resulting CSV output.
+
+    Currently hacky/limited and doesn't handle all valid Rust syntax.
+    """
+    results = []
+    pat = of_interest(line)
+    if pat is None:
         logging.debug(f"Skipping: {line}")
     elif m := re.fullmatch("use ([^{}]*){([^{}]*)};\n", line):
         prefix = m[1]
         for suffix in m[2].replace(' ', '').split(','):
-            results.append(f"{crate}, {interest}, {root}, {file}, {prefix}{suffix}")
+            results.append(
+                (pat, f"{crate}, {pat}, {root}, {file}, {prefix}{suffix}")
+            )
     elif m := re.fullmatch("use ([^{}]*)\n", line):
-        results.append(f"{crate}, {interest}, {root}, {file}, {m[1]}")
+        results.append(
+            (pat, f"{crate}, {pat}, {root}, {file}, {m[1]}")
+        )
     else:
         logging.warning(f"Unable to parse 'use' line: {line}")
+    return results
 
-def scan_file(crate, root, file, results):
+def scan_file(crate, root, file, results, crate_summary, pattern_summary):
     filepath = os.path.join(root, file)
     logging.debug(f"Scanning file: {filepath}")
     with open(filepath) as fh:
         for line in fh:
             if re.fullmatch("use .*\n", line):
-                parse_use(crate, root, file, line, results)
+                for pat, result in parse_use(crate, root, file, line):
+                    results.append(result)
+                    # Update summaries
+                    crate_summary[crate] += 1
+                    pattern_summary[pat] += 1
 
-def scan_crate(crate, results):
+def scan_crate(crate, results, crate_summary, pattern_summary):
     logging.info(f"Scanning crate: {crate}")
     src = os.path.join(PACKAGES_DIR, crate, SRC_DIR)
     for root, dirs, files in os.walk(src):
         for file in files:
             if os.path.splitext(file)[1] == ".rs":
-                scan_file(crate, root, file, results)
+                scan_file(
+                    crate,
+                    root,
+                    file,
+                    results,
+                    crate_summary,
+                    pattern_summary,
+                )
 
 # ===== Entrypoint =====
 
 results = []
+crate_summary = {c: 0 for c in TOP_200_CRATES}
+pattern_summary= {p: 0 for p in OF_INTEREST}
 for crate in TOP_200_CRATES:
     download_crate(crate)
-    scan_crate(crate, results)
+    scan_crate(crate, results, crate_summary, pattern_summary)
 save_results(results)
+save_summary(crate_summary, pattern_summary)
