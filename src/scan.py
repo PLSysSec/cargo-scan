@@ -13,8 +13,8 @@ import time
 PACKAGES_DIR = "packages"
 SRC_DIR = "src"
 RESULTS_DIR = "results"
-RESULTS_ALL_SUFFIX = "_all.csv"
-RESULTS_SUMMARY_SUFFIX = "_summary.txt"
+RESULTS_ALL_SUFFIX = "all.csv"
+RESULTS_SUMMARY_SUFFIX = "summary.txt"
 
 OF_INTEREST = [
     "std::env",
@@ -236,6 +236,11 @@ assert len(TOP_200_CRATES) == 200
 
 logging.basicConfig(level=logging.INFO)
 
+# ===== Utility =====
+
+def copy_file(src, dst):
+    subprocess.run(["cp", src, dst])
+
 # ===== Main script =====
 
 def download_crate(crate):
@@ -248,7 +253,7 @@ def download_crate(crate):
 
 def save_results(results):
     timestr = time.strftime("%Y%m%d_%H%M%S")
-    results_file = f"{timestr}{RESULTS_ALL_SUFFIX}"
+    results_file = f"{timestr}_{RESULTS_ALL_SUFFIX}"
     results_path = os.path.join(RESULTS_DIR, results_file)
     logging.info(f"Saving full results to {results_path}")
     with open(results_path, 'w') as fh:
@@ -256,12 +261,16 @@ def save_results(results):
         for line in results:
             fh.write(line + '\n')
 
+    # Copy to a second file under version control
+    results_copy = os.path.join(RESULTS_DIR, RESULTS_ALL_SUFFIX)
+    copy_file(results_path, results_copy)
+
 def sort_summary_dict(d):
     return sorted(d.items(), key=lambda x: x[1], reverse=True)
 
 def save_summary(crate_summary, pattern_summary):
     timestr = time.strftime("%Y%m%d_%H%M%S")
-    results_file = f"{timestr}{RESULTS_SUMMARY_SUFFIX}"
+    results_file = f"{timestr}_{RESULTS_SUMMARY_SUFFIX}"
     results_path = os.path.join(RESULTS_DIR, results_file)
 
     # Sanity check
@@ -280,6 +289,10 @@ def save_summary(crate_summary, pattern_summary):
         crate_sorted = sort_summary_dict(crate_summary)
         for c, n in crate_sorted:
             fh.write(f"{c}: {n}\n")
+
+    # Copy to a second file under version control
+    results_copy = os.path.join(RESULTS_DIR, RESULTS_SUMMARY_SUFFIX)
+    copy_file(results_path, results_copy)
 
 def of_interest(line):
     found = None
