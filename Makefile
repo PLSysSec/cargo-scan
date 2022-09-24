@@ -2,7 +2,7 @@
 .DEFAULT: build
 
 build:
-	python3 src/gather.py
+	python3 src/scan.py
 
 clean:
 	rm -rf packages/
