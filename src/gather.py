@@ -32,9 +32,9 @@ logging.basicConfig(level=logging.INFO)
 def download_crate(crate):
     target = os.path.join(PACKAGES_DIR, crate)
     if os.path.exists(target):
-        logging.info(f"found existing crate: {target}")
+        logging.info(f"Found existing crate: {target}")
     else:
-        logging.info(f"downloading crate: {target}")
+        logging.info(f"Downloading crate: {target}")
         subprocess.run(["cargo", "download", "-x", crate, "-o", target])
 
 def save_results(crate, results):
@@ -91,5 +91,6 @@ def scan_crate(crate):
 # ===== Entrypoint =====
 
 for crate in CRATES:
+    download_crate(crate)
     results = scan_crate(crate)
     save_results(crate, results)
