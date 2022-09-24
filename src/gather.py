@@ -37,9 +37,9 @@ def download_crate(crate):
         logging.info(f"Downloading crate: {target}")
         subprocess.run(["cargo", "download", "-x", crate, "-o", target])
 
-def save_results(crate, results):
+def save_results(results):
     timestr = time.strftime("%Y%m%d_%H%M%S")
-    results_file = f"{timestr}_{crate}.csv"
+    results_file = f"{timestr}_all.csv"
     results_path = os.path.join(RESULTS_DIR, results_file)
     logging.info(f"Saving results to {results_path}")
     with open(results_path, 'a') as fh:
@@ -78,19 +78,18 @@ def scan_file(crate, root, file, results):
             if re.fullmatch("use .*\n", line):
                 parse_use(crate, root, file, line, results)
 
-def scan_crate(crate):
-    results = []
+def scan_crate(crate, results):
     logging.info(f"Scanning crate: {crate}")
     src = os.path.join(PACKAGES_DIR, crate, SRC_DIR)
     for root, dirs, files in os.walk(src):
         for file in files:
             if os.path.splitext(file)[1] == ".rs":
                 scan_file(crate, root, file, results)
-    return results
 
 # ===== Entrypoint =====
 
+results = []
 for crate in CRATES:
     download_crate(crate)
-    results = scan_crate(crate)
-    save_results(crate, results)
+    scan_crate(crate, results)
+save_results(results)
