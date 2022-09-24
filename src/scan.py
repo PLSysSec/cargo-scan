@@ -13,6 +13,8 @@ import time
 PACKAGES_DIR = "packages"
 SRC_DIR = "src"
 RESULTS_DIR = "results"
+RESULTS_ALL_SUFFIX = "_all.csv"
+RESULTS_SUMMARY_SUFFIX = "_summary.txt"
 
 OF_INTEREST = [
     "std::env",
@@ -246,7 +248,7 @@ def download_crate(crate):
 
 def save_results(results):
     timestr = time.strftime("%Y%m%d_%H%M%S")
-    results_file = f"{timestr}_all.csv"
+    results_file = f"{timestr}{RESULTS_ALL_SUFFIX}"
     results_path = os.path.join(RESULTS_DIR, results_file)
     logging.info(f"Saving full results to {results_path}")
     with open(results_path, 'w') as fh:
@@ -259,7 +261,7 @@ def sort_summary_dict(d):
 
 def save_summary(crate_summary, pattern_summary):
     timestr = time.strftime("%Y%m%d_%H%M%S")
-    results_file = f"{timestr}_summary.csv"
+    results_file = f"{timestr}{RESULTS_SUMMARY_SUFFIX}"
     results_path = os.path.join(RESULTS_DIR, results_file)
 
     # Sanity check
