@@ -8,13 +8,26 @@ import re
 import subprocess
 import time
 
+# ===== Constants =====
+
 PACKAGES_DIR = "packages"
 SRC_DIR = "src"
 RESULTS_DIR = "results"
 
+OF_INTEREST = [
+    "std::fs",
+    "std::net",
+    "std::os",
+    "std::path",
+]
+
+CRATES = ["rand", "syn"]
+
+# ===== Logging setup =====
+
 logging.basicConfig(level=logging.INFO)
 
-# Main script
+# ===== Main script =====
 
 def download_crate(crate):
     target = os.path.join(PACKAGES_DIR, crate)
@@ -33,19 +46,33 @@ def save_results(crate, results):
         for line in results:
             fh.write(line + '\n')
 
+def of_interest(line):
+    found = None
+    for p in OF_INTEREST:
+        if re.match(p, line):
+            if found is not None:
+                logging.warning(
+                    f"Line matched multiple patterns of interest: {line}"
+                )
+            found = p
+    return found
+
 def parse_use(crate, root, file, line, results):
-    if m := re.fullmatch("use ([^{}]*){([^{}]*)};\n", line):
+    interest = of_interest(line)
+    if interest is None:
+        logging.debug(f"Skipping: {line}")
+    elif m := re.fullmatch("use ([^{}]*){([^{}]*)};\n", line):
         prefix = m[1]
         for suffix in m[2].replace(' ', '').split(','):
-            results.append(f"{crate}, {root}, {file}, {prefix}{suffix}")
+            results.append(f"{crate}, {interest}, {root}, {file}, {prefix}{suffix}")
     elif m := re.fullmatch("use ([^{}]*)\n", line):
-        results.append(f"{crate}, {root}, {file}, {m[1]}")
+        results.append(f"{crate}, {interest}, {root}, {file}, {m[1]}")
     else:
         logging.warning(f"Unable to parse 'use' line: {line}")
 
 def scan_file(crate, root, file, results):
     filepath = os.path.join(root, file)
-    logging.debug(f"scanning file: {filepath}")
+    logging.debug(f"Scanning file: {filepath}")
     with open(filepath) as fh:
         for line in fh:
             if re.fullmatch("use .*\n", line):
@@ -53,7 +80,7 @@ def scan_file(crate, root, file, results):
 
 def scan_crate(crate):
     results = []
-    logging.info(f"scanning crate: {crate}")
+    logging.info(f"Scanning crate: {crate}")
     src = os.path.join(PACKAGES_DIR, crate, SRC_DIR)
     for root, dirs, files in os.walk(src):
         for file in files:
@@ -61,8 +88,8 @@ def scan_crate(crate):
                 scan_file(crate, root, file, results)
     return results
 
-CRATES = ["rand"]
-# "syn"
+# ===== Entrypoint =====
+
 for crate in CRATES:
     results = scan_crate(crate)
     save_results(crate, results)
