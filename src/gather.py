@@ -21,6 +21,8 @@ OF_INTEREST = [
     "std::path",
 ]
 
+CSV_HEADER = "crate, pattern of interest, directory, file, use line\n"
+
 CRATES = [
     "rand",
     "syn",
@@ -72,6 +74,56 @@ CRATES = [
     "textwrap",
     "percent-encoding",
     "url",
+    "mio",
+    "ansi_term",
+    "idna",
+    "indexmap",
+    "ppv-lite86",
+    "pin-project-lite",
+    "unicode-width",
+    "either",
+    "tokio",
+    "itertools",
+    "slab",
+    "futures",
+    "unicode-normalization",
+    "rustc_version",
+    "chrono",
+    "memoffset",
+    "fnv",
+    "env_logger",
+    "typenum",
+    "unicode-bidi",
+    "heck",
+    "pkg-config",
+    "winapi",
+    "matches",
+    "hyper",
+    "crossbeam-epoch",
+    "miniz_oxide",
+    "thread_local",
+    "thiserror",
+    "thiserror-impl",
+    "termcolor",
+    "toml",
+    "opaque-debug",
+    "anyhow",
+    "futures-core",
+    "socket2",
+    "crossbeam-channel",
+    "arrayvec",
+    "futures-util",
+    "http",
+    "futures-task",
+    "tokio-util",
+    "futures-channel",
+    "futures-sink",
+    "unicode-segmentation",
+    "crossbeam-deque",
+    "nom",
+    "httparse",
+    "h2",
+    "vec_map",
 ]
 
 # ===== Logging setup =====
@@ -94,6 +146,7 @@ def save_results(results):
     results_path = os.path.join(RESULTS_DIR, results_file)
     logging.info(f"Saving results to {results_path}")
     with open(results_path, 'a') as fh:
+        fh.write(CSV_HEADER)
         for line in results:
             fh.write(line + '\n')
 
