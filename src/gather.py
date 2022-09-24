@@ -31,15 +31,25 @@ def save_results(crate, results):
     logging.info(f"Saving results to {results_path}")
     with open(results_path, 'a') as fh:
         for line in results:
-            fh.write(line)
+            fh.write(line + '\n')
+
+def parse_use(crate, root, file, line, results):
+    if m := re.fullmatch("use ([^{}]*){([^{}]*)};\n", line):
+        prefix = m[1]
+        for suffix in m[2].replace(' ', '').split(','):
+            results.append(f"{crate}, {root}, {file}, {prefix}{suffix}")
+    elif m := re.fullmatch("use ([^{}]*)\n", line):
+        results.append(f"{crate}, {root}, {file}, {m[1]}")
+    else:
+        logging.warning(f"Unable to parse 'use' line: {line}")
 
 def scan_file(crate, root, file, results):
     filepath = os.path.join(root, file)
     logging.debug(f"scanning file: {filepath}")
     with open(filepath) as fh:
         for line in fh:
-            if re.match("use .*$", line):
-                results.append(f"{crate}, {root}, {file}, {line}")
+            if re.fullmatch("use .*\n", line):
+                parse_use(crate, root, file, line, results)
 
 def scan_crate(crate):
     results = []
