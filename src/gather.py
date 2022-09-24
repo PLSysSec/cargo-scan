@@ -343,8 +343,10 @@ def scan_crate(crate, results, crate_summary, pattern_summary):
 results = []
 crate_summary = {c: 0 for c in TOP_200_CRATES}
 pattern_summary= {p: 0 for p in OF_INTEREST}
+logging.info(f"===== Scanning {len(TOP_200_CRATES)} crates... =====")
 for crate in TOP_200_CRATES:
     download_crate(crate)
     scan_crate(crate, results, crate_summary, pattern_summary)
+logging.info("===== Results =====")
 save_results(results)
 save_summary(crate_summary, pattern_summary)
