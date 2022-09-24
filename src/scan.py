@@ -15,10 +15,12 @@ SRC_DIR = "src"
 RESULTS_DIR = "results"
 
 OF_INTEREST = [
+    "std::env",
     "std::fs",
     "std::net",
     "std::os",
     "std::path",
+    "std::process",
 ]
 
 CSV_HEADER = "crate, pattern of interest, directory, file, use line\n"
