@@ -49,7 +49,7 @@ def save_results(results):
 def of_interest(line):
     found = None
     for p in OF_INTEREST:
-        if re.match(p, line):
+        if re.search(p, line):
             if found is not None:
                 logging.warning(
                     f"Line matched multiple patterns of interest: {line}"
