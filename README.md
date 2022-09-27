@@ -1,4 +1,4 @@
-# Cargo Experiments
+# Cargo Vet
 
 Some experiments to gather statistics on module-level Cargo dependencies.
 

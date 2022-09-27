@@ -10,9 +10,9 @@ import time
 
 # ===== Constants =====
 
-PACKAGES_DIR = "packages"
+PACKAGES_DIR = "experiments/packages"
 SRC_DIR = "src"
-RESULTS_DIR = "results"
+RESULTS_DIR = "experiments/results"
 RESULTS_ALL_SUFFIX = "all.csv"
 RESULTS_SUMMARY_SUFFIX = "summary.txt"
 

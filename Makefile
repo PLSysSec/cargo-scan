@@ -1,10 +1,10 @@
 .PHONY: build
-.DEFAULT: build
+.DEFAULT: cargo-scan
 
-build:
-	python3 src/scan.py
+cargo-scan:
+	python3 experiments/scan.py
 
 clean:
-	rm -rf packages/
-	mkdir packages/
-	touch packages/.gitkeep
+	rm -rf experiments/packages/
+	mkdir experiments/packages/
+	touch experiments/packages/.gitkeep
