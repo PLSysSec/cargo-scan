@@ -52,17 +52,21 @@ with open(CRATES_CSV, newline='') as infile:
         if '\n' in description:
             description = description.replace('\n', ' ')
             # print(f"Removed newlines: {description}")
+        if len(description) > 100:
+            description = description[:97] + "..."
+            assert len(description) == 100
+            # print(f"Truncated: {description}")
 
         out_row = [
-            created_at,
-            description,
-            documentation,
-            downloads,
-            homepage,
-            id,
             name,
-            repository,
+            downloads,
+            description,
+            created_at,
             updated_at,
+            documentation,
+            homepage,
+            repository,
+            id,
         ]
 
         rows.append(out_row)
@@ -70,7 +74,7 @@ with open(CRATES_CSV, newline='') as infile:
 # Sort data by downloads
 first_row = rows[0]
 rows = rows[1:]
-rows.sort(reverse=True, key=lambda x: int(x[3]))
+rows.sort(reverse=True, key=lambda x: int(x[1]))
 rows = [first_row] + rows
 
 with open(OUT_CSV, 'w', newline='') as outfile:
