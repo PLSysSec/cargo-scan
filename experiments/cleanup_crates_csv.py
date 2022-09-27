@@ -44,7 +44,7 @@ with open(CRATES_CSV, newline='') as infile:
     # Sort data by downloads
     first_row = rows[0]
     rows = rows[1:]
-    rows.sort(reverse=True, key=lambda x: x[3])
+    rows.sort(reverse=True, key=lambda x: int(x[3]))
     rows = [first_row] + rows
 
     with open(OUT_CSV, 'w', newline='') as outfile:
