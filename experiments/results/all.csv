@@ -174,7 +174,7 @@ mio, std::net, experiments/packages/mio/src/sys/windows, udp.rs, std::net::self
 mio, std::net, experiments/packages/mio/src/sys/windows, udp.rs, std::net::SocketAddr
 mio, std::os, experiments/packages/mio/src/sys/windows, udp.rs, std::os::windows::io::AsRawSocket
 mio, std::os, experiments/packages/mio/src/sys/windows, udp.rs, std::os::windows::io::FromRawSocket
-mio, std::os, experiments/packages/mio/src/sys/windows, udp.rs, std::os::windows::raw::SOCKET as StdSocket; // windows-sys uses usize stdlib uses u32/u64.
+mio, std::os, experiments/packages/mio/src/sys/windows, udp.rs, std::os::windows::raw::SOCKET as StdSocket;
 tokio, std::net, experiments/packages/tokio/src/net, addr.rs, std::net::IpAddr
 tokio, std::net, experiments/packages/tokio/src/net, addr.rs, std::net::Ipv4Addr
 tokio, std::net, experiments/packages/tokio/src/net, addr.rs, std::net::Ipv6Addr

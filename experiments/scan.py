@@ -334,6 +334,7 @@ def parse_use(crate, root, file, line):
     Currently hacky/limited and doesn't handle all valid Rust syntax.
     """
     results = []
+    line = re.sub("[ ]*//.*\n", "\n", line) # remove commented text
     pat = of_interest(line)
     if pat is None:
         logging.debug(f"Skipping: {line}")
