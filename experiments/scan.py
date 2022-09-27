@@ -313,6 +313,19 @@ def of_interest(line):
             found = p
     return found
 
+def sanitize_comma(s):
+    if "," in s:
+        logging.warning(f"found unexpected comma in: {s}")
+    return s.replace(',', '')
+
+def to_csv(crate, pat, root, file, use_expr):
+    crate = sanitize_comma(crate)
+    pat = sanitize_comma(pat)
+    root = sanitize_comma(root)
+    file = sanitize_comma(file)
+    use_expr = sanitize_comma(use_expr)
+    return f"{crate}, {pat}, {root}, {file}, {use_expr}"
+
 def parse_use(crate, root, file, line):
     """
     Parse a single use ...; line.
@@ -327,13 +340,10 @@ def parse_use(crate, root, file, line):
     elif m := re.fullmatch("use ([^{}]*){([^{}]*)};\n", line):
         prefix = m[1]
         for suffix in m[2].replace(' ', '').split(','):
-            results.append(
-                (pat, f"{crate}, {pat}, {root}, {file}, {prefix}{suffix}")
-            )
+            use_expr = prefix + suffix
+            results.append((pat, to_csv(crate, pat, root, file, use_expr)))
     elif m := re.fullmatch("use ([^{}]*)\n", line):
-        results.append(
-            (pat, f"{crate}, {pat}, {root}, {file}, {m[1]}")
-        )
+        results.append((pat, to_csv(crate, pat, root, file, m[1])))
     else:
         logging.warning(f"Unable to parse 'use' line: {line}")
     return results
