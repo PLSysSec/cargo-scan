@@ -9,3 +9,4 @@ use std::fs::test::{
 }
 use std::fs::mod3; // comment, with, commas, in, it
 use std::collections::*; // comment with import: std::fs
+use std::fs::mod4;//comment-without-spaces
