@@ -14,6 +14,7 @@ csv.field_size_limit(sys.maxsize)
 
 CRATES_CSV = "/Users/caleb/Downloads/2022-09-25-020017/data/crates.csv"
 OUT_CSV = "data/crates.csv"
+OUT_CSV_FIRST1000 = "data/crates-top1000.csv"
 
 with open(CRATES_CSV, newline='') as infile:
     in_reader = csv.reader(infile, delimiter=',')
@@ -36,18 +37,29 @@ with open(CRATES_CSV, newline='') as infile:
         # Index 8 is the offending row (a README dump) causing most
         # of the bloat
         # Index 6 doesn't seem to contain any data
+        # Index 1 sometimes contains newlines
         del row[8]
         del row[6]
+        row[1] = row[1].replace('\n', ' ')
 
         rows.append(row)
 
-    # Sort data by downloads
-    first_row = rows[0]
-    rows = rows[1:]
-    rows.sort(reverse=True, key=lambda x: int(x[3]))
-    rows = [first_row] + rows
+# Sort data by downloads
+first_row = rows[0]
+rows = rows[1:]
+rows.sort(reverse=True, key=lambda x: int(x[3]))
+rows = [first_row] + rows
 
-    with open(OUT_CSV, 'w', newline='') as outfile:
-        out_writer = csv.writer(outfile, delimiter=',', lineterminator='\n')
-        for row in rows:
-            out_writer.writerow(row)
+with open(OUT_CSV, 'w', newline='') as outfile:
+    out_writer = csv.writer(outfile, delimiter=',', lineterminator='\n')
+    for row in rows:
+        out_writer.writerow(row)
+    print(f"Successfully rote {len(rows)} rows")
+
+rows = rows[:1001]
+
+with open(OUT_CSV_FIRST1000, 'w', newline='') as outfile:
+    out_writer = csv.writer(outfile, delimiter=',', lineterminator='\n')
+    for row in rows:
+        out_writer.writerow(row)
+    print(f"Successfully rote {len(rows)} rows")
