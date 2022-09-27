@@ -7,7 +7,6 @@ For more info see: https://crates.io/data-access
 
 import csv
 import sys
-import time
 
 # Deal with very huge fields in the data dump
 csv.field_size_limit(sys.maxsize)
