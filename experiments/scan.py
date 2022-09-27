@@ -10,11 +10,17 @@ import time
 
 # ===== Constants =====
 
-PACKAGES_DIR = "experiments/packages"
+# Change to true to do a test run on dummy packages
+TEST_RUN = False
+
+CRATES_DIR = "experiments/packages"
 SRC_DIR = "src"
 RESULTS_DIR = "experiments/results"
 RESULTS_ALL_SUFFIX = "all.csv"
 RESULTS_SUMMARY_SUFFIX = "summary.txt"
+
+TEST_CRATES_DIR = "experiments/test-packages"
+TEST_CRATES = [ "dummy" ]
 
 OF_INTEREST = [
     "std::env",
@@ -244,7 +250,7 @@ def copy_file(src, dst):
 # ===== Main script =====
 
 def download_crate(crate):
-    target = os.path.join(PACKAGES_DIR, crate)
+    target = os.path.join(CRATES_DIR, crate)
     if os.path.exists(target):
         logging.info(f"Found existing crate: {target}")
     else:
@@ -261,9 +267,10 @@ def save_results(results):
         for line in results:
             fh.write(line + '\n')
 
-    # Copy to a second file under version control
-    results_copy = os.path.join(RESULTS_DIR, RESULTS_ALL_SUFFIX)
-    copy_file(results_path, results_copy)
+    if not TEST_RUN:
+        # Copy to a second file under version control
+        results_copy = os.path.join(RESULTS_DIR, RESULTS_ALL_SUFFIX)
+        copy_file(results_path, results_copy)
 
 def sort_summary_dict(d):
     return sorted(d.items(), key=lambda x: x[1], reverse=True)
@@ -290,9 +297,10 @@ def save_summary(crate_summary, pattern_summary):
         for c, n in crate_sorted:
             fh.write(f"{c}: {n}\n")
 
-    # Copy to a second file under version control
-    results_copy = os.path.join(RESULTS_DIR, RESULTS_SUMMARY_SUFFIX)
-    copy_file(results_path, results_copy)
+    if not TEST_RUN:
+        # Copy to a second file under version control
+        results_copy = os.path.join(RESULTS_DIR, RESULTS_SUMMARY_SUFFIX)
+        copy_file(results_path, results_copy)
 
 def of_interest(line):
     found = None
@@ -342,9 +350,9 @@ def scan_file(crate, root, file, results, crate_summary, pattern_summary):
                     crate_summary[crate] += 1
                     pattern_summary[pat] += 1
 
-def scan_crate(crate, results, crate_summary, pattern_summary):
+def scan_crate(crate, crate_dir, results, crate_summary, pattern_summary):
     logging.info(f"Scanning crate: {crate}")
-    src = os.path.join(PACKAGES_DIR, crate, SRC_DIR)
+    src = os.path.join(crate_dir, crate, SRC_DIR)
     for root, dirs, files in os.walk(src):
         for file in files:
             if os.path.splitext(file)[1] == ".rs":
@@ -359,13 +367,31 @@ def scan_crate(crate, results, crate_summary, pattern_summary):
 
 # ===== Entrypoint =====
 
+if TEST_RUN:
+    crates_dir = TEST_CRATES_DIR
+    crates = TEST_CRATES
+else:
+    crates_dir = CRATES_DIR
+    crates = TOP_200_CRATES
+
 results = []
-crate_summary = {c: 0 for c in TOP_200_CRATES}
+crate_summary = {c: 0 for c in crates}
 pattern_summary= {p: 0 for p in OF_INTEREST}
-logging.info(f"===== Scanning {len(TOP_200_CRATES)} crates... =====")
-for crate in TOP_200_CRATES:
-    download_crate(crate)
-    scan_crate(crate, results, crate_summary, pattern_summary)
-logging.info("===== Results =====")
-save_results(results)
-save_summary(crate_summary, pattern_summary)
+
+if TEST_RUN:
+    logging.info(f"==== Test run: scanning test packages =====")
+    for crate in TEST_CRATES:
+        scan_crate(crate, TEST_CRATES_DIR, results, crate_summary, pattern_summary)
+    logging.info(f"===== Results =====")
+    # TODO: display results, don't just save them
+    save_results(results)
+    save_summary(crate_summary, pattern_summary)
+else:
+    logging.info(f"===== Scanning {len(TOP_200_CRATES)} crates... =====")
+    for crate in TOP_200_CRATES:
+        download_crate(crate)
+        scan_crate(crate, CRATES_DIR, results, crate_summary, pattern_summary)
+    logging.info("===== Results =====")
+    # TODO: display results, don't just save them
+    save_results(results)
+    save_summary(crate_summary, pattern_summary)
