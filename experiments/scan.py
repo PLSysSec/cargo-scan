@@ -20,6 +20,10 @@ TEST_RUN = False
 # (ignored for a test run)
 USE_TOP = 200
 
+# For progress tracking purposes
+PROGRESS_INCS = 10
+PROGRESS_INC = USE_TOP // PROGRESS_INCS
+
 # ===== Constants =====
 
 RESULTS_DIR = "experiments/results"
@@ -61,7 +65,7 @@ def get_top_crates(n):
         crates = []
         for i, row in enumerate(in_reader):
             if i > 0:
-                logging.info(f"Top crate: {row[0]} ({row[1]} downloads)")
+                logging.debug(f"Top crate: {row[0]} ({row[1]} downloads)")
                 crates.append(row[0])
             if i == n:
                 assert len(crates) == n
@@ -72,7 +76,7 @@ def get_top_crates(n):
 def download_crate(crate):
     target = os.path.join(CRATES_DIR, crate)
     if os.path.exists(target):
-        logging.info(f"Found existing crate: {target}")
+        logging.debug(f"Found existing crate: {target}")
     else:
         if TEST_RUN:
             logging.warning(f"Crate not found during test run: {target}")
@@ -182,7 +186,7 @@ def scan_file(crate, root, file, results, crate_summary, pattern_summary):
                     pattern_summary[pat] += 1
 
 def scan_crate(crate, crate_dir, results, crate_summary, pattern_summary):
-    logging.info(f"Scanning crate: {crate}")
+    logging.debug(f"Scanning crate: {crate}")
     src = os.path.join(crate_dir, crate, SRC_DIR)
     for root, dirs, files in os.walk(src):
         # Hack to make os.walk work in alphabetical order
@@ -219,7 +223,10 @@ results = []
 crate_summary = {c: 0 for c in crates}
 pattern_summary= {p: 0 for p in OF_INTEREST}
 
-for crate in crates:
+for i, crate in enumerate(crates):
+    if i % PROGRESS_INC == 0:
+        progress = 100 * i // USE_TOP
+        logging.info(f"{progress}% complete")
     download_crate(crate)
     scan_crate(crate, crates_dir, results, crate_summary, pattern_summary)
 logging.info(f"===== Results =====")
