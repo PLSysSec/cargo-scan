@@ -2,16 +2,24 @@
 Script to download Cargo crate source code and analyze module-level imports.
 """
 
+import csv
 import logging
 import os
 import re
 import subprocess
+import sys
 import time
 
-# ===== Constants =====
+# ===== Input arguments =====
+# These should be CLI args but I'm lazy
 
 # Change to true to do a test run on dummy packages
 TEST_RUN = False
+
+# Number of top crates to analyze
+USE_TOP = 200
+
+# ===== Constants =====
 
 CRATES_DIR = "experiments/packages"
 SRC_DIR = "src"
@@ -20,7 +28,9 @@ RESULTS_ALL_SUFFIX = "all.csv"
 RESULTS_SUMMARY_SUFFIX = "summary.txt"
 
 TEST_CRATES_DIR = "experiments/test-packages"
-TEST_CRATES = [ "dummy" ]
+TEST_CRATES = [ "dummy", "doesnt-exist" ]
+
+TOP_CRATES_CSV = "data/crates.csv"
 
 OF_INTEREST = [
     "std::env",
@@ -33,211 +43,6 @@ OF_INTEREST = [
 
 CSV_HEADER = "crate, pattern of interest, directory, file, use line\n"
 
-# Top 200 most downloaded crates
-TOP_200_CRATES = [
-    "rand",
-    "syn",
-    "rand_core",
-    "libc",
-    "cfg-if",
-    "quote",
-    "proc-macro2",
-    "unicode-xid",
-    "serde",
-    "autocfg",
-    "bitflags",
-    "rand_chacha",
-    "log",
-    "lazy_static",
-    "itoa",
-    "getrandom",
-    "serde_derive",
-    "memchr",
-    "time",
-    "base64",
-    "serde_json",
-    "num-traits",
-    "regex",
-    "smallvec",
-    "regex-syntax",
-    "cc",
-    "parking_lot_core",
-    "version_check",
-    "parking_lot",
-    "strsim",
-    "ryu",
-    "aho-corasick",
-    "semver",
-    "bytes",
-    "crossbeam-utils",
-    "byteorder",
-    "generic-array",
-    "lock_api",
-    "scopeguard",
-    "digest",
-    "clap",
-    "once_cell",
-    "atty",
-    "block-buffer",
-    "num_cpus",
-    "hashbrown",
-    "num-integer",
-    "textwrap",
-    "percent-encoding",
-    "url",
-    "mio",
-    "ansi_term",
-    "idna",
-    "indexmap",
-    "ppv-lite86",
-    "pin-project-lite",
-    "unicode-width",
-    "either",
-    "tokio",
-    "itertools",
-    "slab",
-    "futures",
-    "unicode-normalization",
-    "rustc_version",
-    "chrono",
-    "memoffset",
-    "fnv",
-    "env_logger",
-    "typenum",
-    "unicode-bidi",
-    "heck",
-    "pkg-config",
-    "winapi",
-    "matches",
-    "hyper",
-    "crossbeam-epoch",
-    "miniz_oxide",
-    "thread_local",
-    "thiserror",
-    "thiserror-impl",
-    "termcolor",
-    "toml",
-    "opaque-debug",
-    "anyhow",
-    "futures-core",
-    "socket2",
-    "crossbeam-channel",
-    "arrayvec",
-    "futures-util",
-    "http",
-    "futures-task",
-    "tokio-util",
-    "futures-channel",
-    "futures-sink",
-    "unicode-segmentation",
-    "crossbeam-deque",
-    "nom",
-    "httparse",
-    "h2",
-    "vec_map",
-    "futures-io",
-    "semver-parser",
-    "proc-macro-hack",
-    "pin-project",
-    "humantime",
-    "pin-project-internal",
-    "backtrace",
-    "tracing",
-    "pin-utils",
-    "tinyvec",
-    "crc32fast",
-    "tracing-core",
-    "sha2",
-    "instant",
-    "rustc-demangle",
-    "nix",
-    "remove_dir_all",
-    "http-body",
-    "tempfile",
-    "futures-macro",
-    "mime",
-    "quick-error",
-    "hex",
-    "rand_hc",
-    "futures-executor",
-    "uuid",
-    "want",
-    "openssl-sys",
-    "adler",
-    "sha-1",
-    "serde_urlencoded",
-    "flate2",
-    "walkdir",
-    "same-file",
-    "try-lock",
-    "object",
-    "form_urlencoded",
-    "tokio-macros",
-    "glob",
-    "num-bigint",
-    "proc-macro-error",
-    "wasi",
-    "openssl",
-    "tower-service",
-    "proc-macro-error-attr",
-    "encoding_rs",
-    "linked-hash-map",
-    "tinyvec_macros",
-    "ahash",
-    "rayon",
-    "gimli",
-    "unicase",
-    "async-trait",
-    "openssl-probe",
-    "spin",
-    "rayon-core",
-    "reqwest",
-    "synstructure",
-    "signal-hook-registry",
-    "foreign-types",
-    "redox_syscall",
-    "addr2line",
-    "httpdate",
-    "foreign-types-shared",
-    "subtle",
-    "hmac",
-    "crypto-mac",
-    "which",
-    "regex-automata",
-    "native-tls",
-    "tracing-attributes",
-    "rand_pcg",
-    "winapi-x86_64-pc-windows-gnu",
-    "paste",
-    "dirs",
-    "winapi-i686-pc-windows-gnu",
-    "static_assertions",
-    "bstr",
-    "block-padding",
-    "net2",
-    "cpufeatures",
-    "hyper-tls",
-    "dtoa",
-    "num-rational",
-    "iovec",
-    "crossbeam-queue",
-    "rustls",
-    "ring",
-    "fixedbitset",
-    "ipnet",
-    "untrusted",
-    "petgraph",
-    "miow",
-    "libloading",
-    "proc-macro-nested",
-    "time-macros",
-    "yaml-rust",
-    "sct",
-    "webpki",
-    "stable_deref_trait",
-]
-assert len(TOP_200_CRATES) == 200
-
 # ===== Logging setup =====
 
 logging.basicConfig(level=logging.INFO)
@@ -249,13 +54,30 @@ def copy_file(src, dst):
 
 # ===== Main script =====
 
+def get_top_crates(n):
+    with open(TOP_CRATES_CSV, newline='') as infile:
+        in_reader = csv.reader(infile, delimiter=',')
+        crates = []
+        for i, row in enumerate(in_reader):
+            if i > 0:
+                logging.info(f"Top crate: {row[0]} ({row[1]} downloads)")
+                crates.append(row[0])
+            if i == n:
+                assert len(crates) == n
+                return crates
+    logging.error(f"Not enough crates. Asked for {n}, found {len(crates)}")
+    sys.exit(1)
+
 def download_crate(crate):
     target = os.path.join(CRATES_DIR, crate)
     if os.path.exists(target):
         logging.info(f"Found existing crate: {target}")
     else:
-        logging.info(f"Downloading crate: {target}")
-        subprocess.run(["cargo", "download", "-x", crate, "-o", target])
+        if TEST_RUN:
+            logging.warning(f"Crate not found during test run: {target}")
+        else:
+            logging.info(f"Downloading crate: {target}")
+            subprocess.run(["cargo", "download", "-x", crate, "-o", target])
 
 def save_results(results):
     timestr = time.strftime("%Y%m%d_%H%M%S")
@@ -379,30 +201,22 @@ def scan_crate(crate, crate_dir, results, crate_summary, pattern_summary):
 # ===== Entrypoint =====
 
 if TEST_RUN:
+    logging.info(f"==== Test run: scanning crates in {TEST_CRATES_DIR} =====")
     crates_dir = TEST_CRATES_DIR
     crates = TEST_CRATES
 else:
+    logging.info(f"==== Scanning the top {USE_TOP} crates =====")
     crates_dir = CRATES_DIR
-    crates = TOP_200_CRATES
+    crates = get_top_crates(USE_TOP)
 
 results = []
 crate_summary = {c: 0 for c in crates}
 pattern_summary= {p: 0 for p in OF_INTEREST}
 
-if TEST_RUN:
-    logging.info(f"==== Test run: scanning test packages =====")
-    for crate in TEST_CRATES:
-        scan_crate(crate, TEST_CRATES_DIR, results, crate_summary, pattern_summary)
-    logging.info(f"===== Results =====")
-    # TODO: display results, don't just save them
-    save_results(results)
-    save_summary(crate_summary, pattern_summary)
-else:
-    logging.info(f"===== Scanning {len(TOP_200_CRATES)} crates... =====")
-    for crate in TOP_200_CRATES:
-        download_crate(crate)
-        scan_crate(crate, CRATES_DIR, results, crate_summary, pattern_summary)
-    logging.info("===== Results =====")
-    # TODO: display results, don't just save them
-    save_results(results)
-    save_summary(crate_summary, pattern_summary)
+for crate in crates:
+    download_crate(crate)
+    scan_crate(crate, crates_dir, results, crate_summary, pattern_summary)
+logging.info(f"===== Results =====")
+# TODO: display results, don't just save them
+save_results(results)
+save_summary(crate_summary, pattern_summary)

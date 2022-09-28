@@ -160,8 +160,8 @@ try-lock: 0
 object: 0
 form_urlencoded: 0
 tokio-macros: 0
-num-bigint: 0
 proc-macro-error: 0
+num-bigint: 0
 wasi: 0
 tower-service: 0
 proc-macro-error-attr: 0
