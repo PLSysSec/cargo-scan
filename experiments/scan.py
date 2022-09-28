@@ -14,7 +14,7 @@ import time
 # These should be CLI args but I'm lazy
 
 # Change to true to do a test run on dummy packages
-TEST_RUN = True
+TEST_RUN = False
 
 # Number of top crates to analyze
 # (ignored for a test run)
@@ -73,8 +73,8 @@ def get_top_crates(n):
     logging.error(f"Not enough crates. Asked for {n}, found {len(crates)}")
     sys.exit(1)
 
-def download_crate(crate):
-    target = os.path.join(CRATES_DIR, crate)
+def download_crate(crates_dir, crate):
+    target = os.path.join(crates_dir, crate)
     if os.path.exists(target):
         logging.debug(f"Found existing crate: {target}")
     else:
@@ -233,6 +233,15 @@ def scan_file(crate, root, file, results, crate_summary, pattern_summary):
     with open(filepath) as fh:
         for line in fh:
             if re.fullmatch("use .*\n", line):
+                # Fetch more lines until semicolon
+                while ';' not in line:
+                    next_line = next(fh, None)
+                    if next_line is None:
+                        logging.warning(f"file ended during use expr! {file}")
+                        logging.warning(f"adding implicit semicolon: {line}")
+                        next_line = ';'
+                    line += next_line
+                # Scan use expression
                 for pat, result in scan_use(crate, root, file, line):
                     results.append(result)
                     # Update summaries
@@ -281,7 +290,7 @@ for i, crate in enumerate(crates):
     if i % PROGRESS_INC == 0:
         progress = 100 * i // USE_TOP
         logging.info(f"{progress}% complete")
-    download_crate(crate)
+    download_crate(crates_dir, crate)
     scan_crate(crate, crates_dir, results, crate_summary, pattern_summary)
 logging.info(f"===== Results =====")
 # TODO: display results, don't just save them

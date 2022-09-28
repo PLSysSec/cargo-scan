@@ -5,7 +5,15 @@ dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::mod2::tes
 dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::mod1
 dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::mod2::test1
 dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::mod1
-dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::mod3
-dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::mod4
+dummy, std::process, experiments/test-packages/dummy/src, main.rs, std::process::Command::*
+dummy, std::process, experiments/test-packages/dummy/src, main.rs, std::process::Command::*
+dummy, std::process, experiments/test-packages/dummy/src, main.rs, std::process::process::Command::*
+dummy, std::process, experiments/test-packages/dummy/src, main.rs, std::process::process::Command::*
+dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::test::mod4
+dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::test::mod3
+dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::mod5
+dummy, std::env, experiments/test-packages/dummy/src, main.rs, std::env
+dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::mod6
+dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::mod7
 dummy, std::env, experiments/test-packages/dummy/src, main.rs, std::env
 dummy, std::env, experiments/test-packages/dummy/src, main.rs, std::env
