@@ -187,6 +187,10 @@ def scan_crate(crate, crate_dir, results, crate_summary, pattern_summary):
     logging.info(f"Scanning crate: {crate}")
     src = os.path.join(crate_dir, crate, SRC_DIR)
     for root, dirs, files in os.walk(src):
+        # Hack to make os.walk work in alphabetical order
+        # https://stackoverflow.com/questions/6670029/can-i-force-os-walk-to-visit-directories-in-alphabetical-order
+        # This is fragile. It relies on modifying dirs.sort() in place, and
+        # doesn't work if topdown=False is set.
         files.sort()
         dirs.sort()
         for file in files:
