@@ -187,6 +187,8 @@ def scan_crate(crate, crate_dir, results, crate_summary, pattern_summary):
     logging.info(f"Scanning crate: {crate}")
     src = os.path.join(crate_dir, crate, SRC_DIR)
     for root, dirs, files in os.walk(src):
+        files.sort()
+        dirs.sort()
         for file in files:
             if os.path.splitext(file)[1] == ".rs":
                 scan_file(
