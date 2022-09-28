@@ -14,7 +14,7 @@ import time
 # These should be CLI args but I'm lazy
 
 # Change to true to do a test run on dummy packages
-TEST_RUN = False
+TEST_RUN = True
 
 # Number of top crates to analyze
 # (ignored for a test run)
@@ -137,6 +137,66 @@ def of_interest(line):
             found = p
     return found
 
+def parse_use(line):
+    """
+    Parse a use ...; string of Rust syntax, returning a list
+    of crate imports.
+
+    This function is hacky and best-effort (it prints warnings if
+    it detects anything it doesn't recognize).
+    Most of the logic is just dealing with {} replacements.
+
+    The input is called 'line' but may actually be multiple lines.
+    It should end in a newline.
+    """
+    # Preconditions
+    if line[-1] != '\n':
+        logging.warning(f"Expected newline-terminated use expression: {line}")
+        return []
+    elif line[0:4] != "use ":
+        logging.warning(f"Expected 'use' expression: {line}")
+        return []
+    elif ";" not in line:
+        logging.warning(f"Expected semicolon in: {line}")
+        return []
+
+    # Remove 'use ' at the beginning
+    line = line[4:]
+
+    # Remove commented text
+    line = re.sub("[ ]*//.*\n", "\n", line)
+    line = line.replace('\n', '')
+    assert '/n' not in line
+    if '/' in line:
+        logging.warning(f"Unexpected extra slash in: {line}")
+        return []
+
+    # Remove semicolon at the end
+    if line[-1] != ';':
+        logging.warning(f"Expected ; at end of use expression: {line}")
+        return []
+    line = line[:-1]
+    if ';' in line:
+        logging.warning(f"Unexpected extra semicolon in: {line}")
+
+    # Replace {} instances, iteratively
+    to_search = [line]
+    done = []
+    while to_search:
+        l = to_search.pop()
+        if m := re.fullmatch("(.*){([^{}]*)}(.*)", l):
+            for mid in m[2].split(','):
+                to_search.append(m[1] + mid.strip() + m[3])
+        elif '{' in l:
+            logging.warning(f"Unexpected extra {{ in line: {line}")
+        elif '}' in l:
+            logging.warning(f"Unexpected extra }} in line: {line}")
+        else:
+            done.append(l)
+
+    # Return parsed list of results
+    return done
+
 def sanitize_comma(s):
     if "," in s:
         logging.warning(f"found unexpected comma in: {s}")
@@ -150,27 +210,21 @@ def to_csv(crate, pat, root, file, use_expr):
     use_expr = sanitize_comma(use_expr)
     return f"{crate}, {pat}, {root}, {file}, {use_expr}"
 
-def parse_use(crate, root, file, line):
+def scan_use(crate, root, file, use_expr):
     """
-    Parse a single use ...; line.
-    Return the pattern and the resulting CSV output.
+    Scan a single use ...; expression.
+    Return a list of pairs of a pattern and the CSV output.
 
-    Currently hacky/limited and doesn't handle all valid Rust syntax.
+    Calls parse_use to parse the Rust syntax.
     """
     results = []
-    line = re.sub("[ ]*//.*\n", "\n", line) # remove commented text
-    pat = of_interest(line)
-    if pat is None:
-        logging.debug(f"Skipping: {line}")
-    elif m := re.fullmatch("use ([^{}]*){([^{}]*)};\n", line):
-        prefix = m[1]
-        for suffix in m[2].replace(' ', '').split(','):
-            use_expr = prefix + suffix
-            results.append((pat, to_csv(crate, pat, root, file, use_expr)))
-    elif m := re.fullmatch("use ([^{}]*)\n", line):
-        results.append((pat, to_csv(crate, pat, root, file, m[1])))
-    else:
-        logging.warning(f"Unable to parse 'use' line: {line}")
+    for use in parse_use(use_expr):
+        pat = of_interest(use)
+        if pat is None:
+            logging.debug(f"Skipping: {use}")
+        else:
+            logging.debug(f"Of interest: {use}")
+            results.append((pat, to_csv(crate, pat, root, file, use)))
     return results
 
 def scan_file(crate, root, file, results, crate_summary, pattern_summary):
@@ -179,7 +233,7 @@ def scan_file(crate, root, file, results, crate_summary, pattern_summary):
     with open(filepath) as fh:
         for line in fh:
             if re.fullmatch("use .*\n", line):
-                for pat, result in parse_use(crate, root, file, line):
+                for pat, result in scan_use(crate, root, file, line):
                     results.append(result)
                     # Update summaries
                     crate_summary[crate] += 1
