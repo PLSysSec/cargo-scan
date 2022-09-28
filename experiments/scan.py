@@ -21,12 +21,12 @@ USE_TOP = 200
 
 # ===== Constants =====
 
-CRATES_DIR = "experiments/packages"
-SRC_DIR = "src"
 RESULTS_DIR = "experiments/results"
 RESULTS_ALL_SUFFIX = "all.csv"
 RESULTS_SUMMARY_SUFFIX = "summary.txt"
 
+CRATES_DIR = "experiments/packages"
+SRC_DIR = "src"
 TEST_CRATES_DIR = "experiments/test-packages"
 TEST_CRATES = [ "dummy", "doesnt-exist" ]
 
@@ -79,27 +79,20 @@ def download_crate(crate):
             logging.info(f"Downloading crate: {target}")
             subprocess.run(["cargo", "download", "-x", crate, "-o", target])
 
-def save_results(results):
-    timestr = time.strftime("%Y%m%d_%H%M%S")
-    results_file = f"{timestr}_{RESULTS_ALL_SUFFIX}"
+def save_results(results, results_prefix):
+    results_file = f"{results_prefix}_{RESULTS_ALL_SUFFIX}"
     results_path = os.path.join(RESULTS_DIR, results_file)
-    logging.info(f"Saving full results to {results_path}")
+    logging.info(f"Saving raw results to {results_path}")
     with open(results_path, 'w') as fh:
         fh.write(CSV_HEADER)
         for line in results:
             fh.write(line + '\n')
 
-    if not TEST_RUN:
-        # Copy to a second file under version control
-        results_copy = os.path.join(RESULTS_DIR, RESULTS_ALL_SUFFIX)
-        copy_file(results_path, results_copy)
-
 def sort_summary_dict(d):
     return sorted(d.items(), key=lambda x: x[1], reverse=True)
 
-def save_summary(crate_summary, pattern_summary):
-    timestr = time.strftime("%Y%m%d_%H%M%S")
-    results_file = f"{timestr}_{RESULTS_SUMMARY_SUFFIX}"
+def save_summary(crate_summary, pattern_summary, results_prefix):
+    results_file = f"{results_prefix}_{RESULTS_SUMMARY_SUFFIX}"
     results_path = os.path.join(RESULTS_DIR, results_file)
 
     # Sanity check
@@ -118,11 +111,6 @@ def save_summary(crate_summary, pattern_summary):
         crate_sorted = sort_summary_dict(crate_summary)
         for c, n in crate_sorted:
             fh.write(f"{c}: {n}\n")
-
-    if not TEST_RUN:
-        # Copy to a second file under version control
-        results_copy = os.path.join(RESULTS_DIR, RESULTS_SUMMARY_SUFFIX)
-        copy_file(results_path, results_copy)
 
 def of_interest(line):
     found = None
@@ -210,10 +198,12 @@ if TEST_RUN:
     logging.info(f"==== Test run: scanning crates in {TEST_CRATES_DIR} =====")
     crates_dir = TEST_CRATES_DIR
     crates = TEST_CRATES
+    results_prefix = "test"
 else:
     logging.info(f"==== Scanning the top {USE_TOP} crates =====")
     crates_dir = CRATES_DIR
     crates = get_top_crates(USE_TOP)
+    results_prefix = f"top{USE_TOP}"
 
 results = []
 crate_summary = {c: 0 for c in crates}
@@ -224,5 +214,5 @@ for crate in crates:
     scan_crate(crate, crates_dir, results, crate_summary, pattern_summary)
 logging.info(f"===== Results =====")
 # TODO: display results, don't just save them
-save_results(results)
-save_summary(crate_summary, pattern_summary)
+save_results(results, results_prefix)
+save_summary(crate_summary, pattern_summary, results_prefix)
