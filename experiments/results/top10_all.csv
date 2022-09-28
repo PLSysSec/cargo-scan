@@ -1,0 +1,15 @@
+crate, pattern of interest, directory, file, use line
+proc-macro2, std::path, experiments/packages/proc-macro2/src, fallback.rs, std::path::Path;
+proc-macro2, std::path, experiments/packages/proc-macro2/src, fallback.rs, std::path::PathBuf;
+proc-macro2, std::path, experiments/packages/proc-macro2/src, lib.rs, std::path::PathBuf;
+proc-macro2, std::path, experiments/packages/proc-macro2/src, wrapper.rs, std::path::PathBuf;
+autocfg, std::env, experiments/packages/autocfg/src, lib.rs, std::env;
+autocfg, std::fs, experiments/packages/autocfg/src, lib.rs, std::fs;
+autocfg, std::path, experiments/packages/autocfg/src, lib.rs, std::path::Path
+autocfg, std::path, experiments/packages/autocfg/src, lib.rs, std::path::PathBuf
+autocfg, std::process, experiments/packages/autocfg/src, lib.rs, std::process::Command
+autocfg, std::process, experiments/packages/autocfg/src, lib.rs, std::process::Stdio
+autocfg, std::env, experiments/packages/autocfg/src, tests.rs, std::env;
+autocfg, std::path, experiments/packages/autocfg/src, tests.rs, std::path::Path;
+autocfg, std::path, experiments/packages/autocfg/src, version.rs, std::path::Path;
+autocfg, std::process, experiments/packages/autocfg/src, version.rs, std::process::Command;

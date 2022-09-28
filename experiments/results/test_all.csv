@@ -1,0 +1,5 @@
+crate, pattern of interest, directory, file, use line
+dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::*;
+dummy, std::os, experiments/test-packages/dummy/src, main.rs, std::os::*;
+dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::mod3;
+dummy, std::fs, experiments/test-packages/dummy/src, main.rs, std::fs::mod4;

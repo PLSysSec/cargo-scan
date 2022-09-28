@@ -1,0 +1,15 @@
+===== Patterns =====
+Total instances of each import pattern:
+std::path: 8
+std::process: 3
+std::env: 2
+std::fs: 1
+std::net: 0
+std::os: 0
+===== Crate Summary =====
+Number of dangerous imports by crate:
+autocfg: 10
+proc-macro2: 4
+===== Crate Totals =====
+2 crates with 1 or more dangerous imports
+8 crates with 0 dangerous imports

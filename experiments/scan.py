@@ -17,6 +17,7 @@ import time
 TEST_RUN = False
 
 # Number of top crates to analyze
+# (ignored for a test run)
 USE_TOP = 200
 
 # ===== Constants =====
