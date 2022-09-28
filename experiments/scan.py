@@ -107,10 +107,19 @@ def save_summary(crate_summary, pattern_summary, results_prefix):
             fh.write(f"{p}: {n}\n")
 
         fh.write("===== Crate Summary =====\n")
-        fh.write("Total dangerous imports by crate:\n")
+        fh.write("Number of dangerous imports by crate:\n")
         crate_sorted = sort_summary_dict(crate_summary)
+        num_nonzero = 0
+        num_zero = 0
         for c, n in crate_sorted:
-            fh.write(f"{c}: {n}\n")
+            if n > 0:
+                num_nonzero += 1
+                fh.write(f"{c}: {n}\n")
+            else:
+                num_zero += 1
+        fh.write("===== Crate Totals =====\n")
+        fh.write(f"{num_nonzero} crates with 1 or more dangerous imports\n")
+        fh.write(f"{num_zero} crates with 0 dangerous imports\n")
 
 def of_interest(line):
     found = None
