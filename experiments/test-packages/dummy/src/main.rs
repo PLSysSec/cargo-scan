@@ -38,3 +38,14 @@ memory, but executes searches more quickly. If you can abide slower searches
 (somewhere around 3-5x), then sparse DFAs might make more sense since they can
 use significantly less space.
 */
+
+// Multiline strings
+// from crossbeam-epoch
+#[deprecated(
+    note = "`compare_and_set` and `compare_and_set_weak` that use this trait are deprecated, \
+            use `compare_exchange` or `compare_exchange_weak instead`"
+)]
+pub trait CompareAndSetOrdering {
+    /// The ordering of the operation when it succeeds.
+    fn success(&self) -> Ordering;
+}
