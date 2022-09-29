@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+from functools import partial, partialmethod
 
 # ===== Input arguments =====
 # These should be CLI args but I'm lazy
@@ -21,6 +22,14 @@ USE_TOP = 200
 
 # Logging level
 logging.basicConfig(level=logging.INFO)
+
+# ===== Additional logging config =====
+# Set up trace logging level below debug
+# https://stackoverflow.com/a/55276759/2038713
+logging.TRACE = logging.DEBUG - 5
+logging.addLevelName(logging.TRACE, 'TRACE')
+logging.Logger.trace = partialmethod(logging.Logger.log, logging.TRACE)
+logging.trace = partial(logging.log, logging.TRACE)
 
 # ===== Constants =====
 
@@ -63,7 +72,7 @@ def get_top_crates(n):
         crates = []
         for i, row in enumerate(in_reader):
             if i > 0:
-                logging.debug(f"Top crate: {row[0]} ({row[1]} downloads)")
+                logging.trace(f"Top crate: {row[0]} ({row[1]} downloads)")
                 crates.append(row[0])
             if i == n:
                 assert len(crates) == n
@@ -74,7 +83,7 @@ def get_top_crates(n):
 def download_crate(crates_dir, crate):
     target = os.path.join(crates_dir, crate)
     if os.path.exists(target):
-        logging.debug(f"Found existing crate: {target}")
+        logging.trace(f"Found existing crate: {target}")
     else:
         if TEST_RUN:
             logging.warning(f"Crate not found during test run: {target}")
@@ -215,9 +224,9 @@ def scan_use(crate, root, file, use_expr):
     for use in parse_use(use_expr):
         pat = of_interest(use)
         if pat is None:
-            logging.debug(f"Skipping: {use}")
+            logging.trace(f"Skipping: {use}")
         else:
-            logging.debug(f"Of interest: {use}")
+            logging.trace(f"Of interest: {use}")
             results.append((pat, to_csv(crate, pat, root, file, use)))
     return results
 
@@ -242,7 +251,7 @@ def scan_rs(fh):
 
 def scan_file(crate, root, file, results, crate_summary, pattern_summary):
     filepath = os.path.join(root, file)
-    logging.debug(f"Scanning file: {filepath}")
+    logging.trace(f"Scanning file: {filepath}")
     with open(filepath) as fh:
         scanner = scan_rs(fh)
         for line in scanner:
