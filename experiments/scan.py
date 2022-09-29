@@ -19,11 +19,14 @@ TEST_RUN = False
 # (ignored for a test run)
 USE_TOP = 200
 
+# Logging level
+logging.basicConfig(level=logging.INFO)
+
+# ===== Constants =====
+
 # For progress tracking purposes
 PROGRESS_INCS = 10
 PROGRESS_INC = USE_TOP // PROGRESS_INCS
-
-# ===== Constants =====
 
 RESULTS_DIR = "experiments/results"
 RESULTS_ALL_SUFFIX = "all.csv"
@@ -46,10 +49,6 @@ OF_INTEREST = [
 ]
 
 CSV_HEADER = "crate, pattern of interest, directory, file, use line\n"
-
-# ===== Logging setup =====
-
-logging.basicConfig(level=logging.INFO)
 
 # ===== Utility =====
 
