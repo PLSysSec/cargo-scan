@@ -303,7 +303,7 @@ crate_summary = {c: 0 for c in crates}
 pattern_summary= {p: 0 for p in OF_INTEREST}
 
 for i, crate in enumerate(crates):
-    if i % PROGRESS_INC == 0:
+    if i > 0 and i % PROGRESS_INC == 0:
         progress = 100 * i // USE_TOP
         logging.info(f"{progress}% complete")
     download_crate(crates_dir, crate)
