@@ -29,3 +29,12 @@ use std::fs::mod7;//comment-without-spaces
 // example missed in rustc_version
 use std::{env, error, fmt, io, num, str};
 use std::{error, env}; // a variant
+
+// Fake use expression in the comments
+// from regex-automata
+/*
+By default, compiling a regex will use dense DFAs internally. This uses more
+memory, but executes searches more quickly. If you can abide slower searches
+(somewhere around 3-5x), then sparse DFAs might make more sense since they can
+use significantly less space.
+*/
