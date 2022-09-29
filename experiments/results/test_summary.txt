@@ -1,14 +1,14 @@
 ===== Patterns =====
 Total instances of each import pattern:
-std::fs: 10
-std::process: 4
+std::fs: 9
 std::env: 3
+std::process: 2
 std::os: 1
 std::net: 0
 std::path: 0
 ===== Crate Summary =====
 Number of dangerous imports by crate:
-dummy: 18
+dummy: 15
 ===== Crate Totals =====
 1 crates with 1 or more dangerous imports
 1 crates with 0 dangerous imports

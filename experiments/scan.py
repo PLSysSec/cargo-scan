@@ -194,8 +194,8 @@ def parse_use(line):
         else:
             done.append(l)
 
-    # Return parsed list of results
-    return done
+    # Dedup and sort final results
+    return sorted(set(done))
 
 def sanitize_comma(s):
     if "," in s:
