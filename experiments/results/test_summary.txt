@@ -11,4 +11,4 @@ Number of dangerous imports by crate:
 dummy: 15
 ===== Crate Totals =====
 1 crates with 1 or more dangerous imports
-1 crates with 0 dangerous imports
+0 crates with 0 dangerous imports
