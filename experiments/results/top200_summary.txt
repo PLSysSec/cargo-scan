@@ -1,53 +1,56 @@
 ===== Patterns =====
 Total instances of each import pattern:
-std::os: 240
-std::net: 156
-std::path: 122
-std::fs: 62
+std::os: 249
+std::net: 162
+std::path: 132
+std::fs: 68
 std::process: 35
-std::env: 25
+std::env: 29
 ===== Crate Summary =====
 Number of dangerous imports by crate:
 mio: 129
-tokio: 116
-nix: 48
+tokio: 123
+nix: 50
 net2: 45
 socket2: 33
-tempfile: 31
+tempfile: 33
 backtrace: 19
 cc: 18
 walkdir: 18
 same-file: 17
 openssl: 17
+reqwest: 15
 hyper: 14
 miow: 14
-reqwest: 13
 autocfg: 10
 which: 10
 ipnet: 10
+remove_dir_all: 8
 rustls: 8
+parking_lot_core: 7
 url: 7
+chrono: 6
 dirs: 6
 glob: 5
 native-tls: 5
 libloading: 5
 proc-macro2: 4
-chrono: 4
 pkg-config: 4
 clap: 3
 num_cpus: 3
 thiserror: 3
-remove_dir_all: 3
+tokio-util: 3
 flate2: 3
 openssl-probe: 3
 rayon-core: 3
+bstr: 3
 version_check: 2
+rustc_version: 2
+env_logger: 2
 h2: 2
-rustc_version: 1
-env_logger: 1
 termcolor: 1
 crossbeam-channel: 1
 stable_deref_trait: 1
 ===== Crate Totals =====
-40 crates with 1 or more dangerous imports
-160 crates with 0 dangerous imports
+43 crates with 1 or more dangerous imports
+157 crates with 0 dangerous imports
