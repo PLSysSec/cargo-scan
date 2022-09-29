@@ -8,7 +8,6 @@ import os
 import re
 import subprocess
 import sys
-import time
 
 # ===== Input arguments =====
 # These should be CLI args but I'm lazy
