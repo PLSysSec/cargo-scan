@@ -44,7 +44,7 @@ RESULTS_SUMMARY_SUFFIX = "summary.txt"
 CRATES_DIR = "experiments/packages"
 SRC_DIR = "src"
 TEST_CRATES_DIR = "experiments/test-packages"
-TEST_CRATES = [ "dummy", "doesnt-exist" ]
+TEST_CRATES = [ "dummy" ]
 
 TOP_CRATES_CSV = "data/crates.csv"
 
@@ -240,9 +240,9 @@ def scan_rs(fh):
     curr = ""
     for line in fh:
         curr += line
-        curr = re.sub("//.*\n", "\n", curr)
+        curr = re.sub("[ ]*//.*\n", "\n", curr)
         curr = re.sub("/\*.*\*/", "", curr, flags=re.DOTALL)
-        curr = curr.strip() + '\n'
+        curr = curr + '\n'
         if "/*" not in curr:
             if "*/" in curr:
                 logging.warning("unexpected */ before /*")
