@@ -159,17 +159,13 @@ def parse_use(line):
     elif ";" not in line:
         logging.warning(f"Expected semicolon in: {line}")
         return []
-
-    # Remove 'use ' at the beginning
-    line = line[4:]
-
-    # Remove commented text
-    line = re.sub("[ ]*//.*\n", "\n", line)
-    line = line.replace('\n', '')
-    assert '/n' not in line
-    if '/' in line:
+    elif '/' in line:
         logging.warning(f"Unexpected extra slash in: {line}")
         return []
+
+    # Remove 'use ' at the beginning and newlines
+    line = line[4:]
+    line = line.replace('\n', '')
 
     # Remove semicolon at the end
     if line[-1] != ';':
@@ -227,17 +223,37 @@ def scan_use(crate, root, file, use_expr):
             results.append((pat, to_csv(crate, pat, root, file, use)))
     return results
 
+def scan_rs(fh):
+    """
+    Scan a rust file handle, ignoring comments
+    (i.e. // and /* */).
+
+    Yield (possibly multi-line) newline-terminated strings.
+    """
+    curr = ""
+    for line in fh:
+        curr += line
+        curr = re.sub("//.*\n", "\n", curr)
+        curr = re.sub("/\*.*\*/", "", curr, flags=re.DOTALL)
+        curr = curr.strip() + '\n'
+        if "/*" not in curr:
+            if "*/" in curr:
+                logging.warning("unexpected */ before /*")
+            yield curr
+            curr = ""
+
 def scan_file(crate, root, file, results, crate_summary, pattern_summary):
     filepath = os.path.join(root, file)
     logging.debug(f"Scanning file: {filepath}")
     with open(filepath) as fh:
-        for line in fh:
-            if re.fullmatch("use .*\n", line):
+        scanner = scan_rs(fh)
+        for line in scanner:
+            if re.fullmatch("use .*\n", line, flags=re.DOTALL):
                 # Fetch more lines until semicolon
                 while ';' not in line:
-                    next_line = next(fh, None)
+                    next_line = next(scanner, None)
                     if next_line is None:
-                        logging.warning(f"file ended during use expr! {file}")
+                        logging.warning(f"file ended during use expr: {file}")
                         logging.warning(f"adding implicit semicolon: {line}")
                         next_line = ';'
                     line += next_line
