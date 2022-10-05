@@ -1,5 +1,8 @@
 # proc-macro2
 
+Audited by: Caleb Stanford
+Date: 2022-10-05
+
 One of two crates in the top 10 most downloaded crates with dangerous imports.
 
 ## List of imports (4)

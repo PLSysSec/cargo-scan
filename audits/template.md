@@ -1,5 +1,8 @@
 # <!-- crate name -->
 
+Audited by: <!-- name -->
+Date: <!-- date -->
+
 <!-- Statement about crate downloads or significance -->
 
 ## List of imports <!-- number -->

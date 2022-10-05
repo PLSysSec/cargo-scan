@@ -1,5 +1,8 @@
 # autocfg
 
+Audited by: Caleb Stanford
+Date: 2022-10-04
+
 One of two crates in the top 10 most downloaded crates with dangerous imports.
 
 ## List of imports (10)
