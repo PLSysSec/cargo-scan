@@ -248,8 +248,6 @@ def scan_rs(fh):
     """
     curr = ""
     for line in fh:
-        if line is None:
-            return
         curr += line
         if ';' in curr:
             curr = re.sub("[ ]*//.*\n", "\n", curr)

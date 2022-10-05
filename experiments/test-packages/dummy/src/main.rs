@@ -49,3 +49,5 @@ pub trait CompareAndSetOrdering {
     /// The ordering of the operation when it succeeds.
     fn success(&self) -> Ordering;
 }
+
+use expr with no semicolon
