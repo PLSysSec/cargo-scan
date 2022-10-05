@@ -221,9 +221,6 @@ def scan_use(crate, root, file, use_expr):
 
     Calls parse_use to parse the Rust syntax.
     """
-    if len(use_expr) >= 500:
-        logging.warning(f"Skipping use expression longer than 500 chars in {crate}, {root}, {file}: {use_expr[:100]...}")
-        return []
     results = []
     for use in parse_use(use_expr):
         pat = of_interest(use)
