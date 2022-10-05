@@ -2,7 +2,7 @@
 
 One of two crates in the top 10 most downloaded crates with dangerous imports.
 
-## 10 imports
+## List of imports (10)
 
 ```
 lib.rs, std::env
@@ -42,12 +42,22 @@ Only in cfg(test): TESTS_TARGET_DIR
 
 ## Security summary
 
-- I believe the crate very easily allows executing arbitrary code at build time with an appropriate call to one of the `emit` methods.
+1. Security risks
 
-- The crate needs shell access to call commands of a fixed form, namely, calls to `rustc` with various arguments.
+I believe the crate very easily allows executing arbitrary code at build time with an appropriate call to one of the `emit` methods.
 
-- The crate needs read-only access to a fixed set of environment variables and a fixed set of filepaths.
+2. Permissions
 
-- It may also need access to additional filepaths if the user passes them in via function calls.
+The crate needs shell access to call commands of a fixed form, namely, calls to `rustc` with various arguments. The crate also needs read-only access to a fixed set of environment variables and a fixed set of filepaths. It may also need access to additional filepaths if the user passes them in via function calls.
 
-- In typical use cases, it needs this access at build time only. (`build.rs`)
+In typical use cases, it needs this access at build time only. (`build.rs`)
+
+3. Transitive risk
+
+Crate is a transitive risk if used inappropriately or beyond the fixed permissions above.
+
+4. Feasibility of automated analysis
+
+- Spec: project-independent in most cases
+- Static analysis: likely feasible
+- Dynamic enforcement overhead: acceptable
