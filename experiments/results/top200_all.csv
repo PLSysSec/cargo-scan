@@ -450,6 +450,7 @@ remove_dir_all, std::fs, experiments/packages/remove_dir_all/src, fs.rs, std::fs
 remove_dir_all, std::os, experiments/packages/remove_dir_all/src, fs.rs, std::os::windows::prelude::*
 remove_dir_all, std::path, experiments/packages/remove_dir_all/src, fs.rs, std::path::Path
 remove_dir_all, std::path, experiments/packages/remove_dir_all/src, fs.rs, std::path::PathBuf
+remove_dir_all, std::fs, experiments/packages/remove_dir_all/src, lib.rs, std::fs::remove_dir_all
 remove_dir_all, std::path, experiments/packages/remove_dir_all/src, portable.rs, std::path::Path
 remove_dir_all, std::fs, experiments/packages/remove_dir_all/src, unix.rs, std::fs
 remove_dir_all, std::path, experiments/packages/remove_dir_all/src, unix.rs, std::path::Path

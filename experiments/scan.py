@@ -263,9 +263,9 @@ def scan_file(crate, root, file, results, crate_summary, pattern_summary):
     with open(filepath) as fh:
         scanner = scan_rs(fh)
         for expr in scanner:
-            if m := re.fullmatch(".*(^use .*\n)", expr, flags=re.MULTILINE | re.DOTALL):
+            if m := re.fullmatch(".*^(pub )?(use .*\n)", expr, flags=re.MULTILINE | re.DOTALL):
                 # Scan use expression
-                for pat, result in scan_use(crate, root, file, m[1]):
+                for pat, result in scan_use(crate, root, file, m[2]):
                     results.append(result)
                     # Update summaries
                     crate_summary[crate] += 1
