@@ -163,7 +163,7 @@ def parse_use(expr):
 
     The input should start with 'use ' and end in a newline.
     """
-    smry = truncate_str(expr, 500)
+    smry = truncate_str(expr, 100)
 
     # Preconditions
     if expr[-1] != '\n':
