@@ -2,6 +2,7 @@
 Script to download Cargo crate source code and analyze module-level imports.
 """
 
+import argparse
 import csv
 import logging
 import os
@@ -9,16 +10,6 @@ import re
 import subprocess
 import sys
 from functools import partial, partialmethod
-
-# ===== Input arguments =====
-# These should be CLI args but I'm lazy
-
-# Change to true to do a test run on dummy packages
-TEST_RUN = False
-
-# Number of top crates to analyze
-# (ignored for a test run)
-USE_TOP = 200
 
 # ===== Logging config =====
 
@@ -29,8 +20,22 @@ logging.addLevelName(logging.TRACE, 'TRACE')
 logging.Logger.trace = partialmethod(logging.Logger.log, logging.TRACE)
 logging.trace = partial(logging.log, logging.TRACE)
 
-# Logging level
-logging.basicConfig(level=logging.INFO)
+# ===== Input arguments =====
+
+parser = argparse.ArgumentParser()
+parser.add_argument('use_top', nargs='?', help="Number of top crates to analyze (ignored for a test run)", default=10)
+parser.add_argument('-t', '--test', action="store_true", help="Test run on dummy packages")
+parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
+
+args = vars(parser.parse_args())
+
+TEST_RUN = args["test"]
+LOG_LEVEL = [logging.INFO, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG, logging.TRACE][args["verbose"]]
+USE_TOP = int(args["use_top"])
+
+logging.basicConfig(level=LOG_LEVEL)
+
+logging.debug(args)
 
 # ===== Constants =====
 
