@@ -20,10 +20,8 @@ TEST_RUN = False
 # (ignored for a test run)
 USE_TOP = 200
 
-# Logging level
-logging.basicConfig(level=logging.INFO)
+# ===== Logging config =====
 
-# ===== Additional logging config =====
 # Set up trace logging level below debug
 # https://stackoverflow.com/a/55276759/2038713
 logging.TRACE = logging.DEBUG - 5
@@ -31,10 +29,13 @@ logging.addLevelName(logging.TRACE, 'TRACE')
 logging.Logger.trace = partialmethod(logging.Logger.log, logging.TRACE)
 logging.trace = partial(logging.log, logging.TRACE)
 
+# Logging level
+logging.basicConfig(level=logging.INFO)
+
 # ===== Constants =====
 
 # For progress tracking purposes
-PROGRESS_INCS = 10
+PROGRESS_INCS = 5
 PROGRESS_INC = USE_TOP // PROGRESS_INCS
 
 RESULTS_DIR = "experiments/results"
@@ -232,20 +233,21 @@ def scan_use(crate, root, file, use_expr):
 
 def scan_rs(fh):
     """
-    Scan a rust file handle, ignoring comments
-    (i.e. // and /* */).
+    Scan a rust file handle until at least one semicolon is found.
+    Ignore comments.
 
     Yield (possibly multi-line) newline-terminated strings.
     """
     curr = ""
     for line in fh:
+        if line is None:
+            return
         curr += line
-        curr = re.sub("[ ]*//.*\n", "\n", curr)
-        curr = re.sub("/\*.*\*/", "", curr, flags=re.DOTALL)
-        curr = curr + '\n'
-        if "/*" not in curr:
-            if "*/" in curr:
-                logging.warning("unexpected */ before /*")
+        if ';' in curr:
+            curr = re.sub("[ ]*//.*\n", "\n", curr)
+            curr = re.sub("/\*.*\*/", "", curr, flags=re.DOTALL)
+            curr = re.sub("/\*.*$", "", curr, flags=re.DOTALL)
+            curr = re.sub("^.*\*/", "", curr, flags=re.DOTALL)
             yield curr
             curr = ""
 
@@ -254,18 +256,10 @@ def scan_file(crate, root, file, results, crate_summary, pattern_summary):
     logging.trace(f"Scanning file: {filepath}")
     with open(filepath) as fh:
         scanner = scan_rs(fh)
-        for line in scanner:
-            if re.fullmatch("use .*\n", line, flags=re.DOTALL):
-                # Fetch more lines until semicolon
-                while ';' not in line:
-                    next_line = next(scanner, None)
-                    if next_line is None:
-                        logging.warning(f"file ended during use expr: {file}")
-                        logging.warning(f"adding implicit semicolon: {line}")
-                        next_line = ';'
-                    line += next_line
+        for expr in scanner:
+            if m := re.fullmatch(".*(^use .*\n)", expr, flags=re.MULTILINE | re.DOTALL):
                 # Scan use expression
-                for pat, result in scan_use(crate, root, file, line):
+                for pat, result in scan_use(crate, root, file, m[1]):
                     results.append(result)
                     # Update summaries
                     crate_summary[crate] += 1
