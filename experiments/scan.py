@@ -65,6 +65,13 @@ CSV_HEADER = "crate, pattern of interest, directory, file, use line\n"
 def copy_file(src, dst):
     subprocess.run(["cp", src, dst])
 
+def truncate_str(s, n):
+    assert n >= 3
+    if len(s) <= n:
+        return s
+    else:
+        return s[:(n-3)] + "..."
+
 # ===== Main script =====
 
 def get_top_crates(n):
@@ -145,46 +152,47 @@ def of_interest(line):
             found = p
     return found
 
-def parse_use(line):
+def parse_use(expr):
     """
-    Parse a use ...; string of Rust syntax, returning a list
-    of crate imports.
+    Heuristically parse a use ...; expression, returning a list of crate
+    imports.
 
     This function is hacky and best-effort (it prints warnings if
     it detects anything it doesn't recognize).
     Most of the logic is just dealing with {} replacements.
 
-    The input is called 'line' but may actually be multiple lines.
-    It should end in a newline.
+    The input should start with 'use ' and end in a newline.
     """
+    smry = truncate_str(expr, 500)
+
     # Preconditions
-    if line[-1] != '\n':
-        logging.warning(f"Expected newline-terminated use expression: {line}")
+    if expr[-1] != '\n':
+        logging.warning(f"Expected newline-terminated use expression: {smry}")
         return []
-    elif line[0:4] != "use ":
-        logging.warning(f"Expected 'use' expression: {line}")
+    elif expr[0:4] != "use ":
+        logging.warning(f"Expected 'use' expression: {smry}")
         return []
-    elif ";" not in line:
-        logging.warning(f"Expected semicolon in: {line}")
+    elif ";" not in expr:
+        logging.warning(f"Expected semicolon in: {smry}")
         return []
-    elif '/' in line:
-        logging.warning(f"Unexpected extra slash in: {line}")
+    elif '/' in expr:
+        logging.warning(f"Unexpected extra slash in: {smry}")
         return []
 
     # Remove 'use ' at the beginning and newlines
-    line = line[4:]
-    line = line.replace('\n', '')
+    expr = expr[4:]
+    expr = expr.replace('\n', '')
 
     # Remove semicolon at the end
-    if line[-1] != ';':
-        logging.warning(f"Expected ; at end of use expression: {line}")
+    if expr[-1] != ';':
+        logging.warning(f"Expected ; at end of use expression: {smry}")
         return []
-    line = line[:-1]
-    if ';' in line:
-        logging.warning(f"Unexpected extra semicolon in: {line}")
+    expr = expr[:-1]
+    if ';' in expr:
+        logging.warning(f"Unexpected extra semicolon in: {smry}")
 
     # Replace {} instances, iteratively
-    to_search = [line]
+    to_search = [expr]
     done = []
     while to_search:
         l = to_search.pop()
@@ -192,9 +200,9 @@ def parse_use(line):
             for mid in m[2].split(','):
                 to_search.append(m[1] + mid.strip() + m[3])
         elif '{' in l:
-            logging.warning(f"Unexpected extra {{ in line: {line}")
+            logging.warning(f"Unexpected extra {{ in expr: {smry}")
         elif '}' in l:
-            logging.warning(f"Unexpected extra }} in line: {line}")
+            logging.warning(f"Unexpected extra }} in expr: {smry}")
         else:
             done.append(l)
 
