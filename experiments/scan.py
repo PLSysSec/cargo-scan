@@ -157,6 +157,33 @@ def of_interest(line):
             found = p
     return found
 
+def parse_use_core(expr, smry):
+    stack = []
+    cur = ""
+    pending = ""
+    for ch in expr:
+        if ch in '{,}':
+            cur, pending = cur + pending.strip(), ""
+        if ch == '{':
+            stack.append(cur)
+        elif ch == ',':
+            if not stack:
+                logging.warning(f"unexpected ,: {smry}")
+                return
+            yield cur
+            cur = stack[-1]
+        elif ch == '}':
+            if not stack:
+                logging.warning(f"unexpected }}: {smry}")
+                return
+            stack.pop()
+        else:
+            pending += ch
+    if stack:
+        logging.warning(f"unclosed {{: {smry}")
+    cur, pending = cur + pending.strip(), ""
+    yield cur
+
 def parse_use(expr):
     """
     Heuristically parse a use ...; expression, returning a list of crate
@@ -196,23 +223,8 @@ def parse_use(expr):
     if ';' in expr:
         logging.warning(f"Unexpected extra semicolon in: {smry}")
 
-    # Replace {} instances, iteratively
-    to_search = [expr]
-    done = []
-    while to_search:
-        l = to_search.pop()
-        if m := re.fullmatch("(.*){([^{}]*)}(.*)", l):
-            for mid in m[2].split(','):
-                to_search.append(m[1] + mid.strip() + m[3])
-        elif '{' in l:
-            logging.warning(f"Unexpected extra {{ in expr: {smry}")
-        elif '}' in l:
-            logging.warning(f"Unexpected extra }} in expr: {smry}")
-        else:
-            done.append(l)
-
-    # Dedup and sort final results
-    return sorted(set(done))
+    # Sort final results
+    return sorted(list(parse_use_core(expr, smry)))
 
 def sanitize_comma(s):
     if "," in s:
