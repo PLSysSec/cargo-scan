@@ -4,7 +4,10 @@
 cargo-scan:
 	python3 experiments/scan.py
 
-full:
+test:
+	python3 experiments/scan.py -t -vvv
+
+full: test
 	python3 experiments/scan.py 10
 	python3 experiments/scan.py 100
 
@@ -12,10 +15,12 @@ full-extra: full
 	python3 experiments/scan.py 1000
 	python3 experiments/scan.py 10000
 
-test:
-	python3 experiments/scan.py -t -vvv
-
 clean:
+	# Warning: this deletes all downloaded packages and experiment results
+	# not under version control!
+	# Run make full to redownload and regenerate results.
 	rm -rf experiments/packages/
 	mkdir experiments/packages/
 	touch experiments/packages/.gitkeep
+	rm -rf experiments/results/
+	mkdir experiments/results/
