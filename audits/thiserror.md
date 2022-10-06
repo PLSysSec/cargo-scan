@@ -19,7 +19,7 @@ One of Rust's many error handling crates.
 
 It imports `path` features only to implement some custom traits for them
 in `display.rs`. This module is very weird though, and not actually used
-by the crate (maybe old/depcrated stuff).
+by the crate (maybe old/deprecated stuff).
 
 ## Security summary
 
