@@ -1,4 +1,4 @@
-# <!-- crate name -->
+# <!-- crate name/URL -->
 
 Audited by: <!-- name -->
 Date: <!-- date -->
@@ -27,8 +27,10 @@ Date: <!-- date -->
 
 <!-- Short answer -->
 
-4. Feasibility of automated analysis
+4. Automation feasibility
 
-- Spec: <!-- Short answer -->
-- Static analysis: <!-- Short answer -->
-- Dynamic enforcement overhead: <!-- Short answer -->
+<!-- Feasible/infeasible -->
+
+- Spec:
+- Static analysis:
+- Dynamic enforcement overhead:
