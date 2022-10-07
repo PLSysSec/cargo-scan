@@ -11,37 +11,10 @@ import subprocess
 import sys
 from functools import partial, partialmethod
 
-# ===== Logging config =====
-
-# Set up trace logging level below debug
-# https://stackoverflow.com/a/55276759/2038713
-logging.TRACE = logging.DEBUG - 5
-logging.addLevelName(logging.TRACE, 'TRACE')
-logging.Logger.trace = partialmethod(logging.Logger.log, logging.TRACE)
-logging.trace = partial(logging.log, logging.TRACE)
-
-# ===== Input arguments =====
-
-parser = argparse.ArgumentParser()
-parser.add_argument('use_top', nargs='?', help="Number of top crates to analyze (ignored for a test run)", default=100)
-parser.add_argument('-t', '--test', action="store_true", help="Test run on dummy packages")
-parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
-
-args = vars(parser.parse_args())
-
-TEST_RUN = args["test"]
-LOG_LEVEL = [logging.INFO, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG, logging.TRACE][args["verbose"]]
-USE_TOP = int(args["use_top"])
-
-logging.basicConfig(level=LOG_LEVEL)
-
-logging.debug(args)
-
 # ===== Constants =====
 
-# For progress tracking purposes
+# Number of progress tracking messages to display
 PROGRESS_INCS = 5
-PROGRESS_INC = USE_TOP // PROGRESS_INCS
 
 RESULTS_DIR = "experiments/results"
 RESULTS_ALL_SUFFIX = "all.csv"
@@ -54,6 +27,7 @@ TEST_CRATES = [ "dummy" ]
 
 TOP_CRATES_CSV = "data/crates.csv"
 
+# Potentially dangerous stdlib imports
 OF_INTEREST = [
     "std::env",
     "std::fs",
@@ -66,6 +40,13 @@ OF_INTEREST = [
 CSV_HEADER = "crate, pattern of interest, directory, file, use line\n"
 
 # ===== Utility =====
+
+# Set up trace logging level below debug
+# https://stackoverflow.com/a/55276759/2038713
+logging.TRACE = logging.DEBUG - 5
+logging.addLevelName(logging.TRACE, 'TRACE')
+logging.Logger.trace = partialmethod(logging.Logger.log, logging.TRACE)
+logging.trace = partial(logging.log, logging.TRACE)
 
 def copy_file(src, dst):
     subprocess.run(["cp", src, dst])
@@ -93,12 +74,12 @@ def get_top_crates(n):
     logging.error(f"Not enough crates. Asked for {n}, found {len(crates)}")
     sys.exit(1)
 
-def download_crate(crates_dir, crate):
+def download_crate(crates_dir, crate, test_run):
     target = os.path.join(crates_dir, crate)
     if os.path.exists(target):
         logging.trace(f"Found existing crate: {target}")
     else:
-        if TEST_RUN:
+        if test_run:
             logging.warning(f"Crate not found during test run: {target}")
         else:
             logging.info(f"Downloading crate: {target}")
@@ -311,28 +292,48 @@ def scan_crate(crate, crate_dir, results, crate_summary, pattern_summary):
 
 # ===== Entrypoint =====
 
-if TEST_RUN:
-    logging.info(f"==== Test run: scanning crates in {TEST_CRATES_DIR} =====")
-    crates_dir = TEST_CRATES_DIR
-    crates = TEST_CRATES
-    results_prefix = "test"
-else:
-    logging.info(f"==== Scanning the top {USE_TOP} crates =====")
-    crates_dir = CRATES_DIR
-    crates = get_top_crates(USE_TOP)
-    results_prefix = f"top{USE_TOP}"
+if __name__ == "__main__":
 
-results = []
-crate_summary = {c: 0 for c in crates}
-pattern_summary= {p: 0 for p in OF_INTEREST}
+    parser = argparse.ArgumentParser()
+    parser.add_argument('num_crates', nargs='?', help="Number of top crates to analyze (ignored for a test run)", default=100)
+    parser.add_argument('-t', '--test', action="store_true", help="Test run on dummy packages")
+    parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
 
-for i, crate in enumerate(crates):
-    if i > 0 and i % PROGRESS_INC == 0:
-        progress = 100 * i // USE_TOP
-        logging.info(f"{progress}% complete")
-    download_crate(crates_dir, crate)
-    scan_crate(crate, crates_dir, results, crate_summary, pattern_summary)
-logging.info(f"===== Results =====")
-# TODO: display results, don't just save them
-save_results(results, results_prefix)
-save_summary(crate_summary, pattern_summary, results_prefix)
+    args = vars(parser.parse_args())
+
+    test_run = args["test"]
+    log_level = [logging.INFO, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG, logging.TRACE][args["verbose"]]
+    num_crates = int(args["num_crates"])
+
+    logging.basicConfig(level=log_level)
+    logging.debug(args)
+
+    if test_run:
+        num_crates = len(TEST_CRATES)
+        crates_dir = TEST_CRATES_DIR
+        logging.info(f"===== Test run: scanning {num_crates} crate(s) in {crates_dir} =====")
+        crates = TEST_CRATES
+        results_prefix = "test"
+    else:
+        crates_dir = CRATES_DIR
+        logging.info(f"===== Scanning the top {num_crates} crates in {crates_dir} =====")
+        crates = get_top_crates(num_crates)
+        results_prefix = f"top{num_crates}"
+
+    progress_inc = num_crates // PROGRESS_INCS
+
+    results = []
+    crate_summary = {c: 0 for c in crates}
+    pattern_summary= {p: 0 for p in OF_INTEREST}
+
+    for i, crate in enumerate(crates):
+        if i > 0 and i % progress_inc == 0:
+            progress = 100 * i // num_crates
+            logging.info(f"{progress}% complete")
+        download_crate(crates_dir, crate, test_run)
+        scan_crate(crate, crates_dir, results, crate_summary, pattern_summary)
+
+    logging.info(f"===== Results =====")
+    # TODO: display results, don't just save them
+    save_results(results, results_prefix)
+    save_summary(crate_summary, pattern_summary, results_prefix)
