@@ -23,7 +23,7 @@ logging.trace = partial(logging.log, logging.TRACE)
 # ===== Input arguments =====
 
 parser = argparse.ArgumentParser()
-parser.add_argument('use_top', nargs='?', help="Number of top crates to analyze (ignored for a test run)", default=10)
+parser.add_argument('use_top', nargs='?', help="Number of top crates to analyze (ignored for a test run)", default=100)
 parser.add_argument('-t', '--test', action="store_true", help="Test run on dummy packages")
 parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
 
