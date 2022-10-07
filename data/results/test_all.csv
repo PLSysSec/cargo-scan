@@ -1,0 +1,16 @@
+crate, pattern of interest, directory, file, use line
+dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::*
+dummy, std::os, data/test-packages/dummy/src, main.rs, std::os::*
+dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod1
+dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod2::test1
+dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod2::test2
+dummy, std::process, data/test-packages/dummy/src, main.rs, std::process::Command::*
+dummy, std::process, data/test-packages/dummy/src, main.rs, std::process::process::Command
+dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::test::mod3
+dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::test::mod4
+dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod5
+dummy, std::env, data/test-packages/dummy/src, main.rs, std::env
+dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod6
+dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod7
+dummy, std::env, data/test-packages/dummy/src, main.rs, std::env
+dummy, std::env, data/test-packages/dummy/src, main.rs, std::env

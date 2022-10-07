@@ -19,8 +19,8 @@ clean:
 	# Warning: this deletes all downloaded packages and experiment results
 	# not under version control!
 	# Run make full to redownload and regenerate results.
-	rm -rf experiments/packages/
-	mkdir experiments/packages/
-	touch experiments/packages/.gitkeep
-	rm -rf experiments/results/
-	mkdir experiments/results/
+	rm -rf data/packages/
+	mkdir data/packages/
+	touch data/packages/.gitkeep
+	rm -rf data/results/
+	mkdir data/results/

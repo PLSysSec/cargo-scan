@@ -16,13 +16,13 @@ from functools import partial, partialmethod
 # Number of progress tracking messages to display
 PROGRESS_INCS = 5
 
-RESULTS_DIR = "experiments/results"
+RESULTS_DIR = "data/results"
 RESULTS_ALL_SUFFIX = "all.csv"
 RESULTS_SUMMARY_SUFFIX = "summary.txt"
 
-CRATES_DIR = "experiments/packages"
+CRATES_DIR = "data/packages"
 SRC_DIR = "src"
-TEST_CRATES_DIR = "experiments/test-packages"
+TEST_CRATES_DIR = "data/test-packages"
 TEST_CRATES = [ "dummy" ]
 
 TOP_CRATES_CSV = "data/crates.csv"
