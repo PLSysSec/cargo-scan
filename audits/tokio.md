@@ -8,8 +8,9 @@ Date: 2022-10-07
 Tokio is a popular asynchronous library for network applications, of huge
 significance as a transitive risk for many other libraries which directly use
 it for network-related functionality.
-It has 123 dangerous imports, which is the second most flagged by the script
-in the top 100 crates (second only to `mio`).
+
+Tokio has 123 dangerous imports, which is the second most flagged by the script
+in the top 100 (in fact, even the top 1000) crates (second only to `mio`).
 
 ## List of imports (123) and detailed audit
 
