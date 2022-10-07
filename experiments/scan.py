@@ -132,9 +132,7 @@ def of_interest(line):
     for p in OF_INTEREST:
         if re.search(p, line):
             if found is not None:
-                logging.warning(
-                    f"Line matched multiple patterns of interest: {line}"
-                )
+                logging.warning(f"Matched multiple patterns of interest: {line}")
             found = p
     return found
 
@@ -227,15 +225,13 @@ def scan_use(crate, root, file, use_expr):
 
     Calls parse_use to parse the Rust syntax.
     """
-    results = []
     for use in parse_use(use_expr):
         pat = of_interest(use)
         if pat is None:
             logging.trace(f"Skipping: {use}")
         else:
             logging.trace(f"Of interest: {use}")
-            results.append((pat, to_csv(crate, pat, root, file, use)))
-    return results
+            yield (pat, to_csv(crate, pat, root, file, use))
 
 def scan_rs(fh):
     """
@@ -255,7 +251,7 @@ def scan_rs(fh):
             yield curr
             curr = ""
 
-def scan_file(crate, root, file, results, crate_summary, pattern_summary):
+def scan_file(crate, root, file):
     filepath = os.path.join(root, file)
     logging.trace(f"Scanning file: {filepath}")
     with open(filepath) as fh:
@@ -263,13 +259,9 @@ def scan_file(crate, root, file, results, crate_summary, pattern_summary):
         for expr in scanner:
             if m := re.fullmatch(".*^(pub )?(use .*\n)", expr, flags=re.MULTILINE | re.DOTALL):
                 # Scan use expression
-                for pat, result in scan_use(crate, root, file, m[2]):
-                    results.append(result)
-                    # Update summaries
-                    crate_summary[crate] += 1
-                    pattern_summary[pat] += 1
+                yield from scan_use(crate, root, file, m[2])
 
-def scan_crate(crate, crate_dir, results, crate_summary, pattern_summary):
+def scan_crate(crate, crate_dir):
     logging.debug(f"Scanning crate: {crate}")
     src = os.path.join(crate_dir, crate, SRC_DIR)
     for root, dirs, files in os.walk(src):
@@ -281,14 +273,7 @@ def scan_crate(crate, crate_dir, results, crate_summary, pattern_summary):
         dirs.sort()
         for file in files:
             if os.path.splitext(file)[1] == ".rs":
-                scan_file(
-                    crate,
-                    root,
-                    file,
-                    results,
-                    crate_summary,
-                    pattern_summary,
-                )
+                yield from scan_file(crate, root, file)
 
 # ===== Entrypoint =====
 
@@ -330,8 +315,14 @@ if __name__ == "__main__":
         if i > 0 and i % progress_inc == 0:
             progress = 100 * i // num_crates
             logging.info(f"{progress}% complete")
+
         download_crate(crates_dir, crate, test_run)
-        scan_crate(crate, crates_dir, results, crate_summary, pattern_summary)
+
+        for pat, result in scan_crate(crate, crates_dir):
+            results.append(result)
+            # Update summaries
+            crate_summary[crate] += 1
+            pattern_summary[pat] += 1
 
     logging.info(f"===== Results =====")
     # TODO: display results, don't just save them
