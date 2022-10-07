@@ -37,7 +37,17 @@ OF_INTEREST = [
     "std::process",
 ]
 
-CSV_HEADER = "crate, pattern of interest, directory, file, use line\n"
+# Crates that seem to be a transitive risk
+# This list is manually updated.
+TRANSITIVE_INTEREST = [
+    "tokio::fs",
+    "tokio::io",
+    "tokio::net",
+    "tokio::process",
+    "tokio::sync",
+]
+
+CSV_HEADER = "crate, pattern of interest, directory, file, use line"
 
 # ===== Utility =====
 
@@ -90,7 +100,7 @@ def save_results(results, results_prefix):
     results_path = os.path.join(RESULTS_DIR, results_file)
     logging.info(f"Saving raw results to {results_path}")
     with open(results_path, 'w') as fh:
-        fh.write(CSV_HEADER)
+        fh.write(CSV_HEADER + '\n')
         for line in results:
             fh.write(line + '\n')
 
@@ -127,9 +137,9 @@ def save_summary(crate_summary, pattern_summary, results_prefix):
         fh.write(f"{num_nonzero} crates with 1 or more dangerous imports\n")
         fh.write(f"{num_zero} crates with 0 dangerous imports\n")
 
-def of_interest(line):
+def is_of_interest(line, of_interest):
     found = None
-    for p in OF_INTEREST:
+    for p in of_interest:
         if re.search(p, line):
             if found is not None:
                 logging.warning(f"Matched multiple patterns of interest: {line}")
@@ -218,7 +228,7 @@ def to_csv(crate, pat, root, file, use_expr):
     use_expr = sanitize_comma(use_expr)
     return f"{crate}, {pat}, {root}, {file}, {use_expr}"
 
-def scan_use(crate, root, file, use_expr):
+def scan_use(crate, root, file, use_expr, of_interest):
     """
     Scan a single use ...; expression.
     Return a list of pairs of a pattern and the CSV output.
@@ -226,7 +236,7 @@ def scan_use(crate, root, file, use_expr):
     Calls parse_use to parse the Rust syntax.
     """
     for use in parse_use(use_expr):
-        pat = of_interest(use)
+        pat = is_of_interest(use, of_interest)
         if pat is None:
             logging.trace(f"Skipping: {use}")
         else:
@@ -251,7 +261,7 @@ def scan_rs(fh):
             yield curr
             curr = ""
 
-def scan_file(crate, root, file):
+def scan_file(crate, root, file, of_interest):
     filepath = os.path.join(root, file)
     logging.trace(f"Scanning file: {filepath}")
     with open(filepath) as fh:
@@ -259,9 +269,9 @@ def scan_file(crate, root, file):
         for expr in scanner:
             if m := re.fullmatch(".*^(pub )?(use .*\n)", expr, flags=re.MULTILINE | re.DOTALL):
                 # Scan use expression
-                yield from scan_use(crate, root, file, m[2])
+                yield from scan_use(crate, root, file, m[2], of_interest)
 
-def scan_crate(crate, crate_dir):
+def scan_crate(crate, crate_dir, of_interest):
     logging.debug(f"Scanning crate: {crate}")
     src = os.path.join(crate_dir, crate, SRC_DIR)
     for root, dirs, files in os.walk(src):
@@ -273,7 +283,7 @@ def scan_crate(crate, crate_dir):
         dirs.sort()
         for file in files:
             if os.path.splitext(file)[1] == ".rs":
-                yield from scan_file(crate, root, file)
+                yield from scan_file(crate, root, file, of_interest)
 
 # ===== Entrypoint =====
 
@@ -282,6 +292,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('num_crates', nargs='?', help="Number of top crates to analyze (ignored for a test run)", default=100)
     parser.add_argument('-t', '--test', action="store_true", help="Test run on dummy packages")
+    parser.add_argument('-r', '--transitive', action="store_true", help="Also flag imports with a transitive identified risk")
     parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
 
     args = vars(parser.parse_args())
@@ -289,6 +300,7 @@ if __name__ == "__main__":
     test_run = args["test"]
     log_level = [logging.INFO, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG, logging.TRACE][args["verbose"]]
     num_crates = int(args["num_crates"])
+    progress_inc = num_crates // PROGRESS_INCS
 
     logging.basicConfig(level=log_level)
     logging.debug(args)
@@ -297,19 +309,23 @@ if __name__ == "__main__":
         num_crates = len(TEST_CRATES)
         crates_dir = TEST_CRATES_DIR
         logging.info(f"===== Test run: scanning {num_crates} crate(s) in {crates_dir} =====")
+
         crates = TEST_CRATES
         results_prefix = "test"
     else:
         crates_dir = CRATES_DIR
         logging.info(f"===== Scanning the top {num_crates} crates in {crates_dir} =====")
+
         crates = get_top_crates(num_crates)
         results_prefix = f"top{num_crates}"
 
-    progress_inc = num_crates // PROGRESS_INCS
+    of_interest = OF_INTEREST
+    if args["transitive"]:
+        of_interest += TRANSITIVE_INTEREST
 
     results = []
     crate_summary = {c: 0 for c in crates}
-    pattern_summary= {p: 0 for p in OF_INTEREST}
+    pattern_summary= {p: 0 for p in of_interest}
 
     for i, crate in enumerate(crates):
         if i > 0 and i % progress_inc == 0:
@@ -318,7 +334,7 @@ if __name__ == "__main__":
 
         download_crate(crates_dir, crate, test_run)
 
-        for pat, result in scan_crate(crate, crates_dir):
+        for pat, result in scan_crate(crate, crates_dir, of_interest):
             results.append(result)
             # Update summaries
             crate_summary[crate] += 1
