@@ -44,7 +44,6 @@ TRANSITIVE_INTEREST = [
     "tokio::io",
     "tokio::net",
     "tokio::process",
-    "tokio::sync",
 ]
 
 CSV_HEADER = "crate, pattern of interest, directory, file, use line"
