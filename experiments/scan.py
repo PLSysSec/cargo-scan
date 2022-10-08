@@ -40,6 +40,8 @@ OF_INTEREST = [
 # Crates that seem to be a transitive risk
 # This list is manually updated.
 TRANSITIVE_INTEREST = [
+    "libc",
+    "mio",
     "tokio::fs",
     "tokio::io",
     "tokio::net",
