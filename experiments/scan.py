@@ -27,8 +27,8 @@ TEST_CRATES = [ "dummy" ]
 
 TOP_CRATES_CSV = "data/crates.csv"
 
-# Potentially dangerous stdlib imports
-OF_INTEREST = [
+# Potentially dangerous stdlib imports.
+OF_INTEREST_STD = [
     "std::env",
     "std::fs",
     "std::net",
@@ -37,9 +37,9 @@ OF_INTEREST = [
     "std::process",
 ]
 
-# Crates that seem to be a transitive risk
+# Crates that seem to be a transitive risk.
 # This list is manually updated.
-TRANSITIVE_INTEREST = [
+OF_INTEREST_OTHER = [
     "libc",
     "mio",
     "tokio::fs",
@@ -293,18 +293,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('num_crates', nargs='?', help="Number of top crates to analyze (ignored for a test run)", default=100)
     parser.add_argument('-t', '--test', action="store_true", help="Test run on dummy packages")
-    parser.add_argument('-r', '--transitive', action="store_true", help="Also flag imports with a transitive identified risk")
+    parser.add_argument('-s', '--std', action="store_true", help="Flag standard library imports only")
     parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
 
     args = vars(parser.parse_args())
 
-    test_run = args["test"]
     log_level = [logging.INFO, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG, logging.TRACE][args["verbose"]]
-    num_crates = int(args["num_crates"])
-    progress_inc = num_crates // PROGRESS_INCS
-
     logging.basicConfig(level=log_level)
     logging.debug(args)
+
+    test_run = args["test"]
+    num_crates = int(args["num_crates"])
+    progress_inc = num_crates // PROGRESS_INCS
+    of_interest = OF_INTEREST_STD
+    if not args["std"]:
+        of_interest += OF_INTEREST_OTHER
 
     if test_run:
         num_crates = len(TEST_CRATES)
@@ -319,10 +322,6 @@ if __name__ == "__main__":
 
         crates = get_top_crates(num_crates)
         results_prefix = f"top{num_crates}"
-
-    of_interest = OF_INTEREST
-    if args["transitive"]:
-        of_interest += TRANSITIVE_INTEREST
 
     results = []
     crate_summary = {c: 0 for c in crates}
