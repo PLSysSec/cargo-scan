@@ -186,6 +186,15 @@ src/sys/windows, udp.rs, std::os::windows::io::FromRawSocket
 src/sys/windows, udp.rs, std::os::windows::raw::SOCKET as StdSocket
 ```
 
+Contains the "implementation detail" of the crate.
+Lots of platform-specific code.
+This is not a public module; it is not exposed directly.
+
+The `libc` imports are for [epoll](https://man7.org/linux/man-pages/man7/epoll.7.html)-related functionality -- these are used in particular to monitor
+multiple file descriptors for any active input.
+Since these are the only `libc` imports in the crate, the upshot is that
+`libc` is not a transitive risk past this crate for any clients.
+
 ### Others
 
 The crate also provides four other modules.
@@ -221,7 +230,8 @@ Needs network access and system access.
 
 3. Transitive risk
 
-Yes
+Yes. However, note that `libc` is not a transitive risk
+if imported through `mio`.
 
 4. Automation feasibility
 
