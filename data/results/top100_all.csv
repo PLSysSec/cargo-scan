@@ -248,13 +248,9 @@ tokio, std::path, data/packages/tokio/src/fs, write.rs, std::path::Path
 tokio, std::os, data/packages/tokio/src/fs/open_options, mock_open_options.rs, std::os::unix::fs::OpenOptionsExt
 tokio, std::os, data/packages/tokio/src/fs/open_options, mock_open_options.rs, std::os::windows::fs::OpenOptionsExt
 tokio, std::path, data/packages/tokio/src/fs/open_options, mock_open_options.rs, std::path::Path
-tokio, mio, data/packages/tokio/src/io, async_fd.rs, mio::unix::SourceFd
+tokio, mio::unix, data/packages/tokio/src/io, async_fd.rs, mio::unix::SourceFd
 tokio, std::os, data/packages/tokio/src/io, async_fd.rs, std::os::unix::io::AsRawFd
 tokio, std::os, data/packages/tokio/src/io, async_fd.rs, std::os::unix::io::RawFd
-tokio, mio, data/packages/tokio/src/io, poll_evented.rs, mio::event::Source
-tokio, mio, data/packages/tokio/src/io/bsd, poll_aio.rs, mio::event::Source
-tokio, mio, data/packages/tokio/src/io/bsd, poll_aio.rs, mio::Registry
-tokio, mio, data/packages/tokio/src/io/bsd, poll_aio.rs, mio::Token
 tokio, std::os, data/packages/tokio/src/io/bsd, poll_aio.rs, std::os::unix::io::AsRawFd
 tokio, std::os, data/packages/tokio/src/io/bsd, poll_aio.rs, std::os::unix::prelude::RawFd
 tokio, std::net, data/packages/tokio/src/net, addr.rs, std::net::IpAddr
@@ -327,8 +323,7 @@ tokio, std::process, data/packages/tokio/src/process, windows.rs, std::process::
 tokio, std::process, data/packages/tokio/src/process, windows.rs, std::process::Child as StdChild
 tokio, std::process, data/packages/tokio/src/process, windows.rs, std::process::Command as StdCommand
 tokio, std::process, data/packages/tokio/src/process, windows.rs, std::process::ExitStatus
-tokio, mio, data/packages/tokio/src/process/unix, mod.rs, mio::event::Source
-tokio, mio, data/packages/tokio/src/process/unix, mod.rs, mio::unix::SourceFd
+tokio, mio::unix, data/packages/tokio/src/process/unix, mod.rs, mio::unix::SourceFd
 tokio, std::fs, data/packages/tokio/src/process/unix, mod.rs, std::fs::File
 tokio, std::os, data/packages/tokio/src/process/unix, mod.rs, std::os::unix::io::AsRawFd
 tokio, std::os, data/packages/tokio/src/process/unix, mod.rs, std::os::unix::io::FromRawFd
@@ -339,9 +334,8 @@ tokio, std::process, data/packages/tokio/src/process/unix, mod.rs, std::process:
 tokio, std::process, data/packages/tokio/src/process/unix, mod.rs, std::process::Stdio
 tokio, std::process, data/packages/tokio/src/process/unix, orphan.rs, std::process::ExitStatus
 tokio, std::process, data/packages/tokio/src/process/unix, reap.rs, std::process::ExitStatus
-tokio, mio, data/packages/tokio/src/runtime/io, registration.rs, mio::event::Source
-tokio, mio, data/packages/tokio/src/signal, unix.rs, mio::net::UnixStream
-tokio, mio, data/packages/tokio/src/signal/unix, driver.rs, mio::net::UnixStream
+tokio, mio::net, data/packages/tokio/src/signal, unix.rs, mio::net::UnixStream
+tokio, mio::net, data/packages/tokio/src/signal/unix, driver.rs, mio::net::UnixStream
 tokio, std::process, data/packages/tokio/src/sync/mpsc, chan.rs, std::process
 rustc_version, std::process, data/packages/rustc_version/src, lib.rs, std::process::Command
 rustc_version, std::env, data/packages/rustc_version/src, lib.rs, std::env

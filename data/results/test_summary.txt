@@ -7,7 +7,8 @@ std::os: 1
 std::net: 0
 std::path: 0
 libc: 0
-mio: 0
+mio::net: 0
+mio::unix: 0
 tokio::fs: 0
 tokio::io: 0
 tokio::net: 0

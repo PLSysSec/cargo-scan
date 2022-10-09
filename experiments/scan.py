@@ -41,7 +41,8 @@ OF_INTEREST_STD = [
 # This list is manually updated.
 OF_INTEREST_OTHER = [
     "libc",
-    "mio",
+    "mio::net",
+    "mio::unix",
     "tokio::fs",
     "tokio::io",
     "tokio::net",

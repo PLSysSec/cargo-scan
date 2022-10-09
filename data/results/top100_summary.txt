@@ -8,14 +8,15 @@ libc: 42
 std::process: 29
 std::fs: 23
 std::env: 13
-mio: 10
 tokio::net: 5
+mio::net: 2
+mio::unix: 2
 tokio::fs: 0
 tokio::process: 0
 ===== Crate Summary =====
 Number of dangerous imports by crate:
-tokio: 136
 mio: 133
+tokio: 130
 hyper: 56
 socket2: 39
 tokio-util: 30
