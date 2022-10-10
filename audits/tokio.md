@@ -1,18 +1,26 @@
 # [tokio](https://docs.rs/tokio/latest/tokio/)
 
 Audited by: Caleb Stanford
-(IN PROGRESS)
 
-Date: 2022-10-07
+Date: 2022-10-09
 
-Tokio is a popular asynchronous library for network applications, of huge
-significance as a transitive risk for many other libraries which directly use
-it for network-related functionality.
+Tokio is a popular asynchronous library for network applications.
+It is a significant transitive risk for many other libraries which directly
+use it for network-related functionality and for its async programming
+runtime.
 
-Tokio has 123 dangerous imports, which is the second most flagged by the script
-in the top 100 (in fact, even the top 1000) crates (second only to `mio`).
+Tokio relies on `mio` for some of its implementation details (4 imports).
+The dependency chain is:
+```
+tokio -> mio -> libc -> std
+```
+but Tokio also uses `libc` directly (3 imports).
 
-## List of imports (123) and detailed audit
+Tokio has 130 dangerous imports (123 in the standard library),
+which is the second most flagged by the script in the top 100
+(in fact, even the top 1000) crates, second only to `mio`.
+
+## List of imports (130) and detailed audit
 
 ### `tokio::fs` (41)
 
@@ -70,7 +78,7 @@ file system operation.
 Of particular security interest is the `set_permissions` submodule which
 calls `std::fs::set_permissions`.
 
-### `tokio::io` (4)
+### `tokio::io` (5)
 
 ```
 src/io, async_fd.rs, std::os::unix::io::AsRawFd
@@ -79,10 +87,18 @@ src/io/bsd, poll_aio.rs, std::os::unix::io::AsRawFd
 src/io/bsd, poll_aio.rs, std::os::unix::prelude::RawFd
 ```
 
-  This module implements asynchronous IO, relying on `mio` and on
-  file descriptors in the standard library.
+Mio import:
+```
+src/io, async_fd.rs, mio::unix::SourceFd
+```
 
-### `tokio::net` (50)
+This module implements asynchronous IO, relying on `mio` (Unix-only)
+and on file descriptors in the standard library.
+The examples suggest that it can only be used with `tokio::fs` to actually
+access the file system. This is also supported by the fact that all of
+the above imports are Unix-only.
+
+### `tokio::net` (55)
 
 ```
 src/net, addr.rs, std::net::IpAddr
@@ -136,16 +152,32 @@ src/net/unix/datagram, socket.rs, std::os::unix::io::RawFd
 src/net/unix/datagram, socket.rs, std::os::unix::net
 src/net/unix/datagram, socket.rs, std::path::Path
 ```
-- `udp`: calls into `mio::net` for the underlying network socket bindings.
-  Also interfaces with `net::UdpSocket`
 
-  I think `mio` needs to be audited first. (TODO)
+Mio imports:
+```
+src/signal, unix.rs, mio::net::UnixStream
+src/signal/unix, driver.rs, mio::net::UnixStream
+```
 
-- `tcp`: TODO
+Libc imports:
+```
+src/net/unix, ucred.rs, libc::gid_t
+src/net/unix, ucred.rs, libc::pid_t
+src/net/unix, ucred.rs, libc::uid_t
+```
 
-- `unix`: TODO
+I took a look at `udp`: calls into `mio::net` for the underlying network socket bindings. It also interfaces with `net::UdpSocket`.
+It's a bit surprising that `tcp` doesn't also use `mio`.
+Why does `mio::net::TcpStream` never get imported by Tokio anywhere?
 
-### `tokio::process` (27)
+There is also `unix` again with some Unix-specific stuff;
+note the `libc` imports are just types.
+
+Overall, this module imports dangerous wrappers around network functions.
+The underlying `libc` and `mio` imports are likely not transitive risks,
+beyond the risk that is already there from importing the `tokio` methods.
+
+### `tokio::process` (28)
 
 ```
 src/process, mod.rs, std::os::unix::process::CommandExt
@@ -175,6 +207,11 @@ src/process/unix, mod.rs, std::process::ExitStatus
 src/process/unix, mod.rs, std::process::Stdio
 src/process/unix, orphan.rs, std::process::ExitStatus
 src/process/unix, reap.rs, std::process::ExitStatus
+```
+
+Mio import:
+```
+src/process/unix, mod.rs, mio::unix::SourceFd
 ```
 
 Infrastructure to handle child processes.
@@ -209,7 +246,7 @@ The exact specifications on how/why code can panic or abort
 need to be decided by the client.
 It is likely this is not a risk.
 
-### Transitive dependencies
+### Other transitive dependencies
 
 - `tokio::runtime::driver`
 
@@ -221,28 +258,32 @@ It is likely this is not a risk.
   triggered if an actual process is spawned on the runtime. The runtime API
   is mostly based on using `tokio::spawn` primitives and futures.
 
-## Discussion
-
-TODO
-
 ## Security summary
 
 1. Security risks
 
-<!-- Short answer -->
+Tokio is a security risk for:
+(1) network access
+(2) file system access (if `fs` is included)
+(3) process management (if `process` is included), including running
+arbitrary commands.
 
 2. Permissions
 
-<!-- Short answer -->
+Needs access for all of the above, depending on what the crate is used
+for and the specific functions called.
+Also calls things like `libc` and `num_cpus` internally which require
+their own permissions.
 
 3. Transitive risk
 
-<!-- Short answer -->
+`tokio` is a transitive risk. The imports to `mio` and `libc` are wrapped
+by `tokio` primitives and are likely not a transitive risk through `tokio`.
 
 4. Automation feasibility
 
-<!-- Feasible/infeasible -->
+(Same as mio)
 
-- Spec:
-- Static analysis:
-- Dynamic enforcement overhead:
+- Spec: project-dependent; difficult
+- Static analysis: difficult
+- Dynamic enforcement overhead: probably unacceptable
