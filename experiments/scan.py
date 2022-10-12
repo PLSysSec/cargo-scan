@@ -47,6 +47,10 @@ OF_INTEREST_OTHER = [
     "tokio::io",
     "tokio::net",
     "tokio::process",
+    "hyper::client",
+    "hyper::server",
+    "tokio_util::udp",
+    "tokio_util::net",
 ]
 
 CSV_HEADER = "crate, pattern of interest, directory, file, use line"
