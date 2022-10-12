@@ -46,6 +46,6 @@ No
 
 4. Automation feasibility
 
-- Spec: platform-independent. Probably feasible but difficult.
+- Spec: platform-dependent. Probably feasible but difficult.
 - Static analysis: feasible
 - Dynamic enforcement overhead: acceptable

@@ -49,6 +49,6 @@ Uncertain
 
 4. Automation feasibility
 
-- Spec: mostly project-independent
+- Spec: project dependent
 - Static analysis: possibly feasible
 - Dynamic enforcement overhead: acceptable

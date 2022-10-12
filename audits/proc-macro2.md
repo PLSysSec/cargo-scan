@@ -37,8 +37,7 @@ macros in the standard library.
 2. Permissions
 
 No permissions needed for the crate itself. Some wrapped `proc_macro`
-functionality likely needs read-only file access.
-
+functionality may need read-only file access.
 Permissions only needed at build time.
 
 3. Transitive risk
