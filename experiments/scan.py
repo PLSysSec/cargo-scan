@@ -51,6 +51,7 @@ OF_INTEREST_OTHER = [
     "hyper::server",
     "tokio_util::udp",
     "tokio_util::net",
+    "socket2",
 ]
 
 CSV_HEADER = "crate, pattern of interest, directory, file, use line"

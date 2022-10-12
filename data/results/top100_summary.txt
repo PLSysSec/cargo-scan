@@ -17,6 +17,7 @@ hyper::client: 0
 hyper::server: 0
 tokio_util::udp: 0
 tokio_util::net: 0
+socket2: 0
 ===== Crate Summary =====
 Number of dangerous imports by crate:
 mio: 133
