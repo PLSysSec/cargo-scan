@@ -19,18 +19,20 @@ Imports `std::process` purely for two calls to `std::process::abort()`.  I’m n
 
 1. Security risks
 
-<!-- Short answer -->
+`process::abort()` can bypass destructor runs, saving work-in-progress,
+or other important exiting behavior.
+This can be destructive but probably can't be used for anything malicious.
 
 2. Permissions
 
-<!-- Short answer -->
+Abort the process
 
 3. Transitive risk
 
-<!-- Short answer -->
+No
 
 4. Feasibility of automated analysis
 
-- Spec: <!-- Short answer -->
-- Static analysis: <!-- Short answer -->
-- Dynamic enforcement overhead: <!-- Short answer -->
+- Spec: project-independent
+- Static analysis: likely feasible
+- Dynamic enforcement overhead: maybe acceptable

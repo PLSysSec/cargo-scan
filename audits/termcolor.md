@@ -19,18 +19,18 @@ Imports `std::env` to get environment variables: `env::var_os` and `env::var`. I
 
 1. Security risks
 
-<!-- Short answer -->
+Minimal
 
 2. Permissions
 
-<!-- Short answer -->
+Environment variable read/write access
 
 3. Transitive risk
 
-<!-- Short answer -->
+No
 
 4. Feasibility of automated analysis
 
-- Spec: <!-- Short answer -->
-- Static analysis: <!-- Short answer -->
-- Dynamic enforcement overhead: <!-- Short answer -->
+- Spec: project-independent
+- Static analysis: feasible
+- Dynamic enforcement overhead: OK

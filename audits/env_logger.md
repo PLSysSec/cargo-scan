@@ -22,18 +22,18 @@ Note: `mod.rs` also uses `env` to set (mostly fixed) var names.
 
 1. Security risks
 
-<!-- Short answer -->
+Dangerous if used with the wrong environment variables
 
 2. Permissions
 
-<!-- Short answer -->
+Environment variable access
 
 3. Transitive risk
 
-<!-- Short answer -->
+Likely no in most cases
 
 4. Feasibility of automated analysis
 
-- Spec: <!-- Short answer -->
-- Static analysis: <!-- Short answer -->
-- Dynamic enforcement overhead: <!-- Short answer -->
+- Spec: maybe project-dependent
+- Static analysis: unsure
+- Dynamic enforcement overhead: unsure
