@@ -9,6 +9,10 @@ Contrast with `rand`: OS-based rather than software-based random number
 generation.
 Exposes a single function: `getrandom`
 
+In the top 100 crates, `memchr` and `getrandom` are the only
+crates that had no stdlib dangerous imports, and were only
+flagged after including third party imports (in both cases, `libc`).
+
 ## List of imports (15)
 
 ```
