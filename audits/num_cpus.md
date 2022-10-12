@@ -5,12 +5,17 @@ Date: 2022-10-05
 
 Top 100 most downloaded crates.
 
-## List of imports (3)
+## List of imports (4)
 
 ```
 linux.rs, std::fs::File
 linux.rs, std::path::Path
 linux.rs, std::path::PathBuf
+```
+
+Outside of `std`:
+```
+linux.rs, libc
 ```
 
 ## Analysis
