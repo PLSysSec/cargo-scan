@@ -1,4 +1,4 @@
-.PHONY: build
+.PHONY: cargo-scan test full full-extra clean
 .DEFAULT: cargo-scan
 
 cargo-scan:
