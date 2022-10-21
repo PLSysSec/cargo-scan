@@ -23,7 +23,7 @@ RESULTS_SUMMARY_SUFFIX = "summary.txt"
 CRATES_DIR = "data/packages"
 SRC_DIR = "src"
 TEST_CRATES_DIR = "data/test-packages"
-TEST_CRATES = [ "dummy", "permissions-types" ]
+TEST_CRATES = [ "dummy", "permissions-ex" ]
 
 TOP_CRATES_CSV = "data/crates.csv"
 

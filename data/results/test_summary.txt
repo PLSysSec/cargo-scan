@@ -21,7 +21,7 @@ socket2: 0
 ===== Crate Summary =====
 Number of dangerous imports by crate:
 dummy: 15
-permissions-types: 2
+permissions-ex: 2
 ===== Crate Totals =====
 2 crates with 1 or more dangerous imports
 0 crates with 0 dangerous imports

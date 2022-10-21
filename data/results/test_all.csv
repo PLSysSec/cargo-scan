@@ -14,5 +14,5 @@ dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod6
 dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod7
 dummy, std::env, data/test-packages/dummy/src, main.rs, std::env
 dummy, std::env, data/test-packages/dummy/src, main.rs, std::env
-permissions-types, std::fs, data/test-packages/permissions-types/src, lib.rs, std::fs
-permissions-types, std::process, data/test-packages/permissions-types/src, lib.rs, std::process::Command
+permissions-ex, std::fs, data/test-packages/permissions-ex/src, lib.rs, std::fs
+permissions-ex, std::process, data/test-packages/permissions-ex/src, lib.rs, std::process::Command
