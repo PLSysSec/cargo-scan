@@ -1,0 +1,33 @@
+/*
+    Example policy for the test crate
+    data/test-packages/permissions-ex
+*/
+
+remove(path):
+    caller: { delete(path) }
+    crate: {}
+    internal: { run_command("rm", "-f", path) }
+
+save_data(path):
+    caller: { create(path), overwrite(path) }
+    crate: {}
+    internal: { delete(path) }
+
+prepare_data():
+    caller: {}
+    crate: { append("my_app.log") }
+    internal: {}
+
+/*
+    Special policies
+*/
+build():
+    caller: {}
+    crate: {}
+    internal: {}
+
+# TBD: not sure about this one
+import():
+    caller: {}
+    crate: {}
+    internal: { append("my_app.log") }
