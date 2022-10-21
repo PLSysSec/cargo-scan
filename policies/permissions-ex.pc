@@ -4,7 +4,6 @@
 */
 
 remove(path):
-    build: {}
     crate: {}
     caller: { delete(path) }
     internal: { run_command("rm", "-f", path) }
@@ -12,7 +11,6 @@ remove(path):
         Command:new: { run_command("rm", "-f", path) }
 
 save_data(path):
-    build: {}
     crate: {}
     caller: { create(path), overwrite(path) }
     internal: { delete(path) }
@@ -21,7 +19,6 @@ save_data(path):
         fs::write(path, _): { create(path), overwrite(path) }
 
 prepare_data():
-    build: {}
     crate: { append("my_app.log") }
     caller: {}
     internal: {}
@@ -31,12 +28,6 @@ prepare_data():
 /*
     Special policies
 */
-build():
-    auditor: {}
-    user: {}
-    parent: {}
-    internal: {}
-    children:
 
 crate():
     auditor: { append("my_app.log") }
@@ -44,3 +35,18 @@ crate():
     parent: {}
     internal: {}
     children:
+
+///////////////////////////////////////////////////////////
+
+/*
+    TBD features later:
+    add build: {} field for build-time capabilities
+    + add top-level build capabilities for the crate. e.g.
+
+build():
+    auditor: {}
+    user: {}
+    parent: {}
+    internal: {}
+    children:
+*/
