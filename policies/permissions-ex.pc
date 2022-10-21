@@ -4,30 +4,43 @@
 */
 
 remove(path):
-    caller: { delete(path) }
+    build: {}
     crate: {}
+    caller: { delete(path) }
     internal: { run_command("rm", "-f", path) }
+    calls:
+        Command:new: { run_command("rm", "-f", path) }
 
 save_data(path):
-    caller: { create(path), overwrite(path) }
+    build: {}
     crate: {}
+    caller: { create(path), overwrite(path) }
     internal: { delete(path) }
+    calls:
+        remove(path): { delete(path) }
+        fs::write(path, _): { create(path), overwrite(path) }
 
 prepare_data():
-    caller: {}
+    build: {}
     crate: { append("my_app.log") }
+    caller: {}
     internal: {}
+    calls:
+        fs::write: { append("my_app.log") }
 
 /*
     Special policies
 */
 build():
-    caller: {}
-    crate: {}
+    auditor: {}
+    user: {}
+    parent: {}
     internal: {}
+    children:
 
-# TBD: not sure about this one
-import():
-    caller: {}
-    crate: {}
-    internal: { append("my_app.log") }
+crate():
+    auditor: { append("my_app.log") }
+    user: {}
+    parent: {}
+    internal: {}
+    children:
