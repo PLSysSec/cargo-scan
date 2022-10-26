@@ -1,5 +1,17 @@
 # Policy language
 
+(Work in progress, October 2022)
+
+## Threat model
+
+We want to attach a security policy to each build script, crate, module, and function.
+Some of these are audited manually, others inferred.
+I would like to be able to prove a security property under the following threat model:
+
+- adversary can update any build, crate, or module arbitrarily, other than audited functions, as long as the inferred policies for those are still consistent
+
+- no matter what the adversary does, program should be secure in the sense that any build or run of the program uses only the capabilities explicitly passed by the user to perform necessary functionality.
+
 ## Components
 
 Each policy has the following components.
