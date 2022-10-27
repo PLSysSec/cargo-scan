@@ -1,0 +1,270 @@
+android_logger,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,0.11.0
+android_logger,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,0.11.0 -> 0.11.1
+android_system_properties,Nicolas Silva,nical@fastmail.com,safe-to-deploy,0.1.2
+android_system_properties,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.1.2 -> 0.1.4
+anyhow,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.57 -> 1.0.61
+anyhow,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,delta,1.0.58 -> 1.0.57
+anyhow,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.61 -> 1.0.62
+app_units,Emilio Cobos Álvarez,emilio@crisal.io,safe-to-deploy,0.7.1
+arbitrary,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,1.1.0 -> 1.1.1
+arbitrary,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,1.1.1 -> 1.1.3
+ashmem,Matthew Gregan,kinetik@flim.org,safe-to-deploy,0.1.2
+askama,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,0.11.1
+async-trait,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.1.56 -> 0.1.57
+atomic_refcell,Bobby Holley,bholley@mozilla.com,safe-to-deploy,0.1.8
+autocfg,Josh Stone,jistone@redhat.com,safe-to-deploy,1.1.0
+bindgen,Emilio Cobos Álvarez,emilio@crisal.io,safe-to-deploy,0.59.2
+bit-set,Aria Beingessner,a.beingessner@gmail.com,safe-to-deploy,0.5.2
+bit-set,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.5.2 -> 0.5.3
+bit-vec,Aria Beingessner,a.beingessner@gmail.com,safe-to-deploy,0.6.3
+build-parallel,Jeff Muizelaar,jmuizelaar@mozilla.com,safe-to-deploy,0.1.2
+bumpalo,Bobby Holley,bobbyholley@gmail.com,safe-to-run,delta,3.9.1 -> 3.10.0
+bytes,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.1.0 -> 1.2.1
+camino,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.9 -> 1.1.1
+chardetng,Henri Sivonen,hsivonen@hsivonen.fi,safe-to-deploy,0.1.9
+chardetng_c,Henri Sivonen,hsivonen@hsivonen.fi,safe-to-deploy,0.1.2
+clap_lex,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.2.0 -> 0.2.2
+clap_lex,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.2.2 -> 0.2.4
+comedy,Nick Alexander,nalexander@mozilla.com,safe-to-deploy,0.2.0
+cpufeatures,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.2.2 -> 0.2.4
+crossbeam-channel,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.5.4 -> 0.5.6
+crossbeam-deque,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.8.1 -> 0.8.2
+crossbeam-epoch,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.9.8 -> 0.9.10
+crossbeam-utils,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.8.8 -> 0.8.11
+crypto-common,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.1.3 -> 0.1.6
+cssparser,Emilio Cobos Álvarez,emilio@crisal.io,safe-to-deploy,0.29.6
+cssparser-macros,Emilio Cobos Álvarez,emilio@crisal.io,safe-to-deploy,0.6.0
+cstr,Emilio Cobos Álvarez,emilio@crisal.io,safe-to-deploy,0.2.10
+cubeb,Matthew Gregan,kinetik@flim.org,safe-to-deploy,0.10.1
+cubeb,Matthew Gregan,kinetik@flim.org,safe-to-deploy,delta,0.10.1 -> 0.10.2
+cubeb-backend,Matthew Gregan,kinetik@flim.org,safe-to-deploy,0.10.1
+cubeb-backend,Matthew Gregan,kinetik@flim.org,safe-to-deploy,delta,0.10.1 -> 0.10.2
+cubeb-backend,Paul Adenot,paul@paul.cx,safe-to-deploy,delta,0.10.2 -> 0.10.3
+cubeb-core,Matthew Gregan,kinetik@flim.org,safe-to-deploy,0.10.1
+cubeb-core,Matthew Gregan,kinetik@flim.org,safe-to-deploy,delta,0.10.1 -> 0.10.2
+cubeb-core,Paul Adenot,paul@paul.cx,safe-to-deploy,delta,0.10.2 -> 0.10.3
+cubeb-sys,Matthew Gregan,kinetik@flim.org,safe-to-deploy,0.10.1
+cubeb-sys,Matthew Gregan,kinetik@flim.org,safe-to-deploy,delta,0.10.1 -> 0.10.2
+cubeb-sys,Paul Adenot,paul@paul.cx,safe-to-deploy,delta,0.10.2 -> 0.10.3
+d3d12,Jim Blandy,jimb@red-bean.com,safe-to-deploy,delta,0.4.1 -> 0.5.0
+derive_arbitrary,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,1.1.0 -> 1.1.1
+derive_arbitrary,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,1.1.1 -> 1.1.3
+devd-rs,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.3.4 -> 0.3.5
+dogear,Sammy Khamis,skhamis@mozilla.com,safe-to-deploy,delta,0.4.0 -> 0.5.0
+either,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.6.1 -> 1.7.0
+either,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.7.0 -> 1.8.0
+encoding_c,Henri Sivonen,hsivonen@hsivonen.fi,safe-to-deploy,0.9.8
+encoding_c_mem,Henri Sivonen,hsivonen@hsivonen.fi,safe-to-deploy,0.2.6
+encoding_rs,Henri Sivonen,hsivonen@hsivonen.fi,safe-to-deploy,0.8.31
+extend,Ben Dean-Kawamura,bdk@mozilla.com,safe-to-deploy,1.1.2
+fallible_collections,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.4.4 -> 0.4.5
+fastrand,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.7.0 -> 1.8.0
+filetime_win,Nick Alexander,nalexander@mozilla.com,safe-to-deploy,0.2.0
+flagset,Ryan Hunt,rhunt@eqrion.net,safe-to-deploy,0.4.3
+fluent,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,0.16.0
+fluent-bundle,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,0.15.2
+fluent-fallback,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,0.6.0
+fluent-langneg,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,0.13.0
+fluent-pseudo,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,0.3.1
+fluent-syntax,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,0.11.0
+fluent-testing,Zibi Braniecki,zibi@unicode.org,safe-to-run,0.0.2
+fnv,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,1.0.7
+fs-err,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,2.7.0 -> 2.8.1
+futures,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.3.21 -> 0.3.23
+futures-channel,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.3.21 -> 0.3.23
+futures-core,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.3.21 -> 0.3.23
+futures-executor,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.3.21 -> 0.3.23
+futures-io,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.3.21 -> 0.3.23
+futures-macro,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.3.21 -> 0.3.23
+futures-sink,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.3.21 -> 0.3.23
+futures-task,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.3.21 -> 0.3.23
+futures-util,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.3.21 -> 0.3.23
+fxhash,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,0.2.1
+generic-array,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.14.5 -> 0.14.6
+getrandom,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.2.6 -> 0.2.7
+glean,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,50.1.0
+glean,Travis Long,tlong@mozilla.com,safe-to-deploy,50.1.2
+glean,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,51.1.0
+glean,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,50.1.2 -> 50.1.3
+glean,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,50.1.3 -> 51.0.1
+glean,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,51.1.0 -> 51.2.0
+glean,Perry McManis,pmcmanis@mozilla.com,safe-to-deploy,delta,51.2.0 -> 51.4.0
+glean,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,51.4.0 -> 51.5.0
+glean-core,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,50.1.0
+glean-core,Travis Long,tlong@mozilla.com,safe-to-deploy,50.1.2
+glean-core,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,51.1.0
+glean-core,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,50.1.2 -> 50.1.3
+glean-core,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,50.1.3 -> 51.0.1
+glean-core,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,51.1.0 -> 51.2.0
+glean-core,Perry McManis,pmcmanis@mozilla.com,safe-to-deploy,delta,51.2.0 -> 51.4.0
+glean-core,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,51.4.0 -> 51.5.0
+goblin,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,0.1.3 -> 0.5.4
+gpu-descriptor,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.2.2 -> 0.2.3
+guid_win,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,0.2.0
+h2,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,0.3.13 -> 0.3.14
+hashbrown,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,0.12.3
+hyper,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,0.14.19 -> 0.14.20
+indexmap,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.8.2 -> 1.9.1
+inherent,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.1 -> 1.0.2
+inplace_it,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.3.3 -> 0.3.4
+intl-memoizer,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,0.5.1
+intl_pluralrules,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,7.0.1
+itoa,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.2 -> 1.0.3
+libc,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.2.126 -> 0.2.132
+linked-hash-map,Aria Beingessner,a.beingessner@gmail.com,safe-to-deploy,0.5.4
+linked-hash-map,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,0.5.4 -> 0.5.6
+log,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,0.4.17
+malloc_size_of_derive,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,0.1.2
+matches,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,0.1.9
+memmap2,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.5.4 -> 0.5.7
+metal,Jim Blandy,jimb@red-bean.com,safe-to-deploy,delta,0.23.1 -> 0.24.0
+mozprofile,Henrik Skupin,mail@hskupin.info,safe-to-deploy,0.9.0
+mozrunner,Henrik Skupin,mail@hskupin.info,safe-to-deploy,0.15.0
+mozversion,Henrik Skupin,mail@hskupin.info,safe-to-run,0.5.0
+naga,Dzmitry Malyshau,kvark@fastmail.com,safe-to-deploy,0.8.0
+naga,Jim Blandy,jimb@red-bean.com,safe-to-deploy,delta,0.8.0 -> 0.9.0
+new_debug_unreachable,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,1.0.4
+num,Josh Stone,jistone@redhat.com,safe-to-deploy,0.4.0
+num-bigint,Josh Stone,jistone@redhat.com,safe-to-deploy,0.2.6
+num-bigint,Josh Stone,jistone@redhat.com,safe-to-deploy,0.4.3
+num-complex,Josh Stone,jistone@redhat.com,safe-to-deploy,0.4.2
+num-derive,Josh Stone,jistone@redhat.com,safe-to-deploy,0.3.3
+num-integer,Josh Stone,jistone@redhat.com,safe-to-deploy,0.1.45
+num-iter,Josh Stone,jistone@redhat.com,safe-to-deploy,0.1.43
+num-macros,Josh Stone,jistone@redhat.com,safe-to-deploy,0.1.40
+num-rational,Josh Stone,jistone@redhat.com,safe-to-deploy,0.4.1
+num-traits,Josh Stone,jistone@redhat.com,safe-to-deploy,0.2.15
+once_cell,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.12.0 -> 1.13.1
+origin-trial-token,Emilio Cobos Álvarez,emilio@crisal.io,safe-to-deploy,0.1.1
+os_str_bytes,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,6.1.0 -> 6.3.0
+packed_simd_2,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.3.7 -> 0.3.8
+paste,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.7 -> 1.0.8
+pin-project,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,1.0.10 -> 1.0.12
+pin-project-internal,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,1.0.10 -> 1.0.12
+pkcs11-bindings,Dana Keeler,dkeeler@mozilla.com,safe-to-deploy,0.1.0
+precomputed-hash,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,0.1.1
+prio,Simon Friedberger,simon@mozilla.com,safe-to-deploy,0.8.4
+proc-macro2,Nika Layzell,nika@thelayzells.com,safe-to-deploy,1.0.39
+proc-macro2,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.39 -> 1.0.43
+qcms,Jeff Muizelaar,jmuizelaar@mozilla.com,safe-to-deploy,0.2.0
+quote,Nika Layzell,nika@thelayzells.com,safe-to-deploy,1.0.18
+quote,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.18 -> 1.0.21
+radium,Nika Layzell,nika@thelayzells.com,safe-to-deploy,0.5.3
+raw-window-handle,Jim Blandy,jimb@red-bean.com,safe-to-deploy,0.5.0
+rayon,Josh Stone,jistone@redhat.com,safe-to-deploy,1.5.3
+rayon-core,Josh Stone,jistone@redhat.com,safe-to-deploy,1.9.3
+redox_syscall,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.2.13 -> 0.2.16
+regex,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.5.6 -> 1.6.0
+regex-syntax,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.6.26 -> 0.6.27
+ron,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.7.0 -> 0.7.1
+rure,Nika Layzell,nika@thelayzells.com,safe-to-deploy,0.2.2
+notes =
+This is a fairly straightforward FFI wrapper crate for `regex`, maintained by
+the `regex` developers in the same repository.
+This crate is explicitly designed for FFI use, and should not be used directly
+by Rust code. The exported `extern \C\` functions are not marked as `unsafe`,
+meaning that it is technically incorrect to use them from within Rust code,
+however they are reasonable to use from C code.
+The unsafe code in this crate heavily depends on the C caller maintaining
+invariants, however these invariants are clearly documented in the `rure.h`
+file, bundled with the crate.
+I have checked the signatures of each function both in C++ and in the Rust to
+ensure they match.  In some places, the c `rure.h` header file is missing a
+`const` qualifier which could be present given the Rust code, however this will
+have no impact on ABI, and is fairly normal for FFI crates.
+Panics are handled in all Rust FFI methods, meaning that projects which do not
+disable unwinding will still consistently abort (using `libc::abort()`) if a
+panic occurs in the Rust code.
+
+rust_decimal,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.24.0 -> 1.25.0
+rust_decimal,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.25.0 -> 1.26.1
+rustc-hash,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,1.1.0
+rustc_version,Nika Layzell,nika@thelayzells.com,safe-to-run,0.4.0
+rustversion,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,1.0.9
+ryu,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.10 -> 1.0.11
+scroll,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,0.10.2 -> 0.11.0
+scroll_derive,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,0.10.5 -> 0.11.0
+selectors,Emilio Cobos Álvarez,emilio@crisal.io,safe-to-deploy,0.22.0
+semver,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.9 -> 1.0.10
+semver,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.10 -> 1.0.13
+serde,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.137 -> 1.0.143
+serde,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.143 -> 1.0.144
+serde_bytes,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.11.6 -> 0.11.7
+serde_derive,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.137 -> 1.0.143
+serde_derive,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.143 -> 1.0.144
+serde_json,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.81 -> 1.0.83
+serde_json,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.83 -> 1.0.85
+serde_repr,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,0.1.8 -> 0.1.9
+serde_yaml,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,0.8.24 -> 0.8.26
+servo_arc,Emilio Cobos Álvarez,emilio@crisal.io,safe-to-deploy,0.1.1
+slab,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.4.6 -> 0.4.7
+smallvec,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.8.0 -> 1.9.0
+svg_fmt,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,0.4.1
+syn,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.96 -> 1.0.99
+synstructure,Nika Layzell,nika@thelayzells.com,safe-to-deploy,0.12.6
+thin-vec,Aria Beingessner,a.beingessner@gmail.com,safe-to-deploy,0.2.5
+thin-vec,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.2.5 -> 0.2.7
+thiserror,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.31 -> 1.0.32
+thiserror-impl,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.31 -> 1.0.32
+threadbound,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.1.3 -> 0.1.4
+tinystr,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,0.3.4
+tinystr,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,0.6.0
+topological-sort,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,0.1.0
+tower-service,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,0.3.1 -> 0.3.2
+tracing,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,0.1.35 -> 0.1.36
+tracing-attributes,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,0.1.21 -> 0.1.22
+tracing-core,Mike Hommey,mh+mozilla@glandium.org,safe-to-run,delta,0.1.27 -> 0.1.29
+tracy-rs,Glenn Watson,git@intuitionlibrary.com,safe-to-deploy,0.1.2
+uluru,Emilio Cobos Álvarez,emilio@crisal.io,safe-to-deploy,3.0.0
+unic-langid,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,0.9.0
+unic-langid-impl,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,0.9.0
+unic-langid-macros,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,0.9.0
+unic-langid-macros-impl,Zibi Braniecki,zibi@unicode.org,safe-to-deploy,0.9.0
+unicode-ident,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.0 -> 1.0.1
+unicode-ident,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,1.0.1 -> 1.0.3
+unicode-normalization,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.1.19 -> 0.1.20
+unicode-normalization,Mike Hommey,mh+mozilla@glandium.org,safe-to-deploy,delta,0.1.20 -> 0.1.21
+uniffi,Travis Long,tlong@mozilla.com,safe-to-deploy,0.19.3
+uniffi,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,0.19.3 -> 0.19.6
+uniffi,Perry McManis,pmcmanis@mozilla.com,safe-to-deploy,delta,0.19.6 -> 0.20.0
+uniffi,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,0.20.0 -> 0.21.0
+uniffi_bindgen,Travis Long,tlong@mozilla.com,safe-to-deploy,0.19.3
+uniffi_bindgen,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,0.19.3 -> 0.19.6
+uniffi_bindgen,Perry McManis,pmcmanis@mozilla.com,safe-to-deploy,delta,0.19.6 -> 0.20.0
+uniffi_bindgen,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,0.20.0 -> 0.21.0
+uniffi_build,Travis Long,tlong@mozilla.com,safe-to-deploy,0.19.3
+uniffi_build,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,0.19.3 -> 0.19.6
+uniffi_build,Perry McManis,pmcmanis@mozilla.com,safe-to-deploy,delta,0.19.6 -> 0.20.0
+uniffi_build,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,0.20.0 -> 0.21.0
+uniffi_macros,Travis Long,tlong@mozilla.com,safe-to-deploy,0.19.3
+uniffi_macros,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,0.19.3 -> 0.19.6
+uniffi_macros,Perry McManis,pmcmanis@mozilla.com,safe-to-deploy,delta,0.19.6 -> 0.20.0
+uniffi_macros,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,0.20.0 -> 0.21.0
+uniffi_meta,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,0.19.6
+uniffi_meta,Perry McManis,pmcmanis@mozilla.com,safe-to-deploy,delta,0.19.6 -> 0.20.0
+uniffi_meta,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,0.20.0 -> 0.21.0
+void,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,1.0.2
+wasm-encoder,Ryan Hunt,rhunt@eqrion.net,safe-to-deploy,0.7.0
+wasm-encoder,Ryan Hunt,rhunt@eqrion.net,safe-to-deploy,delta,0.7.0 -> 0.14.0
+wasm-encoder,Yury Delendik,ydelendik@mozilla.com,safe-to-deploy,delta,0.14.0 -> 0.15.0
+wasm-encoder,Yury Delendik,ydelendik@mozilla.com,safe-to-deploy,delta,0.16.0 -> 0.17.0
+wasm-smith,Ryan Hunt,rhunt@eqrion.net,safe-to-deploy,0.11.2
+wasm-smith,Yury Delendik,ydelendik@mozilla.com,safe-to-run,delta,0.11.2 -> 0.11.3
+wasm-smith,Yury Delendik,ydelendik@mozilla.com,safe-to-run,delta,0.11.4 -> 0.11.5
+wasmparser,Ryan Hunt,rhunt@eqrion.net,safe-to-deploy,0.87.0
+wasmparser,Yury Delendik,ydelendik@mozilla.com,safe-to-deploy,delta,0.87.0 -> 0.88.0
+wasmparser,Yury Delendik,ydelendik@mozilla.com,safe-to-deploy,delta,0.89.1 -> 0.91.0
+wast,Ryan Hunt,rhunt@eqrion.net,safe-to-deploy,44.0.0
+wast,Yury Delendik,ydelendik@mozilla.com,safe-to-deploy,delta,44.0.0 -> 45.0.0
+wast,Yury Delendik,ydelendik@mozilla.com,safe-to-deploy,delta,46.0.0 -> 47.0.0
+webdriver,Henrik Skupin,mail@hskupin.info,safe-to-deploy,0.46.0
+weedle2,Travis Long,tlong@mozilla.com,safe-to-deploy,3.0.0
+weedle2,Jan-Erik Rediger,jrediger@mozilla.com,safe-to-deploy,delta,3.0.0 -> 4.0.0
+wgpu-core,Dzmitry Malyshau,kvark@fastmail.com,safe-to-deploy,0.12.0
+wgpu-core,Jim Blandy,jimb@mozilla.com,safe-to-deploy,delta,0.12.0 -> 0.13.0
+wgpu-hal,Dzmitry Malyshau,kvark@fastmail.com,safe-to-deploy,0.12.0
+wgpu-hal,Jim Blandy,jimb@mozilla.com,safe-to-deploy,delta,0.12.0 -> 0.13.0
+wgpu-types,Dzmitry Malyshau,kvark@fastmail.com,safe-to-deploy,0.12.0
+wgpu-types,Jim Blandy,jimb@mozilla.com,safe-to-deploy,delta,0.12.0 -> 0.13.0
+whatsys,Bobby Holley,bobbyholley@gmail.com,safe-to-deploy,0.1.2
+xmldecl,Henri Sivonen,hsivonen@hsivonen.fi,safe-to-deploy,0.2.0
