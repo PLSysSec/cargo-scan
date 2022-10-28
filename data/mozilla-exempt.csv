@@ -1,3 +1,4 @@
+name,version,criteria
 adler,1.0.2,safe-to-deploy
 ahash,0.7.6,safe-to-deploy
 aho-corasick,0.7.18,safe-to-deploy
