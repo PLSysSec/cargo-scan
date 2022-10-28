@@ -308,8 +308,7 @@ version_check,0.9.4,safe-to-deploy
 walkdir,2.3.2,safe-to-deploy
 want,0.3.0,safe-to-run
 warp,0.3.2,safe-to-run
-wasi
-0.11.0+wasi-snapshot-preview1,safe-to-deploy
+wasi,0.11.0+wasi-snapshot-preview1,safe-to-deploy
 webrtc-sdp,0.3.9,safe-to-deploy
 winapi,0.3.9,safe-to-deploy
 winapi-i686-pc-windows-gnu,0.4.0,safe-to-deploy
