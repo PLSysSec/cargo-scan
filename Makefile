@@ -13,6 +13,10 @@ full: test
 	$(SCAN) 10
 	$(SCAN) 100
 
+mozilla:
+	$(SCAN) all -i data/mozilla-exempt.csv -o mozilla-exempt
+	$(SCAN) all -i data/mozilla-audits.csv -o mozilla-audits
+
 full-extra: full
 	$(SCAN) 1000
 	$(SCAN) 10000
