@@ -1,19 +1,21 @@
 .PHONY: cargo-scan test full full-extra clean
 .DEFAULT: cargo-scan
 
+SCAN = python3 experiments/scan.py
+
 cargo-scan:
-	python3 experiments/scan.py 100
+	$(SCAN) 100
 
 test:
-	python3 experiments/scan.py all -t -vvv
+	$(SCAN) all -t -vvv
 
 full: test
-	python3 experiments/scan.py 10
-	python3 experiments/scan.py 100
+	$(SCAN) 10
+	$(SCAN) 100
 
 full-extra: full
-	python3 experiments/scan.py 1000
-	python3 experiments/scan.py 10000
+	$(SCAN) 1000
+	$(SCAN) 10000
 
 clean:
 	# Warning: this deletes all downloaded packages and experiment results

@@ -16,16 +16,12 @@ from functools import partial, partialmethod
 # Number of progress tracking messages to display
 PROGRESS_INCS = 5
 
-RESULTS_DIR = "data/results"
-RESULTS_ALL_SUFFIX = "all.csv"
-RESULTS_SUMMARY_SUFFIX = "summary.txt"
-
-CRATES_DIR = "data/packages"
-SRC_DIR = "src"
-TEST_CRATES_DIR = "data/test-packages"
-
 TOP_CRATES_CSV = "data/crates.csv"
 TEST_CRATES_CSV = "data/test-crates.csv"
+
+CRATES_DIR = "data/packages"
+CRATES_SRC_DIR = "src"
+TEST_CRATES_DIR = "data/test-packages"
 
 # Potentially dangerous stdlib imports.
 OF_INTEREST_STD = [
@@ -54,6 +50,9 @@ OF_INTEREST_OTHER = [
     "socket2",
 ]
 
+RESULTS_DIR = "data/results"
+RESULTS_ALL_SUFFIX = "all.csv"
+RESULTS_SUMMARY_SUFFIX = "summary.txt"
 CSV_HEADER = "crate, pattern of interest, directory, file, use line"
 
 # ===== Utility =====
@@ -287,7 +286,7 @@ def scan_file(crate, root, file, of_interest):
 
 def scan_crate(crate, crate_dir, of_interest):
     logging.debug(f"Scanning crate: {crate}")
-    src = os.path.join(crate_dir, crate, SRC_DIR)
+    src = os.path.join(crate_dir, crate, CRATES_SRC_DIR)
     for root, dirs, files in os.walk(src):
         # Hack to make os.walk work in alphabetical order
         # https://stackoverflow.com/questions/6670029/can-i-force-os-walk-to-visit-directories-in-alphabetical-order
@@ -306,6 +305,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('num_crates', help="Number of crates in the input file to analyze (or 'all' for all crates)")
     parser.add_argument('-t', '--test', action="store_true", help="Test run on dummy packages")
+    parser.add_argument('-i', '--infile', help="Input crates list CSV file (should be used together with -o) (ignored for a test run)", default=TOP_CRATES_CSV)
+    parser.add_argument('-o', '--outprefix', help="Output file prefix for results (ignored for a test run)", default="top")
     parser.add_argument('-s', '--std', action="store_true", help="Flag standard library imports only")
     parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
 
@@ -324,16 +325,18 @@ if __name__ == "__main__":
         crates_dir = TEST_CRATES_DIR
         results_prefix = "test"
     else:
-        crates_csv = TOP_CRATES_CSV
+        crates_csv = args["infile"]
         crates_dir = CRATES_DIR
-        results_prefix = f"top{num_crates}"
+        results_prefix = args["outprefix"]
 
     logging.info(f"===== Scanning {num_crates} crates from {crates_csv} in {crates_dir} =====")
 
     if num_crates == "all":
         num_crates = count_lines(crates_csv)
     else:
+        results_prefix += num_crates
         num_crates = int(num_crates)
+
     crates = get_top_crates(crates_csv, num_crates)
 
     progress_inc = num_crates // PROGRESS_INCS
