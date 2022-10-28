@@ -2,10 +2,10 @@
 .DEFAULT: cargo-scan
 
 cargo-scan:
-	python3 experiments/scan.py
+	python3 experiments/scan.py 100
 
 test:
-	python3 experiments/scan.py -t -vvv
+	python3 experiments/scan.py all -t -vvv
 
 full: test
 	python3 experiments/scan.py 10

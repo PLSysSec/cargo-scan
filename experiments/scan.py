@@ -23,9 +23,9 @@ RESULTS_SUMMARY_SUFFIX = "summary.txt"
 CRATES_DIR = "data/packages"
 SRC_DIR = "src"
 TEST_CRATES_DIR = "data/test-packages"
-TEST_CRATES = [ "dummy", "permissions-ex" ]
 
 TOP_CRATES_CSV = "data/crates.csv"
+TEST_CRATES_CSV = "data/test-crates.csv"
 
 # Potentially dangerous stdlib imports.
 OF_INTEREST_STD = [
@@ -77,13 +77,20 @@ def truncate_str(s, n):
 
 # ===== Main script =====
 
-def get_top_crates(n):
-    with open(TOP_CRATES_CSV, newline='') as infile:
+def count_lines(cratefile, header_row=True):
+    with open(cratefile, 'r') as fh:
+        result = len(fh.readlines())
+        if header_row:
+            result -= 1
+        return result
+
+def get_top_crates(cratefile, n):
+    with open(cratefile, newline='') as infile:
         in_reader = csv.reader(infile, delimiter=',')
         crates = []
         for i, row in enumerate(in_reader):
             if i > 0:
-                logging.trace(f"Top crate: {row[0]} ({row[1]} downloads)")
+                logging.trace(f"Top crate: {row[0]} ({','.join(row[1:])})")
                 crates.append(row[0])
             if i == n:
                 assert len(crates) == n
@@ -297,7 +304,7 @@ def scan_crate(crate, crate_dir, of_interest):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('num_crates', nargs='?', help="Number of top crates to analyze (ignored for a test run)", default=100)
+    parser.add_argument('num_crates', help="Number of crates in the input file to analyze (or 'all' for all crates)")
     parser.add_argument('-t', '--test', action="store_true", help="Test run on dummy packages")
     parser.add_argument('-s', '--std', action="store_true", help="Flag standard library imports only")
     parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
@@ -309,32 +316,37 @@ if __name__ == "__main__":
     logging.debug(args)
 
     test_run = args["test"]
-    num_crates = int(args["num_crates"])
+    num_crates = args["num_crates"]
+
+    if test_run:
+        logging.info("===== Test run =====")
+        crates_csv = TEST_CRATES_CSV
+        crates_dir = TEST_CRATES_DIR
+        results_prefix = "test"
+    else:
+        crates_csv = TOP_CRATES_CSV
+        crates_dir = CRATES_DIR
+        results_prefix = f"top{num_crates}"
+
+    logging.info(f"===== Scanning {num_crates} crates from {crates_csv} in {crates_dir} =====")
+
+    if num_crates == "all":
+        num_crates = count_lines(crates_csv)
+    else:
+        num_crates = int(num_crates)
+    crates = get_top_crates(crates_csv, num_crates)
+
     progress_inc = num_crates // PROGRESS_INCS
     of_interest = OF_INTEREST_STD
     if not args["std"]:
         of_interest += OF_INTEREST_OTHER
-
-    if test_run:
-        num_crates = len(TEST_CRATES)
-        crates_dir = TEST_CRATES_DIR
-        logging.info(f"===== Test run: scanning {num_crates} crate(s) in {crates_dir} =====")
-
-        crates = TEST_CRATES
-        results_prefix = "test"
-    else:
-        crates_dir = CRATES_DIR
-        logging.info(f"===== Scanning the top {num_crates} crates in {crates_dir} =====")
-
-        crates = get_top_crates(num_crates)
-        results_prefix = f"top{num_crates}"
 
     results = []
     crate_summary = {c: 0 for c in crates}
     pattern_summary= {p: 0 for p in of_interest}
 
     for i, crate in enumerate(crates):
-        if i > 0 and i % progress_inc == 0:
+        if progress_inc > 0 and i > 0 and i % progress_inc == 0:
             progress = 100 * i // num_crates
             logging.info(f"{progress}% complete")
 
