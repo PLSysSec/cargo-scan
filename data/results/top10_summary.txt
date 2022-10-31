@@ -7,6 +7,7 @@ std::fs: 1
 std::net: 0
 std::os: 0
 libc: 0
+winapi: 0
 mio::net: 0
 mio::unix: 0
 tokio::fs: 0

@@ -2,6 +2,7 @@
 Total instances of each import pattern:
 std::os: 157
 std::net: 89
+winapi: 78
 tokio::io: 75
 std::path: 66
 libc: 42
@@ -20,18 +21,18 @@ tokio_util::net: 0
 socket2: 0
 ===== Crate Summary =====
 Number of dangerous imports by crate:
+tokio: 151
 mio: 133
-tokio: 130
+socket2: 65
 hyper: 56
-socket2: 39
+cc: 43
 tokio-util: 30
 h2: 21
-cc: 18
 getrandom: 15
 autocfg: 10
 parking_lot_core: 9
+chrono: 9
 url: 7
-chrono: 6
 proc-macro2: 4
 num_cpus: 4
 pkg-config: 4
@@ -39,10 +40,11 @@ memchr: 3
 clap: 3
 thiserror: 3
 version_check: 2
+atty: 2
 rustc_version: 2
 env_logger: 2
-termcolor: 1
+termcolor: 2
 crossbeam-channel: 1
 ===== Crate Totals =====
-23 crates with 1 or more dangerous imports
-77 crates with 0 dangerous imports
+24 crates with 1 or more dangerous imports
+76 crates with 0 dangerous imports
