@@ -1,5 +1,6 @@
 ===== Patterns =====
 Total instances of each import pattern:
+winapi: 212
 std::os: 197
 std::path: 143
 std::fs: 119
@@ -21,8 +22,11 @@ socket2: 0
 ===== Crate Summary =====
 Number of dangerous imports by crate:
 glean-core: 208
+wgpu-hal: 134
 cubeb-sys: 87
 hyper: 56
+d3d12: 41
+comedy: 31
 cubeb-backend: 27
 h2: 21
 bindgen: 19
@@ -34,6 +38,7 @@ devd-rs: 13
 memmap2: 13
 uniffi: 12
 autocfg: 10
+filetime_win: 8
 glean: 8
 mozrunner: 8
 os_str_bytes: 8
@@ -41,9 +46,9 @@ proc-macro2: 8
 qcms: 7
 android_system_properties: 6
 arbitrary: 6
+guid_win: 6
 metal: 6
 wast: 6
-wgpu-hal: 6
 camino: 5
 cubeb: 4
 uniffi_build: 4
@@ -56,7 +61,6 @@ rure: 3
 thiserror: 3
 webdriver: 3
 whatsys: 3
-guid_win: 2
 naga: 2
 rustc_version: 2
 unic-langid-impl: 2
@@ -66,5 +70,5 @@ crossbeam-channel: 1
 fluent-testing: 1
 rustversion: 1
 ===== Crate Totals =====
-45 crates with 1 or more dangerous imports
-136 crates with 0 dangerous imports
+48 crates with 1 or more dangerous imports
+133 crates with 0 dangerous imports
