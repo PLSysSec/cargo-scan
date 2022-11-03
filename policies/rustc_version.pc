@@ -1,0 +1,7 @@
+crate():
+    read_var("RUSTC")
+    run_command("rustc", "-vV")
+    run_command(env::var_os("RUSTC"), "-vV")
+
+VersionMeta::for_command(c)
+    caller: { run_command(c, "-vV") }

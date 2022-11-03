@@ -1,0 +1,3 @@
+crates with the trivial policy (no permissions):
+percent-encoding
+fnv
