@@ -16,3 +16,7 @@ dummy, std::env, data/test-packages/dummy/src, main.rs, std::env
 dummy, std::env, data/test-packages/dummy/src, main.rs, std::env
 permissions-ex, std::fs, data/test-packages/permissions-ex/src, lib.rs, std::fs
 permissions-ex, std::process, data/test-packages/permissions-ex/src, lib.rs, std::process::Command
+toy-crates, libc, data/test-packages/toy-crates/src, num_cpus.rs, libc
+toy-crates, std::env, data/test-packages/toy-crates/src, rustc_version.rs, std::env
+toy-crates, std::process, data/test-packages/toy-crates/src, rustc_version.rs, std::process::Command
+toy-crates, std::net, data/test-packages/toy-crates/src, url_client.rs, std::net::TcpListener
