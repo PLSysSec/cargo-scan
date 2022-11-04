@@ -7,3 +7,4 @@ allow crate read_env("RUSTC")
 allow crate exec("rustc", "-vV")
 allow crate exec(env::var_os("RUSTC"), "-vV")
 require VersionMeta::for_command(cmd) exec(cmd, "-vV")
+trust env::var_os
