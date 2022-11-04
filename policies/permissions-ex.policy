@@ -1,52 +1,11 @@
-/*
-    Example policy for the test crate
-    data/test-packages/permissions-ex
-*/
+[policy]
+crate = permissions-ex
+policy-version = 0.1
 
-remove(path):
-    crate: {}
-    caller: { delete(path) }
-    internal: { run_command("rm", "-f", path) }
-    calls:
-        Command:new: { run_command("rm", "-f", path) }
-
-save_data(path):
-    crate: {}
-    caller: { create(path), overwrite(path) }
-    internal: { delete(path) }
-    calls:
-        remove(path): { delete(path) }
-        fs::write(path, _): { create(path), overwrite(path) }
-
-prepare_data():
-    crate: { append("my_app.log") }
-    caller: {}
-    internal: {}
-    calls:
-        fs::write: { append("my_app.log") }
-
-/*
-    Special policies
-*/
-
-crate():
-    auditor: { append("my_app.log") }
-    user: {}
-    parent: {}
-    internal: {}
-    children:
-
-///////////////////////////////////////////////////////////
-
-/*
-    TBD features later:
-    add build: {} field for build-time capabilities
-    + add top-level build capabilities for the crate. e.g.
-
-build():
-    auditor: {}
-    user: {}
-    parent: {}
-    internal: {}
-    children:
-*/
+[statements]
+require remove(path) delete(path)
+require save_data(path) create(path)
+require save_data(path) overwrite(path)
+grant remove(path) exec("rm", "-f", path)
+grant save_data(path) delete(path)
+grant prepare_data() append("my_app.log")

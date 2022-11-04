@@ -1,7 +1,9 @@
-crate():
-    read_var("RUSTC")
-    run_command("rustc", "-vV")
-    run_command(env::var_os("RUSTC"), "-vV")
+[policy]
+crate = rustc_version
+policy-version = 0.1
 
-VersionMeta::for_command(c)
-    caller: { run_command(c, "-vV") }
+[statements]
+allow crate read_env("RUSTC")
+allow crate exec("rustc", "-vV")
+allow crate exec(env::var_os("RUSTC"), "-vV")
+require VersionMeta::for_command(cmd) exec(cmd, "-vV")
