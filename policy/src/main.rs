@@ -1,3 +1,7 @@
+use policy::policy::Policy;
+
 fn main() {
-    println!("Hello, world!");
+    let policy = Policy::new("permissions-ex", "0.1", "0.1");
+
+    println!("Policy example: {:?}", policy);
 }
