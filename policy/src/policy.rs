@@ -5,13 +5,15 @@
     See example .policy files in policies/
 */
 
-#[derive(Debug)]
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Expr(String);
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Args(String);
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Effect {
     EnvRead(String),
     EnvWrite(String),
@@ -23,14 +25,14 @@ pub enum Effect {
     Exec(Vec<String>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Region {
     Crate(String),
     Module(String),
     Function(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Statement {
     Allow(Region, Effect),
     Require(Region, Effect),
@@ -38,7 +40,7 @@ pub enum Statement {
 }
 
 // TODO: make crate_version and policy_version semver objects
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Policy {
     crate_name: String,
     crate_version: String,
