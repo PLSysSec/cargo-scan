@@ -24,6 +24,28 @@ pub enum Effect {
     // NetSend(String),
     Exec(Vec<Expr>),
 }
+impl Effect {
+    pub fn env_read(s: String) -> Self {
+        Self::EnvRead(Expr(s))
+    }
+    pub fn env_write(s: String) -> Self {
+        Self::EnvWrite(Expr(s))
+    }
+    pub fn fs_read(s: String) -> Self {
+        Self::FsRead(Expr(s))
+    }
+    pub fn fs_write(s: String) -> Self {
+        Self::FsWrite(Expr(s))
+    }
+    pub fn exec(cmd: String, args: Vec<String>) -> Self {
+        let mut result = vec![Expr(cmd)];
+        for arg in args.into_iter() {
+            result.push(Expr(arg))
+        }
+        Self::Exec(result)
+    }
+}
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Region {
