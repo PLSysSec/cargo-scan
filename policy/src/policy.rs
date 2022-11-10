@@ -14,6 +14,7 @@ pub struct Expr(String);
 pub struct Args(String);
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type", content = "c")]
 pub enum Effect {
     EnvRead(Expr),
     EnvWrite(Expr),
@@ -59,6 +60,7 @@ impl Effect {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type", content = "c")]
 pub enum Region {
     Crate(String),
     Module(String),
@@ -67,6 +69,7 @@ pub enum Region {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type", content = "c")]
 pub enum Statement {
     Allow(Region, Effect),
     Require(Region, Effect),

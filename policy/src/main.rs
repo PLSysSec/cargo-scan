@@ -16,6 +16,5 @@ fn main() {
 
     println!("Policy example: {:?}", policy);
 
-    // TODO: this doesn't work
-    // println!("{}", toml::to_string(&policy).unwrap());
+    println!("{}", toml::to_string(&policy).unwrap());
 }
