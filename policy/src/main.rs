@@ -1,6 +1,5 @@
 pub mod policy;
 use policy::{Effect, Policy};
-use toml;
 
 fn main() {
     let mut policy = Policy::new("permissions-ex", "0.1", "0.1");
