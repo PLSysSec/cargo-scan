@@ -37,6 +37,18 @@ impl Effect {
     pub fn fs_write(s: &str) -> Self {
         Self::FsWrite(Expr(s.to_string()))
     }
+    pub fn fs_create(s: &str) -> Self {
+        // TBD: distinguish more
+        Self::FsWrite(Expr(s.to_string()))
+    }
+    pub fn fs_delete(s: &str) -> Self {
+        // TBD: distinguish more
+        Self::FsWrite(Expr(s.to_string()))
+    }
+    pub fn fs_append(s: &str) -> Self {
+        // TBD: distinguish more
+        Self::FsWrite(Expr(s.to_string()))
+    }
     pub fn exec(cmd: &str, args: &[&str]) -> Self {
         let mut result = vec![Expr(cmd.to_string())];
         for arg in args {
