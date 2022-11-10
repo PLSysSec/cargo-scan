@@ -25,27 +25,26 @@ pub enum Effect {
     Exec(Vec<Expr>),
 }
 impl Effect {
-    pub fn env_read(s: String) -> Self {
-        Self::EnvRead(Expr(s))
+    pub fn env_read(s: &str) -> Self {
+        Self::EnvRead(Expr(s.to_string()))
     }
-    pub fn env_write(s: String) -> Self {
-        Self::EnvWrite(Expr(s))
+    pub fn env_write(s: &str) -> Self {
+        Self::EnvWrite(Expr(s.to_string()))
     }
-    pub fn fs_read(s: String) -> Self {
-        Self::FsRead(Expr(s))
+    pub fn fs_read(s: &str) -> Self {
+        Self::FsRead(Expr(s.to_string()))
     }
-    pub fn fs_write(s: String) -> Self {
-        Self::FsWrite(Expr(s))
+    pub fn fs_write(s: &str) -> Self {
+        Self::FsWrite(Expr(s.to_string()))
     }
-    pub fn exec(cmd: String, args: Vec<String>) -> Self {
-        let mut result = vec![Expr(cmd)];
-        for arg in args.into_iter() {
-            result.push(Expr(arg))
+    pub fn exec(cmd: &str, args: &[&str]) -> Self {
+        let mut result = vec![Expr(cmd.to_string())];
+        for arg in args {
+            result.push(Expr(arg.to_string()))
         }
         Self::Exec(result)
     }
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Region {
@@ -62,33 +61,37 @@ pub enum Statement {
     Trust(Region),
 }
 impl Statement {
-    pub fn allow_crate(name: String, eff: Effect) -> Self {
-        Self::Allow(Region::Crate(name), eff)
+    pub fn allow_crate(name: &str, eff: Effect) -> Self {
+        Self::Allow(Region::Crate(name.to_string()), eff)
     }
-    pub fn allow_mod(name: String, eff: Effect) -> Self {
-        Self::Allow(Region::Module(name), eff)
+    pub fn allow_mod(name: &str, eff: Effect) -> Self {
+        Self::Allow(Region::Module(name.to_string()), eff)
     }
-    pub fn allow_fn(name: String, args: String, eff: Effect) -> Self {
+    pub fn allow_fn(name: &str, args: &str, eff: Effect) -> Self {
+        let name = name.to_string();
+        let args = args.to_string();
         Self::Allow(Region::Function(name, Args(args)), eff)
     }
     // Q: do we need these?
-    // pub fn require_crate(name: String, eff: Effect) -> Self {
-    //     Self::Require(Region::Crate(name), eff)
+    // pub fn require_crate(name: &str, eff: Effect) -> Self {
+    //     Self::Require(Region::Crate(name.to_string()), eff)
     // }
-    // pub fn require_mod(name: String, eff: Effect) -> Self {
-    //     Self::Require(Region::Module(name), eff)
+    // pub fn require_mod(name: &str, eff: Effect) -> Self {
+    //     Self::Require(Region::Module(name.to_string()), eff)
     // }
-    pub fn require_fn(name: String, args: String, eff: Effect) -> Self {
+    pub fn require_fn(name: &str, args: &str, eff: Effect) -> Self {
+        let name = name.to_string();
+        let args = args.to_string();
         Self::Require(Region::Function(name, Args(args)), eff)
     }
-    pub fn trust_crate(name: String) -> Self {
-        Self::Trust(Region::Crate(name))
+    pub fn trust_crate(name: &str) -> Self {
+        Self::Trust(Region::Crate(name.to_string()))
     }
-    pub fn trust_mod(name: String) -> Self {
-        Self::Trust(Region::Module(name))
+    pub fn trust_mod(name: &str) -> Self {
+        Self::Trust(Region::Module(name.to_string()))
     }
-    pub fn trust_fn(name: String) -> Self {
-        Self::Trust(Region::FunctionAll(name))
+    pub fn trust_fn(name: &str) -> Self {
+        Self::Trust(Region::FunctionAll(name.to_string()))
     }
 }
 
@@ -115,25 +118,25 @@ impl Policy {
     pub fn add_statement(&mut self, s: Statement) {
         self.statements.push(s);
     }
-    pub fn allow_crate(&mut self, name: String, eff: Effect) {
+    pub fn allow_crate(&mut self, name: &str, eff: Effect) {
         self.add_statement(Statement::allow_crate(name, eff))
     }
-    pub fn allow_mod(&mut self, name: String, eff: Effect) {
+    pub fn allow_mod(&mut self, name: &str, eff: Effect) {
         self.add_statement(Statement::allow_mod(name, eff))
     }
-    pub fn allow_fn(&mut self, name: String, args: String, eff: Effect) {
+    pub fn allow_fn(&mut self, name: &str, args: &str, eff: Effect) {
         self.add_statement(Statement::allow_fn(name, args, eff))
     }
-    pub fn require_fn(&mut self, name: String, args: String, eff: Effect) {
+    pub fn require_fn(&mut self, name: &str, args: &str, eff: Effect) {
         self.add_statement(Statement::require_fn(name, args, eff))
     }
-    pub fn trust_crate(&mut self, name: String) {
+    pub fn trust_crate(&mut self, name: &str) {
         self.add_statement(Statement::trust_crate(name))
     }
-    pub fn trust_mod(&mut self, name: String) {
+    pub fn trust_mod(&mut self, name: &str) {
         self.add_statement(Statement::trust_mod(name))
     }
-    pub fn trust_fn(&mut self, name: String) {
+    pub fn trust_fn(&mut self, name: &str) {
         self.add_statement(Statement::trust_fn(name))
     }
 }
