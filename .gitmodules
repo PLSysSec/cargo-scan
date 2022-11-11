@@ -1,3 +1,3 @@
 [submodule "experiments/MIRAI-testing"]
-	path = experiments/MIRAI-testing
+	path = mirai/MIRAI
 	url = https://github.com/anisenoff/MIRAI-testing.git
