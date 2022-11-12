@@ -5,8 +5,9 @@
     See example .policy files in policies/
 */
 
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{self, Display};
+use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct Expr(String);
@@ -23,20 +24,19 @@ pub enum Effect {
     // TBD
     // NetRecv(String),
     // NetSend(String),
-    Exec(Vec<Expr>),
+    Exec(Expr, Expr),
 }
 impl Display for Effect {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::EnvRead(e) => write!(f, "env_read({})", e.0),
-            Self::EnvWrite(e) => write!(f, "env_write({})", e.0),
-            Self::FsRead(e) => write!(f, "fs_read({})", e.0),
-            Self::FsWrite(e) => write!(f, "fs_write({})", e.0),
-            Self::Exec(v) => {
-                // Ineffecient implementation bc .intersperse() / .join()
-                // on iterators is not stable
-                let v: Vec<&str> = v.iter().map(|e| e.0.as_ref()).collect();
-                write!(f, "exec({})", v.join(", "))
+            Self::EnvRead(e) => write!(f, "env_read {}", e.0),
+            Self::EnvWrite(e) => write!(f, "env_write {}", e.0),
+            Self::FsRead(e) => write!(f, "fs_read {}", e.0),
+            Self::FsWrite(e) => write!(f, "fs_write {}", e.0),
+            Self::Exec(e1, e2) => {
+                // precondition
+                debug_assert!(!e1.0.contains(' '));
+                write!(f, "exec {} {}", e1.0, e2.0)
             }
         }
     }
@@ -47,6 +47,36 @@ impl Serialize for Effect {
         S: Serializer,
     {
         ser.collect_str(self)
+    }
+}
+impl FromStr for Effect {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (s1, s2) = s.split_once(' ').ok_or("expected space in Effect")?;
+        if s1 == "exec" {
+            let (com, args) = s2.split_once(' ').ok_or("expected space after exec command name")?;
+            let com = Expr(com.to_string());
+            let args = Expr(args.to_string());
+            return Ok(Self::Exec(com, args));
+        }
+        let e = Expr(s2.to_string());
+        let eff = match s1 {
+            "env_read" => Self::EnvRead(e),
+            "env_write" => Self::EnvWrite(e),
+            "fs_read" => Self::FsRead(e),
+            "fs_write" => Self::FsWrite(e),
+            _ => return Err("unrecognized effect name"),
+        };
+        Ok(eff)
+    }
+}
+impl<'de> Deserialize<'de> for Effect {
+    fn deserialize<D>(des: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        String::deserialize(des)?.parse().map_err(de::Error::custom)
     }
 }
 impl Effect {
@@ -75,11 +105,9 @@ impl Effect {
         Self::FsWrite(Expr(s.to_string()))
     }
     pub fn exec(cmd: &str, args: &[&str]) -> Self {
-        let mut result = vec![Expr(cmd.to_string())];
-        for arg in args {
-            result.push(Expr(arg.to_string()))
-        }
-        Self::Exec(result)
+        let cmd = Expr(cmd.to_string());
+        let args = Expr(format!("{:?}", args));
+        Self::Exec(cmd, args)
     }
 }
 
