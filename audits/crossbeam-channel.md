@@ -8,7 +8,7 @@ Top 100 most-downloaded crates
 ## List of imports (1)
 
 ```
-crossbeam-channel, std::process, experiments/packages/crossbeam-channel/src, counter.rs, std::process
+crossbeam-channel, std::process, src, counter.rs, std::process
 ```
 
 ## Analysis

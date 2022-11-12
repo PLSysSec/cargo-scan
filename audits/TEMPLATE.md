@@ -8,7 +8,7 @@ Date: <!-- date -->
 
 ## List of imports <!-- number -->
 
-<!-- Copy from experiments/results/top100_all.csv -->
+<!-- Copy from data/results/top100_all.csv -->
 
 ## Analysis
 

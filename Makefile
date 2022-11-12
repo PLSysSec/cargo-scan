@@ -1,7 +1,7 @@
 .PHONY: top10 top100 top1000 top10000 test mozilla small medium large clean
 .DEFAULT: top10
 
-SCAN = python3 experiments/scan.py
+SCAN = python3 scan.py
 
 top10:
 	$(SCAN) -i data/crates-top10.csv -o top10
