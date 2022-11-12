@@ -29,5 +29,11 @@ fn main() {
 
     println!("Policy example: {:?}", policy);
 
-    println!("{}", toml::to_string(&policy).unwrap());
+    let policy_toml = toml::to_string(&policy).unwrap();
+    println!("Policy serialized: {}", policy_toml);
+
+    let policy2: Policy = toml::from_str(&policy_toml).unwrap();
+    println!("Policy deserialized again: {:?}", policy2);
+
+    assert_eq!(policy, policy2);
 }

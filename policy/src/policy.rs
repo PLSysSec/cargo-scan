@@ -9,13 +9,13 @@ use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{self, Display};
 use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Expr(String);
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Args(String);
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Effect {
     EnvRead(Expr),
     EnvWrite(Expr),
@@ -113,7 +113,7 @@ impl Effect {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Region {
     // crate
     Crate(String),
@@ -126,6 +126,7 @@ pub enum Region {
 }
 impl Display for Region {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // TODO: debug assert that strings are alphanumeric, no ::
         match self {
             Self::Crate(cr) => write!(f, "{}", cr),
             Self::Module(cr, md) => write!(f, "{}::{}", cr, md),
@@ -142,6 +143,29 @@ impl Serialize for Region {
         S: Serializer,
     {
         ser.collect_str(self)
+    }
+}
+impl FromStr for Region {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split("::").collect();
+        let reg = match parts.as_slice() {
+            [cr] => Self::whole_crate(cr),
+            [cr, md] => Self::module(cr, md),
+            [cr, md, fun] => Self::function(cr, md, fun),
+            [cr, md, fun, args] => Self::function_call(cr, md, fun, args),
+            _ => return Err("expected at most 3 :: separators in Region"),
+        };
+        Ok(reg)
+    }
+}
+impl<'de> Deserialize<'de> for Region {
+    fn deserialize<D>(des: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        String::deserialize(des)?.parse().map_err(de::Error::custom)
     }
 }
 impl Region {
@@ -169,7 +193,7 @@ impl Region {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Statement {
     Allow { region: Region, effect: Effect },
@@ -189,14 +213,6 @@ impl Display for Statement {
                 write!(f, "trust {}", region)
             }
         }
-    }
-}
-impl<'de> Deserialize<'de> for Statement {
-    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        todo!()
     }
 }
 impl Statement {
@@ -250,7 +266,7 @@ impl Statement {
 }
 
 // TODO: make crate_version and policy_version semver objects
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Policy {
     crate_name: String,
     crate_version: String,
