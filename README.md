@@ -4,17 +4,9 @@ Repository to collect tools and experiments related to the `cargo vet` project.
 
 ## Installation
 
-1. Make sure you have Python 3 and [Rust](https://www.rust-lang.org/tools/install).
+Make sure you have Python 3 and [Rust](https://www.rust-lang.org/tools/install), then run `make install`.
 
-2. Install [cargo-download](https://crates.io/crates/cargo-download) by running `cargo install cargo-download`
-
-3. Install our fork of [MIRAI](https://github.com/facebookexperimental/MIRAI) by running the following:
-```
-git submodule init
-git submodule update
-cd mirai/MIRAI
-cargo install --locked --path ./checker
-```
+This installs [cargo-download](https://crates.io/crates/cargo-download) and our fork of [MIRAI](https://github.com/facebookexperimental/MIRAI).
 
 ## Running an experiment
 

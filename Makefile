@@ -1,7 +1,13 @@
-.PHONY: top10 top100 top1000 top10000 test mozilla small medium large clean
+.PHONY: install top10 top100 top1000 top10000 test mozilla small medium large clean
 .DEFAULT: top10
 
 SCAN = python3 scan.py
+
+install:
+	cargo install cargo-download
+	git submodule init
+	git submodule update
+	cd mirai/MIRAI && cargo install --locked --path ./checker
 
 top10:
 	$(SCAN) -i data/crates-top10.csv -o top10
