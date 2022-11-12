@@ -41,6 +41,14 @@ impl Display for Effect {
         }
     }
 }
+impl Serialize for Effect {
+    fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        ser.collect_str(self)
+    }
+}
 impl Effect {
     pub fn env_read(s: &str) -> Self {
         Self::EnvRead(Expr(s.to_string()))
@@ -92,8 +100,17 @@ impl Display for Region {
         }
     }
 }
+impl Serialize for Region {
+    fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        ser.collect_str(self)
+    }
+}
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
+#[serde(tag = "type")]
 pub enum Statement {
     Allow { region: Region, effect: Effect },
     Require { region: Region, effect: Effect },
@@ -112,35 +129,6 @@ impl Display for Statement {
                 write!(f, "trust {}", region)
             }
         }
-    }
-}
-/// Serialization for the Statement type
-///
-/// Serde is unfortunately rather clunky at serializing enums
-/// with unnamed fields in each enum variant.
-/// E.g., it generates things like
-/// ```
-/// [[statements]]
-/// type = "Allow"
-///
-/// [statements.expr]
-/// region = ["prepare_data", ""]
-///
-/// [statements.expr.effect]
-/// type = "FsWrite"
-/// expr = "my_app.log"
-/// ```
-///
-/// Here we leverage Display to get a more compact representation:
-/// ```
-/// allow prepare_data() FsWrite("my_app.log")
-/// ```
-impl Serialize for Statement {
-    fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        ser.collect_str(self)
     }
 }
 impl<'de> Deserialize<'de> for Statement {
