@@ -144,6 +144,30 @@ impl Serialize for Region {
         ser.collect_str(self)
     }
 }
+impl Region {
+    pub fn whole_crate(cr: &str) -> Self {
+        let cr = cr.to_string();
+        Self::Crate(cr)
+    }
+    pub fn module(cr: &str, md: &str) -> Self {
+        let cr = cr.to_string();
+        let md = md.to_string();
+        Self::Module(cr, md)
+    }
+    pub fn function(cr: &str, md: &str, fun: &str) -> Self {
+        let cr = cr.to_string();
+        let md = md.to_string();
+        let fun = fun.to_string();
+        Self::Function(cr, md, fun)
+    }
+    pub fn function_call(cr: &str, md: &str, fun: &str, args: &str) -> Self {
+        let cr = cr.to_string();
+        let md = md.to_string();
+        let fun = fun.to_string();
+        let args = Args(args.to_string());
+        Self::FunctionCall(cr, md, fun, args)
+    }
+}
 
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
@@ -177,14 +201,11 @@ impl<'de> Deserialize<'de> for Statement {
 }
 impl Statement {
     pub fn allow_crate(cr: &str, effect: Effect) -> Self {
-        let cr = cr.to_string();
-        let region = Region::Crate(cr);
+        let region = Region::whole_crate(cr);
         Self::Allow { region, effect }
     }
     pub fn allow_mod(cr: &str, md: &str, effect: Effect) -> Self {
-        let cr = cr.to_string();
-        let md = md.to_string();
-        let region = Region::Module(cr, md);
+        let region = Region::module(cr, md);
         Self::Allow { region, effect }
     }
     pub fn allow_fn(
@@ -194,11 +215,7 @@ impl Statement {
         args: &str,
         effect: Effect,
     ) -> Self {
-        let cr = cr.to_string();
-        let md = md.to_string();
-        let fun = fun.to_string();
-        let args = Args(args.to_string());
-        let region = Region::FunctionCall(cr, md, fun, args);
+        let region = Region::function_call(cr, md, fun, args);
         Self::Allow { region, effect }
     }
     // Q: do we need these?
@@ -215,29 +232,19 @@ impl Statement {
         args: &str,
         effect: Effect,
     ) -> Self {
-        let cr = cr.to_string();
-        let md = md.to_string();
-        let fun = fun.to_string();
-        let args = Args(args.to_string());
-        let region = Region::FunctionCall(cr, md, fun, args);
+        let region = Region::function_call(cr, md, fun, args);
         Self::Require { region, effect }
     }
     pub fn trust_crate(cr: &str) -> Self {
-        let cr = cr.to_string();
-        let region = Region::Crate(cr);
+        let region = Region::whole_crate(cr);
         Self::Trust { region }
     }
     pub fn trust_mod(cr: &str, md: &str) -> Self {
-        let cr = cr.to_string();
-        let md = md.to_string();
-        let region = Region::Module(cr, md);
+        let region = Region::module(cr, md);
         Self::Trust { region }
     }
     pub fn trust_fn(cr: &str, md: &str, fun: &str) -> Self {
-        let cr = cr.to_string();
-        let md = md.to_string();
-        let fun = fun.to_string();
-        let region = Region::Function(cr, md, fun);
+        let region = Region::function(cr, md, fun);
         Self::Trust { region }
     }
 }
