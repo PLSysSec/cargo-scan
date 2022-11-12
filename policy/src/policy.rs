@@ -55,7 +55,9 @@ impl FromStr for Effect {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (s1, s2) = s.split_once(' ').ok_or("expected space in Effect")?;
         if s1 == "exec" {
-            let (com, args) = s2.split_once(' ').ok_or("expected space after exec command name")?;
+            let (com, args) = s2
+                .split_once(' ')
+                .ok_or("expected space after exec command name")?;
             let com = Expr(com.to_string());
             let args = Expr(args.to_string());
             return Ok(Self::Exec(com, args));
@@ -113,18 +115,24 @@ impl Effect {
 
 #[derive(Debug)]
 pub enum Region {
+    // crate
     Crate(String),
-    Module(String),
-    Function(String, Args),
-    FunctionAll(String),
+    // crate::mod
+    Module(String, String),
+    // crate::mod::fun
+    Function(String, String, String),
+    // crate::mod::fun::args
+    FunctionCall(String, String, String, Args),
 }
 impl Display for Region {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Crate(s) => write!(f, "{}", s),
-            Self::Module(s) => write!(f, "::{}", s),
-            Self::Function(s, a) => write!(f, "::{}({})", s, a.0),
-            Self::FunctionAll(s) => write!(f, "::{}()", s),
+            Self::Crate(cr) => write!(f, "{}", cr),
+            Self::Module(cr, md) => write!(f, "{}::{}", cr, md),
+            Self::Function(cr, md, fun) => write!(f, "{}::{}::{}", cr, md, fun),
+            Self::FunctionCall(cr, md, fun, args) => {
+                write!(f, "{}::{}::{}::{}", cr, md, fun, args.0)
+            }
         }
     }
 }
@@ -168,18 +176,29 @@ impl<'de> Deserialize<'de> for Statement {
     }
 }
 impl Statement {
-    pub fn allow_crate(name: &str, effect: Effect) -> Self {
-        let region = Region::Crate(name.to_string());
+    pub fn allow_crate(cr: &str, effect: Effect) -> Self {
+        let cr = cr.to_string();
+        let region = Region::Crate(cr);
         Self::Allow { region, effect }
     }
-    pub fn allow_mod(name: &str, effect: Effect) -> Self {
-        let region = Region::Module(name.to_string());
+    pub fn allow_mod(cr: &str, md: &str, effect: Effect) -> Self {
+        let cr = cr.to_string();
+        let md = md.to_string();
+        let region = Region::Module(cr, md);
         Self::Allow { region, effect }
     }
-    pub fn allow_fn(name: &str, args: &str, effect: Effect) -> Self {
-        let name = name.to_string();
-        let args = args.to_string();
-        let region = Region::Function(name, Args(args));
+    pub fn allow_fn(
+        cr: &str,
+        md: &str,
+        fun: &str,
+        args: &str,
+        effect: Effect,
+    ) -> Self {
+        let cr = cr.to_string();
+        let md = md.to_string();
+        let fun = fun.to_string();
+        let args = Args(args.to_string());
+        let region = Region::FunctionCall(cr, md, fun, args);
         Self::Allow { region, effect }
     }
     // Q: do we need these?
@@ -189,22 +208,36 @@ impl Statement {
     // pub fn require_mod(name: &str, effect: Effect) -> Self {
     //     Self::Require(Region::Module(name.to_string()), effect)
     // }
-    pub fn require_fn(name: &str, args: &str, effect: Effect) -> Self {
-        let name = name.to_string();
-        let args = args.to_string();
-        let region = Region::Function(name, Args(args));
+    pub fn require_fn(
+        cr: &str,
+        md: &str,
+        fun: &str,
+        args: &str,
+        effect: Effect,
+    ) -> Self {
+        let cr = cr.to_string();
+        let md = md.to_string();
+        let fun = fun.to_string();
+        let args = Args(args.to_string());
+        let region = Region::FunctionCall(cr, md, fun, args);
         Self::Require { region, effect }
     }
-    pub fn trust_crate(name: &str) -> Self {
-        let region = Region::Crate(name.to_string());
+    pub fn trust_crate(cr: &str) -> Self {
+        let cr = cr.to_string();
+        let region = Region::Crate(cr);
         Self::Trust { region }
     }
-    pub fn trust_mod(name: &str) -> Self {
-        let region = Region::Module(name.to_string());
+    pub fn trust_mod(cr: &str, md: &str) -> Self {
+        let cr = cr.to_string();
+        let md = md.to_string();
+        let region = Region::Module(cr, md);
         Self::Trust { region }
     }
-    pub fn trust_fn(name: &str) -> Self {
-        let region = Region::FunctionAll(name.to_string());
+    pub fn trust_fn(cr: &str, md: &str, fun: &str) -> Self {
+        let cr = cr.to_string();
+        let md = md.to_string();
+        let fun = fun.to_string();
+        let region = Region::Function(cr, md, fun);
         Self::Trust { region }
     }
 }
@@ -223,34 +256,48 @@ impl Policy {
         crate_version: &str,
         policy_version: &str,
     ) -> Self {
-        let crate_name = crate_name.to_owned();
-        let crate_version = crate_version.to_owned();
-        let policy_version = policy_version.to_owned();
+        let crate_name = crate_name.to_string();
+        let crate_version = crate_version.to_string();
+        let policy_version = policy_version.to_string();
         let statements = Vec::new();
         Policy { crate_name, crate_version, policy_version, statements }
     }
     pub fn add_statement(&mut self, s: Statement) {
         self.statements.push(s);
     }
-    pub fn allow_crate(&mut self, name: &str, eff: Effect) {
-        self.add_statement(Statement::allow_crate(name, eff))
+    pub fn allow_crate(&mut self, cr: &str, eff: Effect) {
+        self.add_statement(Statement::allow_crate(cr, eff))
     }
-    pub fn allow_mod(&mut self, name: &str, eff: Effect) {
-        self.add_statement(Statement::allow_mod(name, eff))
+    pub fn allow_mod(&mut self, cr: &str, md: &str, eff: Effect) {
+        self.add_statement(Statement::allow_mod(cr, md, eff))
     }
-    pub fn allow_fn(&mut self, name: &str, args: &str, eff: Effect) {
-        self.add_statement(Statement::allow_fn(name, args, eff))
+    pub fn allow_fn(
+        &mut self,
+        cr: &str,
+        md: &str,
+        fun: &str,
+        args: &str,
+        eff: Effect,
+    ) {
+        self.add_statement(Statement::allow_fn(cr, md, fun, args, eff))
     }
-    pub fn require_fn(&mut self, name: &str, args: &str, eff: Effect) {
-        self.add_statement(Statement::require_fn(name, args, eff))
+    pub fn require_fn(
+        &mut self,
+        cr: &str,
+        md: &str,
+        fun: &str,
+        args: &str,
+        eff: Effect,
+    ) {
+        self.add_statement(Statement::require_fn(cr, md, fun, args, eff))
     }
-    pub fn trust_crate(&mut self, name: &str) {
-        self.add_statement(Statement::trust_crate(name))
+    pub fn trust_crate(&mut self, cr: &str) {
+        self.add_statement(Statement::trust_crate(cr))
     }
-    pub fn trust_mod(&mut self, name: &str) {
-        self.add_statement(Statement::trust_mod(name))
+    pub fn trust_mod(&mut self, cr: &str, md: &str) {
+        self.add_statement(Statement::trust_mod(cr, md))
     }
-    pub fn trust_fn(&mut self, name: &str) {
-        self.add_statement(Statement::trust_fn(name))
+    pub fn trust_fn(&mut self, cr: &str, md: &str, fun: &str) {
+        self.add_statement(Statement::trust_fn(cr, md, fun))
     }
 }
