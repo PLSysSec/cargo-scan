@@ -17,9 +17,8 @@ from functools import partial, partialmethod
 PROGRESS_INCS = 5
 
 CRATES_DIR = "data/packages"
-CRATES_SRC_DIR = "src"
-TEST_CRATES_CSV = "data/test-crates.csv"
 TEST_CRATES_DIR = "data/test-packages"
+RUST_SRC = "src"
 
 # Potentially dangerous stdlib imports.
 OF_INTEREST_STD = [
@@ -115,35 +114,43 @@ def save_results(results, results_prefix):
 def sort_summary_dict(d):
     return sorted(d.items(), key=lambda x: x[1], reverse=True)
 
+def make_summary(crate_summary, pattern_summary):
+    # Sanity check
+    assert sum(crate_summary.values()) == sum(pattern_summary.values())
+
+    result = ""
+    result += "===== Patterns =====\n"
+    result += "Total instances of each import pattern:\n"
+    pattern_sorted = sort_summary_dict(pattern_summary)
+    for p, n in pattern_sorted:
+        result += f"{p}: {n}\n"
+
+    result += "===== Crate Summary =====\n"
+    result += "Number of dangerous imports by crate:\n"
+    crate_sorted = sort_summary_dict(crate_summary)
+    num_nonzero = 0
+    num_zero = 0
+    for c, n in crate_sorted:
+        if n > 0:
+            num_nonzero += 1
+            result += f"{c}: {n}\n"
+        else:
+            num_zero += 1
+    result += "===== Crate Totals =====\n"
+    result += f"{num_nonzero} crates with 1 or more dangerous imports\n"
+    result += f"{num_zero} crates with 0 dangerous imports\n"
+
+    return result
+
 def save_summary(crate_summary, pattern_summary, results_prefix):
     results_file = f"{results_prefix}_{RESULTS_SUMMARY_SUFFIX}"
     results_path = os.path.join(RESULTS_DIR, results_file)
 
-    # Sanity check
-    assert sum(crate_summary.values()) == sum(pattern_summary.values())
+    summary = make_summary(crate_summary, pattern_summary)
 
     logging.info(f"Saving summary to {results_path}")
     with open(results_path, 'w') as fh:
-        fh.write("===== Patterns =====\n")
-        fh.write("Total instances of each import pattern:\n")
-        pattern_sorted = sort_summary_dict(pattern_summary)
-        for p, n in pattern_sorted:
-            fh.write(f"{p}: {n}\n")
-
-        fh.write("===== Crate Summary =====\n")
-        fh.write("Number of dangerous imports by crate:\n")
-        crate_sorted = sort_summary_dict(crate_summary)
-        num_nonzero = 0
-        num_zero = 0
-        for c, n in crate_sorted:
-            if n > 0:
-                num_nonzero += 1
-                fh.write(f"{c}: {n}\n")
-            else:
-                num_zero += 1
-        fh.write("===== Crate Totals =====\n")
-        fh.write(f"{num_nonzero} crates with 1 or more dangerous imports\n")
-        fh.write(f"{num_zero} crates with 0 dangerous imports\n")
+        fh.write(summary)
 
 def is_of_interest(line, of_interest):
     found = None
@@ -281,7 +288,7 @@ def scan_file(crate, root, file, of_interest):
 
 def scan_crate(crate, crate_dir, of_interest):
     logging.debug(f"Scanning crate: {crate}")
-    src = os.path.join(crate_dir, crate, CRATES_SRC_DIR)
+    src = os.path.join(crate_dir, crate, RUST_SRC)
     for root, dirs, files in os.walk(src):
         # Hack to make os.walk work in alphabetical order
         # https://stackoverflow.com/questions/6670029/can-i-force-os-walk-to-visit-directories-in-alphabetical-order
@@ -300,7 +307,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--test', action="store_true", help="Test run on dummy packages")
     parser.add_argument('-i', '--infile', required=True, help="Input crates list CSV file (ignored for a test run)")
-    parser.add_argument('-o', '--outprefix', required=True, help="Output file prefix for results (ignored for a test run)")
+    parser.add_argument('-o', '--outprefix', help="Output file prefix for results (ignored for a test run)")
     parser.add_argument('-s', '--std', action="store_true", help="Flag standard library imports only")
     parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
 
@@ -311,19 +318,20 @@ if __name__ == "__main__":
     logging.debug(args)
 
     test_run = args["test"]
+    crates_csv = args["infile"]
+    results_prefix = args["outprefix"]
 
     if test_run:
-        logging.info("===== Test run =====")
-        crates_csv = TEST_CRATES_CSV
+        logging.info("=== Test run ===")
         crates_dir = TEST_CRATES_DIR
-        results_prefix = "test"
     else:
-        crates_csv = args["infile"]
         crates_dir = CRATES_DIR
-        results_prefix = args["outprefix"]
 
     num_crates = count_lines(crates_csv)
-    logging.info(f"===== Scanning {num_crates} crates from {crates_csv} in {crates_dir} =====")
+    logging.info(f"=== Scanning {num_crates} crates from {crates_csv} in {crates_dir} ===")
+
+    if results_prefix is None and num_crates > 1:
+        logging.warning("No results prefix specified; results of this run will not be saved")
 
     crates = get_crate_names(crates_csv)
 
@@ -349,7 +357,10 @@ if __name__ == "__main__":
             crate_summary[crate] += 1
             pattern_summary[pat] += 1
 
-    logging.info(f"===== Results =====")
-    # TODO: display results, don't just save them
-    save_results(results, results_prefix)
-    save_summary(crate_summary, pattern_summary, results_prefix)
+    logging.info(f"=== Results ===")
+    if results_prefix is None:
+        summary = make_summary(crate_summary, pattern_summary)
+        logging.info(summary)
+    else:
+        save_results(results, results_prefix)
+        save_summary(crate_summary, pattern_summary, results_prefix)
