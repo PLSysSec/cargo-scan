@@ -20,9 +20,9 @@ To scan a crate, using MIRAI to locate dangerous functions in the call graph (th
 python3 scan.py -c <crate name> -m
 ```
 
-Both of the above will download the requested crate to `data/packages`. To instead scan a test crate in `data/test-packages`, use `-t`, e.g.
+Both of the above will download the requested crate to `data/packages`. To instead scan a test crate in `data/test-packages`:
 ```
-python3 scan.py -c permissions-ex -t
+python3 scan.py -c <crate name> -t
 ```
 
 You can play around with this by adding your own example Rust crates in `data/test-packages`.
