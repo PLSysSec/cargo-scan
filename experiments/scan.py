@@ -308,45 +308,41 @@ if __name__ == "__main__":
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-c', '--crate', help="Crate name to scan")
     group.add_argument('-i', '--infile', help="Instead of scanning a single crate, provide a list of crates as a CSV file")
-    parser.add_argument('-t', '--test', action="store_true", help=f"Test run: use existing crates in {TEST_CRATES_DIR} instead of downloading via cargo-download")
-    parser.add_argument('-o', '--outprefix', help="Output file prefix to save results")
+    parser.add_argument('-t', '--test-run', action="store_true", help=f"Test run: use existing crates in {TEST_CRATES_DIR} instead of downloading via cargo-download")
+    parser.add_argument('-o', '--output-prefix', help="Output file prefix to save results")
     parser.add_argument('-s', '--std', action="store_true", help="Flag standard library imports only")
     parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
 
-    args = vars(parser.parse_args())
+    args = parser.parse_args()
 
-    log_level = [logging.INFO, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG, logging.TRACE][args["verbose"]]
+    log_level = [logging.INFO, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG, logging.TRACE][args.verbose]
     logging.basicConfig(level=log_level)
     logging.debug(args)
 
-    test_run = args["test"]
-    if test_run:
+    if args.test_run:
         logging.info("=== Test run ===")
         crates_dir = TEST_CRATES_DIR
     else:
         crates_dir = CRATES_DIR
 
-    crates_csv = args["infile"]
-    if crates_csv is None:
+    if args.infile is None:
         num_crates = 1
-        crate = args["crate"]
-        crates = [crate]
-        crates_infostr = f"{crate}"
+        crates = [args.crate]
+        crates_infostr = f"{args.crate}"
     else:
-        num_crates = count_lines(crates_csv)
-        crates = get_crate_names(crates_csv)
-        crates_infostr = f"{num_crates} crates from {crates_csv}"
+        num_crates = count_lines(args.infile)
+        crates = get_crate_names(args.infile)
+        crates_infostr = f"{num_crates} crates from {args.infile}"
 
-    results_prefix = args["outprefix"]
-    if results_prefix is None and num_crates > 1:
+    if args.output_prefix is None and num_crates > 1:
         logging.warning("No results prefix specified; results of this run will not be saved")
-
-    logging.info(f"=== Scanning {crates_infostr} in {crates_dir} ===")
 
     progress_inc = num_crates // PROGRESS_INCS
     of_interest = OF_INTEREST_STD
-    if not args["std"]:
+    if not args.std:
         of_interest += OF_INTEREST_OTHER
+
+    logging.info(f"=== Scanning {crates_infostr} in {crates_dir} ===")
 
     results = []
     crate_summary = {c: 0 for c in crates}
@@ -357,7 +353,7 @@ if __name__ == "__main__":
             progress = 100 * i // num_crates
             logging.info(f"{progress}% complete")
 
-        download_crate(crates_dir, crate, test_run)
+        download_crate(crates_dir, crate, args.test_run)
 
         for pat, result in scan_crate(crate, crates_dir, of_interest):
             results.append(result)
@@ -365,7 +361,7 @@ if __name__ == "__main__":
             crate_summary[crate] += 1
             pattern_summary[pat] += 1
 
-    if results_prefix is None:
+    if args.output_prefix is None:
         results_str = "=== Results ===\n"
         if num_crates == 1:
             for result in results:
@@ -375,5 +371,5 @@ if __name__ == "__main__":
         logging.info(results_str)
     else:
         logging.info(f"=== Saving results ===")
-        save_results(results, results_prefix)
-        save_summary(crate_summary, pattern_summary, results_prefix)
+        save_results(results, args.output_prefix)
+        save_summary(crate_summary, pattern_summary, args.output_prefix)
