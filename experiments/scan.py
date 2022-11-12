@@ -16,11 +16,9 @@ from functools import partial, partialmethod
 # Number of progress tracking messages to display
 PROGRESS_INCS = 5
 
-TOP_CRATES_CSV = "data/crates.csv"
-TEST_CRATES_CSV = "data/test-crates.csv"
-
 CRATES_DIR = "data/packages"
 CRATES_SRC_DIR = "src"
+TEST_CRATES_CSV = "data/test-crates.csv"
 TEST_CRATES_DIR = "data/test-packages"
 
 # Potentially dangerous stdlib imports.
@@ -84,19 +82,15 @@ def count_lines(cratefile, header_row=True):
             result -= 1
         return result
 
-def get_top_crates(cratefile, n):
+def get_crate_names(cratefile):
+    crates = []
     with open(cratefile, newline='') as infile:
         in_reader = csv.reader(infile, delimiter=',')
-        crates = []
         for i, row in enumerate(in_reader):
             if i > 0:
-                logging.trace(f"Top crate: {row[0]} ({','.join(row[1:])})")
+                logging.trace(f"Input crate: {row[0]} ({','.join(row[1:])})")
                 crates.append(row[0])
-            if i == n:
-                assert len(crates) == n
-                return crates
-    logging.error(f"Not enough crates. Asked for {n}, found {len(crates)}")
-    sys.exit(1)
+    return crates
 
 def download_crate(crates_dir, crate, test_run):
     target = os.path.join(crates_dir, crate)
@@ -304,10 +298,9 @@ def scan_crate(crate, crate_dir, of_interest):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('num_crates', help="Number of crates in the input file to analyze (or 'all' for all crates)")
     parser.add_argument('-t', '--test', action="store_true", help="Test run on dummy packages")
-    parser.add_argument('-i', '--infile', help="Input crates list CSV file (should be used together with -o) (ignored for a test run)", default=TOP_CRATES_CSV)
-    parser.add_argument('-o', '--outprefix', help="Output file prefix for results (ignored for a test run)", default="top")
+    parser.add_argument('-i', '--infile', required=True, help="Input crates list CSV file (ignored for a test run)")
+    parser.add_argument('-o', '--outprefix', required=True, help="Output file prefix for results (ignored for a test run)")
     parser.add_argument('-s', '--std', action="store_true", help="Flag standard library imports only")
     parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
 
@@ -318,7 +311,6 @@ if __name__ == "__main__":
     logging.debug(args)
 
     test_run = args["test"]
-    num_crates = args["num_crates"]
 
     if test_run:
         logging.info("===== Test run =====")
@@ -330,15 +322,10 @@ if __name__ == "__main__":
         crates_dir = CRATES_DIR
         results_prefix = args["outprefix"]
 
+    num_crates = count_lines(crates_csv)
     logging.info(f"===== Scanning {num_crates} crates from {crates_csv} in {crates_dir} =====")
 
-    if num_crates == "all":
-        num_crates = count_lines(crates_csv)
-    else:
-        results_prefix += num_crates
-        num_crates = int(num_crates)
-
-    crates = get_top_crates(crates_csv, num_crates)
+    crates = get_crate_names(crates_csv)
 
     progress_inc = num_crates // PROGRESS_INCS
     of_interest = OF_INTEREST_STD

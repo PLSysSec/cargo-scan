@@ -1,0 +1,11 @@
+name,downloads,description,created_at,updated_at,documentation,homepage,repository,id
+rand,149414055,Random number generators and other randomness functionality. ,2015-02-03 06:17:14.147783,2022-02-14 08:37:47.035988,https://docs.rs/rand,https://rust-random.github.io/book,https://github.com/rust-random/rand,1339
+syn,147892895,Parser for Rust source code,2016-09-07 15:22:40.491981,2022-09-19 00:19:02.780119,https://docs.rs/syn,,https://github.com/dtolnay/syn,6274
+rand_core,140061304,Core random number generator traits and tools for implementation. ,2017-09-14 12:02:18.709038,2022-09-15 13:23:44.54823,https://docs.rs/rand_core,https://rust-random.github.io/book,https://github.com/rust-random/rand,31712
+libc,136878114,Raw FFI bindings to platform libraries like libc. ,2015-01-15 20:22:13.100871,2022-09-19 13:11:59.928487,https://docs.rs/libc/,https://github.com/rust-lang/libc,https://github.com/rust-lang/libc,795
+cfg-if,136152102,A macro to ergonomically define an item depending on a large number of #[cfg] parameters. Structu...,2015-07-08 01:11:24.48504,2020-10-06 18:44:12.67862,https://docs.rs/cfg-if,https://github.com/alexcrichton/cfg-if,https://github.com/alexcrichton/cfg-if,2556
+quote,136041556,Quasi-quoting macro quote!(...),2016-09-03 05:42:05.484129,2022-08-03 03:58:22.276607,https://docs.rs/quote/,,https://github.com/dtolnay/quote,6224
+proc-macro2,132493175,A substitute implementation of the compiler's `proc_macro` API to decouple token-based libraries ...,2017-07-06 01:01:58.064887,2022-09-24 22:10:15.041239,https://docs.rs/proc-macro2,,https://github.com/dtolnay/proc-macro2,22124
+unicode-xid,118054758,Determine whether characters have the XID_Start or XID_Continue properties according to Unicode S...,2015-04-27 01:12:08.811826,2022-09-15 17:14:52.826034,https://unicode-rs.github.io/unicode-xid,https://github.com/unicode-rs/unicode-xid,https://github.com/unicode-rs/unicode-xid,1964
+serde,114737968,A generic serialization/deserialization framework,2014-12-05 20:20:39.487502,2022-09-22 17:50:37.433846,https://docs.serde.rs/serde/,https://serde.rs,https://github.com/serde-rs/serde,463
+autocfg,110901553,Automatic cfg for Rust compiler features,2018-05-30 18:21:35.379916,2022-02-07 23:33:24.468119,,,https://github.com/cuviper/autocfg,67825
