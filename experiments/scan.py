@@ -20,6 +20,10 @@ CRATES_DIR = "data/packages"
 TEST_CRATES_DIR = "data/test-packages"
 RUST_SRC = "src"
 
+MIRAI_CONFIG = "mirai/config.json"
+MIRAI_FLAGS_KEY = "MIRAI_FLAGS"
+MIRAI_FLAGS_VAL = f"--call_graph_config ../../../{MIRAI_CONFIG}"
+
 # Potentially dangerous stdlib imports.
 OF_INTEREST_STD = [
     "std::env",
@@ -300,6 +304,19 @@ def scan_crate(crate, crate_dir, of_interest):
             if os.path.splitext(file)[1] == ".rs":
                 yield from scan_file(crate, root, file, of_interest)
 
+def scan_crate_mirai(crate, crate_dir, _of_interest):
+    # TBD: use the of_interest argument
+
+    crate = os.path.join(crate_dir, crate)
+    os.environ[MIRAI_FLAGS_KEY] = MIRAI_FLAGS_VAL
+
+    # Run our MIRAI fork
+    subprocess.run(["cargo", "clean"], cwd=crate)
+    subprocess.run(["cargo", "mirai"], cwd=crate, stderr=subprocess.DEVNULL)
+
+    # TBD: return useful information
+    yield from []
+
 # ===== Entrypoint =====
 
 if __name__ == "__main__":
@@ -310,6 +327,7 @@ if __name__ == "__main__":
     group.add_argument('-i', '--infile', help="Instead of scanning a single crate, provide a list of crates as a CSV file")
     parser.add_argument('-t', '--test-run', action="store_true", help=f"Test run: use existing crates in {TEST_CRATES_DIR} instead of downloading via cargo-download")
     parser.add_argument('-o', '--output-prefix', help="Output file prefix to save results")
+    parser.add_argument('-m', '--mirai', action="store_true", help="Use MIRAI to scan packages instead of pattern matching")
     parser.add_argument('-s', '--std', action="store_true", help="Flag standard library imports only")
     parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
 
@@ -342,6 +360,11 @@ if __name__ == "__main__":
     if not args.std:
         of_interest += OF_INTEREST_OTHER
 
+    if args.mirai:
+        scan_fun = scan_crate_mirai
+    else:
+        scan_fun = scan_crate
+
     logging.info(f"=== Scanning {crates_infostr} in {crates_dir} ===")
 
     results = []
@@ -355,13 +378,16 @@ if __name__ == "__main__":
 
         download_crate(crates_dir, crate, args.test_run)
 
-        for pat, result in scan_crate(crate, crates_dir, of_interest):
+        for pat, result in scan_fun(crate, crates_dir, of_interest):
             results.append(result)
             # Update summaries
             crate_summary[crate] += 1
             pattern_summary[pat] += 1
 
-    if args.output_prefix is None:
+    if args.mirai:
+        # TBD
+        pass
+    elif args.output_prefix is None:
         results_str = "=== Results ===\n"
         if num_crates == 1:
             for result in results:
