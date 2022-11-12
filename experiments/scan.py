@@ -305,9 +305,11 @@ def scan_crate(crate, crate_dir, of_interest):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--test', action="store_true", help="Test run on dummy packages")
-    parser.add_argument('-i', '--infile', required=True, help="Input crates list CSV file (ignored for a test run)")
-    parser.add_argument('-o', '--outprefix', help="Output file prefix for results (ignored for a test run)")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-c', '--crate', help="Crate name to scan")
+    group.add_argument('-i', '--infile', help="Instead of scanning a single crate, provide a list of crates as a CSV file")
+    parser.add_argument('-t', '--test', action="store_true", help=f"Test run: use existing crates in {TEST_CRATES_DIR} instead of downloading via cargo-download")
+    parser.add_argument('-o', '--outprefix', help="Output file prefix to save results")
     parser.add_argument('-s', '--std', action="store_true", help="Flag standard library imports only")
     parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
 
@@ -318,22 +320,28 @@ if __name__ == "__main__":
     logging.debug(args)
 
     test_run = args["test"]
-    crates_csv = args["infile"]
-    results_prefix = args["outprefix"]
-
     if test_run:
         logging.info("=== Test run ===")
         crates_dir = TEST_CRATES_DIR
     else:
         crates_dir = CRATES_DIR
 
-    num_crates = count_lines(crates_csv)
-    logging.info(f"=== Scanning {num_crates} crates from {crates_csv} in {crates_dir} ===")
+    crates_csv = args["infile"]
+    if crates_csv is None:
+        num_crates = 1
+        crate = args["crate"]
+        crates = [crate]
+        crates_infostr = f"{crate}"
+    else:
+        num_crates = count_lines(crates_csv)
+        crates = get_crate_names(crates_csv)
+        crates_infostr = f"{num_crates} crates from {crates_csv}"
 
+    results_prefix = args["outprefix"]
     if results_prefix is None and num_crates > 1:
         logging.warning("No results prefix specified; results of this run will not be saved")
 
-    crates = get_crate_names(crates_csv)
+    logging.info(f"=== Scanning {crates_infostr} in {crates_dir} ===")
 
     progress_inc = num_crates // PROGRESS_INCS
     of_interest = OF_INTEREST_STD
@@ -357,10 +365,15 @@ if __name__ == "__main__":
             crate_summary[crate] += 1
             pattern_summary[pat] += 1
 
-    logging.info(f"=== Results ===")
     if results_prefix is None:
-        summary = make_summary(crate_summary, pattern_summary)
-        logging.info(summary)
+        results_str = "=== Results ===\n"
+        if num_crates == 1:
+            for result in results:
+                results_str += result
+                results_str += '\n'
+        results_str += make_summary(crate_summary, pattern_summary)
+        logging.info(results_str)
     else:
+        logging.info(f"=== Saving results ===")
         save_results(results, results_prefix)
         save_summary(crate_summary, pattern_summary, results_prefix)
