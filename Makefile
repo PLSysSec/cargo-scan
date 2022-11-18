@@ -1,5 +1,5 @@
 .PHONY: install top10 top100 top1000 top10000 test mozilla small medium large clean
-.DEFAULT: top10
+.DEFAULT_GOAL := top10
 
 SCAN = python3 scan.py
 
