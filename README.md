@@ -15,7 +15,7 @@ Installation has currently been tested on Mac OS (Monterey) and Linux (Arch Linu
 
 If you want to use the `-g` option, you also need to install [graphviz](https://graphviz.org/download/): on Mac, `brew install graphviz`.
 
-## Running an experiment
+## Running a scan
 
 To scan a crate, looking for dangerous import patterns:
 ```
@@ -34,4 +34,4 @@ python3 scan.py -c <crate name> -t
 
 You can play around with this by adding your own example Rust crates in `data/test-packages`.
 
-For additional options, run `python3 scan.py -h` or run one of the pre-defined experiments in `Makefile`.
+For additional options, run `python3 scan.py -h` or run one of the pre-defined experiments that can be found in `Makefile`.
