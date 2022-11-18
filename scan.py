@@ -330,7 +330,7 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--test-run', action="store_true", help=f"Test run: use existing crates in {TEST_CRATES_DIR} instead of downloading via cargo-download")
     parser.add_argument('-o', '--output-prefix', help="Output file prefix to save results")
     parser.add_argument('-m', '--mirai', action="store_true", help="Use MIRAI to scan packages instead of pattern matching")
-    parser.add_argument('-g', '--call-graph', action="store_true", help="View the call graph as a .png (requires graphviz to be installed)")
+    parser.add_argument('-g', '--call-graph', action="store_true", help="View the call graph as a .png (only works with -m; requires graphviz to be installed)")
     parser.add_argument('-s', '--std', action="store_true", help="Flag standard library imports only")
     parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
 
@@ -339,6 +339,9 @@ if __name__ == "__main__":
     log_level = [logging.INFO, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG, logging.TRACE][args.verbose]
     logging.basicConfig(level=log_level)
     logging.debug(args)
+
+    if args.call_graph and not args.mirai:
+        logging.warning("-g/--call-graph option ignored without -m/--mirai")
 
     if args.test_run:
         logging.info("=== Test run ===")
@@ -392,13 +395,12 @@ if __name__ == "__main__":
             crate_summary[crate] += 1
             pattern_summary[pat] += 1
 
-    if args.call_graph:
-        logging.info("=== Generating call graph as a PNG ===")
-        view_callgraph_mirai(crate_dir)
 
     if args.mirai:
-        # TBD
-        pass
+        if args.call_graph:
+            logging.info("=== Generating call graph as a PNG ===")
+            view_callgraph_mirai(crate_dir)
+        # TBD: print other results
     elif args.output_prefix is None:
         results_str = "=== Results ===\n"
         if num_crates == 1:
