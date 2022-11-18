@@ -290,9 +290,9 @@ def scan_file(crate, root, file, of_interest):
                 # Scan use expression
                 yield from scan_use(crate, root, file, m[2], of_interest)
 
-def scan_crate(crate, crate_dir, of_interest):
+def scan_crate(crate_dir, of_interest):
     logging.debug(f"Scanning crate: {crate}")
-    src = os.path.join(crate_dir, crate, RUST_SRC)
+    src = os.path.join(crate_dir, RUST_SRC)
     for root, dirs, files in os.walk(src):
         # Hack to make os.walk work in alphabetical order
         # https://stackoverflow.com/questions/6670029/can-i-force-os-walk-to-visit-directories-in-alphabetical-order
@@ -304,18 +304,20 @@ def scan_crate(crate, crate_dir, of_interest):
             if os.path.splitext(file)[1] == ".rs":
                 yield from scan_file(crate, root, file, of_interest)
 
-def scan_crate_mirai(crate, crate_dir, _of_interest):
+def scan_crate_mirai(crate_dir, _of_interest):
     # TBD: use the of_interest argument
 
-    crate = os.path.join(crate_dir, crate)
-    os.environ[MIRAI_FLAGS_KEY] = MIRAI_FLAGS_VAL
-
     # Run our MIRAI fork
-    subprocess.run(["cargo", "clean"], cwd=crate, check=True)
-    subprocess.run(["cargo", "mirai"], cwd=crate, stderr=subprocess.DEVNULL, check=True)
+    os.environ[MIRAI_FLAGS_KEY] = MIRAI_FLAGS_VAL
+    subprocess.run(["cargo", "clean"], cwd=crate_dir, check=True)
+    subprocess.run(["cargo", "mirai"], cwd=crate_dir, stderr=subprocess.DEVNULL, check=True)
 
     # TBD: return useful information
     yield from []
+
+def view_callgraph_mirai(crate_dir):
+    subprocess.run(["dot", "-Tpng", "graph.dot", "-o", "graph.png"], cwd=crate_dir, check=True)
+    subprocess.run(["open", "graph.png"], cwd=crate_dir, check=True)
 
 # ===== Entrypoint =====
 
@@ -328,6 +330,7 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--test-run', action="store_true", help=f"Test run: use existing crates in {TEST_CRATES_DIR} instead of downloading via cargo-download")
     parser.add_argument('-o', '--output-prefix', help="Output file prefix to save results")
     parser.add_argument('-m', '--mirai', action="store_true", help="Use MIRAI to scan packages instead of pattern matching")
+    parser.add_argument('-g', '--call-graph', action="store_true", help="View the call graph as a .png (requires graphviz to be installed)")
     parser.add_argument('-s', '--std', action="store_true", help="Flag standard library imports only")
     parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
 
@@ -382,11 +385,16 @@ if __name__ == "__main__":
             logging.error(f"cargo-download failed for crate: {crate} ({e})")
             sys.exit(1)
 
-        for pat, result in scan_fun(crate, crates_dir, of_interest):
+        crate_dir = os.path.join(crates_dir, crate)
+        for pat, result in scan_fun(crate_dir, of_interest):
             results.append(result)
             # Update summaries
             crate_summary[crate] += 1
             pattern_summary[pat] += 1
+
+    if args.call_graph:
+        logging.info("=== Generating call graph as a PNG ===")
+        view_callgraph_mirai(crate_dir)
 
     if args.mirai:
         # TBD

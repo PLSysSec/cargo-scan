@@ -7,6 +7,9 @@ Repository to collect tools and experiments related to the `cargo vet` project.
 Make sure you have Python 3 and [Rust](https://www.rust-lang.org/tools/install), then run `make install`.
 
 This installs [cargo-download](https://crates.io/crates/cargo-download) and our fork of [MIRAI](https://github.com/facebookexperimental/MIRAI).
+Installation has currently been tested on Mac OS (Monterey) and Linux (Arch Linux).
+
+If you want to use the `-g` feature, you also need to install [graphviz](https://graphviz.org/download/): on Mac, `brew install graphviz`.
 
 ## Running an experiment
 
