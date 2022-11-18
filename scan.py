@@ -402,7 +402,6 @@ if __name__ == "__main__":
             crate_summary[crate] += 1
             pattern_summary[pat] += 1
 
-
     if args.mirai:
         if args.call_graph:
             logging.info("=== Generating call graph as a PNG ===")
