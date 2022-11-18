@@ -1,4 +1,6 @@
 """
+Cargo Scan
+
 Script to download Cargo crate source code and analyze module-level imports.
 """
 

@@ -1,6 +1,11 @@
-# Cargo Vet Experiments
+# Cargo Scan
 
-Repository to collect tools and experiments related to the `cargo vet` project.
+`cargo scan` is an experimental tool to scan and analyze Cargo (Rust) dependencies for security and auditing purposes.
+It can also be used in tandem with [cargo vet](https://mozilla.github.io/cargo-vet/).
+
+This tool is under heavy development and is likely to be updated frequently.
+It is currently implemented as a top-level Python wrapper (`scan.py`), but this may change later.
+This repository also collects related experiments and experimental data.
 
 ## Installation
 
@@ -9,7 +14,7 @@ Make sure you have Python 3 and [Rust](https://www.rust-lang.org/tools/install),
 This installs [cargo-download](https://crates.io/crates/cargo-download) and our fork of [MIRAI](https://github.com/facebookexperimental/MIRAI).
 Installation has currently been tested on Mac OS (Monterey) and Linux (Arch Linux).
 
-If you want to use the `-g` feature, you also need to install [graphviz](https://graphviz.org/download/): on Mac, `brew install graphviz`.
+If you want to use the `-g` option, you also need to install [graphviz](https://graphviz.org/download/): on Mac, `brew install graphviz`.
 
 ## Running an experiment
 
