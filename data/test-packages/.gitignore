@@ -1,2 +1,7 @@
 target/
 Cargo.lock
+call_sites.json
+graph.dat
+graph.dot
+graph.png
+types.json

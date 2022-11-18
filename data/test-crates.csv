@@ -2,3 +2,5 @@ name
 dummy
 permissions-ex
 toy-crates
+num_cpus_minimal
+libc-ex
