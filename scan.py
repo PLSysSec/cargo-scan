@@ -66,6 +66,11 @@ logging.addLevelName(logging.TRACE, 'TRACE')
 logging.Logger.trace = partialmethod(logging.Logger.log, logging.TRACE)
 logging.trace = partial(logging.log, logging.TRACE)
 
+# Color logging output
+logging.addLevelName(logging.INFO, "\033[0;31m%s\033[0;0m" % "INFO")
+logging.addLevelName(logging.WARNING, "\033[0;33m%s\033[0;0m" % "WARNING")
+logging.addLevelName(logging.ERROR, "\033[0;31m%s\033[0;0m" % "ERROR")
+
 def copy_file(src, dst):
     subprocess.run(["cp", src, dst], check=True)
 
