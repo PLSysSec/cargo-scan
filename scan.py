@@ -67,7 +67,7 @@ logging.Logger.trace = partialmethod(logging.Logger.log, logging.TRACE)
 logging.trace = partial(logging.log, logging.TRACE)
 
 def copy_file(src, dst):
-    subprocess.run(["cp", src, dst])
+    subprocess.run(["cp", src, dst], check=True)
 
 def truncate_str(s, n):
     assert n >= 3
@@ -104,7 +104,7 @@ def download_crate(crates_dir, crate, test_run):
             logging.warning(f"Crate not found during test run: {target}")
         else:
             logging.info(f"Downloading crate: {target}")
-            subprocess.run(["cargo", "download", "-x", crate, "-o", target])
+            subprocess.run(["cargo", "download", "-x", crate, "-o", target], check=True)
 
 def save_results(results, results_prefix):
     results_file = f"{results_prefix}_{RESULTS_ALL_SUFFIX}"
@@ -311,8 +311,8 @@ def scan_crate_mirai(crate, crate_dir, _of_interest):
     os.environ[MIRAI_FLAGS_KEY] = MIRAI_FLAGS_VAL
 
     # Run our MIRAI fork
-    subprocess.run(["cargo", "clean"], cwd=crate)
-    subprocess.run(["cargo", "mirai"], cwd=crate, stderr=subprocess.DEVNULL)
+    subprocess.run(["cargo", "clean"], cwd=crate, check=True)
+    subprocess.run(["cargo", "mirai"], cwd=crate, stderr=subprocess.DEVNULL, check=True)
 
     # TBD: return useful information
     yield from []
@@ -376,7 +376,11 @@ if __name__ == "__main__":
             progress = 100 * i // num_crates
             logging.info(f"{progress}% complete")
 
-        download_crate(crates_dir, crate, args.test_run)
+        try:
+            download_crate(crates_dir, crate, args.test_run)
+        except subprocess.CalledProcessError as e:
+            logging.error(f"cargo-download failed for crate: {crate} ({e})")
+            sys.exit(1)
 
         for pat, result in scan_fun(crate, crates_dir, of_interest):
             results.append(result)
