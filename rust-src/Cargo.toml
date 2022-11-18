@@ -2,6 +2,10 @@
 name = "cargo-scan"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "Scan and analyze Cargo dependencies"
+repository = "https://github.com/PLSysSec/cargo-scan"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
