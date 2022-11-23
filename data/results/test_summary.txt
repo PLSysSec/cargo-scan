@@ -26,4 +26,4 @@ toy-crates: 4
 permissions-ex: 2
 ===== Crate Totals =====
 3 crates with 1 or more dangerous imports
-0 crates with 0 dangerous imports
+3 crates with 0 dangerous imports
