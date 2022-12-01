@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import sys
+from dataclasses import dataclass
 from functools import partial, partialmethod
 
 # ===== Constants =====
@@ -57,7 +58,6 @@ OF_INTEREST_OTHER = [
 RESULTS_DIR = "data/results"
 RESULTS_ALL_SUFFIX = "all.csv"
 RESULTS_SUMMARY_SUFFIX = "summary.txt"
-CSV_HEADER = "crate, pattern of interest, directory, file, use line"
 
 # ===== Utility =====
 
@@ -82,6 +82,37 @@ def truncate_str(s, n):
         return s
     else:
         return s[:(n-3)] + "..."
+
+def sanitize_comma(s):
+    if "," in s:
+        logging.warning(f"found unexpected comma in: {s}")
+    return s.replace(',', '')
+
+# ===== CSV output for effects =====
+
+@dataclass
+class Effect:
+    """
+    Data related to an effect
+    used as an intermediate output for both the grep-based and the
+    mirai-based effects analysis
+    """
+    crate: str
+    pattern: str
+    dir: str
+    file: str
+    fun: str
+
+    def csv_header():
+        return ", ".join(["crate", "pattern of interest", "directory", "file", "use line"])
+
+    def to_csv(self):
+        crate = sanitize_comma(self.crate)
+        pattern = sanitize_comma(self.pattern)
+        dir = sanitize_comma(self.dir)
+        file = sanitize_comma(self.file)
+        fun = sanitize_comma(self.fun)
+        return ", ".join([crate, pattern, dir, file, fun])
 
 # ===== Main script =====
 
@@ -118,9 +149,9 @@ def save_results(results, results_prefix):
     results_path = os.path.join(RESULTS_DIR, results_file)
     logging.info(f"Saving raw results to {results_path}")
     with open(results_path, 'w') as fh:
-        fh.write(CSV_HEADER + '\n')
-        for line in results:
-            fh.write(line + '\n')
+        fh.write(Effect.csv_header() + '\n')
+        for effect in results:
+            fh.write(effect.to_csv() + '\n')
 
 def sort_summary_dict(d):
     return sorted(d.items(), key=lambda x: x[1], reverse=True)
@@ -241,19 +272,6 @@ def parse_use(expr):
     # Sort final results
     return sorted(list(parse_use_core(expr, smry)))
 
-def sanitize_comma(s):
-    if "," in s:
-        logging.warning(f"found unexpected comma in: {s}")
-    return s.replace(',', '')
-
-def to_csv(crate, pat, root, file, use_expr):
-    crate = sanitize_comma(crate)
-    pat = sanitize_comma(pat)
-    root = sanitize_comma(root)
-    file = sanitize_comma(file)
-    use_expr = sanitize_comma(use_expr)
-    return f"{crate}, {pat}, {root}, {file}, {use_expr}"
-
 def scan_use(crate, root, file, use_expr, of_interest):
     """
     Scan a single use ...; expression.
@@ -267,7 +285,7 @@ def scan_use(crate, root, file, use_expr, of_interest):
             logging.trace(f"Skipping: {use}")
         else:
             logging.trace(f"Of interest: {use}")
-            yield (pat, to_csv(crate, pat, root, file, use))
+            yield Effect(crate, pat, root, file, use)
 
 def scan_rs(fh):
     """
@@ -396,11 +414,11 @@ if __name__ == "__main__":
             sys.exit(1)
 
         crate_dir = os.path.join(crates_dir, crate)
-        for pat, result in scan_fun(crate_dir, of_interest):
-            results.append(result)
+        for effect in scan_fun(crate_dir, of_interest):
+            results.append(effect)
             # Update summaries
             crate_summary[crate] += 1
-            pattern_summary[pat] += 1
+            pattern_summary[effect.pattern] += 1
 
     if args.mirai:
         if args.call_graph:
@@ -411,7 +429,7 @@ if __name__ == "__main__":
         results_str = "=== Results ===\n"
         if num_crates == 1:
             for result in results:
-                results_str += result
+                results_str += result.to_csv()
                 results_str += '\n'
         results_str += make_summary(crate_summary, pattern_summary)
         logging.info(results_str)
