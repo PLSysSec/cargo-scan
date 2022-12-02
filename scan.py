@@ -329,13 +329,55 @@ def scan_crate(crate_dir, of_interest):
             if os.path.splitext(file)[1] == ".rs":
                 yield from scan_file(crate, root, file, of_interest)
 
+def parse_mirai_call_line(line):
+    parts = (line
+        .replace(" (", " ")
+        .replace("(", " ")
+        .replace(" ~ ", " ")
+        .replace("), ", " ")
+        .replace(")", " ")
+        .replace(": ", " ")
+        .strip()
+        .split(" ")
+    )
+    if len(parts) != 6:
+        logging.warning(f"MIRAI output: expected 6 parts: {parts}")
+        return None
+    # Examples:
+    # ['DefId', '0:6', 'num_cpus[1818]::get_num_physical_cpus', 'src/lib.rs:324:20', '324:34', '#0']
+    # ['DefId', '0:5', 'num_cpus[1818]::get_physical', 'src/lib.rs:109:5', '109:28', '#0']
+    fun = parts[2]
+    src_dir, path = tuple(parts[3].split("/"))
+    return fun, src_dir, path
+
 def scan_crate_mirai(crate_dir, _of_interest):
     # TBD: use the of_interest argument
 
     # Run our MIRAI fork
     os.environ[MIRAI_FLAGS_KEY] = MIRAI_FLAGS_VAL
     subprocess.run(["cargo", "clean"], cwd=crate_dir, check=True)
-    subprocess.run(["cargo", "mirai"], cwd=crate_dir, stderr=subprocess.DEVNULL, check=True)
+    proc = subprocess.Popen(["cargo", "mirai"], cwd=crate_dir, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
+    call_path_counter = 0
+    for line in iter(proc.stdout.readline, b""):
+        line = line.strip().decode("utf-8")
+        logging.trace(f"MIRAI output line: {line}")
+        if line == "~~~New Fn~~~~~":
+            logging.debug("MIRAI:new fn")
+        elif line == "Call Path:":
+            logging.debug("MIRAI:new call path")
+            call_path_counter = 0
+        elif line[0:6] == "Call: ":
+            result = parse_mirai_call_line(line[6:])
+            if result is not None:
+                call_path_counter += 1
+                if call_path_counter == 1:
+                    fun1, src_dir1, path1 = result
+                elif call_path_counter == 2:
+                    fun2, src_dir2, path2 = result
+                    # TODO: yield effect
+                    logging.info(f"MIRAI effect found: {fun1}, {src_dir1}, {path1}, {fun2}, {src_dir2}, {path2}")
+        else:
+            logging.warning(f"Unrecognized MIRAI output line: {line}")
 
     # TBD: return useful information
     yield from []
