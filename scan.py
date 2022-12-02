@@ -16,6 +16,25 @@ import sys
 from dataclasses import dataclass
 from functools import partial, partialmethod
 
+# ===== Check requirements =====
+
+# requires v3.7 for dataclasses
+MIN_PYTHON = (3, 7)
+if sys.version_info < MIN_PYTHON:
+    version = f"{MIN_PYTHON[0]}.{MIN_PYTHON[1]}"
+    found = f"{sys.version_info.major}.{sys.version_info.minor}"
+    sys.exit(f"Error: Python {version} or later is required (found {found}).")
+
+def check_installed(args, check_exit_code=True):
+    try:
+        subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=check_exit_code)
+    except Exception as e:
+        sys.exit(f"missing dependency: command {args} failed ({e})")
+
+check_installed(["rustc", "--version"])
+check_installed(["cargo", "download", "--version"], check_exit_code=False)
+check_installed(["cargo", "mirai", "--version"])
+
 # ===== Constants =====
 
 # Number of progress tracking messages to display

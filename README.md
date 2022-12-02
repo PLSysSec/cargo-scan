@@ -8,7 +8,7 @@ This repository also collects related experiments, test crates, and experimental
 
 ## Installation
 
-Make sure you have Python 3 and [Rust](https://www.rust-lang.org/tools/install), then run `make install`.
+Make sure you have Python 3 (at least 3.7) and [Rust](https://www.rust-lang.org/tools/install), then run `make install`.
 
 This installs [cargo-download](https://crates.io/crates/cargo-download) and our fork of [MIRAI](https://github.com/facebookexperimental/MIRAI).
 Installation has currently been tested on Mac OS (Monterey) and Linux (Arch Linux).
