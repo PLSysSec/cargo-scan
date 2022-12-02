@@ -424,6 +424,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    if args.verbose > 5:
+        logging.error("verbosity only goes up to 5 (-vvvvv)")
+        sys.exit(1)
     log_level = [logging.INFO, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG, logging.TRACE][args.verbose]
     logging.basicConfig(level=log_level)
     logging.debug(args)
