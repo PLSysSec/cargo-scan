@@ -383,20 +383,21 @@ def scan_crate_mirai(crate_dir, _of_interest):
         line = line.strip().decode("utf-8")
         logging.trace(f"MIRAI output line: {line}")
         if line == "~~~New Fn~~~~~":
-            logging.debug("MIRAI:new fn")
+            logging.info("MIRAI:new function")
         elif line == "Call Path:":
-            logging.debug("MIRAI:new call path")
+            logging.info("MIRAI:new call path")
             call_path_counter = 0
         elif line[0:6] == "Call: ":
             result = parse_mirai_call_line(line[6:])
             if result is not None:
                 call_path_counter += 1
-                if call_path_counter == 1:
-                    fun1, src_dir1, path1 = result
-                elif call_path_counter == 2:
-                    fun2, src_dir2, path2 = result
-                    # TODO: yield effect
-                    logging.info(f"MIRAI effect found: {fun1}, {src_dir1}, {path1}, {fun2}, {src_dir2}, {path2}")
+                # if call_path_counter == 1:
+                #     effect_fun, src_dir1, path1 = result
+                # elif call_path_counter == 2:
+                #     fun2, src_dir2, path2 = result
+                #     # TODO: yield effect
+                effect_fun, src_dir, path = result
+                logging.info(f"MIRAI effect found: {effect_fun}, {src_dir}, {path}")
         else:
             logging.warning(f"Unrecognized MIRAI output line: {line}")
 
