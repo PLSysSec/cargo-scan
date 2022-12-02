@@ -122,7 +122,8 @@ class Effect:
     pattern: str
     dir: str
     file: str
-    fun: str
+    effect_fun: str
+    caller_fun: str
 
     def csv_header():
         return ", ".join(["crate", "pattern of interest", "directory", "file", "use line"])
@@ -132,8 +133,8 @@ class Effect:
         pattern = sanitize_comma(self.pattern)
         dir = sanitize_comma(self.dir)
         file = sanitize_comma(self.file)
-        fun = sanitize_comma(self.fun)
-        return ", ".join([crate, pattern, dir, file, fun])
+        effect_fun = sanitize_comma(self.effect_fun)
+        return ", ".join([crate, pattern, dir, file, effect_fun])
 
 # ===== Main script =====
 
@@ -306,7 +307,7 @@ def scan_use(crate, root, file, use_expr, of_interest):
             logging.trace(f"Skipping: {use}")
         else:
             logging.trace(f"Of interest: {use}")
-            yield Effect(crate, pat, root, file, use)
+            yield Effect(crate, pat, root, file, use, "Unknown")
 
 def scan_rs(fh):
     """
@@ -371,38 +372,48 @@ def parse_mirai_call_line(line):
     src_dir, path = tuple(parts[3].split("/"))
     return fun, src_dir, path
 
-def scan_crate_mirai(crate_dir, _of_interest):
-    # TBD: use the of_interest argument
+def mirai_call_path_as_effect(crate_dir, call_path):
+    # Convert a call path to an Effect object
+    # crate_dir is the name of the crate
+    # call_path is a nonempty list of (effect_fun, src_dir, path)
+    callee, src_dir, callee_path = call_path[0]
+    if len(call_path) > 1:
+        caller, src_dir2, caller_path = call_path[1]
+        if src_dir != src_dir2:
+            logging.warning("MIRAI: callee and caller in different source dirs: {src_dir1} and {src_dir2}")
+    else:
+        logging.warning("MIRAI: call path of length 1: {call_path}")
+        caller = "Unknown"
+        caller_path = "Unknown"
 
-    # Run our MIRAI fork
+    pattern = callee.replace("::", " ").replace("[", " ").replace("]", " ").split(" ")[0]
+    return Effect(crate_dir, pattern, src_dir, callee_path, callee, caller)
+
+def scan_crate_mirai(crate_dir, _of_interest):
+    # Run our MIRAI fork; yield effects
+    # TBD: use the of_interest argument
     os.environ[MIRAI_FLAGS_KEY] = MIRAI_FLAGS_VAL
     subprocess.run(["cargo", "clean"], cwd=crate_dir, check=True)
     proc = subprocess.Popen(["cargo", "mirai"], cwd=crate_dir, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
-    call_path_counter = 0
+    call_path = []
     for line in iter(proc.stdout.readline, b""):
         line = line.strip().decode("utf-8")
-        logging.trace(f"MIRAI output line: {line}")
         if line == "~~~New Fn~~~~~":
-            logging.info("MIRAI:new function")
+            logging.trace("MIRAI: new function")
         elif line == "Call Path:":
-            logging.info("MIRAI:new call path")
-            call_path_counter = 0
+            logging.trace("MIRAI: new call path")
+            if call_path:
+                yield mirai_call_path_as_effect(crate_dir, call_path)
+            call_path = []
         elif line[0:6] == "Call: ":
             result = parse_mirai_call_line(line[6:])
             if result is not None:
-                call_path_counter += 1
-                # if call_path_counter == 1:
-                #     effect_fun, src_dir1, path1 = result
-                # elif call_path_counter == 2:
-                #     fun2, src_dir2, path2 = result
-                #     # TODO: yield effect
-                effect_fun, src_dir, path = result
-                logging.info(f"MIRAI effect found: {effect_fun}, {src_dir}, {path}")
+                logging.trace(f"MIRAI call: {result}")
+                call_path.append(result)
         else:
             logging.warning(f"Unrecognized MIRAI output line: {line}")
-
-    # TBD: return useful information
-    yield from []
+    if call_path:
+        yield mirai_call_path_as_effect(crate_dir, call_path)
 
 def view_callgraph_mirai(crate_dir):
     subprocess.run(["dot", "-Tpng", "graph.dot", "-o", "graph.png"], cwd=crate_dir, check=True)
@@ -467,7 +478,7 @@ if __name__ == "__main__":
 
     results = []
     crate_summary = {c: 0 for c in crates}
-    pattern_summary= {p: 0 for p in of_interest}
+    pattern_summary = {p: 0 for p in of_interest}
 
     for i, crate in enumerate(crates):
         if progress_inc > 0 and i > 0 and i % progress_inc == 0:
@@ -482,17 +493,18 @@ if __name__ == "__main__":
 
         crate_dir = os.path.join(crates_dir, crate)
         for effect in scan_fun(crate_dir, of_interest):
+            logging.debug(f"effect found: {effect.to_csv()}")
             results.append(effect)
             # Update summaries
             crate_summary[crate] += 1
+            pattern_summary.setdefault(effect.pattern, 0)
             pattern_summary[effect.pattern] += 1
 
-    if args.mirai:
-        if args.call_graph:
-            logging.info("=== Generating call graph as a PNG ===")
-            view_callgraph_mirai(crate_dir)
-        # TBD: print other results
-    elif args.output_prefix is None:
+    if args.mirai and args.call_graph:
+        logging.info("=== Generating call graph as a PNG ===")
+        view_callgraph_mirai(crate_dir)
+
+    if args.output_prefix is None:
         results_str = "=== Results ===\n"
         if num_crates == 1:
             for result in results:
