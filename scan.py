@@ -329,7 +329,7 @@ def scan_use(crate, root, file, lineno, use_expr, of_interest):
                 crate,
                 "Unknown",
                 "Unknown",
-                "Unknown",
+                use,
                 pat,
                 root,
                 file,
