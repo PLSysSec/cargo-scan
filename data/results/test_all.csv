@@ -1,22 +1,22 @@
-crate, pattern of interest, directory, file, use line
-dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::*
-dummy, std::os, data/test-packages/dummy/src, main.rs, std::os::*
-dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod1
-dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod2::test1
-dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod2::test2
-dummy, std::process, data/test-packages/dummy/src, main.rs, std::process::Command::*
-dummy, std::process, data/test-packages/dummy/src, main.rs, std::process::process::Command
-dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::test::mod3
-dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::test::mod4
-dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod5
-dummy, std::env, data/test-packages/dummy/src, main.rs, std::env
-dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod6
-dummy, std::fs, data/test-packages/dummy/src, main.rs, std::fs::mod7
-dummy, std::env, data/test-packages/dummy/src, main.rs, std::env
-dummy, std::env, data/test-packages/dummy/src, main.rs, std::env
-permissions-ex, std::fs, data/test-packages/permissions-ex/src, lib.rs, std::fs
-permissions-ex, std::process, data/test-packages/permissions-ex/src, lib.rs, std::process::Command
-toy-crates, libc, data/test-packages/toy-crates/src, num_cpus.rs, libc
-toy-crates, std::env, data/test-packages/toy-crates/src, rustc_version.rs, std::env
-toy-crates, std::process, data/test-packages/toy-crates/src, rustc_version.rs, std::process::Command
-toy-crates, std::net, data/test-packages/toy-crates/src, url_client.rs, std::net::TcpListener
+crate, module, caller, callee, pattern, dir, file, loc
+dummy, Unknown, Unknown, std::fs::*, std::fs, data/test-packages/dummy/src, main.rs, 2
+dummy, Unknown, Unknown, std::os::*, std::os, data/test-packages/dummy/src, main.rs, 3
+dummy, Unknown, Unknown, std::fs::mod1, std::fs, data/test-packages/dummy/src, main.rs, 6
+dummy, Unknown, Unknown, std::fs::mod2::test1, std::fs, data/test-packages/dummy/src, main.rs, 6
+dummy, Unknown, Unknown, std::fs::mod2::test2, std::fs, data/test-packages/dummy/src, main.rs, 6
+dummy, Unknown, Unknown, std::process::Command::*, std::process, data/test-packages/dummy/src, main.rs, 7
+dummy, Unknown, Unknown, std::process::process::Command, std::process, data/test-packages/dummy/src, main.rs, 7
+dummy, Unknown, Unknown, std::fs::test::mod3, std::fs, data/test-packages/dummy/src, main.rs, 13
+dummy, Unknown, Unknown, std::fs::test::mod4, std::fs, data/test-packages/dummy/src, main.rs, 13
+dummy, Unknown, Unknown, std::fs::mod5, std::fs, data/test-packages/dummy/src, main.rs, 16
+dummy, Unknown, Unknown, std::env, std::env, data/test-packages/dummy/src, main.rs, 21
+dummy, Unknown, Unknown, std::fs::mod6, std::fs, data/test-packages/dummy/src, main.rs, 24
+dummy, Unknown, Unknown, std::fs::mod7, std::fs, data/test-packages/dummy/src, main.rs, 26
+dummy, Unknown, Unknown, std::env, std::env, data/test-packages/dummy/src, main.rs, 29
+dummy, Unknown, Unknown, std::env, std::env, data/test-packages/dummy/src, main.rs, 30
+permissions-ex, Unknown, Unknown, std::fs, std::fs, data/test-packages/permissions-ex/src, lib.rs, 7
+permissions-ex, Unknown, Unknown, std::process::Command, std::process, data/test-packages/permissions-ex/src, lib.rs, 8
+toy-crates, Unknown, Unknown, libc, libc, data/test-packages/toy-crates/src, num_cpus.rs, 4
+toy-crates, Unknown, Unknown, std::env, std::env, data/test-packages/toy-crates/src, rustc_version.rs, 4
+toy-crates, Unknown, Unknown, std::process::Command, std::process, data/test-packages/toy-crates/src, rustc_version.rs, 6
+toy-crates, Unknown, Unknown, std::net::TcpListener, std::net, data/test-packages/toy-crates/src, url_client.rs, 6

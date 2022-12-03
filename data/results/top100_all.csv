@@ -1,582 +1,582 @@
-crate, pattern of interest, directory, file, use line
-proc-macro2, std::path, data/packages/proc-macro2/src, fallback.rs, std::path::Path
-proc-macro2, std::path, data/packages/proc-macro2/src, fallback.rs, std::path::PathBuf
-proc-macro2, std::path, data/packages/proc-macro2/src, lib.rs, std::path::PathBuf
-proc-macro2, std::path, data/packages/proc-macro2/src, wrapper.rs, std::path::PathBuf
-autocfg, std::env, data/packages/autocfg/src, lib.rs, std::env
-autocfg, std::fs, data/packages/autocfg/src, lib.rs, std::fs
-autocfg, std::path, data/packages/autocfg/src, lib.rs, std::path::Path
-autocfg, std::path, data/packages/autocfg/src, lib.rs, std::path::PathBuf
-autocfg, std::process, data/packages/autocfg/src, lib.rs, std::process::Command
-autocfg, std::process, data/packages/autocfg/src, lib.rs, std::process::Stdio
-autocfg, std::env, data/packages/autocfg/src, tests.rs, std::env
-autocfg, std::path, data/packages/autocfg/src, tests.rs, std::path::Path
-autocfg, std::path, data/packages/autocfg/src, version.rs, std::path::Path
-autocfg, std::process, data/packages/autocfg/src, version.rs, std::process::Command
-getrandom, libc, data/packages/getrandom/src, 3ds.rs, crate::util_libc::sys_fill_exact
-getrandom, libc, data/packages/getrandom/src, bsd_arandom.rs, crate::util_libc::sys_fill_exact
-getrandom, libc, data/packages/getrandom/src, dragonfly.rs, crate::util_libc::Weak
-getrandom, libc, data/packages/getrandom/src, dragonfly.rs, crate::util_libc::sys_fill_exact
-getrandom, libc, data/packages/getrandom/src, linux_android.rs, crate::util_libc::last_os_error
-getrandom, libc, data/packages/getrandom/src, linux_android.rs, crate::util_libc::sys_fill_exact
-getrandom, libc, data/packages/getrandom/src, macos.rs, crate::util_libc::Weak
-getrandom, libc, data/packages/getrandom/src, macos.rs, crate::util_libc::last_os_error
-getrandom, libc, data/packages/getrandom/src, openbsd.rs, crate::util_libc::last_os_error
-getrandom, libc, data/packages/getrandom/src, solaris_illumos.rs, crate::util_libc::Weak
-getrandom, libc, data/packages/getrandom/src, solaris_illumos.rs, crate::util_libc::sys_fill_exact
-getrandom, libc, data/packages/getrandom/src, use_file.rs, crate::util_libc::open_readonly
-getrandom, libc, data/packages/getrandom/src, use_file.rs, crate::util_libc::sys_fill_exact
-getrandom, libc, data/packages/getrandom/src, util_libc.rs, libc::c_void
-getrandom, libc, data/packages/getrandom/src, vxworks.rs, crate::util_libc::last_os_error
-memchr, libc, data/packages/memchr/src/memchr, c.rs, libc::c_int
-memchr, libc, data/packages/memchr/src/memchr, c.rs, libc::c_void
-memchr, libc, data/packages/memchr/src/memchr, c.rs, libc::size_t
-cc, winapi, data/packages/cc/src, com.rs, crate::winapi::CoInitializeEx
-cc, winapi, data/packages/cc/src, com.rs, crate::winapi::IUnknown
-cc, winapi, data/packages/cc/src, com.rs, crate::winapi::Interface
-cc, winapi, data/packages/cc/src, com.rs, crate::winapi::BSTR
-cc, winapi, data/packages/cc/src, com.rs, crate::winapi::COINIT_MULTITHREADED
-cc, winapi, data/packages/cc/src, com.rs, crate::winapi::SysFreeString
-cc, winapi, data/packages/cc/src, com.rs, crate::winapi::SysStringLen
-cc, winapi, data/packages/cc/src, com.rs, crate::winapi::HRESULT
-cc, winapi, data/packages/cc/src, com.rs, crate::winapi::S_FALSE
-cc, winapi, data/packages/cc/src, com.rs, crate::winapi::S_OK
-cc, std::os, data/packages/cc/src, com.rs, std::os::windows::ffi::OsStrExt
-cc, std::os, data/packages/cc/src, com.rs, std::os::windows::ffi::OsStringExt
-cc, std::env, data/packages/cc/src, lib.rs, std::env
-cc, std::fs, data/packages/cc/src, lib.rs, std::fs
-cc, std::path, data/packages/cc/src, lib.rs, std::path::Component
-cc, std::path, data/packages/cc/src, lib.rs, std::path::Path
-cc, std::path, data/packages/cc/src, lib.rs, std::path::PathBuf
-cc, std::process, data/packages/cc/src, lib.rs, std::process::Child
-cc, std::process, data/packages/cc/src, lib.rs, std::process::Command
-cc, std::process, data/packages/cc/src, lib.rs, std::process::Stdio
-cc, std::os, data/packages/cc/src, registry.rs, std::os::raw
-cc, std::os, data/packages/cc/src, registry.rs, std::os::windows::prelude::*
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::Interface
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::BSTR
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::LPCOLESTR
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::LPSAFEARRAY
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::S_FALSE
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::CLSCTX_ALL
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::CoCreateInstance
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::IUnknown
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::IUnknownVtbl
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::HRESULT
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::LCID
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::LPCWSTR
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::PULONGLONG
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::LPFILETIME
-cc, winapi, data/packages/cc/src, setup_config.rs, crate::winapi::ULONG
-cc, std::path, data/packages/cc/src, vs_instances.rs, std::path::PathBuf
-cc, std::os, data/packages/cc/src, winapi.rs, std::os::raw
-cc, std::process, data/packages/cc/src, windows_registry.rs, std::process::Command
-cc, std::env, data/packages/cc/src/bin, gcc-shim.rs, std::env
-cc, std::fs, data/packages/cc/src/bin, gcc-shim.rs, std::fs::File
-cc, std::path, data/packages/cc/src/bin, gcc-shim.rs, std::path::PathBuf
-parking_lot_core, libc, data/packages/parking_lot_core/src/thread_parker, linux.rs, libc
-parking_lot_core, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, std::os::fortanix_sgx::
-parking_lot_core, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, std::os::fortanix_sgx::thread::current as current_tcs
-parking_lot_core, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, std::os::fortanix_sgx::usercalls::
-parking_lot_core, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, std::os::fortanix_sgx::usercalls::raw::EV_UNPARK
-parking_lot_core, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, std::os::fortanix_sgx::usercalls::raw::Tcs
-parking_lot_core, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, std::os::fortanix_sgx::usercalls::raw::WAIT_INDEFINITE
-parking_lot_core, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, std::os::fortanix_sgx::usercalls::self
-parking_lot_core, libc, data/packages/parking_lot_core/src/thread_parker, unix.rs, libc
-version_check, std::env, data/packages/version_check/src, lib.rs, std::env
-version_check, std::process, data/packages/version_check/src, lib.rs, std::process::Command
-clap, std::env, data/packages/clap/src/builder, arg.rs, std::env
-clap, std::env, data/packages/clap/src/builder, command.rs, std::env
-clap, std::path, data/packages/clap/src/builder, command.rs, std::path::Path
-atty, winapi, data/packages/atty/src, lib.rs, winapi::shared::minwindef::DWORD
-atty, winapi, data/packages/atty/src, lib.rs, winapi::shared::ntdef::WCHAR
-num_cpus, std::fs, data/packages/num_cpus/src, linux.rs, std::fs::File
-num_cpus, std::path, data/packages/num_cpus/src, linux.rs, std::path::Path
-num_cpus, std::path, data/packages/num_cpus/src, linux.rs, std::path::PathBuf
-num_cpus, libc, data/packages/num_cpus/src, linux.rs, libc
-url, std::net, data/packages/url/src, host.rs, std::net::Ipv4Addr
-url, std::net, data/packages/url/src, host.rs, std::net::Ipv6Addr
-url, std::net, data/packages/url/src, lib.rs, std::net::IpAddr
-url, std::net, data/packages/url/src, lib.rs, std::net::SocketAddr
-url, std::net, data/packages/url/src, lib.rs, std::net::ToSocketAddrs
-url, std::path, data/packages/url/src, lib.rs, std::path::Path
-url, std::path, data/packages/url/src, lib.rs, std::path::PathBuf
-mio, std::os, data/packages/mio/src, io_source.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src, io_source.rs, std::os::wasi::io::AsRawFd
-mio, std::os, data/packages/mio/src, io_source.rs, std::os::windows::io::AsRawSocket
-mio, std::os, data/packages/mio/src, poll.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src, poll.rs, std::os::unix::io::RawFd
-mio, std::net, data/packages/mio/src/net, udp.rs, std::net
-mio, std::net, data/packages/mio/src/net, udp.rs, std::net::Ipv4Addr
-mio, std::net, data/packages/mio/src/net, udp.rs, std::net::Ipv6Addr
-mio, std::net, data/packages/mio/src/net, udp.rs, std::net::SocketAddr
-mio, std::os, data/packages/mio/src/net, udp.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/net, udp.rs, std::os::unix::io::FromRawFd
-mio, std::os, data/packages/mio/src/net, udp.rs, std::os::unix::io::IntoRawFd
-mio, std::os, data/packages/mio/src/net, udp.rs, std::os::unix::io::RawFd
-mio, std::os, data/packages/mio/src/net, udp.rs, std::os::windows::io::AsRawSocket
-mio, std::os, data/packages/mio/src/net, udp.rs, std::os::windows::io::FromRawSocket
-mio, std::os, data/packages/mio/src/net, udp.rs, std::os::windows::io::IntoRawSocket
-mio, std::os, data/packages/mio/src/net, udp.rs, std::os::windows::io::RawSocket
-mio, std::net, data/packages/mio/src/net/tcp, listener.rs, std::net::SocketAddr
-mio, std::net, data/packages/mio/src/net/tcp, listener.rs, std::net::self
-mio, std::os, data/packages/mio/src/net/tcp, listener.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/net/tcp, listener.rs, std::os::unix::io::FromRawFd
-mio, std::os, data/packages/mio/src/net/tcp, listener.rs, std::os::unix::io::IntoRawFd
-mio, std::os, data/packages/mio/src/net/tcp, listener.rs, std::os::unix::io::RawFd
-mio, std::os, data/packages/mio/src/net/tcp, listener.rs, std::os::wasi::io::AsRawFd
-mio, std::os, data/packages/mio/src/net/tcp, listener.rs, std::os::wasi::io::FromRawFd
-mio, std::os, data/packages/mio/src/net/tcp, listener.rs, std::os::wasi::io::IntoRawFd
-mio, std::os, data/packages/mio/src/net/tcp, listener.rs, std::os::wasi::io::RawFd
-mio, std::os, data/packages/mio/src/net/tcp, listener.rs, std::os::windows::io::AsRawSocket
-mio, std::os, data/packages/mio/src/net/tcp, listener.rs, std::os::windows::io::FromRawSocket
-mio, std::os, data/packages/mio/src/net/tcp, listener.rs, std::os::windows::io::IntoRawSocket
-mio, std::os, data/packages/mio/src/net/tcp, listener.rs, std::os::windows::io::RawSocket
-mio, std::net, data/packages/mio/src/net/tcp, stream.rs, std::net::Shutdown
-mio, std::net, data/packages/mio/src/net/tcp, stream.rs, std::net::SocketAddr
-mio, std::net, data/packages/mio/src/net/tcp, stream.rs, std::net::self
-mio, std::os, data/packages/mio/src/net/tcp, stream.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/net/tcp, stream.rs, std::os::unix::io::FromRawFd
-mio, std::os, data/packages/mio/src/net/tcp, stream.rs, std::os::unix::io::IntoRawFd
-mio, std::os, data/packages/mio/src/net/tcp, stream.rs, std::os::unix::io::RawFd
-mio, std::os, data/packages/mio/src/net/tcp, stream.rs, std::os::wasi::io::AsRawFd
-mio, std::os, data/packages/mio/src/net/tcp, stream.rs, std::os::wasi::io::FromRawFd
-mio, std::os, data/packages/mio/src/net/tcp, stream.rs, std::os::wasi::io::IntoRawFd
-mio, std::os, data/packages/mio/src/net/tcp, stream.rs, std::os::wasi::io::RawFd
-mio, std::os, data/packages/mio/src/net/tcp, stream.rs, std::os::windows::io::AsRawSocket
-mio, std::os, data/packages/mio/src/net/tcp, stream.rs, std::os::windows::io::FromRawSocket
-mio, std::os, data/packages/mio/src/net/tcp, stream.rs, std::os::windows::io::IntoRawSocket
-mio, std::os, data/packages/mio/src/net/tcp, stream.rs, std::os::windows::io::RawSocket
-mio, std::net, data/packages/mio/src/net/uds, datagram.rs, std::net::Shutdown
-mio, std::os, data/packages/mio/src/net/uds, datagram.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/net/uds, datagram.rs, std::os::unix::io::FromRawFd
-mio, std::os, data/packages/mio/src/net/uds, datagram.rs, std::os::unix::io::IntoRawFd
-mio, std::os, data/packages/mio/src/net/uds, datagram.rs, std::os::unix::io::RawFd
-mio, std::os, data/packages/mio/src/net/uds, datagram.rs, std::os::unix::net
-mio, std::path, data/packages/mio/src/net/uds, datagram.rs, std::path::Path
-mio, std::os, data/packages/mio/src/net/uds, listener.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/net/uds, listener.rs, std::os::unix::io::FromRawFd
-mio, std::os, data/packages/mio/src/net/uds, listener.rs, std::os::unix::io::IntoRawFd
-mio, std::os, data/packages/mio/src/net/uds, listener.rs, std::os::unix::io::RawFd
-mio, std::os, data/packages/mio/src/net/uds, listener.rs, std::os::unix::net
-mio, std::path, data/packages/mio/src/net/uds, listener.rs, std::path::Path
-mio, std::net, data/packages/mio/src/net/uds, stream.rs, std::net::Shutdown
-mio, std::os, data/packages/mio/src/net/uds, stream.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/net/uds, stream.rs, std::os::unix::io::FromRawFd
-mio, std::os, data/packages/mio/src/net/uds, stream.rs, std::os::unix::io::IntoRawFd
-mio, std::os, data/packages/mio/src/net/uds, stream.rs, std::os::unix::io::RawFd
-mio, std::os, data/packages/mio/src/net/uds, stream.rs, std::os::unix::net
-mio, std::path, data/packages/mio/src/net/uds, stream.rs, std::path::Path
-mio, std::os, data/packages/mio/src/sys/shell, selector.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/sys/shell, selector.rs, std::os::unix::io::RawFd
-mio, std::net, data/packages/mio/src/sys/shell, tcp.rs, std::net::SocketAddr
-mio, std::net, data/packages/mio/src/sys/shell, tcp.rs, std::net::self
-mio, std::net, data/packages/mio/src/sys/shell, udp.rs, std::net::SocketAddr
-mio, std::net, data/packages/mio/src/sys/shell, udp.rs, std::net::self
-mio, std::net, data/packages/mio/src/sys/unix, net.rs, std::net::Ipv4Addr
-mio, std::net, data/packages/mio/src/sys/unix, net.rs, std::net::Ipv6Addr
-mio, std::net, data/packages/mio/src/sys/unix, net.rs, std::net::SocketAddr
-mio, std::net, data/packages/mio/src/sys/unix, net.rs, std::net::SocketAddrV4
-mio, std::net, data/packages/mio/src/sys/unix, net.rs, std::net::SocketAddrV6
-mio, std::fs, data/packages/mio/src/sys/unix, pipe.rs, std::fs::File
-mio, std::os, data/packages/mio/src/sys/unix, pipe.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/sys/unix, pipe.rs, std::os::unix::io::FromRawFd
-mio, std::os, data/packages/mio/src/sys/unix, pipe.rs, std::os::unix::io::IntoRawFd
-mio, std::os, data/packages/mio/src/sys/unix, pipe.rs, std::os::unix::io::RawFd
-mio, std::process, data/packages/mio/src/sys/unix, pipe.rs, std::process::ChildStderr
-mio, std::process, data/packages/mio/src/sys/unix, pipe.rs, std::process::ChildStdin
-mio, std::process, data/packages/mio/src/sys/unix, pipe.rs, std::process::ChildStdout
-mio, std::os, data/packages/mio/src/sys/unix, sourcefd.rs, std::os::unix::io::RawFd
-mio, std::net, data/packages/mio/src/sys/unix, tcp.rs, std::net::SocketAddr
-mio, std::net, data/packages/mio/src/sys/unix, tcp.rs, std::net::self
-mio, std::os, data/packages/mio/src/sys/unix, tcp.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/sys/unix, tcp.rs, std::os::unix::io::FromRawFd
-mio, std::net, data/packages/mio/src/sys/unix, udp.rs, std::net::SocketAddr
-mio, std::net, data/packages/mio/src/sys/unix, udp.rs, std::net::self
-mio, std::os, data/packages/mio/src/sys/unix, udp.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/sys/unix, udp.rs, std::os::unix::io::FromRawFd
-mio, libc, data/packages/mio/src/sys/unix/selector, epoll.rs, libc::EPOLLET
-mio, libc, data/packages/mio/src/sys/unix/selector, epoll.rs, libc::EPOLLIN
-mio, libc, data/packages/mio/src/sys/unix/selector, epoll.rs, libc::EPOLLOUT
-mio, libc, data/packages/mio/src/sys/unix/selector, epoll.rs, libc::EPOLLRDHUP
-mio, std::os, data/packages/mio/src/sys/unix/selector, epoll.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/sys/unix/selector, epoll.rs, std::os::unix::io::RawFd
-mio, std::os, data/packages/mio/src/sys/unix/selector, kqueue.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/sys/unix/selector, kqueue.rs, std::os::unix::io::RawFd
-mio, std::os, data/packages/mio/src/sys/unix/uds, datagram.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/sys/unix/uds, datagram.rs, std::os::unix::io::FromRawFd
-mio, std::os, data/packages/mio/src/sys/unix/uds, datagram.rs, std::os::unix::net
-mio, std::path, data/packages/mio/src/sys/unix/uds, datagram.rs, std::path::Path
-mio, std::os, data/packages/mio/src/sys/unix/uds, listener.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/sys/unix/uds, listener.rs, std::os::unix::io::FromRawFd
-mio, std::os, data/packages/mio/src/sys/unix/uds, listener.rs, std::os::unix::net
-mio, std::path, data/packages/mio/src/sys/unix/uds, listener.rs, std::path::Path
-mio, std::os, data/packages/mio/src/sys/unix/uds, socketaddr.rs, std::os::unix::ffi::OsStrExt
-mio, std::path, data/packages/mio/src/sys/unix/uds, socketaddr.rs, std::path::Path
-mio, std::os, data/packages/mio/src/sys/unix/uds, stream.rs, std::os::unix::io::AsRawFd
-mio, std::os, data/packages/mio/src/sys/unix/uds, stream.rs, std::os::unix::io::FromRawFd
-mio, std::os, data/packages/mio/src/sys/unix/uds, stream.rs, std::os::unix::net
-mio, std::path, data/packages/mio/src/sys/unix/uds, stream.rs, std::path::Path
-mio, std::fs, data/packages/mio/src/sys/windows, afd.rs, std::fs::File
-mio, std::os, data/packages/mio/src/sys/windows, afd.rs, std::os::windows::io::AsRawHandle
-mio, std::os, data/packages/mio/src/sys/windows, handle.rs, std::os::windows::io::RawHandle
-mio, std::os, data/packages/mio/src/sys/windows, iocp.rs, std::os::windows::io::*
-mio, std::os, data/packages/mio/src/sys/windows, named_pipe.rs, std::os::windows::io::AsRawHandle
-mio, std::os, data/packages/mio/src/sys/windows, named_pipe.rs, std::os::windows::io::FromRawHandle
-mio, std::os, data/packages/mio/src/sys/windows, named_pipe.rs, std::os::windows::io::RawHandle
-mio, std::net, data/packages/mio/src/sys/windows, net.rs, std::net::SocketAddr
-mio, std::os, data/packages/mio/src/sys/windows, selector.rs, std::os::windows::io::RawSocket
-mio, std::net, data/packages/mio/src/sys/windows, tcp.rs, std::net::SocketAddr
-mio, std::net, data/packages/mio/src/sys/windows, tcp.rs, std::net::self
-mio, std::os, data/packages/mio/src/sys/windows, tcp.rs, std::os::windows::io::AsRawSocket
-mio, std::net, data/packages/mio/src/sys/windows, udp.rs, std::net::SocketAddr
-mio, std::net, data/packages/mio/src/sys/windows, udp.rs, std::net::self
-mio, std::os, data/packages/mio/src/sys/windows, udp.rs, std::os::windows::io::AsRawSocket
-mio, std::os, data/packages/mio/src/sys/windows, udp.rs, std::os::windows::io::FromRawSocket
-mio, std::os, data/packages/mio/src/sys/windows, udp.rs, std::os::windows::raw::SOCKET as StdSocket
-tokio, std::path, data/packages/tokio/src/fs, canonicalize.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, canonicalize.rs, std::path::PathBuf
-tokio, std::path, data/packages/tokio/src/fs, copy.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, create_dir.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, create_dir_all.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, dir_builder.rs, std::path::Path
-tokio, std::fs, data/packages/tokio/src/fs, file.rs, std::fs::Metadata
-tokio, std::fs, data/packages/tokio/src/fs, file.rs, std::fs::Permissions
-tokio, std::path, data/packages/tokio/src/fs, file.rs, std::path::Path
-tokio, std::fs, data/packages/tokio/src/fs, file.rs, std::fs::File as StdFile
-tokio, std::path, data/packages/tokio/src/fs, hard_link.rs, std::path::Path
-tokio, std::fs, data/packages/tokio/src/fs, metadata.rs, std::fs::Metadata
-tokio, std::path, data/packages/tokio/src/fs, metadata.rs, std::path::Path
-tokio, std::fs, data/packages/tokio/src/fs, mocks.rs, std::fs::Metadata
-tokio, std::fs, data/packages/tokio/src/fs, mocks.rs, std::fs::Permissions
-tokio, std::path, data/packages/tokio/src/fs, mocks.rs, std::path::PathBuf
-tokio, std::path, data/packages/tokio/src/fs, open_options.rs, std::path::Path
-tokio, std::fs, data/packages/tokio/src/fs, open_options.rs, std::fs::OpenOptions as StdOpenOptions
-tokio, std::path, data/packages/tokio/src/fs, read.rs, std::path::Path
-tokio, std::fs, data/packages/tokio/src/fs, read_dir.rs, std::fs::FileType
-tokio, std::fs, data/packages/tokio/src/fs, read_dir.rs, std::fs::Metadata
-tokio, std::path, data/packages/tokio/src/fs, read_dir.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, read_dir.rs, std::path::PathBuf
-tokio, std::path, data/packages/tokio/src/fs, read_link.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, read_link.rs, std::path::PathBuf
-tokio, std::path, data/packages/tokio/src/fs, read_to_string.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, remove_dir.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, remove_dir_all.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, remove_file.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, rename.rs, std::path::Path
-tokio, std::fs, data/packages/tokio/src/fs, set_permissions.rs, std::fs::Permissions
-tokio, std::path, data/packages/tokio/src/fs, set_permissions.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, symlink.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, symlink_dir.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, symlink_file.rs, std::path::Path
-tokio, std::fs, data/packages/tokio/src/fs, symlink_metadata.rs, std::fs::Metadata
-tokio, std::path, data/packages/tokio/src/fs, symlink_metadata.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/fs, write.rs, std::path::Path
-tokio, std::os, data/packages/tokio/src/fs/open_options, mock_open_options.rs, std::os::unix::fs::OpenOptionsExt
-tokio, std::os, data/packages/tokio/src/fs/open_options, mock_open_options.rs, std::os::windows::fs::OpenOptionsExt
-tokio, std::path, data/packages/tokio/src/fs/open_options, mock_open_options.rs, std::path::Path
-tokio, mio::unix, data/packages/tokio/src/io, async_fd.rs, mio::unix::SourceFd
-tokio, std::os, data/packages/tokio/src/io, async_fd.rs, std::os::unix::io::AsRawFd
-tokio, std::os, data/packages/tokio/src/io, async_fd.rs, std::os::unix::io::RawFd
-tokio, std::os, data/packages/tokio/src/io/bsd, poll_aio.rs, std::os::unix::io::AsRawFd
-tokio, std::os, data/packages/tokio/src/io/bsd, poll_aio.rs, std::os::unix::prelude::RawFd
-tokio, std::net, data/packages/tokio/src/net, addr.rs, std::net::IpAddr
-tokio, std::net, data/packages/tokio/src/net, addr.rs, std::net::Ipv4Addr
-tokio, std::net, data/packages/tokio/src/net, addr.rs, std::net::Ipv6Addr
-tokio, std::net, data/packages/tokio/src/net, addr.rs, std::net::SocketAddr
-tokio, std::net, data/packages/tokio/src/net, addr.rs, std::net::SocketAddrV4
-tokio, std::net, data/packages/tokio/src/net, addr.rs, std::net::SocketAddrV6
-tokio, std::net, data/packages/tokio/src/net, udp.rs, std::net::Ipv4Addr
-tokio, std::net, data/packages/tokio/src/net, udp.rs, std::net::Ipv6Addr
-tokio, std::net, data/packages/tokio/src/net, udp.rs, std::net::SocketAddr
-tokio, std::net, data/packages/tokio/src/net, udp.rs, std::net::self
-tokio, std::net, data/packages/tokio/src/net/tcp, listener.rs, std::net::SocketAddr
-tokio, std::net, data/packages/tokio/src/net/tcp, listener.rs, std::net::self
-tokio, std::net, data/packages/tokio/src/net/tcp, socket.rs, std::net::SocketAddr
-tokio, std::os, data/packages/tokio/src/net/tcp, socket.rs, std::os::unix::io::AsRawFd
-tokio, std::os, data/packages/tokio/src/net/tcp, socket.rs, std::os::unix::io::FromRawFd
-tokio, std::os, data/packages/tokio/src/net/tcp, socket.rs, std::os::unix::io::IntoRawFd
-tokio, std::os, data/packages/tokio/src/net/tcp, socket.rs, std::os::unix::io::RawFd
-tokio, std::os, data/packages/tokio/src/net/tcp, socket.rs, std::os::windows::io::AsRawSocket
-tokio, std::os, data/packages/tokio/src/net/tcp, socket.rs, std::os::windows::io::FromRawSocket
-tokio, std::os, data/packages/tokio/src/net/tcp, socket.rs, std::os::windows::io::IntoRawSocket
-tokio, std::os, data/packages/tokio/src/net/tcp, socket.rs, std::os::windows::io::RawSocket
-tokio, std::net, data/packages/tokio/src/net/tcp, split.rs, std::net::Shutdown
-tokio, std::net, data/packages/tokio/src/net/tcp, split.rs, std::net::SocketAddr
-tokio, std::net, data/packages/tokio/src/net/tcp, split_owned.rs, std::net::Shutdown
-tokio, std::net, data/packages/tokio/src/net/tcp, split_owned.rs, std::net::SocketAddr
-tokio, std::net, data/packages/tokio/src/net/tcp, stream.rs, std::net::Shutdown
-tokio, std::net, data/packages/tokio/src/net/tcp, stream.rs, std::net::SocketAddr
-tokio, std::os, data/packages/tokio/src/net/unix, listener.rs, std::os::unix::io::AsRawFd
-tokio, std::os, data/packages/tokio/src/net/unix, listener.rs, std::os::unix::io::FromRawFd
-tokio, std::os, data/packages/tokio/src/net/unix, listener.rs, std::os::unix::io::IntoRawFd
-tokio, std::os, data/packages/tokio/src/net/unix, listener.rs, std::os::unix::io::RawFd
-tokio, std::os, data/packages/tokio/src/net/unix, listener.rs, std::os::unix::net
-tokio, std::path, data/packages/tokio/src/net/unix, listener.rs, std::path::Path
-tokio, std::path, data/packages/tokio/src/net/unix, socketaddr.rs, std::path::Path
-tokio, std::net, data/packages/tokio/src/net/unix, split.rs, std::net::Shutdown
-tokio, std::net, data/packages/tokio/src/net/unix, split_owned.rs, std::net::Shutdown
-tokio, std::net, data/packages/tokio/src/net/unix, stream.rs, std::net::Shutdown
-tokio, std::os, data/packages/tokio/src/net/unix, stream.rs, std::os::unix::io::AsRawFd
-tokio, std::os, data/packages/tokio/src/net/unix, stream.rs, std::os::unix::io::FromRawFd
-tokio, std::os, data/packages/tokio/src/net/unix, stream.rs, std::os::unix::io::IntoRawFd
-tokio, std::os, data/packages/tokio/src/net/unix, stream.rs, std::os::unix::io::RawFd
-tokio, std::os, data/packages/tokio/src/net/unix, stream.rs, std::os::unix::net
-tokio, std::path, data/packages/tokio/src/net/unix, stream.rs, std::path::Path
-tokio, libc, data/packages/tokio/src/net/unix, ucred.rs, libc::gid_t
-tokio, libc, data/packages/tokio/src/net/unix, ucred.rs, libc::pid_t
-tokio, libc, data/packages/tokio/src/net/unix, ucred.rs, libc::uid_t
-tokio, std::net, data/packages/tokio/src/net/unix/datagram, socket.rs, std::net::Shutdown
-tokio, std::os, data/packages/tokio/src/net/unix/datagram, socket.rs, std::os::unix::io::AsRawFd
-tokio, std::os, data/packages/tokio/src/net/unix/datagram, socket.rs, std::os::unix::io::FromRawFd
-tokio, std::os, data/packages/tokio/src/net/unix/datagram, socket.rs, std::os::unix::io::IntoRawFd
-tokio, std::os, data/packages/tokio/src/net/unix/datagram, socket.rs, std::os::unix::io::RawFd
-tokio, std::os, data/packages/tokio/src/net/unix/datagram, socket.rs, std::os::unix::net
-tokio, std::path, data/packages/tokio/src/net/unix/datagram, socket.rs, std::path::Path
-tokio, std::os, data/packages/tokio/src/process, mod.rs, std::os::unix::process::CommandExt
-tokio, std::os, data/packages/tokio/src/process, mod.rs, std::os::windows::io::AsRawHandle
-tokio, std::os, data/packages/tokio/src/process, mod.rs, std::os::windows::io::RawHandle
-tokio, std::os, data/packages/tokio/src/process, mod.rs, std::os::windows::process::CommandExt
-tokio, std::path, data/packages/tokio/src/process, mod.rs, std::path::Path
-tokio, std::process, data/packages/tokio/src/process, mod.rs, std::process::Command as StdCommand
-tokio, std::process, data/packages/tokio/src/process, mod.rs, std::process::ExitStatus
-tokio, std::process, data/packages/tokio/src/process, mod.rs, std::process::Output
-tokio, std::process, data/packages/tokio/src/process, mod.rs, std::process::Stdio
-tokio, std::fs, data/packages/tokio/src/process, windows.rs, std::fs::File as StdFile
-tokio, std::os, data/packages/tokio/src/process, windows.rs, std::os::windows::prelude::AsRawHandle
-tokio, std::os, data/packages/tokio/src/process, windows.rs, std::os::windows::prelude::IntoRawHandle
-tokio, std::os, data/packages/tokio/src/process, windows.rs, std::os::windows::prelude::RawHandle
-tokio, std::process, data/packages/tokio/src/process, windows.rs, std::process::Stdio
-tokio, std::process, data/packages/tokio/src/process, windows.rs, std::process::Child as StdChild
-tokio, std::process, data/packages/tokio/src/process, windows.rs, std::process::Command as StdCommand
-tokio, std::process, data/packages/tokio/src/process, windows.rs, std::process::ExitStatus
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::shared::minwindef::DWORD
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::shared::minwindef::FALSE
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::um::handleapi::DuplicateHandle
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::um::handleapi::INVALID_HANDLE_VALUE
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::um::processthreadsapi::GetCurrentProcess
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::um::threadpoollegacyapiset::UnregisterWaitEx
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::um::winbase::INFINITE
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::um::winbase::RegisterWaitForSingleObject
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::um::winnt::
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::um::winnt::BOOLEAN
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::um::winnt::DUPLICATE_SAME_ACCESS
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::um::winnt::HANDLE
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::um::winnt::PVOID
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::um::winnt::WT_EXECUTEINWAITTHREAD
-tokio, winapi, data/packages/tokio/src/process, windows.rs, winapi::um::winnt::WT_EXECUTEONLYONCE
-tokio, mio::unix, data/packages/tokio/src/process/unix, mod.rs, mio::unix::SourceFd
-tokio, std::fs, data/packages/tokio/src/process/unix, mod.rs, std::fs::File
-tokio, std::os, data/packages/tokio/src/process/unix, mod.rs, std::os::unix::io::AsRawFd
-tokio, std::os, data/packages/tokio/src/process/unix, mod.rs, std::os::unix::io::FromRawFd
-tokio, std::os, data/packages/tokio/src/process/unix, mod.rs, std::os::unix::io::IntoRawFd
-tokio, std::os, data/packages/tokio/src/process/unix, mod.rs, std::os::unix::io::RawFd
-tokio, std::process, data/packages/tokio/src/process/unix, mod.rs, std::process::Child as StdChild
-tokio, std::process, data/packages/tokio/src/process/unix, mod.rs, std::process::ExitStatus
-tokio, std::process, data/packages/tokio/src/process/unix, mod.rs, std::process::Stdio
-tokio, std::process, data/packages/tokio/src/process/unix, orphan.rs, std::process::ExitStatus
-tokio, std::process, data/packages/tokio/src/process/unix, reap.rs, std::process::ExitStatus
-tokio, mio::net, data/packages/tokio/src/signal, unix.rs, mio::net::UnixStream
-tokio, mio::net, data/packages/tokio/src/signal/unix, driver.rs, mio::net::UnixStream
-tokio, winapi, data/packages/tokio/src/signal/windows, sys.rs, winapi::shared::minwindef::BOOL
-tokio, winapi, data/packages/tokio/src/signal/windows, sys.rs, winapi::shared::minwindef::DWORD
-tokio, winapi, data/packages/tokio/src/signal/windows, sys.rs, winapi::shared::minwindef::FALSE
-tokio, winapi, data/packages/tokio/src/signal/windows, sys.rs, winapi::shared::minwindef::TRUE
-tokio, winapi, data/packages/tokio/src/signal/windows, sys.rs, winapi::um::consoleapi::SetConsoleCtrlHandler
-tokio, winapi, data/packages/tokio/src/signal/windows, sys.rs, winapi::um::wincon
-tokio, std::process, data/packages/tokio/src/sync/mpsc, chan.rs, std::process
-rustc_version, std::process, data/packages/rustc_version/src, lib.rs, std::process::Command
-rustc_version, std::env, data/packages/rustc_version/src, lib.rs, std::env
-chrono, std::env, data/packages/chrono/src/offset/local, unix.rs, std::env
-chrono, std::fs, data/packages/chrono/src/offset/local, unix.rs, std::fs
-chrono, winapi, data/packages/chrono/src/offset/local, windows.rs, winapi::shared::minwindef::*
-chrono, winapi, data/packages/chrono/src/offset/local, windows.rs, winapi::um::minwinbase::SYSTEMTIME
-chrono, winapi, data/packages/chrono/src/offset/local, windows.rs, winapi::um::timezoneapi::*
-chrono, std::fs, data/packages/chrono/src/offset/local/tz_info, timezone.rs, std::fs::File
-chrono, std::fs, data/packages/chrono/src/offset/local/tz_info, timezone.rs, std::fs::self
-chrono, std::path, data/packages/chrono/src/offset/local/tz_info, timezone.rs, std::path::Path
-chrono, std::path, data/packages/chrono/src/offset/local/tz_info, timezone.rs, std::path::PathBuf
-env_logger, std::env, data/packages/env_logger/src, lib.rs, std::env
-env_logger, std::env, data/packages/env_logger/src/filter, mod.rs, std::env
-pkg-config, std::env, data/packages/pkg-config/src, lib.rs, std::env
-pkg-config, std::path, data/packages/pkg-config/src, lib.rs, std::path::PathBuf
-pkg-config, std::process, data/packages/pkg-config/src, lib.rs, std::process::Command
-pkg-config, std::process, data/packages/pkg-config/src, lib.rs, std::process::Output
-hyper, tokio::io, data/packages/hyper/src, upgrade.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src, upgrade.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src, upgrade.rs, tokio::io::ReadBuf
-hyper, tokio::io, data/packages/hyper/src/client, conn.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/client, conn.rs, tokio::io::AsyncWrite
-hyper, tokio::net, data/packages/hyper/src/client, tests.rs, tokio::net::TcpStream
-hyper, std::net, data/packages/hyper/src/client/connect, dns.rs, std::net::Ipv4Addr
-hyper, std::net, data/packages/hyper/src/client/connect, dns.rs, std::net::Ipv6Addr
-hyper, std::net, data/packages/hyper/src/client/connect, dns.rs, std::net::SocketAddr
-hyper, std::net, data/packages/hyper/src/client/connect, dns.rs, std::net::SocketAddrV4
-hyper, std::net, data/packages/hyper/src/client/connect, dns.rs, std::net::SocketAddrV6
-hyper, std::net, data/packages/hyper/src/client/connect, dns.rs, std::net::ToSocketAddrs
-hyper, std::net, data/packages/hyper/src/client/connect, http.rs, std::net::IpAddr
-hyper, std::net, data/packages/hyper/src/client/connect, http.rs, std::net::Ipv4Addr
-hyper, std::net, data/packages/hyper/src/client/connect, http.rs, std::net::Ipv6Addr
-hyper, std::net, data/packages/hyper/src/client/connect, http.rs, std::net::SocketAddr
-hyper, tokio::net, data/packages/hyper/src/client/connect, http.rs, tokio::net::TcpSocket
-hyper, tokio::net, data/packages/hyper/src/client/connect, http.rs, tokio::net::TcpStream
-hyper, tokio::io, data/packages/hyper/src/common/io, rewind.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/common/io, rewind.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/common/io, rewind.rs, tokio::io::ReadBuf
-hyper, libc, data/packages/hyper/src/ffi, body.rs, libc::c_int
-hyper, libc, data/packages/hyper/src/ffi, body.rs, libc::size_t
-hyper, libc, data/packages/hyper/src/ffi, client.rs, libc::c_int
-hyper, libc, data/packages/hyper/src/ffi, error.rs, libc::size_t
-hyper, libc, data/packages/hyper/src/ffi, http_types.rs, libc::c_int
-hyper, libc, data/packages/hyper/src/ffi, http_types.rs, libc::size_t
-hyper, libc, data/packages/hyper/src/ffi, io.rs, libc::size_t
-hyper, tokio::io, data/packages/hyper/src/ffi, io.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/ffi, io.rs, tokio::io::AsyncWrite
-hyper, libc, data/packages/hyper/src/ffi, task.rs, libc::c_int
-hyper, tokio::io, data/packages/hyper/src/proto/h1, conn.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/proto/h1, conn.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/proto/h1, dispatch.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/proto/h1, dispatch.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/proto/h1, io.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/proto/h1, io.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/proto/h1, io.rs, tokio::io::ReadBuf
-hyper, tokio::io, data/packages/hyper/src/proto/h2, client.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/proto/h2, client.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/proto/h2, mod.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/proto/h2, mod.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/proto/h2, mod.rs, tokio::io::ReadBuf
-hyper, tokio::io, data/packages/hyper/src/proto/h2, server.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/proto/h2, server.rs, tokio::io::AsyncWrite
-hyper, std::net, data/packages/hyper/src/server, server.rs, std::net::SocketAddr
-hyper, std::net, data/packages/hyper/src/server, server.rs, std::net::TcpListener as StdTcpListener
-hyper, tokio::io, data/packages/hyper/src/server, server.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/server, server.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/server, shutdown.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/server, shutdown.rs, tokio::io::AsyncWrite
-hyper, std::net, data/packages/hyper/src/server, tcp.rs, std::net::SocketAddr
-hyper, std::net, data/packages/hyper/src/server, tcp.rs, std::net::TcpListener as StdTcpListener
-hyper, tokio::net, data/packages/hyper/src/server, tcp.rs, tokio::net::TcpListener
-hyper, tokio::io, data/packages/hyper/src/service, make.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/service, make.rs, tokio::io::AsyncWrite
-thiserror, std::path, data/packages/thiserror/src, display.rs, std::path::Path
-thiserror, std::path, data/packages/thiserror/src, display.rs, std::path::PathBuf
-thiserror, std::path, data/packages/thiserror/src, display.rs, std::path::self
-termcolor, std::env, data/packages/termcolor/src, lib.rs, std::env
-termcolor, winapi, data/packages/termcolor/src, lib.rs, winapi_util::console as wincon
-socket2, std::net, data/packages/socket2/src, lib.rs, std::net::SocketAddr
-socket2, std::net, data/packages/socket2/src, sockaddr.rs, std::net::SocketAddr
-socket2, std::net, data/packages/socket2/src, sockaddr.rs, std::net::SocketAddrV4
-socket2, std::net, data/packages/socket2/src, sockaddr.rs, std::net::SocketAddrV6
-socket2, winapi, data/packages/socket2/src, sockaddr.rs, winapi::shared::ws2ipdef::SOCKADDR_IN6_LH_u
-socket2, std::net, data/packages/socket2/src, socket.rs, std::net::Ipv4Addr
-socket2, std::net, data/packages/socket2/src, socket.rs, std::net::Ipv6Addr
-socket2, std::net, data/packages/socket2/src, socket.rs, std::net::Shutdown
-socket2, std::net, data/packages/socket2/src, socket.rs, std::net::self
-socket2, std::os, data/packages/socket2/src, socket.rs, std::os::unix::io::FromRawFd
-socket2, std::os, data/packages/socket2/src, socket.rs, std::os::unix::io::IntoRawFd
-socket2, std::os, data/packages/socket2/src, socket.rs, std::os::windows::io::FromRawSocket
-socket2, std::os, data/packages/socket2/src, socket.rs, std::os::windows::io::IntoRawSocket
-socket2, std::os, data/packages/socket2/src, sockref.rs, std::os::unix::io::AsRawFd
-socket2, std::os, data/packages/socket2/src, sockref.rs, std::os::unix::io::FromRawFd
-socket2, std::os, data/packages/socket2/src, sockref.rs, std::os::windows::io::AsRawSocket
-socket2, std::os, data/packages/socket2/src, sockref.rs, std::os::windows::io::FromRawSocket
-socket2, std::net, data/packages/socket2/src/sys, unix.rs, std::net::Shutdown
-socket2, std::net, data/packages/socket2/src/sys, unix.rs, std::net::Ipv4Addr
-socket2, std::net, data/packages/socket2/src/sys, unix.rs, std::net::Ipv6Addr
-socket2, std::os, data/packages/socket2/src/sys, unix.rs, std::os::unix::ffi::OsStrExt
-socket2, std::os, data/packages/socket2/src/sys, unix.rs, std::os::unix::io::RawFd
-socket2, std::os, data/packages/socket2/src/sys, unix.rs, std::os::unix::io::AsRawFd
-socket2, std::os, data/packages/socket2/src/sys, unix.rs, std::os::unix::io::FromRawFd
-socket2, std::os, data/packages/socket2/src/sys, unix.rs, std::os::unix::io::IntoRawFd
-socket2, std::os, data/packages/socket2/src/sys, unix.rs, std::os::unix::net::UnixDatagram
-socket2, std::os, data/packages/socket2/src/sys, unix.rs, std::os::unix::net::UnixListener
-socket2, std::os, data/packages/socket2/src/sys, unix.rs, std::os::unix::net::UnixStream
-socket2, std::path, data/packages/socket2/src/sys, unix.rs, std::path::Path
-socket2, libc, data/packages/socket2/src/sys, unix.rs, libc::ssize_t
-socket2, libc, data/packages/socket2/src/sys, unix.rs, libc::c_void
-socket2, libc, data/packages/socket2/src/sys, unix.rs, libc::in6_addr
-socket2, libc, data/packages/socket2/src/sys, unix.rs, libc::in_addr
-socket2, libc, data/packages/socket2/src/sys, unix.rs, libc::TCP_KEEPALIVE as KEEPALIVE_TIME
-socket2, libc, data/packages/socket2/src/sys, unix.rs, libc::TCP_KEEPIDLE as KEEPALIVE_TIME
-socket2, std::net, data/packages/socket2/src/sys, windows.rs, std::net::Ipv4Addr
-socket2, std::net, data/packages/socket2/src/sys, windows.rs, std::net::Ipv6Addr
-socket2, std::net, data/packages/socket2/src/sys, windows.rs, std::net::Shutdown
-socket2, std::net, data/packages/socket2/src/sys, windows.rs, std::net::self
-socket2, std::os, data/packages/socket2/src/sys, windows.rs, std::os::windows::prelude::*
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::ctypes::c_long
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::shared::in6addr::*
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::shared::inaddr::*
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::shared::minwindef::DWORD
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::shared::minwindef::ULONG
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::shared::mstcpip::SIO_KEEPALIVE_VALS
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::shared::mstcpip::tcp_keepalive
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::shared::ntdef::HANDLE
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::shared::ws2def
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::shared::ws2def::WSABUF
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::handleapi::SetHandleInformation
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::processthreadsapi::GetCurrentProcessId
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::winbase::INFINITE
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::winbase::self
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::winsock2::
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::winsock2::POLLERR
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::winsock2::POLLHUP
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::winsock2::POLLRDNORM
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::winsock2::POLLWRNORM
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::winsock2::SD_BOTH
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::winsock2::SD_RECEIVE
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::winsock2::SD_SEND
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::winsock2::WSAPOLLFD
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::winsock2::self as sock
-socket2, winapi, data/packages/socket2/src/sys, windows.rs, winapi::um::winsock2::u_long
-crossbeam-channel, std::process, data/packages/crossbeam-channel/src, counter.rs, std::process
-tokio-util, tokio::io, data/packages/tokio-util/src, either.rs, tokio::io::AsyncBufRead
-tokio-util, tokio::io, data/packages/tokio-util/src, either.rs, tokio::io::AsyncRead
-tokio-util, tokio::io, data/packages/tokio-util/src, either.rs, tokio::io::AsyncSeek
-tokio-util, tokio::io, data/packages/tokio-util/src, either.rs, tokio::io::AsyncWrite
-tokio-util, tokio::io, data/packages/tokio-util/src, either.rs, tokio::io::ReadBuf
-tokio-util, tokio::io, data/packages/tokio-util/src, either.rs, tokio::io::Result
-tokio-util, tokio::io, data/packages/tokio-util/src/codec, decoder.rs, tokio::io::AsyncRead
-tokio-util, tokio::io, data/packages/tokio-util/src/codec, decoder.rs, tokio::io::AsyncWrite
-tokio-util, tokio::io, data/packages/tokio-util/src/codec, framed.rs, tokio::io::AsyncRead
-tokio-util, tokio::io, data/packages/tokio-util/src/codec, framed.rs, tokio::io::AsyncWrite
-tokio-util, tokio::io, data/packages/tokio-util/src/codec, framed_impl.rs, tokio::io::AsyncRead
-tokio-util, tokio::io, data/packages/tokio-util/src/codec, framed_impl.rs, tokio::io::AsyncWrite
-tokio-util, tokio::io, data/packages/tokio-util/src/codec, framed_read.rs, tokio::io::AsyncRead
-tokio-util, tokio::io, data/packages/tokio-util/src/codec, framed_write.rs, tokio::io::AsyncWrite
-tokio-util, tokio::io, data/packages/tokio-util/src/codec, length_delimited.rs, tokio::io::AsyncRead
-tokio-util, tokio::io, data/packages/tokio-util/src/codec, length_delimited.rs, tokio::io::AsyncWrite
-tokio-util, tokio::io, data/packages/tokio-util/src/io, read_buf.rs, tokio::io::AsyncRead
-tokio-util, tokio::io, data/packages/tokio-util/src/io, reader_stream.rs, tokio::io::AsyncRead
-tokio-util, tokio::io, data/packages/tokio-util/src/io, stream_reader.rs, tokio::io::AsyncBufRead
-tokio-util, tokio::io, data/packages/tokio-util/src/io, stream_reader.rs, tokio::io::AsyncRead
-tokio-util, tokio::io, data/packages/tokio-util/src/io, stream_reader.rs, tokio::io::ReadBuf
-tokio-util, tokio::io, data/packages/tokio-util/src/io, sync_bridge.rs, tokio::io::AsyncRead
-tokio-util, tokio::io, data/packages/tokio-util/src/io, sync_bridge.rs, tokio::io::AsyncReadExt
-tokio-util, tokio::io, data/packages/tokio-util/src/io, sync_bridge.rs, tokio::io::AsyncWrite
-tokio-util, tokio::io, data/packages/tokio-util/src/io, sync_bridge.rs, tokio::io::AsyncWriteExt
-tokio-util, tokio::io, data/packages/tokio-util/src/udp, frame.rs, tokio::io::ReadBuf
-tokio-util, tokio::net, data/packages/tokio-util/src/udp, frame.rs, tokio::net::UdpSocket
-tokio-util, std::net, data/packages/tokio-util/src/udp, frame.rs, std::net::Ipv4Addr
-tokio-util, std::net, data/packages/tokio-util/src/udp, frame.rs, std::net::SocketAddr
-tokio-util, std::net, data/packages/tokio-util/src/udp, frame.rs, std::net::SocketAddrV4
-h2, tokio::io, data/packages/h2/src, client.rs, tokio::io::AsyncRead
-h2, tokio::io, data/packages/h2/src, client.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src, client.rs, tokio::io::AsyncWriteExt
-h2, tokio::io, data/packages/h2/src, server.rs, tokio::io::AsyncRead
-h2, tokio::io, data/packages/h2/src, server.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src, server.rs, tokio::io::ReadBuf
-h2, tokio::io, data/packages/h2/src/codec, framed_read.rs, tokio::io::AsyncRead
-h2, tokio::io, data/packages/h2/src/codec, framed_write.rs, tokio::io::AsyncRead
-h2, tokio::io, data/packages/h2/src/codec, framed_write.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src/codec, framed_write.rs, tokio::io::ReadBuf
-h2, tokio::io, data/packages/h2/src/codec, mod.rs, tokio::io::AsyncRead
-h2, tokio::io, data/packages/h2/src/codec, mod.rs, tokio::io::AsyncWrite
-h2, std::fs, data/packages/h2/src/hpack/test, fixture.rs, std::fs::File
-h2, std::path, data/packages/h2/src/hpack/test, fixture.rs, std::path::Path
-h2, tokio::io, data/packages/h2/src/proto, connection.rs, tokio::io::AsyncRead
-h2, tokio::io, data/packages/h2/src/proto, connection.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src/proto, go_away.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src/proto, mod.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src/proto, ping_pong.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src/proto/streams, send.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src/proto/streams, streams.rs, tokio::io::AsyncWrite
+crate, module, caller, callee, pattern, dir, file, loc
+proc-macro2, Unknown, Unknown, std::path::Path, std::path, data/packages/proc-macro2/src, fallback.rs, 14
+proc-macro2, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/proc-macro2/src, fallback.rs, 15
+proc-macro2, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/proc-macro2/src, lib.rs, 150
+proc-macro2, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/proc-macro2/src, wrapper.rs, 8
+autocfg, Unknown, Unknown, std::env, std::env, data/packages/autocfg/src, lib.rs, 61
+autocfg, Unknown, Unknown, std::fs, std::fs, data/packages/autocfg/src, lib.rs, 63
+autocfg, Unknown, Unknown, std::path::Path, std::path, data/packages/autocfg/src, lib.rs, 65
+autocfg, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/autocfg/src, lib.rs, 65
+autocfg, Unknown, Unknown, std::process::Command, std::process, data/packages/autocfg/src, lib.rs, 66
+autocfg, Unknown, Unknown, std::process::Stdio, std::process, data/packages/autocfg/src, lib.rs, 66
+autocfg, Unknown, Unknown, std::env, std::env, data/packages/autocfg/src, tests.rs, 1
+autocfg, Unknown, Unknown, std::path::Path, std::path, data/packages/autocfg/src, tests.rs, 2
+autocfg, Unknown, Unknown, std::path::Path, std::path, data/packages/autocfg/src, version.rs, 0
+autocfg, Unknown, Unknown, std::process::Command, std::process, data/packages/autocfg/src, version.rs, 1
+getrandom, Unknown, Unknown, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, 3ds.rs, 9
+getrandom, Unknown, Unknown, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, bsd_arandom.rs, 9
+getrandom, Unknown, Unknown, crate::util_libc::Weak, libc, data/packages/getrandom/src, dragonfly.rs, 13
+getrandom, Unknown, Unknown, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, dragonfly.rs, 13
+getrandom, Unknown, Unknown, crate::util_libc::last_os_error, libc, data/packages/getrandom/src, linux_android.rs, 13
+getrandom, Unknown, Unknown, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, linux_android.rs, 13
+getrandom, Unknown, Unknown, crate::util_libc::Weak, libc, data/packages/getrandom/src, macos.rs, 13
+getrandom, Unknown, Unknown, crate::util_libc::last_os_error, libc, data/packages/getrandom/src, macos.rs, 13
+getrandom, Unknown, Unknown, crate::util_libc::last_os_error, libc, data/packages/getrandom/src, openbsd.rs, 9
+getrandom, Unknown, Unknown, crate::util_libc::Weak, libc, data/packages/getrandom/src, solaris_illumos.rs, 23
+getrandom, Unknown, Unknown, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, solaris_illumos.rs, 23
+getrandom, Unknown, Unknown, crate::util_libc::open_readonly, libc, data/packages/getrandom/src, use_file.rs, 13
+getrandom, Unknown, Unknown, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, use_file.rs, 13
+getrandom, Unknown, Unknown, libc::c_void, libc, data/packages/getrandom/src, util_libc.rs, 14
+getrandom, Unknown, Unknown, crate::util_libc::last_os_error, libc, data/packages/getrandom/src, vxworks.rs, 9
+memchr, Unknown, Unknown, libc::c_int, libc, data/packages/memchr/src/memchr, c.rs, 5
+memchr, Unknown, Unknown, libc::c_void, libc, data/packages/memchr/src/memchr, c.rs, 5
+memchr, Unknown, Unknown, libc::size_t, libc, data/packages/memchr/src/memchr, c.rs, 5
+cc, Unknown, Unknown, crate::winapi::CoInitializeEx, winapi, data/packages/cc/src, com.rs, 9
+cc, Unknown, Unknown, crate::winapi::IUnknown, winapi, data/packages/cc/src, com.rs, 10
+cc, Unknown, Unknown, crate::winapi::Interface, winapi, data/packages/cc/src, com.rs, 11
+cc, Unknown, Unknown, crate::winapi::BSTR, winapi, data/packages/cc/src, com.rs, 12
+cc, Unknown, Unknown, crate::winapi::COINIT_MULTITHREADED, winapi, data/packages/cc/src, com.rs, 13
+cc, Unknown, Unknown, crate::winapi::SysFreeString, winapi, data/packages/cc/src, com.rs, 14
+cc, Unknown, Unknown, crate::winapi::SysStringLen, winapi, data/packages/cc/src, com.rs, 14
+cc, Unknown, Unknown, crate::winapi::HRESULT, winapi, data/packages/cc/src, com.rs, 15
+cc, Unknown, Unknown, crate::winapi::S_FALSE, winapi, data/packages/cc/src, com.rs, 15
+cc, Unknown, Unknown, crate::winapi::S_OK, winapi, data/packages/cc/src, com.rs, 15
+cc, Unknown, Unknown, std::os::windows::ffi::OsStrExt, std::os, data/packages/cc/src, com.rs, 19
+cc, Unknown, Unknown, std::os::windows::ffi::OsStringExt, std::os, data/packages/cc/src, com.rs, 19
+cc, Unknown, Unknown, std::env, std::env, data/packages/cc/src, lib.rs, 59
+cc, Unknown, Unknown, std::fs, std::fs, data/packages/cc/src, lib.rs, 62
+cc, Unknown, Unknown, std::path::Component, std::path, data/packages/cc/src, lib.rs, 64
+cc, Unknown, Unknown, std::path::Path, std::path, data/packages/cc/src, lib.rs, 64
+cc, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/cc/src, lib.rs, 64
+cc, Unknown, Unknown, std::process::Child, std::process, data/packages/cc/src, lib.rs, 65
+cc, Unknown, Unknown, std::process::Command, std::process, data/packages/cc/src, lib.rs, 65
+cc, Unknown, Unknown, std::process::Stdio, std::process, data/packages/cc/src, lib.rs, 65
+cc, Unknown, Unknown, std::os::raw, std::os, data/packages/cc/src, registry.rs, 13
+cc, Unknown, Unknown, std::os::windows::prelude::*, std::os, data/packages/cc/src, registry.rs, 14
+cc, Unknown, Unknown, crate::winapi::Interface, winapi, data/packages/cc/src, setup_config.rs, 10
+cc, Unknown, Unknown, crate::winapi::BSTR, winapi, data/packages/cc/src, setup_config.rs, 11
+cc, Unknown, Unknown, crate::winapi::LPCOLESTR, winapi, data/packages/cc/src, setup_config.rs, 12
+cc, Unknown, Unknown, crate::winapi::LPSAFEARRAY, winapi, data/packages/cc/src, setup_config.rs, 13
+cc, Unknown, Unknown, crate::winapi::S_FALSE, winapi, data/packages/cc/src, setup_config.rs, 14
+cc, Unknown, Unknown, crate::winapi::CLSCTX_ALL, winapi, data/packages/cc/src, setup_config.rs, 15
+cc, Unknown, Unknown, crate::winapi::CoCreateInstance, winapi, data/packages/cc/src, setup_config.rs, 15
+cc, Unknown, Unknown, crate::winapi::IUnknown, winapi, data/packages/cc/src, setup_config.rs, 16
+cc, Unknown, Unknown, crate::winapi::IUnknownVtbl, winapi, data/packages/cc/src, setup_config.rs, 16
+cc, Unknown, Unknown, crate::winapi::HRESULT, winapi, data/packages/cc/src, setup_config.rs, 17
+cc, Unknown, Unknown, crate::winapi::LCID, winapi, data/packages/cc/src, setup_config.rs, 17
+cc, Unknown, Unknown, crate::winapi::LPCWSTR, winapi, data/packages/cc/src, setup_config.rs, 17
+cc, Unknown, Unknown, crate::winapi::PULONGLONG, winapi, data/packages/cc/src, setup_config.rs, 17
+cc, Unknown, Unknown, crate::winapi::LPFILETIME, winapi, data/packages/cc/src, setup_config.rs, 18
+cc, Unknown, Unknown, crate::winapi::ULONG, winapi, data/packages/cc/src, setup_config.rs, 18
+cc, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/cc/src, vs_instances.rs, 4
+cc, Unknown, Unknown, std::os::raw, std::os, data/packages/cc/src, winapi.rs, 9
+cc, Unknown, Unknown, std::process::Command, std::process, data/packages/cc/src, windows_registry.rs, 13
+cc, Unknown, Unknown, std::env, std::env, data/packages/cc/src/bin, gcc-shim.rs, 2
+cc, Unknown, Unknown, std::fs::File, std::fs, data/packages/cc/src/bin, gcc-shim.rs, 3
+cc, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/cc/src/bin, gcc-shim.rs, 5
+parking_lot_core, Unknown, Unknown, libc, libc, data/packages/parking_lot_core/src/thread_parker, linux.rs, 11
+parking_lot_core, Unknown, Unknown, std::os::fortanix_sgx::, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, 19
+parking_lot_core, Unknown, Unknown, std::os::fortanix_sgx::thread::current as current_tcs, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, 19
+parking_lot_core, Unknown, Unknown, std::os::fortanix_sgx::usercalls::, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, 19
+parking_lot_core, Unknown, Unknown, std::os::fortanix_sgx::usercalls::raw::EV_UNPARK, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, 19
+parking_lot_core, Unknown, Unknown, std::os::fortanix_sgx::usercalls::raw::Tcs, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, 19
+parking_lot_core, Unknown, Unknown, std::os::fortanix_sgx::usercalls::raw::WAIT_INDEFINITE, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, 19
+parking_lot_core, Unknown, Unknown, std::os::fortanix_sgx::usercalls::self, std::os, data/packages/parking_lot_core/src/thread_parker, sgx.rs, 19
+parking_lot_core, Unknown, Unknown, libc, libc, data/packages/parking_lot_core/src/thread_parker, unix.rs, 13
+version_check, Unknown, Unknown, std::env, std::env, data/packages/version_check/src, lib.rs, 88
+version_check, Unknown, Unknown, std::process::Command, std::process, data/packages/version_check/src, lib.rs, 89
+clap, Unknown, Unknown, std::env, std::env, data/packages/clap/src/builder, arg.rs, 2
+clap, Unknown, Unknown, std::env, std::env, data/packages/clap/src/builder, command.rs, 3
+clap, Unknown, Unknown, std::path::Path, std::path, data/packages/clap/src/builder, command.rs, 8
+atty, Unknown, Unknown, winapi::shared::minwindef::DWORD, winapi, data/packages/atty/src, lib.rs, 25
+atty, Unknown, Unknown, winapi::shared::ntdef::WCHAR, winapi, data/packages/atty/src, lib.rs, 27
+num_cpus, Unknown, Unknown, std::fs::File, std::fs, data/packages/num_cpus/src, linux.rs, 1
+num_cpus, Unknown, Unknown, std::path::Path, std::path, data/packages/num_cpus/src, linux.rs, 4
+num_cpus, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/num_cpus/src, linux.rs, 4
+num_cpus, Unknown, Unknown, libc, libc, data/packages/num_cpus/src, linux.rs, 8
+url, Unknown, Unknown, std::net::Ipv4Addr, std::net, data/packages/url/src, host.rs, 10
+url, Unknown, Unknown, std::net::Ipv6Addr, std::net, data/packages/url/src, host.rs, 10
+url, Unknown, Unknown, std::net::IpAddr, std::net, data/packages/url/src, lib.rs, 144
+url, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/url/src, lib.rs, 144
+url, Unknown, Unknown, std::net::ToSocketAddrs, std::net, data/packages/url/src, lib.rs, 144
+url, Unknown, Unknown, std::path::Path, std::path, data/packages/url/src, lib.rs, 146
+url, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/url/src, lib.rs, 146
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src, io_source.rs, 2
+mio, Unknown, Unknown, std::os::wasi::io::AsRawFd, std::os, data/packages/mio/src, io_source.rs, 4
+mio, Unknown, Unknown, std::os::windows::io::AsRawSocket, std::os, data/packages/mio/src, io_source.rs, 6
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src, poll.rs, 3
+mio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/mio/src, poll.rs, 3
+mio, Unknown, Unknown, std::net, std::net, data/packages/mio/src/net, udp.rs, 14
+mio, Unknown, Unknown, std::net::Ipv4Addr, std::net, data/packages/mio/src/net, udp.rs, 15
+mio, Unknown, Unknown, std::net::Ipv6Addr, std::net, data/packages/mio/src/net, udp.rs, 15
+mio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/mio/src/net, udp.rs, 15
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/net, udp.rs, 17
+mio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/mio/src/net, udp.rs, 17
+mio, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/mio/src/net, udp.rs, 17
+mio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/mio/src/net, udp.rs, 17
+mio, Unknown, Unknown, std::os::windows::io::AsRawSocket, std::os, data/packages/mio/src/net, udp.rs, 19
+mio, Unknown, Unknown, std::os::windows::io::FromRawSocket, std::os, data/packages/mio/src/net, udp.rs, 19
+mio, Unknown, Unknown, std::os::windows::io::IntoRawSocket, std::os, data/packages/mio/src/net, udp.rs, 19
+mio, Unknown, Unknown, std::os::windows::io::RawSocket, std::os, data/packages/mio/src/net, udp.rs, 19
+mio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/mio/src/net/tcp, listener.rs, 0
+mio, Unknown, Unknown, std::net::self, std::net, data/packages/mio/src/net/tcp, listener.rs, 0
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/net/tcp, listener.rs, 2
+mio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/mio/src/net/tcp, listener.rs, 2
+mio, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/mio/src/net/tcp, listener.rs, 2
+mio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/mio/src/net/tcp, listener.rs, 2
+mio, Unknown, Unknown, std::os::wasi::io::AsRawFd, std::os, data/packages/mio/src/net/tcp, listener.rs, 4
+mio, Unknown, Unknown, std::os::wasi::io::FromRawFd, std::os, data/packages/mio/src/net/tcp, listener.rs, 4
+mio, Unknown, Unknown, std::os::wasi::io::IntoRawFd, std::os, data/packages/mio/src/net/tcp, listener.rs, 4
+mio, Unknown, Unknown, std::os::wasi::io::RawFd, std::os, data/packages/mio/src/net/tcp, listener.rs, 4
+mio, Unknown, Unknown, std::os::windows::io::AsRawSocket, std::os, data/packages/mio/src/net/tcp, listener.rs, 6
+mio, Unknown, Unknown, std::os::windows::io::FromRawSocket, std::os, data/packages/mio/src/net/tcp, listener.rs, 6
+mio, Unknown, Unknown, std::os::windows::io::IntoRawSocket, std::os, data/packages/mio/src/net/tcp, listener.rs, 6
+mio, Unknown, Unknown, std::os::windows::io::RawSocket, std::os, data/packages/mio/src/net/tcp, listener.rs, 6
+mio, Unknown, Unknown, std::net::Shutdown, std::net, data/packages/mio/src/net/tcp, stream.rs, 2
+mio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/mio/src/net/tcp, stream.rs, 2
+mio, Unknown, Unknown, std::net::self, std::net, data/packages/mio/src/net/tcp, stream.rs, 2
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/net/tcp, stream.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/mio/src/net/tcp, stream.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/mio/src/net/tcp, stream.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/mio/src/net/tcp, stream.rs, 4
+mio, Unknown, Unknown, std::os::wasi::io::AsRawFd, std::os, data/packages/mio/src/net/tcp, stream.rs, 6
+mio, Unknown, Unknown, std::os::wasi::io::FromRawFd, std::os, data/packages/mio/src/net/tcp, stream.rs, 6
+mio, Unknown, Unknown, std::os::wasi::io::IntoRawFd, std::os, data/packages/mio/src/net/tcp, stream.rs, 6
+mio, Unknown, Unknown, std::os::wasi::io::RawFd, std::os, data/packages/mio/src/net/tcp, stream.rs, 6
+mio, Unknown, Unknown, std::os::windows::io::AsRawSocket, std::os, data/packages/mio/src/net/tcp, stream.rs, 8
+mio, Unknown, Unknown, std::os::windows::io::FromRawSocket, std::os, data/packages/mio/src/net/tcp, stream.rs, 8
+mio, Unknown, Unknown, std::os::windows::io::IntoRawSocket, std::os, data/packages/mio/src/net/tcp, stream.rs, 8
+mio, Unknown, Unknown, std::os::windows::io::RawSocket, std::os, data/packages/mio/src/net/tcp, stream.rs, 8
+mio, Unknown, Unknown, std::net::Shutdown, std::net, data/packages/mio/src/net/uds, datagram.rs, 3
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/net/uds, datagram.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/mio/src/net/uds, datagram.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/mio/src/net/uds, datagram.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/mio/src/net/uds, datagram.rs, 4
+mio, Unknown, Unknown, std::os::unix::net, std::os, data/packages/mio/src/net/uds, datagram.rs, 5
+mio, Unknown, Unknown, std::path::Path, std::path, data/packages/mio/src/net/uds, datagram.rs, 6
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/net/uds, listener.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/mio/src/net/uds, listener.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/mio/src/net/uds, listener.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/mio/src/net/uds, listener.rs, 4
+mio, Unknown, Unknown, std::os::unix::net, std::os, data/packages/mio/src/net/uds, listener.rs, 5
+mio, Unknown, Unknown, std::path::Path, std::path, data/packages/mio/src/net/uds, listener.rs, 6
+mio, Unknown, Unknown, std::net::Shutdown, std::net, data/packages/mio/src/net/uds, stream.rs, 5
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/net/uds, stream.rs, 6
+mio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/mio/src/net/uds, stream.rs, 6
+mio, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/mio/src/net/uds, stream.rs, 6
+mio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/mio/src/net/uds, stream.rs, 6
+mio, Unknown, Unknown, std::os::unix::net, std::os, data/packages/mio/src/net/uds, stream.rs, 7
+mio, Unknown, Unknown, std::path::Path, std::path, data/packages/mio/src/net/uds, stream.rs, 8
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/sys/shell, selector.rs, 2
+mio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/mio/src/sys/shell, selector.rs, 2
+mio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/mio/src/sys/shell, tcp.rs, 1
+mio, Unknown, Unknown, std::net::self, std::net, data/packages/mio/src/sys/shell, tcp.rs, 1
+mio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/mio/src/sys/shell, udp.rs, 2
+mio, Unknown, Unknown, std::net::self, std::net, data/packages/mio/src/sys/shell, udp.rs, 2
+mio, Unknown, Unknown, std::net::Ipv4Addr, std::net, data/packages/mio/src/sys/unix, net.rs, 2
+mio, Unknown, Unknown, std::net::Ipv6Addr, std::net, data/packages/mio/src/sys/unix, net.rs, 2
+mio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/mio/src/sys/unix, net.rs, 2
+mio, Unknown, Unknown, std::net::SocketAddrV4, std::net, data/packages/mio/src/sys/unix, net.rs, 2
+mio, Unknown, Unknown, std::net::SocketAddrV6, std::net, data/packages/mio/src/sys/unix, net.rs, 2
+mio, Unknown, Unknown, std::fs::File, std::fs, data/packages/mio/src/sys/unix, pipe.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/sys/unix, pipe.rs, 6
+mio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/mio/src/sys/unix, pipe.rs, 6
+mio, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/mio/src/sys/unix, pipe.rs, 6
+mio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/mio/src/sys/unix, pipe.rs, 6
+mio, Unknown, Unknown, std::process::ChildStderr, std::process, data/packages/mio/src/sys/unix, pipe.rs, 7
+mio, Unknown, Unknown, std::process::ChildStdin, std::process, data/packages/mio/src/sys/unix, pipe.rs, 7
+mio, Unknown, Unknown, std::process::ChildStdout, std::process, data/packages/mio/src/sys/unix, pipe.rs, 7
+mio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/mio/src/sys/unix, sourcefd.rs, 3
+mio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/mio/src/sys/unix, tcp.rs, 3
+mio, Unknown, Unknown, std::net::self, std::net, data/packages/mio/src/sys/unix, tcp.rs, 3
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/sys/unix, tcp.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/mio/src/sys/unix, tcp.rs, 4
+mio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/mio/src/sys/unix, udp.rs, 4
+mio, Unknown, Unknown, std::net::self, std::net, data/packages/mio/src/sys/unix, udp.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/sys/unix, udp.rs, 5
+mio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/mio/src/sys/unix, udp.rs, 5
+mio, Unknown, Unknown, libc::EPOLLET, libc, data/packages/mio/src/sys/unix/selector, epoll.rs, 2
+mio, Unknown, Unknown, libc::EPOLLIN, libc, data/packages/mio/src/sys/unix/selector, epoll.rs, 2
+mio, Unknown, Unknown, libc::EPOLLOUT, libc, data/packages/mio/src/sys/unix/selector, epoll.rs, 2
+mio, Unknown, Unknown, libc::EPOLLRDHUP, libc, data/packages/mio/src/sys/unix/selector, epoll.rs, 2
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/sys/unix/selector, epoll.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/mio/src/sys/unix/selector, epoll.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/sys/unix/selector, kqueue.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/mio/src/sys/unix/selector, kqueue.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/sys/unix/uds, datagram.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/mio/src/sys/unix/uds, datagram.rs, 4
+mio, Unknown, Unknown, std::os::unix::net, std::os, data/packages/mio/src/sys/unix/uds, datagram.rs, 5
+mio, Unknown, Unknown, std::path::Path, std::path, data/packages/mio/src/sys/unix/uds, datagram.rs, 6
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/sys/unix/uds, listener.rs, 3
+mio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/mio/src/sys/unix/uds, listener.rs, 3
+mio, Unknown, Unknown, std::os::unix::net, std::os, data/packages/mio/src/sys/unix/uds, listener.rs, 4
+mio, Unknown, Unknown, std::path::Path, std::path, data/packages/mio/src/sys/unix/uds, listener.rs, 5
+mio, Unknown, Unknown, std::os::unix::ffi::OsStrExt, std::os, data/packages/mio/src/sys/unix/uds, socketaddr.rs, 2
+mio, Unknown, Unknown, std::path::Path, std::path, data/packages/mio/src/sys/unix/uds, socketaddr.rs, 3
+mio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/mio/src/sys/unix/uds, stream.rs, 4
+mio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/mio/src/sys/unix/uds, stream.rs, 4
+mio, Unknown, Unknown, std::os::unix::net, std::os, data/packages/mio/src/sys/unix/uds, stream.rs, 5
+mio, Unknown, Unknown, std::path::Path, std::path, data/packages/mio/src/sys/unix/uds, stream.rs, 6
+mio, Unknown, Unknown, std::fs::File, std::fs, data/packages/mio/src/sys/windows, afd.rs, 2
+mio, Unknown, Unknown, std::os::windows::io::AsRawHandle, std::os, data/packages/mio/src/sys/windows, afd.rs, 5
+mio, Unknown, Unknown, std::os::windows::io::RawHandle, std::os, data/packages/mio/src/sys/windows, handle.rs, 0
+mio, Unknown, Unknown, std::os::windows::io::*, std::os, data/packages/mio/src/sys/windows, iocp.rs, 7
+mio, Unknown, Unknown, std::os::windows::io::AsRawHandle, std::os, data/packages/mio/src/sys/windows, named_pipe.rs, 2
+mio, Unknown, Unknown, std::os::windows::io::FromRawHandle, std::os, data/packages/mio/src/sys/windows, named_pipe.rs, 2
+mio, Unknown, Unknown, std::os::windows::io::RawHandle, std::os, data/packages/mio/src/sys/windows, named_pipe.rs, 2
+mio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/mio/src/sys/windows, net.rs, 2
+mio, Unknown, Unknown, std::os::windows::io::RawSocket, std::os, data/packages/mio/src/sys/windows, selector.rs, 17
+mio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/mio/src/sys/windows, tcp.rs, 1
+mio, Unknown, Unknown, std::net::self, std::net, data/packages/mio/src/sys/windows, tcp.rs, 1
+mio, Unknown, Unknown, std::os::windows::io::AsRawSocket, std::os, data/packages/mio/src/sys/windows, tcp.rs, 2
+mio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/mio/src/sys/windows, udp.rs, 2
+mio, Unknown, Unknown, std::net::self, std::net, data/packages/mio/src/sys/windows, udp.rs, 2
+mio, Unknown, Unknown, std::os::windows::io::AsRawSocket, std::os, data/packages/mio/src/sys/windows, udp.rs, 3
+mio, Unknown, Unknown, std::os::windows::io::FromRawSocket, std::os, data/packages/mio/src/sys/windows, udp.rs, 3
+mio, Unknown, Unknown, std::os::windows::raw::SOCKET as StdSocket, std::os, data/packages/mio/src/sys/windows, udp.rs, 4
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, canonicalize.rs, 3
+tokio, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/tokio/src/fs, canonicalize.rs, 3
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, copy.rs, 1
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, create_dir.rs, 3
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, create_dir_all.rs, 3
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, dir_builder.rs, 3
+tokio, Unknown, Unknown, std::fs::Metadata, std::fs, data/packages/tokio/src/fs, file.rs, 11
+tokio, Unknown, Unknown, std::fs::Permissions, std::fs, data/packages/tokio/src/fs, file.rs, 11
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, file.rs, 14
+tokio, Unknown, Unknown, std::fs::File as StdFile, std::fs, data/packages/tokio/src/fs, file.rs, 32
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, hard_link.rs, 3
+tokio, Unknown, Unknown, std::fs::Metadata, std::fs, data/packages/tokio/src/fs, metadata.rs, 2
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, metadata.rs, 4
+tokio, Unknown, Unknown, std::fs::Metadata, std::fs, data/packages/tokio/src/fs, mocks.rs, 13
+tokio, Unknown, Unknown, std::fs::Permissions, std::fs, data/packages/tokio/src/fs, mocks.rs, 13
+tokio, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/tokio/src/fs, mocks.rs, 13
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, open_options.rs, 3
+tokio, Unknown, Unknown, std::fs::OpenOptions as StdOpenOptions, std::fs, data/packages/tokio/src/fs, open_options.rs, 10
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, read.rs, 2
+tokio, Unknown, Unknown, std::fs::FileType, std::fs, data/packages/tokio/src/fs, read_dir.rs, 3
+tokio, Unknown, Unknown, std::fs::Metadata, std::fs, data/packages/tokio/src/fs, read_dir.rs, 3
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, read_dir.rs, 6
+tokio, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/tokio/src/fs, read_dir.rs, 6
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, read_link.rs, 3
+tokio, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/tokio/src/fs, read_link.rs, 3
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, read_to_string.rs, 2
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, remove_dir.rs, 3
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, remove_dir_all.rs, 3
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, remove_file.rs, 3
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, rename.rs, 3
+tokio, Unknown, Unknown, std::fs::Permissions, std::fs, data/packages/tokio/src/fs, set_permissions.rs, 2
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, set_permissions.rs, 4
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, symlink.rs, 3
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, symlink_dir.rs, 3
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, symlink_file.rs, 3
+tokio, Unknown, Unknown, std::fs::Metadata, std::fs, data/packages/tokio/src/fs, symlink_metadata.rs, 2
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, symlink_metadata.rs, 4
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs, write.rs, 2
+tokio, Unknown, Unknown, std::os::unix::fs::OpenOptionsExt, std::os, data/packages/tokio/src/fs/open_options, mock_open_options.rs, 5
+tokio, Unknown, Unknown, std::os::windows::fs::OpenOptionsExt, std::os, data/packages/tokio/src/fs/open_options, mock_open_options.rs, 7
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/fs/open_options, mock_open_options.rs, 8
+tokio, Unknown, Unknown, mio::unix::SourceFd, mio::unix, data/packages/tokio/src/io, async_fd.rs, 3
+tokio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/tokio/src/io, async_fd.rs, 5
+tokio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/tokio/src/io, async_fd.rs, 5
+tokio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/tokio/src/io/bsd, poll_aio.rs, 10
+tokio, Unknown, Unknown, std::os::unix::prelude::RawFd, std::os, data/packages/tokio/src/io/bsd, poll_aio.rs, 11
+tokio, Unknown, Unknown, std::net::IpAddr, std::net, data/packages/tokio/src/net, addr.rs, 2
+tokio, Unknown, Unknown, std::net::Ipv4Addr, std::net, data/packages/tokio/src/net, addr.rs, 2
+tokio, Unknown, Unknown, std::net::Ipv6Addr, std::net, data/packages/tokio/src/net, addr.rs, 2
+tokio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/tokio/src/net, addr.rs, 2
+tokio, Unknown, Unknown, std::net::SocketAddrV4, std::net, data/packages/tokio/src/net, addr.rs, 2
+tokio, Unknown, Unknown, std::net::SocketAddrV6, std::net, data/packages/tokio/src/net, addr.rs, 2
+tokio, Unknown, Unknown, std::net::Ipv4Addr, std::net, data/packages/tokio/src/net, udp.rs, 6
+tokio, Unknown, Unknown, std::net::Ipv6Addr, std::net, data/packages/tokio/src/net, udp.rs, 6
+tokio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/tokio/src/net, udp.rs, 6
+tokio, Unknown, Unknown, std::net::self, std::net, data/packages/tokio/src/net, udp.rs, 6
+tokio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/tokio/src/net/tcp, listener.rs, 10
+tokio, Unknown, Unknown, std::net::self, std::net, data/packages/tokio/src/net/tcp, listener.rs, 10
+tokio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/tokio/src/net/tcp, socket.rs, 4
+tokio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/tokio/src/net/tcp, socket.rs, 7
+tokio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/tokio/src/net/tcp, socket.rs, 7
+tokio, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/tokio/src/net/tcp, socket.rs, 7
+tokio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/tokio/src/net/tcp, socket.rs, 7
+tokio, Unknown, Unknown, std::os::windows::io::AsRawSocket, std::os, data/packages/tokio/src/net/tcp, socket.rs, 9
+tokio, Unknown, Unknown, std::os::windows::io::FromRawSocket, std::os, data/packages/tokio/src/net/tcp, socket.rs, 9
+tokio, Unknown, Unknown, std::os::windows::io::IntoRawSocket, std::os, data/packages/tokio/src/net/tcp, socket.rs, 9
+tokio, Unknown, Unknown, std::os::windows::io::RawSocket, std::os, data/packages/tokio/src/net/tcp, socket.rs, 9
+tokio, Unknown, Unknown, std::net::Shutdown, std::net, data/packages/tokio/src/net/tcp, split.rs, 15
+tokio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/tokio/src/net/tcp, split.rs, 15
+tokio, Unknown, Unknown, std::net::Shutdown, std::net, data/packages/tokio/src/net/tcp, split_owned.rs, 15
+tokio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/tokio/src/net/tcp, split_owned.rs, 15
+tokio, Unknown, Unknown, std::net::Shutdown, std::net, data/packages/tokio/src/net/tcp, stream.rs, 13
+tokio, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/tokio/src/net/tcp, stream.rs, 13
+tokio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/tokio/src/net/unix, listener.rs, 6
+tokio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/tokio/src/net/unix, listener.rs, 6
+tokio, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/tokio/src/net/unix, listener.rs, 6
+tokio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/tokio/src/net/unix, listener.rs, 6
+tokio, Unknown, Unknown, std::os::unix::net, std::os, data/packages/tokio/src/net/unix, listener.rs, 7
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/net/unix, listener.rs, 8
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/net/unix, socketaddr.rs, 1
+tokio, Unknown, Unknown, std::net::Shutdown, std::net, data/packages/tokio/src/net/unix, split.rs, 15
+tokio, Unknown, Unknown, std::net::Shutdown, std::net, data/packages/tokio/src/net/unix, split_owned.rs, 15
+tokio, Unknown, Unknown, std::net::Shutdown, std::net, data/packages/tokio/src/net/unix, stream.rs, 10
+tokio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/tokio/src/net/unix, stream.rs, 11
+tokio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/tokio/src/net/unix, stream.rs, 11
+tokio, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/tokio/src/net/unix, stream.rs, 11
+tokio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/tokio/src/net/unix, stream.rs, 11
+tokio, Unknown, Unknown, std::os::unix::net, std::os, data/packages/tokio/src/net/unix, stream.rs, 12
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/net/unix, stream.rs, 13
+tokio, Unknown, Unknown, libc::gid_t, libc, data/packages/tokio/src/net/unix, ucred.rs, 0
+tokio, Unknown, Unknown, libc::pid_t, libc, data/packages/tokio/src/net/unix, ucred.rs, 0
+tokio, Unknown, Unknown, libc::uid_t, libc, data/packages/tokio/src/net/unix, ucred.rs, 0
+tokio, Unknown, Unknown, std::net::Shutdown, std::net, data/packages/tokio/src/net/unix/datagram, socket.rs, 6
+tokio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/tokio/src/net/unix/datagram, socket.rs, 7
+tokio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/tokio/src/net/unix/datagram, socket.rs, 7
+tokio, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/tokio/src/net/unix/datagram, socket.rs, 7
+tokio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/tokio/src/net/unix/datagram, socket.rs, 7
+tokio, Unknown, Unknown, std::os::unix::net, std::os, data/packages/tokio/src/net/unix/datagram, socket.rs, 8
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/net/unix/datagram, socket.rs, 9
+tokio, Unknown, Unknown, std::os::unix::process::CommandExt, std::os, data/packages/tokio/src/process, mod.rs, 252
+tokio, Unknown, Unknown, std::os::windows::io::AsRawHandle, std::os, data/packages/tokio/src/process, mod.rs, 254
+tokio, Unknown, Unknown, std::os::windows::io::RawHandle, std::os, data/packages/tokio/src/process, mod.rs, 254
+tokio, Unknown, Unknown, std::os::windows::process::CommandExt, std::os, data/packages/tokio/src/process, mod.rs, 256
+tokio, Unknown, Unknown, std::path::Path, std::path, data/packages/tokio/src/process, mod.rs, 257
+tokio, Unknown, Unknown, std::process::Command as StdCommand, std::process, data/packages/tokio/src/process, mod.rs, 259
+tokio, Unknown, Unknown, std::process::ExitStatus, std::process, data/packages/tokio/src/process, mod.rs, 259
+tokio, Unknown, Unknown, std::process::Output, std::process, data/packages/tokio/src/process, mod.rs, 259
+tokio, Unknown, Unknown, std::process::Stdio, std::process, data/packages/tokio/src/process, mod.rs, 259
+tokio, Unknown, Unknown, std::fs::File as StdFile, std::fs, data/packages/tokio/src/process, windows.rs, 23
+tokio, Unknown, Unknown, std::os::windows::prelude::AsRawHandle, std::os, data/packages/tokio/src/process, windows.rs, 26
+tokio, Unknown, Unknown, std::os::windows::prelude::IntoRawHandle, std::os, data/packages/tokio/src/process, windows.rs, 26
+tokio, Unknown, Unknown, std::os::windows::prelude::RawHandle, std::os, data/packages/tokio/src/process, windows.rs, 26
+tokio, Unknown, Unknown, std::process::Stdio, std::process, data/packages/tokio/src/process, windows.rs, 28
+tokio, Unknown, Unknown, std::process::Child as StdChild, std::process, data/packages/tokio/src/process, windows.rs, 29
+tokio, Unknown, Unknown, std::process::Command as StdCommand, std::process, data/packages/tokio/src/process, windows.rs, 29
+tokio, Unknown, Unknown, std::process::ExitStatus, std::process, data/packages/tokio/src/process, windows.rs, 29
+tokio, Unknown, Unknown, winapi::shared::minwindef::DWORD, winapi, data/packages/tokio/src/process, windows.rs, 33
+tokio, Unknown, Unknown, winapi::shared::minwindef::FALSE, winapi, data/packages/tokio/src/process, windows.rs, 33
+tokio, Unknown, Unknown, winapi::um::handleapi::DuplicateHandle, winapi, data/packages/tokio/src/process, windows.rs, 34
+tokio, Unknown, Unknown, winapi::um::handleapi::INVALID_HANDLE_VALUE, winapi, data/packages/tokio/src/process, windows.rs, 34
+tokio, Unknown, Unknown, winapi::um::processthreadsapi::GetCurrentProcess, winapi, data/packages/tokio/src/process, windows.rs, 35
+tokio, Unknown, Unknown, winapi::um::threadpoollegacyapiset::UnregisterWaitEx, winapi, data/packages/tokio/src/process, windows.rs, 36
+tokio, Unknown, Unknown, winapi::um::winbase::INFINITE, winapi, data/packages/tokio/src/process, windows.rs, 37
+tokio, Unknown, Unknown, winapi::um::winbase::RegisterWaitForSingleObject, winapi, data/packages/tokio/src/process, windows.rs, 37
+tokio, Unknown, Unknown, winapi::um::winnt::, winapi, data/packages/tokio/src/process, windows.rs, 40
+tokio, Unknown, Unknown, winapi::um::winnt::BOOLEAN, winapi, data/packages/tokio/src/process, windows.rs, 40
+tokio, Unknown, Unknown, winapi::um::winnt::DUPLICATE_SAME_ACCESS, winapi, data/packages/tokio/src/process, windows.rs, 40
+tokio, Unknown, Unknown, winapi::um::winnt::HANDLE, winapi, data/packages/tokio/src/process, windows.rs, 40
+tokio, Unknown, Unknown, winapi::um::winnt::PVOID, winapi, data/packages/tokio/src/process, windows.rs, 40
+tokio, Unknown, Unknown, winapi::um::winnt::WT_EXECUTEINWAITTHREAD, winapi, data/packages/tokio/src/process, windows.rs, 40
+tokio, Unknown, Unknown, winapi::um::winnt::WT_EXECUTEONLYONCE, winapi, data/packages/tokio/src/process, windows.rs, 40
+tokio, Unknown, Unknown, mio::unix::SourceFd, mio::unix, data/packages/tokio/src/process/unix, mod.rs, 39
+tokio, Unknown, Unknown, std::fs::File, std::fs, data/packages/tokio/src/process/unix, mod.rs, 41
+tokio, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/tokio/src/process/unix, mod.rs, 44
+tokio, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/tokio/src/process/unix, mod.rs, 44
+tokio, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/tokio/src/process/unix, mod.rs, 44
+tokio, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/tokio/src/process/unix, mod.rs, 44
+tokio, Unknown, Unknown, std::process::Child as StdChild, std::process, data/packages/tokio/src/process/unix, mod.rs, 46
+tokio, Unknown, Unknown, std::process::ExitStatus, std::process, data/packages/tokio/src/process/unix, mod.rs, 46
+tokio, Unknown, Unknown, std::process::Stdio, std::process, data/packages/tokio/src/process/unix, mod.rs, 46
+tokio, Unknown, Unknown, std::process::ExitStatus, std::process, data/packages/tokio/src/process/unix, orphan.rs, 5
+tokio, Unknown, Unknown, std::process::ExitStatus, std::process, data/packages/tokio/src/process/unix, reap.rs, 8
+tokio, Unknown, Unknown, mio::net::UnixStream, mio::net, data/packages/tokio/src/signal, unix.rs, 12
+tokio, Unknown, Unknown, mio::net::UnixStream, mio::net, data/packages/tokio/src/signal/unix, driver.rs, 10
+tokio, Unknown, Unknown, winapi::shared::minwindef::BOOL, winapi, data/packages/tokio/src/signal/windows, sys.rs, 7
+tokio, Unknown, Unknown, winapi::shared::minwindef::DWORD, winapi, data/packages/tokio/src/signal/windows, sys.rs, 7
+tokio, Unknown, Unknown, winapi::shared::minwindef::FALSE, winapi, data/packages/tokio/src/signal/windows, sys.rs, 7
+tokio, Unknown, Unknown, winapi::shared::minwindef::TRUE, winapi, data/packages/tokio/src/signal/windows, sys.rs, 7
+tokio, Unknown, Unknown, winapi::um::consoleapi::SetConsoleCtrlHandler, winapi, data/packages/tokio/src/signal/windows, sys.rs, 8
+tokio, Unknown, Unknown, winapi::um::wincon, winapi, data/packages/tokio/src/signal/windows, sys.rs, 9
+tokio, Unknown, Unknown, std::process, std::process, data/packages/tokio/src/sync/mpsc, chan.rs, 11
+rustc_version, Unknown, Unknown, std::process::Command, std::process, data/packages/rustc_version/src, lib.rs, 59
+rustc_version, Unknown, Unknown, std::env, std::env, data/packages/rustc_version/src, lib.rs, 60
+chrono, Unknown, Unknown, std::env, std::env, data/packages/chrono/src/offset/local, unix.rs, 10
+chrono, Unknown, Unknown, std::fs, std::fs, data/packages/chrono/src/offset/local, unix.rs, 10
+chrono, Unknown, Unknown, winapi::shared::minwindef::*, winapi, data/packages/chrono/src/offset/local, windows.rs, 14
+chrono, Unknown, Unknown, winapi::um::minwinbase::SYSTEMTIME, winapi, data/packages/chrono/src/offset/local, windows.rs, 15
+chrono, Unknown, Unknown, winapi::um::timezoneapi::*, winapi, data/packages/chrono/src/offset/local, windows.rs, 16
+chrono, Unknown, Unknown, std::fs::File, std::fs, data/packages/chrono/src/offset/local/tz_info, timezone.rs, 2
+chrono, Unknown, Unknown, std::fs::self, std::fs, data/packages/chrono/src/offset/local/tz_info, timezone.rs, 2
+chrono, Unknown, Unknown, std::path::Path, std::path, data/packages/chrono/src/offset/local/tz_info, timezone.rs, 4
+chrono, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/chrono/src/offset/local/tz_info, timezone.rs, 4
+env_logger, Unknown, Unknown, std::env, std::env, data/packages/env_logger/src, lib.rs, 286
+env_logger, Unknown, Unknown, std::env, std::env, data/packages/env_logger/src/filter, mod.rs, 62
+pkg-config, Unknown, Unknown, std::env, std::env, data/packages/pkg-config/src, lib.rs, 71
+pkg-config, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/pkg-config/src, lib.rs, 77
+pkg-config, Unknown, Unknown, std::process::Command, std::process, data/packages/pkg-config/src, lib.rs, 78
+pkg-config, Unknown, Unknown, std::process::Output, std::process, data/packages/pkg-config/src, lib.rs, 78
+hyper, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/hyper/src, upgrade.rs, 48
+hyper, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/hyper/src, upgrade.rs, 48
+hyper, Unknown, Unknown, tokio::io::ReadBuf, tokio::io, data/packages/hyper/src, upgrade.rs, 48
+hyper, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/hyper/src/client, conn.rs, 68
+hyper, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/hyper/src/client, conn.rs, 68
+hyper, Unknown, Unknown, tokio::net::TcpStream, tokio::net, data/packages/hyper/src/client, tests.rs, 3
+hyper, Unknown, Unknown, std::net::Ipv4Addr, std::net, data/packages/hyper/src/client/connect, dns.rs, 25
+hyper, Unknown, Unknown, std::net::Ipv6Addr, std::net, data/packages/hyper/src/client/connect, dns.rs, 25
+hyper, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/hyper/src/client/connect, dns.rs, 25
+hyper, Unknown, Unknown, std::net::SocketAddrV4, std::net, data/packages/hyper/src/client/connect, dns.rs, 25
+hyper, Unknown, Unknown, std::net::SocketAddrV6, std::net, data/packages/hyper/src/client/connect, dns.rs, 25
+hyper, Unknown, Unknown, std::net::ToSocketAddrs, std::net, data/packages/hyper/src/client/connect, dns.rs, 25
+hyper, Unknown, Unknown, std::net::IpAddr, std::net, data/packages/hyper/src/client/connect, http.rs, 5
+hyper, Unknown, Unknown, std::net::Ipv4Addr, std::net, data/packages/hyper/src/client/connect, http.rs, 5
+hyper, Unknown, Unknown, std::net::Ipv6Addr, std::net, data/packages/hyper/src/client/connect, http.rs, 5
+hyper, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/hyper/src/client/connect, http.rs, 5
+hyper, Unknown, Unknown, tokio::net::TcpSocket, tokio::net, data/packages/hyper/src/client/connect, http.rs, 14
+hyper, Unknown, Unknown, tokio::net::TcpStream, tokio::net, data/packages/hyper/src/client/connect, http.rs, 14
+hyper, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/hyper/src/common/io, rewind.rs, 4
+hyper, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/hyper/src/common/io, rewind.rs, 4
+hyper, Unknown, Unknown, tokio::io::ReadBuf, tokio::io, data/packages/hyper/src/common/io, rewind.rs, 4
+hyper, Unknown, Unknown, libc::c_int, libc, data/packages/hyper/src/ffi, body.rs, 6
+hyper, Unknown, Unknown, libc::size_t, libc, data/packages/hyper/src/ffi, body.rs, 6
+hyper, Unknown, Unknown, libc::c_int, libc, data/packages/hyper/src/ffi, client.rs, 3
+hyper, Unknown, Unknown, libc::size_t, libc, data/packages/hyper/src/ffi, error.rs, 0
+hyper, Unknown, Unknown, libc::c_int, libc, data/packages/hyper/src/ffi, http_types.rs, 1
+hyper, Unknown, Unknown, libc::size_t, libc, data/packages/hyper/src/ffi, http_types.rs, 1
+hyper, Unknown, Unknown, libc::size_t, libc, data/packages/hyper/src/ffi, io.rs, 4
+hyper, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/hyper/src/ffi, io.rs, 5
+hyper, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/hyper/src/ffi, io.rs, 5
+hyper, Unknown, Unknown, libc::c_int, libc, data/packages/hyper/src/ffi, task.rs, 11
+hyper, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/hyper/src/proto/h1, conn.rs, 10
+hyper, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/hyper/src/proto/h1, conn.rs, 10
+hyper, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/hyper/src/proto/h1, dispatch.rs, 4
+hyper, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/hyper/src/proto/h1, dispatch.rs, 4
+hyper, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/hyper/src/proto/h1, io.rs, 11
+hyper, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/hyper/src/proto/h1, io.rs, 11
+hyper, Unknown, Unknown, tokio::io::ReadBuf, tokio::io, data/packages/hyper/src/proto/h1, io.rs, 11
+hyper, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/hyper/src/proto/h2, client.rs, 10
+hyper, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/hyper/src/proto/h2, client.rs, 10
+hyper, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/hyper/src/proto/h2, mod.rs, 9
+hyper, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/hyper/src/proto/h2, mod.rs, 9
+hyper, Unknown, Unknown, tokio::io::ReadBuf, tokio::io, data/packages/hyper/src/proto/h2, mod.rs, 9
+hyper, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/hyper/src/proto/h2, server.rs, 10
+hyper, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/hyper/src/proto/h2, server.rs, 10
+hyper, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/hyper/src/server, server.rs, 3
+hyper, Unknown, Unknown, std::net::TcpListener as StdTcpListener, std::net, data/packages/hyper/src/server, server.rs, 3
+hyper, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/hyper/src/server, server.rs, 8
+hyper, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/hyper/src/server, server.rs, 8
+hyper, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/hyper/src/server, shutdown.rs, 3
+hyper, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/hyper/src/server, shutdown.rs, 3
+hyper, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/hyper/src/server, tcp.rs, 2
+hyper, Unknown, Unknown, std::net::TcpListener as StdTcpListener, std::net, data/packages/hyper/src/server, tcp.rs, 2
+hyper, Unknown, Unknown, tokio::net::TcpListener, tokio::net, data/packages/hyper/src/server, tcp.rs, 5
+hyper, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/hyper/src/service, make.rs, 3
+hyper, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/hyper/src/service, make.rs, 3
+thiserror, Unknown, Unknown, std::path::Path, std::path, data/packages/thiserror/src, display.rs, 1
+thiserror, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/thiserror/src, display.rs, 1
+thiserror, Unknown, Unknown, std::path::self, std::path, data/packages/thiserror/src, display.rs, 1
+termcolor, Unknown, Unknown, std::env, std::env, data/packages/termcolor/src, lib.rs, 126
+termcolor, Unknown, Unknown, winapi_util::console as wincon, winapi, data/packages/termcolor/src, lib.rs, 136
+socket2, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/socket2/src, lib.rs, 63
+socket2, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/socket2/src, sockaddr.rs, 1
+socket2, Unknown, Unknown, std::net::SocketAddrV4, std::net, data/packages/socket2/src, sockaddr.rs, 1
+socket2, Unknown, Unknown, std::net::SocketAddrV6, std::net, data/packages/socket2/src, sockaddr.rs, 1
+socket2, Unknown, Unknown, winapi::shared::ws2ipdef::SOCKADDR_IN6_LH_u, winapi, data/packages/socket2/src, sockaddr.rs, 9
+socket2, Unknown, Unknown, std::net::Ipv4Addr, std::net, data/packages/socket2/src, socket.rs, 13
+socket2, Unknown, Unknown, std::net::Ipv6Addr, std::net, data/packages/socket2/src, socket.rs, 13
+socket2, Unknown, Unknown, std::net::Shutdown, std::net, data/packages/socket2/src, socket.rs, 13
+socket2, Unknown, Unknown, std::net::self, std::net, data/packages/socket2/src, socket.rs, 13
+socket2, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/socket2/src, socket.rs, 15
+socket2, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/socket2/src, socket.rs, 15
+socket2, Unknown, Unknown, std::os::windows::io::FromRawSocket, std::os, data/packages/socket2/src, socket.rs, 17
+socket2, Unknown, Unknown, std::os::windows::io::IntoRawSocket, std::os, data/packages/socket2/src, socket.rs, 17
+socket2, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/socket2/src, sockref.rs, 5
+socket2, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/socket2/src, sockref.rs, 5
+socket2, Unknown, Unknown, std::os::windows::io::AsRawSocket, std::os, data/packages/socket2/src, sockref.rs, 7
+socket2, Unknown, Unknown, std::os::windows::io::FromRawSocket, std::os, data/packages/socket2/src, sockref.rs, 7
+socket2, Unknown, Unknown, std::net::Shutdown, std::net, data/packages/socket2/src/sys, unix.rs, 13
+socket2, Unknown, Unknown, std::net::Ipv4Addr, std::net, data/packages/socket2/src/sys, unix.rs, 14
+socket2, Unknown, Unknown, std::net::Ipv6Addr, std::net, data/packages/socket2/src/sys, unix.rs, 14
+socket2, Unknown, Unknown, std::os::unix::ffi::OsStrExt, std::os, data/packages/socket2/src/sys, unix.rs, 28
+socket2, Unknown, Unknown, std::os::unix::io::RawFd, std::os, data/packages/socket2/src/sys, unix.rs, 38
+socket2, Unknown, Unknown, std::os::unix::io::AsRawFd, std::os, data/packages/socket2/src/sys, unix.rs, 39
+socket2, Unknown, Unknown, std::os::unix::io::FromRawFd, std::os, data/packages/socket2/src/sys, unix.rs, 39
+socket2, Unknown, Unknown, std::os::unix::io::IntoRawFd, std::os, data/packages/socket2/src/sys, unix.rs, 39
+socket2, Unknown, Unknown, std::os::unix::net::UnixDatagram, std::os, data/packages/socket2/src/sys, unix.rs, 41
+socket2, Unknown, Unknown, std::os::unix::net::UnixListener, std::os, data/packages/socket2/src/sys, unix.rs, 41
+socket2, Unknown, Unknown, std::os::unix::net::UnixStream, std::os, data/packages/socket2/src/sys, unix.rs, 41
+socket2, Unknown, Unknown, std::path::Path, std::path, data/packages/socket2/src/sys, unix.rs, 43
+socket2, Unknown, Unknown, libc::ssize_t, libc, data/packages/socket2/src/sys, unix.rs, 50
+socket2, Unknown, Unknown, libc::c_void, libc, data/packages/socket2/src/sys, unix.rs, 51
+socket2, Unknown, Unknown, libc::in6_addr, libc, data/packages/socket2/src/sys, unix.rs, 51
+socket2, Unknown, Unknown, libc::in_addr, libc, data/packages/socket2/src/sys, unix.rs, 51
+socket2, Unknown, Unknown, libc::TCP_KEEPALIVE as KEEPALIVE_TIME, libc, data/packages/socket2/src/sys, unix.rs, 161
+socket2, Unknown, Unknown, libc::TCP_KEEPIDLE as KEEPALIVE_TIME, libc, data/packages/socket2/src/sys, unix.rs, 163
+socket2, Unknown, Unknown, std::net::Ipv4Addr, std::net, data/packages/socket2/src/sys, windows.rs, 12
+socket2, Unknown, Unknown, std::net::Ipv6Addr, std::net, data/packages/socket2/src/sys, windows.rs, 12
+socket2, Unknown, Unknown, std::net::Shutdown, std::net, data/packages/socket2/src/sys, windows.rs, 12
+socket2, Unknown, Unknown, std::net::self, std::net, data/packages/socket2/src/sys, windows.rs, 12
+socket2, Unknown, Unknown, std::os::windows::prelude::*, std::os, data/packages/socket2/src/sys, windows.rs, 13
+socket2, Unknown, Unknown, winapi::ctypes::c_long, winapi, data/packages/socket2/src/sys, windows.rs, 18
+socket2, Unknown, Unknown, winapi::shared::in6addr::*, winapi, data/packages/socket2/src/sys, windows.rs, 19
+socket2, Unknown, Unknown, winapi::shared::inaddr::*, winapi, data/packages/socket2/src/sys, windows.rs, 20
+socket2, Unknown, Unknown, winapi::shared::minwindef::DWORD, winapi, data/packages/socket2/src/sys, windows.rs, 21
+socket2, Unknown, Unknown, winapi::shared::minwindef::ULONG, winapi, data/packages/socket2/src/sys, windows.rs, 22
+socket2, Unknown, Unknown, winapi::shared::mstcpip::SIO_KEEPALIVE_VALS, winapi, data/packages/socket2/src/sys, windows.rs, 23
+socket2, Unknown, Unknown, winapi::shared::mstcpip::tcp_keepalive, winapi, data/packages/socket2/src/sys, windows.rs, 23
+socket2, Unknown, Unknown, winapi::shared::ntdef::HANDLE, winapi, data/packages/socket2/src/sys, windows.rs, 24
+socket2, Unknown, Unknown, winapi::shared::ws2def, winapi, data/packages/socket2/src/sys, windows.rs, 25
+socket2, Unknown, Unknown, winapi::shared::ws2def::WSABUF, winapi, data/packages/socket2/src/sys, windows.rs, 26
+socket2, Unknown, Unknown, winapi::um::handleapi::SetHandleInformation, winapi, data/packages/socket2/src/sys, windows.rs, 27
+socket2, Unknown, Unknown, winapi::um::processthreadsapi::GetCurrentProcessId, winapi, data/packages/socket2/src/sys, windows.rs, 28
+socket2, Unknown, Unknown, winapi::um::winbase::INFINITE, winapi, data/packages/socket2/src/sys, windows.rs, 29
+socket2, Unknown, Unknown, winapi::um::winbase::self, winapi, data/packages/socket2/src/sys, windows.rs, 29
+socket2, Unknown, Unknown, winapi::um::winsock2::, winapi, data/packages/socket2/src/sys, windows.rs, 33
+socket2, Unknown, Unknown, winapi::um::winsock2::POLLERR, winapi, data/packages/socket2/src/sys, windows.rs, 33
+socket2, Unknown, Unknown, winapi::um::winsock2::POLLHUP, winapi, data/packages/socket2/src/sys, windows.rs, 33
+socket2, Unknown, Unknown, winapi::um::winsock2::POLLRDNORM, winapi, data/packages/socket2/src/sys, windows.rs, 33
+socket2, Unknown, Unknown, winapi::um::winsock2::POLLWRNORM, winapi, data/packages/socket2/src/sys, windows.rs, 33
+socket2, Unknown, Unknown, winapi::um::winsock2::SD_BOTH, winapi, data/packages/socket2/src/sys, windows.rs, 33
+socket2, Unknown, Unknown, winapi::um::winsock2::SD_RECEIVE, winapi, data/packages/socket2/src/sys, windows.rs, 33
+socket2, Unknown, Unknown, winapi::um::winsock2::SD_SEND, winapi, data/packages/socket2/src/sys, windows.rs, 33
+socket2, Unknown, Unknown, winapi::um::winsock2::WSAPOLLFD, winapi, data/packages/socket2/src/sys, windows.rs, 33
+socket2, Unknown, Unknown, winapi::um::winsock2::self as sock, winapi, data/packages/socket2/src/sys, windows.rs, 33
+socket2, Unknown, Unknown, winapi::um::winsock2::u_long, winapi, data/packages/socket2/src/sys, windows.rs, 33
+crossbeam-channel, Unknown, Unknown, std::process, std::process, data/packages/crossbeam-channel/src, counter.rs, 4
+tokio-util, Unknown, Unknown, tokio::io::AsyncBufRead, tokio::io, data/packages/tokio-util/src, either.rs, 7
+tokio-util, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/tokio-util/src, either.rs, 7
+tokio-util, Unknown, Unknown, tokio::io::AsyncSeek, tokio::io, data/packages/tokio-util/src, either.rs, 7
+tokio-util, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/tokio-util/src, either.rs, 7
+tokio-util, Unknown, Unknown, tokio::io::ReadBuf, tokio::io, data/packages/tokio-util/src, either.rs, 7
+tokio-util, Unknown, Unknown, tokio::io::Result, tokio::io, data/packages/tokio-util/src, either.rs, 7
+tokio-util, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/tokio-util/src/codec, decoder.rs, 2
+tokio-util, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/tokio-util/src/codec, decoder.rs, 2
+tokio-util, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/tokio-util/src/codec, framed.rs, 5
+tokio-util, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/tokio-util/src/codec, framed.rs, 5
+tokio-util, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/tokio-util/src/codec, framed_impl.rs, 4
+tokio-util, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/tokio-util/src/codec, framed_impl.rs, 4
+tokio-util, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/tokio-util/src/codec, framed_read.rs, 4
+tokio-util, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/tokio-util/src/codec, framed_write.rs, 4
+tokio-util, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/tokio-util/src/codec, length_delimited.rs, 376
+tokio-util, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/tokio-util/src/codec, length_delimited.rs, 376
+tokio-util, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/tokio-util/src/io, read_buf.rs, 5
+tokio-util, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/tokio-util/src/io, reader_stream.rs, 5
+tokio-util, Unknown, Unknown, tokio::io::AsyncBufRead, tokio::io, data/packages/tokio-util/src/io, stream_reader.rs, 6
+tokio-util, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/tokio-util/src/io, stream_reader.rs, 6
+tokio-util, Unknown, Unknown, tokio::io::ReadBuf, tokio::io, data/packages/tokio-util/src/io, stream_reader.rs, 6
+tokio-util, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/tokio-util/src/io, sync_bridge.rs, 1
+tokio-util, Unknown, Unknown, tokio::io::AsyncReadExt, tokio::io, data/packages/tokio-util/src/io, sync_bridge.rs, 1
+tokio-util, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/tokio-util/src/io, sync_bridge.rs, 1
+tokio-util, Unknown, Unknown, tokio::io::AsyncWriteExt, tokio::io, data/packages/tokio-util/src/io, sync_bridge.rs, 1
+tokio-util, Unknown, Unknown, tokio::io::ReadBuf, tokio::io, data/packages/tokio-util/src/udp, frame.rs, 3
+tokio-util, Unknown, Unknown, tokio::net::UdpSocket, tokio::net, data/packages/tokio-util/src/udp, frame.rs, 3
+tokio-util, Unknown, Unknown, std::net::Ipv4Addr, std::net, data/packages/tokio-util/src/udp, frame.rs, 13
+tokio-util, Unknown, Unknown, std::net::SocketAddr, std::net, data/packages/tokio-util/src/udp, frame.rs, 13
+tokio-util, Unknown, Unknown, std::net::SocketAddrV4, std::net, data/packages/tokio-util/src/udp, frame.rs, 13
+h2, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/h2/src, client.rs, 151
+h2, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/h2/src, client.rs, 151
+h2, Unknown, Unknown, tokio::io::AsyncWriteExt, tokio::io, data/packages/h2/src, client.rs, 151
+h2, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/h2/src, server.rs, 129
+h2, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/h2/src, server.rs, 129
+h2, Unknown, Unknown, tokio::io::ReadBuf, tokio::io, data/packages/h2/src, server.rs, 129
+h2, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/h2/src/codec, framed_read.rs, 16
+h2, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/h2/src/codec, framed_write.rs, 8
+h2, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/h2/src/codec, framed_write.rs, 8
+h2, Unknown, Unknown, tokio::io::ReadBuf, tokio::io, data/packages/h2/src/codec, framed_write.rs, 8
+h2, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/h2/src/codec, mod.rs, 17
+h2, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/h2/src/codec, mod.rs, 17
+h2, Unknown, Unknown, std::fs::File, std::fs, data/packages/h2/src/hpack/test, fixture.rs, 6
+h2, Unknown, Unknown, std::path::Path, std::path, data/packages/h2/src/hpack/test, fixture.rs, 9
+h2, Unknown, Unknown, tokio::io::AsyncRead, tokio::io, data/packages/h2/src/proto, connection.rs, 14
+h2, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/h2/src/proto, connection.rs, 14
+h2, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/h2/src/proto, go_away.rs, 6
+h2, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/h2/src/proto, mod.rs, 25
+h2, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/h2/src/proto, ping_pong.rs, 10
+h2, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/h2/src/proto/streams, send.rs, 11
+h2, Unknown, Unknown, tokio::io::AsyncWrite, tokio::io, data/packages/h2/src/proto/streams, streams.rs, 12

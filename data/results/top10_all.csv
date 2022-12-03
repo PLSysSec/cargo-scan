@@ -1,15 +1,15 @@
-crate, pattern of interest, directory, file, use line
-proc-macro2, std::path, data/packages/proc-macro2/src, fallback.rs, std::path::Path
-proc-macro2, std::path, data/packages/proc-macro2/src, fallback.rs, std::path::PathBuf
-proc-macro2, std::path, data/packages/proc-macro2/src, lib.rs, std::path::PathBuf
-proc-macro2, std::path, data/packages/proc-macro2/src, wrapper.rs, std::path::PathBuf
-autocfg, std::env, data/packages/autocfg/src, lib.rs, std::env
-autocfg, std::fs, data/packages/autocfg/src, lib.rs, std::fs
-autocfg, std::path, data/packages/autocfg/src, lib.rs, std::path::Path
-autocfg, std::path, data/packages/autocfg/src, lib.rs, std::path::PathBuf
-autocfg, std::process, data/packages/autocfg/src, lib.rs, std::process::Command
-autocfg, std::process, data/packages/autocfg/src, lib.rs, std::process::Stdio
-autocfg, std::env, data/packages/autocfg/src, tests.rs, std::env
-autocfg, std::path, data/packages/autocfg/src, tests.rs, std::path::Path
-autocfg, std::path, data/packages/autocfg/src, version.rs, std::path::Path
-autocfg, std::process, data/packages/autocfg/src, version.rs, std::process::Command
+crate, module, caller, callee, pattern, dir, file, loc
+proc-macro2, Unknown, Unknown, std::path::Path, std::path, data/packages/proc-macro2/src, fallback.rs, 14
+proc-macro2, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/proc-macro2/src, fallback.rs, 15
+proc-macro2, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/proc-macro2/src, lib.rs, 150
+proc-macro2, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/proc-macro2/src, wrapper.rs, 8
+autocfg, Unknown, Unknown, std::env, std::env, data/packages/autocfg/src, lib.rs, 61
+autocfg, Unknown, Unknown, std::fs, std::fs, data/packages/autocfg/src, lib.rs, 63
+autocfg, Unknown, Unknown, std::path::Path, std::path, data/packages/autocfg/src, lib.rs, 65
+autocfg, Unknown, Unknown, std::path::PathBuf, std::path, data/packages/autocfg/src, lib.rs, 65
+autocfg, Unknown, Unknown, std::process::Command, std::process, data/packages/autocfg/src, lib.rs, 66
+autocfg, Unknown, Unknown, std::process::Stdio, std::process, data/packages/autocfg/src, lib.rs, 66
+autocfg, Unknown, Unknown, std::env, std::env, data/packages/autocfg/src, tests.rs, 1
+autocfg, Unknown, Unknown, std::path::Path, std::path, data/packages/autocfg/src, tests.rs, 2
+autocfg, Unknown, Unknown, std::path::Path, std::path, data/packages/autocfg/src, version.rs, 0
+autocfg, Unknown, Unknown, std::process::Command, std::process, data/packages/autocfg/src, version.rs, 1
