@@ -136,7 +136,7 @@ class Effect:
         effect_fun = sanitize_comma(self.effect_fun)
         return ", ".join([crate, pattern, dir, file, effect_fun])
 
-# ===== Main script =====
+# ===== Saving results =====
 
 def count_lines(cratefile, header_row=True):
     with open(cratefile, 'r') as fh:
@@ -215,6 +215,8 @@ def save_summary(crate_summary, pattern_summary, results_prefix):
     logging.info(f"Saving summary to {results_path}")
     with open(results_path, 'w') as fh:
         fh.write(summary)
+
+# ===== Grep-like backend (simple parsing) =====
 
 def is_of_interest(line, of_interest):
     found = None
@@ -350,6 +352,8 @@ def scan_crate(crate, crate_dir, of_interest):
         for file in files:
             if os.path.splitext(file)[1] == ".rs":
                 yield from scan_file(crate, root, file, of_interest)
+
+# ===== MIRAI backend =====
 
 def parse_mirai_call_line(line):
     parts = (line
