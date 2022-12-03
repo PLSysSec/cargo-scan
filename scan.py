@@ -384,9 +384,9 @@ def mirai_call_path_as_effect(crate, call_path):
     if len(call_path) > 1:
         caller, src_dir2, caller_path = call_path[1]
         if src_dir != src_dir2:
-            logging.warning("MIRAI: callee and caller in different source dirs: {src_dir1} and {src_dir2}")
+            logging.warning(f"MIRAI: callee and caller in different source dirs: {src_dir1} and {src_dir2}")
     else:
-        logging.warning("MIRAI: call path of length 1: {call_path}")
+        logging.warning(f"MIRAI: call path of length 1: {call_path}")
         caller = "Unknown"
         caller_path = "Unknown"
 
