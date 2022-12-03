@@ -333,7 +333,7 @@ def scan_use(crate, root, file, lineno, use_expr, of_interest):
                 pat,
                 root,
                 file,
-                lineno,
+                str(lineno),
             )
 
 def scan_rs(fh):
