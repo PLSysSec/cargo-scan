@@ -104,12 +104,12 @@ def truncate_str(s, n):
     else:
         return s[:(n-3)] + "..."
 
+# ===== CSV output for effects =====
+
 def sanitize_comma(s):
     if "," in s:
         logging.warning(f"found unexpected comma in: {s}")
     return s.replace(',', '')
-
-# ===== CSV output for effects =====
 
 @dataclass
 class Effect:
@@ -118,23 +118,37 @@ class Effect:
     used as an intermediate output for both the grep-based and the
     mirai-based effects analysis
     """
+    # Name of crate, e.g. num_cpus
     crate: str
+    # Full path to module, e.g. num_cpus::linux
+    module: str
+    # Caller function, e.g. logical_cpus
+    caller: str
+    # Callee (effect) function, e.g. libc::sched_getaffinity
+    callee: str
+    # Effect pattern -- prefix of callee (effect), e.g. libc
     pattern: str
+    # Directory in which the call occurs
     dir: str
+    # File in which the call occurs -- in the above directory
     file: str
-    effect_fun: str
-    caller_fun: str
+    # Loc in which the call occurs -- in the above file
+    loc: str
 
     def csv_header():
-        return ", ".join(["crate", "pattern of interest", "directory", "file", "use line"])
+        return ", ".join(["crate", "module", "caller", "callee", "pattern", "dir", "file", "loc"])
 
     def to_csv(self):
         crate = sanitize_comma(self.crate)
+        module = sanitize_comma(self.module)
+        caller = sanitize_comma(self.caller)
+        callee = sanitize_comma(self.callee)
         pattern = sanitize_comma(self.pattern)
         dir = sanitize_comma(self.dir)
         file = sanitize_comma(self.file)
-        effect_fun = sanitize_comma(self.effect_fun)
-        return ", ".join([crate, pattern, dir, file, effect_fun])
+        loc = sanitize_comma(self.loc)
+
+        return ", ".join([crate, module, caller, callee, pattern, dir, file, loc])
 
 # ===== Saving results =====
 
@@ -309,7 +323,16 @@ def scan_use(crate, root, file, use_expr, of_interest):
             logging.trace(f"Skipping: {use}")
         else:
             logging.trace(f"Of interest: {use}")
-            yield Effect(crate, pat, root, file, use, "Unknown")
+            yield Effect(
+                crate,
+                "Unknown",
+                "Unknown",
+                "Unknown",
+                pat,
+                root,
+                file,
+                "Unknown",
+            )
 
 def scan_rs(fh):
     """
@@ -373,16 +396,19 @@ def parse_mirai_call_line(line):
     # ['DefId', '0:6', 'num_cpus[1818]::get_num_physical_cpus', 'src/lib.rs:324:20', '324:34', '#0']
     # ['DefId', '0:5', 'num_cpus[1818]::get_physical', 'src/lib.rs:109:5', '109:28', '#0']
     fun = re.sub(r"\[[0-9a-f]*\]", "", parts[2])
+    module = fun.rsplit("::", 1)[0]
     src_dir, path = tuple(parts[3].split("/"))
-    return fun, src_dir, path
+    file, loc = tuple(path.split(':', 1))
+    return module, fun, src_dir, file, loc
 
-def mirai_call_path_as_effect(crate, call_path):
+def mirai_call_path_as_effect(crate, crate_dir, call_path):
     # Convert a call path to an Effect object
-    # crate_dir is the name of the crate
+    # crate is the name of the crate
+    # crate_dir is the path to the crate (from scan.py top-level directory)
     # call_path is a nonempty list of (effect_fun, src_dir, path)
-    callee, src_dir, callee_path = call_path[0]
+    callee_mod, callee_fun, src_dir, callee_file, callee_loc = call_path[0]
     if len(call_path) > 1:
-        caller, src_dir2, caller_path = call_path[1]
+        caller_mod, caller_fun, src_dir2, caller_file, caller_loc = call_path[1]
         if src_dir != src_dir2:
             logging.warning(f"MIRAI: callee and caller in different source dirs: {src_dir1} and {src_dir2}")
     else:
@@ -390,8 +416,22 @@ def mirai_call_path_as_effect(crate, call_path):
         caller = "Unknown"
         caller_path = "Unknown"
 
-    pattern = callee.split("::")[0] + "::" + callee.split("::")[1]
-    return Effect(crate, pattern, src_dir, callee_path, callee, caller)
+    callee_mod_split = callee_mod.split("::")
+    pattern = callee_mod_split[0]
+    if len(callee_mod_split) >= 2:
+        pattern += "::" + callee_mod_split[1]
+    dir = crate_dir + "/" + src_dir
+
+    return Effect(
+        crate,
+        caller_mod,
+        caller_fun,
+        callee_fun,
+        pattern,
+        dir,
+        callee_file,
+        callee_loc,
+    )
 
 def scan_crate_mirai(crate, crate_dir, _of_interest):
     # Run our MIRAI fork; yield effects
@@ -407,7 +447,7 @@ def scan_crate_mirai(crate, crate_dir, _of_interest):
         elif line == "Call Path:":
             logging.trace("MIRAI: new call path")
             if call_path:
-                yield mirai_call_path_as_effect(crate, call_path)
+                yield mirai_call_path_as_effect(crate, crate_dir, call_path)
             call_path = []
         elif line[0:6] == "Call: ":
             result = parse_mirai_call_line(line[6:])
@@ -417,7 +457,7 @@ def scan_crate_mirai(crate, crate_dir, _of_interest):
         else:
             logging.warning(f"Unrecognized MIRAI output line: {line}")
     if call_path:
-        yield mirai_call_path_as_effect(crate, call_path)
+        yield mirai_call_path_as_effect(crate, crate_dir, call_path)
 
 def view_callgraph_mirai(crate_dir):
     subprocess.run(["dot", "-Tpng", "graph.dot", "-o", "graph.png"], cwd=crate_dir, check=True)
