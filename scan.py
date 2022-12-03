@@ -312,7 +312,7 @@ def parse_use(expr):
     # Sort final results
     return sorted(list(parse_use_core(expr, smry)))
 
-def scan_use(crate, root, file, use_expr, of_interest):
+def scan_use(crate, root, file, lineno, use_expr, of_interest):
     """
     Scan a single use ...; expression.
     Return a list of pairs of a pattern and the CSV output.
@@ -333,7 +333,7 @@ def scan_use(crate, root, file, use_expr, of_interest):
                 pat,
                 root,
                 file,
-                "Unknown",
+                lineno,
             )
 
 def scan_rs(fh):
@@ -344,14 +344,14 @@ def scan_rs(fh):
     Yield (possibly multi-line) newline-terminated strings.
     """
     curr = ""
-    for line in fh:
+    for lineno, line in enumerate(fh):
         curr += line
         if ';' in curr:
             curr = re.sub("[ ]*//.*\n", "\n", curr)
             curr = re.sub("/\*.*\*/", "", curr, flags=re.DOTALL)
             curr = re.sub("/\*.*$", "", curr, flags=re.DOTALL)
             curr = re.sub("^.*\*/", "", curr, flags=re.DOTALL)
-            yield curr
+            yield lineno, curr
             curr = ""
 
 def scan_file(crate, root, file, of_interest):
@@ -359,10 +359,10 @@ def scan_file(crate, root, file, of_interest):
     logging.trace(f"Scanning file: {filepath}")
     with open(filepath) as fh:
         scanner = scan_rs(fh)
-        for expr in scanner:
+        for lineno, expr in scanner:
             if m := re.fullmatch(".*^(pub )?(use .*\n)", expr, flags=re.MULTILINE | re.DOTALL):
                 # Scan use expression
-                yield from scan_use(crate, root, file, m[2], of_interest)
+                yield from scan_use(crate, root, file, lineno, m[2], of_interest)
 
 def scan_crate(crate, crate_dir, of_interest):
     logging.debug(f"Scanning crate: {crate}")
