@@ -372,7 +372,7 @@ def parse_mirai_call_line(line):
     # Examples:
     # ['DefId', '0:6', 'num_cpus[1818]::get_num_physical_cpus', 'src/lib.rs:324:20', '324:34', '#0']
     # ['DefId', '0:5', 'num_cpus[1818]::get_physical', 'src/lib.rs:109:5', '109:28', '#0']
-    fun = parts[2]
+    fun = re.sub(r"\[[0-9a-f]*\]", "", parts[2])
     src_dir, path = tuple(parts[3].split("/"))
     return fun, src_dir, path
 
@@ -390,7 +390,7 @@ def mirai_call_path_as_effect(crate, call_path):
         caller = "Unknown"
         caller_path = "Unknown"
 
-    pattern = callee.replace("::", " ").replace("[", " ").replace("]", " ").split(" ")[0]
+    pattern = callee.split("::")[0] + "::" + callee.split("::")[1]
     return Effect(crate, pattern, src_dir, callee_path, callee, caller)
 
 def scan_crate_mirai(crate, crate_dir, _of_interest):
