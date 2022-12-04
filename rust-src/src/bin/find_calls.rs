@@ -13,35 +13,16 @@ use std::path::{Path, PathBuf};
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    filename: PathBuf,
-}
-
-#[allow(dead_code)]
-#[derive(Debug)]
-struct CallSite {
-    caller_name: String,  // my_read_wrapper_fun
-    _callee_name: String, // read
-    callee_path: String,  // std::fs::read
-    call_line: usize,
-    call_col: usize,
-}
-impl CallSite {
-    fn into_effect(self, filepath: &Path) -> Effect {
-        // note: ignores callee_name
-        Effect::new(
-            self.caller_name,
-            self.callee_path,
-            filepath,
-            self.call_line,
-            self.call_col,
-        )
-    }
+    filepath: PathBuf,
 }
 
 /// Stateful object to scan Rust source code for effects (fn calls of interest)
 #[derive(Debug)]
 struct Scanner<'a> {
-    results: Vec<CallSite>,
+    // filepath -- only used to generate the Effect object
+    filepath: &'a Path,
+    // output
+    results: Vec<Effect>,
     // stack-based scopes for parsing (always empty at top-level)
     scope_mods: Vec<&'a syn::Ident>,
     scope_use: Vec<&'a syn::Ident>,
@@ -55,14 +36,14 @@ impl<'a> Scanner<'a> {
     /*
         Top-level items and modules
     */
-    fn new() -> Self {
+    fn new(filepath: &'a Path) -> Self {
         let results = Vec::new();
         let scope_mods = Vec::new();
         let scope_use = Vec::new();
         let scope_fun = None;
         let use_names = HashMap::new();
         let use_globs = Vec::new();
-        Self { results, scope_mods, scope_use, scope_fun, use_names, use_globs }
+        Self { filepath, results, scope_mods, scope_use, scope_fun, use_names, use_globs }
     }
     fn scan_file(&mut self, f: &'a syn::File) {
         // scan the file and return a list of all calls in it
@@ -391,22 +372,27 @@ impl<'a> Scanner<'a> {
         self.use_names.get(&s).cloned().unwrap_or(s)
     }
     fn push_callsite(&mut self, callee_ident: &'a syn::Ident, callee_path: String) {
+        // push an Effect to the list of results based on this call site.
+
+        // caller
         let caller_name = self
             .scope_fun
             .expect("scan_expr_call_ident called outside of a function!")
             .to_string();
-        let _callee_name = callee_ident.to_string();
-        // let call_line = 0;
-        // let call_col = 0;
+
+        // callee
         let call_line = callee_ident.span().start().line;
         let call_col = callee_ident.span().start().column;
-        self.results.push(CallSite {
+        // TBD: callee_name could also be useful
+        // let callee_name = callee_ident.to_string();
+
+        self.results.push(Effect::new(
             caller_name,
-            _callee_name,
             callee_path,
+            self.filepath,
             call_line,
             call_col,
-        })
+        ));
     }
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
         match f {
@@ -437,12 +423,12 @@ fn main() {
     let args = Args::parse();
 
     // based on example at https://docs.rs/syn/latest/syn/struct.File.html
-    let mut file = File::open(&args.filename).expect("Unable to open file");
+    let mut file = File::open(&args.filepath).expect("Unable to open file");
     let mut src = String::new();
     file.read_to_string(&mut src).expect("Unable to read file");
 
     let syntax_tree = syn::parse_file(&src).expect("Unable to parse file");
-    let mut scanner = Scanner::new();
+    let mut scanner = Scanner::new(&args.filepath);
     scanner.scan_file(&syntax_tree);
 
     // for debugging
