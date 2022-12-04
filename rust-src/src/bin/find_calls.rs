@@ -39,7 +39,14 @@ impl<'a> Scanner<'a> {
         let scope_fun = None;
         let use_names = HashMap::new();
         let use_globs = Vec::new();
-        Self { results, scope_mods, scope_use, scope_fun, use_names, use_globs }
+        Self {
+            results,
+            scope_mods,
+            scope_use,
+            scope_fun,
+            use_names,
+            use_globs,
+        }
     }
     fn scan_file(&mut self, f: &'a syn::File) {
         // scan the file and return a list of all calls in it
@@ -77,13 +84,18 @@ impl<'a> Scanner<'a> {
         Use statements
     */
     fn scope_use_as_string(&self) -> String {
-        let v: Vec<String> = self.scope_use.iter().map(|ident| ident.to_string()).collect();
+        let v: Vec<String> = self
+            .scope_use
+            .iter()
+            .map(|ident| ident.to_string())
+            .collect();
         v.join("::")
     }
     fn save_scope_use_under(&mut self, lookup_key: &'a syn::Ident) {
         // save the use scope under an identifier/lookup key
         // TBD: maybe warn if there is a name conflict
-        self.use_names.insert(lookup_key.to_string(), self.scope_use_as_string());
+        self.use_names
+            .insert(lookup_key.to_string(), self.scope_use_as_string());
     }
     fn scan_use(&mut self, u: &'a syn::ItemUse) {
         self.scan_use_tree(&u.tree);
@@ -127,7 +139,10 @@ impl<'a> Scanner<'a> {
     fn scan_fn(&mut self, f: &'a syn::ItemFn) {
         let f_name = &f.sig.ident;
         if let Some(existing_name) = self.scope_fun {
-            eprintln!("warning: found function {} when already in function {}", f_name, existing_name);
+            eprintln!(
+                "warning: found function {} when already in function {}",
+                f_name, existing_name
+            );
         }
         for s in &f.block.stmts {
             self.scan_fn_statement(s);
@@ -138,7 +153,10 @@ impl<'a> Scanner<'a> {
             syn::Stmt::Local(l) => self.scan_fn_local(l),
             syn::Stmt::Expr(e) => self.scan_expr(e),
             syn::Stmt::Semi(e, _) => self.scan_expr(e),
-            syn::Stmt::Item(_) => eprintln!("warning: ignoring item within function block {:?}", self.scope_fun),
+            syn::Stmt::Item(_) => eprintln!(
+                "warning: ignoring item within function block {:?}",
+                self.scope_fun
+            ),
         }
     }
     fn scan_fn_local(&mut self, l: &'a syn::Local) {
@@ -345,7 +363,10 @@ impl<'a> Scanner<'a> {
             }
         }
     }
-    fn scan_expr_call_args(&mut self, _a: &syn::punctuated::Punctuated<syn::Expr, syn::token::Comma>) {
+    fn scan_expr_call_args(
+        &mut self,
+        _a: &syn::punctuated::Punctuated<syn::Expr, syn::token::Comma>,
+    ) {
         todo!()
     }
     fn scan_expr_call(&mut self, _f: &syn::Expr) {
