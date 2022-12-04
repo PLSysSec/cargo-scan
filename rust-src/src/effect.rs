@@ -2,6 +2,7 @@
 Representation of an Effect location in source code
 */
 
+#[derive(Debug, Clone)]
 pub struct Effect {
     // Name of crate, e.g. num_cpus
     crt: String,
