@@ -22,15 +22,34 @@ pub struct Effect {
 }
 
 fn sanitize_comma(s: &str) -> String {
-    if s.contains(",") {
+    if s.contains(',') {
         eprintln!("Warning: ignoring comma when generating CSV: {s}");
     }
-    s.replace(",", "")
+    s.replace(',', "")
 }
 
 impl Effect {
-    pub fn new(crt: String, module: String, caller: String, callee: String, pattern: String, dir: String, file: String, loc: String) -> Self {
-        Self { crt, module, caller, callee, pattern, dir, file, loc }
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        crt: String,
+        module: String,
+        caller: String,
+        callee: String,
+        pattern: String,
+        dir: String,
+        file: String,
+        loc: String,
+    ) -> Self {
+        Self {
+            crt,
+            module,
+            caller,
+            callee,
+            pattern,
+            dir,
+            file,
+            loc,
+        }
     }
 
     pub fn csv_header() -> &'static str {
