@@ -414,7 +414,7 @@ impl<'a> Scanner<'a> {
         }
     }
     fn scan_expr_call_ident(&mut self, i: &'a syn::Ident) {
-        let callee_path = format!("[METHOD]::{}", i.to_string());
+        let callee_path = format!("[METHOD]::{}", i);
         self.push_callsite(i, callee_path);
     }
 }
