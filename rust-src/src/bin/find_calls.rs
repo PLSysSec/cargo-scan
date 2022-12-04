@@ -15,10 +15,24 @@ struct Args {
     filename: String,
 }
 
+#[allow(dead_code)]
+#[derive(Debug)]
+struct CallSite {
+    caller_iden: String, // my_read_wrapper_fun
+    callee_iden: String, // read
+    callee_path: String, // std::fs::read
+}
+impl CallSite {
+    #[allow(dead_code)]
+    fn as_effect(&self) -> Effect {
+        todo!()
+    }
+}
+
 /// Stateful object to scan Rust source code for effects (fn calls of interest)
 #[derive(Debug)]
 struct Scanner<'a> {
-    results: Vec<Effect>,
+    results: Vec<CallSite>,
     // stack-based scopes for parsing (always empty at top-level)
     scope_mods: Vec<&'a syn::Ident>,
     scope_use: Vec<&'a syn::Ident>,
@@ -60,6 +74,8 @@ impl<'a> Scanner<'a> {
             syn::Item::Use(u) => self.scan_use(u),
             syn::Item::Fn(fun) => self.scan_fn(fun),
             _ => (),
+            // TODO:
+            // syn::Item::Impl(i) => ...
             // For all syntax elements see
             // https://docs.rs/syn/latest/syn/enum.Item.html
             // Potentially interesting:
@@ -144,9 +160,11 @@ impl<'a> Scanner<'a> {
                 f_name, existing_name
             );
         }
+        self.scope_fun = Some(f_name);
         for s in &f.block.stmts {
             self.scan_fn_statement(s);
         }
+        self.scope_fun = None;
     }
     fn scan_fn_statement(&mut self, s: &'a syn::Stmt) {
         match s {
@@ -365,15 +383,52 @@ impl<'a> Scanner<'a> {
     }
     fn scan_expr_call_args(
         &mut self,
-        _a: &syn::punctuated::Punctuated<syn::Expr, syn::token::Comma>,
+        a: &'a syn::punctuated::Punctuated<syn::Expr, syn::token::Comma>,
     ) {
-        todo!()
+        for y in a.iter() {
+            self.scan_expr(y);
+        }
     }
-    fn scan_expr_call(&mut self, _f: &syn::Expr) {
-        todo!()
+    fn lookup_ident(&self, i: &'a syn::Ident) -> String {
+        self.use_names
+            .get(&i.to_string())
+            .cloned()
+            .unwrap_or_else(|| format!("UNKNOWN::{}", i))
     }
-    fn scan_expr_call_ident(&mut self, _i: &syn::Ident) {
-        todo!()
+    fn push_callsite(&mut self, callee_iden: String, callee_path: String) {
+        let caller_iden = self
+            .scope_fun
+            .expect("scan_expr_call_ident called outside of a function!")
+            .to_string();
+        self.results.push(CallSite {
+            caller_iden,
+            callee_iden,
+            callee_path,
+        })
+    }
+    fn scan_expr_call(&mut self, f: &'a syn::Expr) {
+        match f {
+            syn::Expr::Path(p) => {
+                let mut it = p.path.segments.iter().map(|seg| &seg.ident);
+                let fst = it.next().unwrap();
+                let mut callee_path = self.lookup_ident(fst);
+                let mut callee_iden = fst.to_string();
+                for id in it {
+                    callee_path.push_str("::");
+                    callee_iden = id.to_string(); // overwrite
+                    callee_path.push_str(&callee_iden);
+                }
+                self.push_callsite(callee_iden, callee_path);
+            }
+            _ => {
+                eprintln!("encountered unexpected function call which was not a path expression; ignoring")
+            }
+        }
+    }
+    fn scan_expr_call_ident(&mut self, i: &'a syn::Ident) {
+        let callee_iden = i.to_string();
+        let callee_path = self.lookup_ident(i);
+        self.push_callsite(callee_iden, callee_path);
     }
 }
 
@@ -391,7 +446,7 @@ fn main() {
 
     println!("Final scanner state: {:?}", scanner);
 
-    for effect in scanner.results {
-        println!("{}", effect.to_csv());
+    for result in scanner.results {
+        println!("{:?}", result);
     }
 }
