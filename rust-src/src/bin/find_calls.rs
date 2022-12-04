@@ -22,6 +22,7 @@ struct Scanner<'a> {
     // stack-based scopes for parsing (always empty at top-level)
     scope_mods: Vec<&'a syn::Ident>,
     scope_use: Vec<&'a syn::Ident>,
+    scope_fun: Option<&'a syn::Ident>,
     // collecting use statements that are in scope
     use_names: HashMap<String, String>,
     use_globs: Vec<String>,
@@ -35,9 +36,10 @@ impl<'a> Scanner<'a> {
         let results = Vec::new();
         let scope_mods = Vec::new();
         let scope_use = Vec::new();
+        let scope_fun = None;
         let use_names = HashMap::new();
         let use_globs = Vec::new();
-        Self { results, scope_mods, scope_use, use_names, use_globs }
+        Self { results, scope_mods, scope_use, scope_fun, use_names, use_globs }
     }
     fn scan_file(&mut self, f: &'a syn::File) {
         // scan the file and return a list of all calls in it
@@ -122,8 +124,30 @@ impl<'a> Scanner<'a> {
     /*
         Function declarations
     */
-    fn scan_fn(&mut self, _f: &'a syn::ItemFn) {
-        // TODO
+    fn scan_fn(&mut self, f: &'a syn::ItemFn) {
+        let f_name = &f.sig.ident;
+        if let Some(existing_name) = self.scope_fun {
+            eprintln!("warning: found function {} when already in function {}", f_name, existing_name);
+        }
+        for s in &f.block.stmts {
+            self.scan_fn_statement(s);
+        }
+    }
+    fn scan_fn_statement(&mut self, s: &'a syn::Stmt) {
+        match s {
+            syn::Stmt::Local(l) => self.scan_fn_local(l),
+            syn::Stmt::Expr(e) => self.scan_fn_expr(e),
+            syn::Stmt::Semi(e, _) => self.scan_fn_expr(e),
+            syn::Stmt::Item(_) => eprintln!("warning: ignoring item within function block {:?}", self.scope_fun),
+        }
+    }
+    fn scan_fn_local(&mut self, l: &'a syn::Local) {
+        if let Some((_, b)) = &l.init {
+            self.scan_fn_expr(b)
+        }
+    }
+    fn scan_fn_expr(&mut self, _e: &'a syn::Expr) {
+        // TODO: 40 cases
     }
 }
 
