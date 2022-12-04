@@ -304,9 +304,8 @@ impl<'a> Scanner<'a> {
             syn::Expr::Paren(x) => {
                 self.scan_expr(&x.expr);
             }
-            syn::Expr::Path(x) => {
-                // do we need to do anything special here?
-                eprintln!("warning: unexpected path expression: {:?}", x);
+            syn::Expr::Path(_) => {
+                // typically a local variable
             }
             syn::Expr::Range(x) => {
                 if let Some(y) = &x.from {
@@ -390,10 +389,8 @@ impl<'a> Scanner<'a> {
         }
     }
     fn lookup_ident(&self, i: &'a syn::Ident) -> String {
-        self.use_names
-            .get(&i.to_string())
-            .cloned()
-            .unwrap_or_else(|| format!("UNKNOWN::{}", i))
+        let s = i.to_string();
+        self.use_names.get(&s).cloned().unwrap_or(s)
     }
     fn push_callsite(&mut self, callee_iden: String, callee_path: String) {
         let caller_iden = self
@@ -427,7 +424,7 @@ impl<'a> Scanner<'a> {
     }
     fn scan_expr_call_ident(&mut self, i: &'a syn::Ident) {
         let callee_iden = i.to_string();
-        let callee_path = self.lookup_ident(i);
+        let callee_path = format!("[METHOD]::{}", i);
         self.push_callsite(callee_iden, callee_path);
     }
 }
@@ -444,7 +441,8 @@ fn main() {
     let mut scanner = Scanner::new();
     scanner.scan_file(&syntax_tree);
 
-    println!("Final scanner state: {:?}", scanner);
+    // for debugging
+    // println!("Final scanner state: {:?}", scanner);
 
     for result in scanner.results {
         println!("{:?}", result);
