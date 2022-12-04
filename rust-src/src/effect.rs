@@ -23,11 +23,7 @@ pub struct EffectPathLoc {
 impl EffectPathLoc {
     pub fn from_caller_name(caller: String) -> Self {
         // TBD: make crt, module Option or get them from somewhere
-        Self {
-            crt: "".to_string(),
-            module: "".to_string(),
-            caller,
-        }
+        Self { crt: "".to_string(), module: "".to_string(), caller }
     }
     pub fn csv_header() -> &'static str {
         "crate, module, caller"
@@ -84,12 +80,7 @@ impl Effect {
         let caller_loc = EffectPathLoc::from_caller_name(caller);
         let pattern = "".to_string(); // TBD
         let call_loc = EffectSrcLoc::from_filepath_loc(filepath, loc);
-        Self {
-            caller_loc,
-            callee,
-            pattern,
-            call_loc,
-        }
+        Self { caller_loc, callee, pattern, call_loc }
     }
 
     pub fn csv_header() -> &'static str {
@@ -108,9 +99,6 @@ impl Effect {
         let pattern = sanitize_comma(&self.pattern);
         let call_loc_csv = self.call_loc.to_csv();
 
-        format!(
-            "{}, {}, {}, {}",
-            caller_loc_csv, callee, pattern, call_loc_csv
-        )
+        format!("{}, {}, {}, {}", caller_loc_csv, callee, pattern, call_loc_csv)
     }
 }
