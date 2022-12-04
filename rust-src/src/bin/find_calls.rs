@@ -8,11 +8,12 @@ use clap::Parser;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    filename: String,
+    filename: PathBuf,
 }
 
 #[allow(dead_code)]
