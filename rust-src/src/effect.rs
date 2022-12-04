@@ -42,15 +42,16 @@ pub struct EffectSrcLoc {
     dir: String,
     // File in which the call occurs -- in the above directory
     file: String,
-    // Location in which the call occurs -- in the above file (line/col)
-    loc: String,
+    // Location in which the call occurs -- in the above file
+    line: usize,
+    col: usize,
 }
 impl EffectSrcLoc {
-    pub fn from_filepath_loc(filepath: &Path, loc: String) -> Self {
+    pub fn from_filepath_loc(filepath: &Path, line: usize, col: usize) -> Self {
         // TBD: lots can go wrong -- consider returning Result<Self, Err>
         let dir = filepath.parent().unwrap().to_string_lossy().into_owned();
         let file = filepath.file_name().unwrap().to_string_lossy().into_owned();
-        Self { dir, file, loc }
+        Self { dir, file, line, col }
     }
     pub fn csv_header() -> &'static str {
         "dir, file, loc"
@@ -58,7 +59,7 @@ impl EffectSrcLoc {
     pub fn to_csv(&self) -> String {
         let dir = sanitize_comma(&self.dir);
         let file = sanitize_comma(&self.file);
-        let loc = sanitize_comma(&self.loc);
+        let loc = sanitize_comma(&format!("{}:{}", self.line, self.col));
         format!("{}, {}, {}", dir, file, loc)
     }
 }
@@ -76,10 +77,16 @@ pub struct Effect {
 }
 
 impl Effect {
-    pub fn new(caller: String, callee: String, filepath: &Path, loc: String) -> Self {
+    pub fn new(
+        caller: String,
+        callee: String,
+        filepath: &Path,
+        line: usize,
+        col: usize,
+    ) -> Self {
         let caller_loc = EffectPathLoc::from_caller_name(caller);
         let pattern = "".to_string(); // TBD
-        let call_loc = EffectSrcLoc::from_filepath_loc(filepath, loc);
+        let call_loc = EffectSrcLoc::from_filepath_loc(filepath, line, col);
         Self { caller_loc, callee, pattern, call_loc }
     }
 

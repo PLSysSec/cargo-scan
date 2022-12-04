@@ -11,4 +11,5 @@ readme = "README.md"
 
 [dependencies]
 clap = { version = "4.0.29", features = ["derive"] }
+proc-macro2 = { version = "1.0.47", features = ["span-locations"] }
 syn = { version = "1.0.105", features = ["full", "extra-traits"] }

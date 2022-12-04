@@ -8,7 +8,7 @@ use clap::Parser;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -19,14 +19,22 @@ struct Args {
 #[allow(dead_code)]
 #[derive(Debug)]
 struct CallSite {
-    caller_iden: String, // my_read_wrapper_fun
-    callee_iden: String, // read
-    callee_path: String, // std::fs::read
+    caller_name: String,  // my_read_wrapper_fun
+    _callee_name: String, // read
+    callee_path: String,  // std::fs::read
+    call_line: usize,
+    call_col: usize,
 }
 impl CallSite {
-    #[allow(dead_code)]
-    fn as_effect(&self) -> Effect {
-        todo!()
+    fn into_effect(self, filepath: &Path) -> Effect {
+        // note: ignores callee_name
+        Effect::new(
+            self.caller_name,
+            self.callee_path,
+            filepath,
+            self.call_line,
+            self.call_col,
+        )
     }
 }
 
@@ -382,12 +390,23 @@ impl<'a> Scanner<'a> {
         let s = i.to_string();
         self.use_names.get(&s).cloned().unwrap_or(s)
     }
-    fn push_callsite(&mut self, callee_iden: String, callee_path: String) {
-        let caller_iden = self
+    fn push_callsite(&mut self, callee_ident: &'a syn::Ident, callee_path: String) {
+        let caller_name = self
             .scope_fun
             .expect("scan_expr_call_ident called outside of a function!")
             .to_string();
-        self.results.push(CallSite { caller_iden, callee_iden, callee_path })
+        let _callee_name = callee_ident.to_string();
+        // let call_line = 0;
+        // let call_col = 0;
+        let call_line = callee_ident.span().start().line;
+        let call_col = callee_ident.span().start().column;
+        self.results.push(CallSite {
+            caller_name,
+            _callee_name,
+            callee_path,
+            call_line,
+            call_col,
+        })
     }
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
         match f {
@@ -395,13 +414,13 @@ impl<'a> Scanner<'a> {
                 let mut it = p.path.segments.iter().map(|seg| &seg.ident);
                 let fst = it.next().unwrap();
                 let mut callee_path = self.lookup_ident(fst);
-                let mut callee_iden = fst.to_string();
+                let mut callee_ident = fst;
                 for id in it {
                     callee_path.push_str("::");
-                    callee_iden = id.to_string(); // overwrite
-                    callee_path.push_str(&callee_iden);
+                    callee_path.push_str(&id.to_string());
+                    callee_ident = id; // overwrite
                 }
-                self.push_callsite(callee_iden, callee_path);
+                self.push_callsite(callee_ident, callee_path);
             }
             _ => {
                 eprintln!("encountered unexpected function call which was not a path expression; ignoring")
@@ -409,9 +428,8 @@ impl<'a> Scanner<'a> {
         }
     }
     fn scan_expr_call_ident(&mut self, i: &'a syn::Ident) {
-        let callee_iden = i.to_string();
-        let callee_path = format!("[METHOD]::{}", i);
-        self.push_callsite(callee_iden, callee_path);
+        let callee_path = format!("[METHOD]::{}", i.to_string());
+        self.push_callsite(i, callee_path);
     }
 }
 
