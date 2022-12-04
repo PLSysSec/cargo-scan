@@ -136,18 +136,223 @@ impl<'a> Scanner<'a> {
     fn scan_fn_statement(&mut self, s: &'a syn::Stmt) {
         match s {
             syn::Stmt::Local(l) => self.scan_fn_local(l),
-            syn::Stmt::Expr(e) => self.scan_fn_expr(e),
-            syn::Stmt::Semi(e, _) => self.scan_fn_expr(e),
+            syn::Stmt::Expr(e) => self.scan_expr(e),
+            syn::Stmt::Semi(e, _) => self.scan_expr(e),
             syn::Stmt::Item(_) => eprintln!("warning: ignoring item within function block {:?}", self.scope_fun),
         }
     }
     fn scan_fn_local(&mut self, l: &'a syn::Local) {
         if let Some((_, b)) = &l.init {
-            self.scan_fn_expr(b)
+            self.scan_expr(b)
         }
     }
-    fn scan_fn_expr(&mut self, _e: &'a syn::Expr) {
-        // TODO: 40 cases
+
+    /*
+        Expressions
+        These have the most cases (currently, 40)
+    */
+    fn scan_expr(&mut self, e: &'a syn::Expr) {
+        match e {
+            syn::Expr::Array(x) => {
+                for y in x.elems.iter() {
+                    self.scan_expr(y);
+                }
+            }
+            syn::Expr::Assign(x) => {
+                self.scan_expr(&x.left);
+                self.scan_expr(&x.right);
+            }
+            syn::Expr::AssignOp(x) => {
+                self.scan_expr(&x.left);
+                self.scan_expr(&x.right);
+            }
+            syn::Expr::Async(x) => {
+                for s in &x.block.stmts {
+                    self.scan_fn_statement(s);
+                }
+            }
+            syn::Expr::Await(x) => {
+                self.scan_expr(&x.base);
+            }
+            syn::Expr::Binary(x) => {
+                self.scan_expr(&x.left);
+                self.scan_expr(&x.right);
+            }
+            syn::Expr::Block(x) => {
+                for s in &x.block.stmts {
+                    self.scan_fn_statement(s);
+                }
+            }
+            syn::Expr::Box(x) => {
+                eprintln!("warning: encountered box expression (unstable feature)");
+                self.scan_expr(&x.expr);
+            }
+            syn::Expr::Break(x) => {
+                if let Some(y) = &x.expr {
+                    self.scan_expr(y);
+                }
+            }
+            syn::Expr::Call(x) => {
+                // ***** THE FIRST IMPORTANT CASE *****
+                // Arguments
+                self.scan_expr_call_args(&x.args);
+                // Function call
+                self.scan_expr_call(&x.func);
+            }
+            syn::Expr::Cast(x) => {
+                self.scan_expr(&x.expr);
+            }
+            syn::Expr::Closure(x) => {
+                // TODO: closures are a bit weird!
+                // Note that the body expression doesn't get evaluated yet,
+                // and may be evaluated somewhere else.
+                // May need to do something more special here.
+                self.scan_expr(&x.body);
+            }
+            syn::Expr::Continue(_) => (),
+            syn::Expr::Field(x) => {
+                self.scan_expr(&x.base);
+            }
+            syn::Expr::ForLoop(x) => {
+                self.scan_expr(&x.expr);
+                for s in &x.body.stmts {
+                    self.scan_fn_statement(s);
+                }
+            }
+            syn::Expr::Group(x) => {
+                self.scan_expr(&x.expr);
+            }
+            syn::Expr::If(x) => {
+                self.scan_expr(&x.cond);
+                for s in &x.then_branch.stmts {
+                    self.scan_fn_statement(s);
+                }
+                if let Some((_, y)) = &x.else_branch {
+                    self.scan_expr(y);
+                }
+            }
+            syn::Expr::Index(x) => {
+                self.scan_expr(&x.expr);
+                self.scan_expr(&x.index);
+            }
+            syn::Expr::Let(x) => {
+                self.scan_expr(&x.expr);
+            }
+            syn::Expr::Lit(_) => (),
+            syn::Expr::Loop(x) => {
+                for s in &x.body.stmts {
+                    self.scan_fn_statement(s);
+                }
+            }
+            syn::Expr::Macro(_) => {
+                // Note that there is an inherent incompleteness in this case
+            }
+            syn::Expr::Match(x) => {
+                self.scan_expr(&x.expr);
+                for a in &x.arms {
+                    if let Some((_, y)) = &a.guard {
+                        self.scan_expr(y);
+                    }
+                    self.scan_expr(&a.body);
+                }
+            }
+            syn::Expr::MethodCall(x) => {
+                // ***** THE SECOND IMPORTANT CASE *****
+                // Receiver object
+                self.scan_expr(&x.receiver);
+                // Arguments
+                self.scan_expr_call_args(&x.args);
+                // Function call
+                self.scan_expr_call_ident(&x.method);
+            }
+            syn::Expr::Paren(x) => {
+                self.scan_expr(&x.expr);
+            }
+            syn::Expr::Path(x) => {
+                // do we need to do anything special here?
+                eprintln!("warning: unexpected path expression: {:?}", x);
+            }
+            syn::Expr::Range(x) => {
+                if let Some(y) = &x.from {
+                    self.scan_expr(y);
+                }
+                if let Some(y) = &x.to {
+                    self.scan_expr(y);
+                }
+            }
+            syn::Expr::Reference(x) => {
+                self.scan_expr(&x.expr);
+            }
+            syn::Expr::Repeat(x) => {
+                self.scan_expr(&x.expr);
+                self.scan_expr(&x.len);
+            }
+            syn::Expr::Return(x) => {
+                if let Some(y) = &x.expr {
+                    self.scan_expr(y);
+                }
+            }
+            syn::Expr::Struct(x) => {
+                for y in x.fields.iter() {
+                    self.scan_expr(&y.expr);
+                }
+                if let Some(y) = &x.rest {
+                    self.scan_expr(y);
+                }
+            }
+            syn::Expr::Try(x) => {
+                self.scan_expr(&x.expr);
+            }
+            syn::Expr::TryBlock(x) => {
+                eprintln!("warning: encountered try block (unstable feature)");
+                for y in &x.block.stmts {
+                    self.scan_fn_statement(y);
+                }
+            }
+            syn::Expr::Tuple(x) => {
+                for y in x.elems.iter() {
+                    self.scan_expr(y);
+                }
+            }
+            syn::Expr::Type(x) => {
+                self.scan_expr(&x.expr);
+            }
+            syn::Expr::Unary(x) => {
+                self.scan_expr(&x.expr);
+            }
+            syn::Expr::Unsafe(x) => {
+                for s in &x.block.stmts {
+                    self.scan_fn_statement(s);
+                }
+            }
+            syn::Expr::Verbatim(_) => {
+                eprintln!("warning: encountered Verbatim expression (skipping)");
+            }
+            syn::Expr::While(x) => {
+                self.scan_expr(&x.cond);
+                for s in &x.body.stmts {
+                    self.scan_fn_statement(s);
+                }
+            }
+            syn::Expr::Yield(x) => {
+                eprintln!("warning: encountered yield expression (unstable feature)");
+                if let Some(y) = &x.expr {
+                    self.scan_expr(y);
+                }
+            }
+            _ => {
+                eprintln!("warning: encountered unknown expression")
+            }
+        }
+    }
+    fn scan_expr_call_args(&mut self, _a: &syn::punctuated::Punctuated<syn::Expr, syn::token::Comma>) {
+        todo!()
+    }
+    fn scan_expr_call(&mut self, _f: &syn::Expr) {
+        todo!()
+    }
+    fn scan_expr_call_ident(&mut self, _i: &syn::Ident) {
+        todo!()
     }
 }
 
