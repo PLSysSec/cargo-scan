@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use syn::spanned::Spanned;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -420,7 +421,9 @@ impl<'a> Scanner<'a> {
                 self.push_callsite(callee_ident, callee_path);
             }
             _ => {
-                eprintln!("encountered unexpected function call which was not a path expression; ignoring")
+                let line = f.span().start().line;
+                let col = f.span().start().column;
+                eprintln!("encountered unexpected function call which was not a path expression: {:?} ({}:{})", f, line, col)
             }
         }
     }
