@@ -430,11 +430,26 @@ fn main() {
     let args = Args::parse();
 
     // based on example at https://docs.rs/syn/latest/syn/struct.File.html
-    let mut file = File::open(&args.filepath).expect("Unable to open file");
+    let mut file = File::open(&args.filepath).unwrap_or_else(|err| {
+        panic!(
+            "find_calls.rs: Error: Unable to open file: {:?} ({:?})",
+            args.filepath, err
+        )
+    });
     let mut src = String::new();
-    file.read_to_string(&mut src).expect("Unable to read file");
+    file.read_to_string(&mut src).unwrap_or_else(|err| {
+        panic!(
+            "find_calls.rs: Error: Unable to read file: {:?} ({:?})",
+            args.filepath, err
+        )
+    });
 
-    let syntax_tree = syn::parse_file(&src).expect("Unable to parse file");
+    let syntax_tree = syn::parse_file(&src).unwrap_or_else(|err| {
+        panic!(
+            "find_calls.rs: Error: Unable to parse file: {:?} ({:?})",
+            args.filepath, err
+        )
+    });
     let mut scanner = Scanner::new(&args.filepath);
     scanner.scan_file(&syntax_tree);
 
