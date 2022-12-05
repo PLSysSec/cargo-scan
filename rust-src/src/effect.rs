@@ -21,9 +21,53 @@ pub struct EffectPathLoc {
     caller: String,
 }
 impl EffectPathLoc {
-    pub fn from_caller_name(caller: String) -> Self {
-        // TBD: make crt, module Option or get them from somewhere
-        Self { crt: "".to_string(), module: "".to_string(), caller }
+    pub fn new(filepath: &Path, mod_scope: &[String], caller: String) -> Self {
+        // note: tries to infer the crate name and modules from the filepath
+        // TBD: use Cargo.toml to get crate name
+        let pre_src: Vec<String> = filepath
+            .iter()
+            .map(|x| {
+                x.to_str().unwrap_or_else(|| {
+                    panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
+                })
+            })
+            .take_while(|&x| x != "src")
+            .map(|x| x.to_string())
+            .collect();
+        let post_src: Vec<String> = filepath
+            .iter()
+            .map(|x| {
+                x.to_str().unwrap_or_else(|| {
+                    panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
+                })
+            })
+            .skip_while(|&x| x != "src")
+            .skip(1)
+            .map(|x| x.to_string())
+            .collect();
+
+        let crt = pre_src.last().cloned().unwrap_or_else(|| {
+            eprintln!("warning: unable to infer crate from path: {:?}", filepath);
+            "".to_string()
+        });
+        let mut module = crt.clone();
+        for x in &post_src {
+            module.push_str("::");
+            module.push_str(x);
+        }
+        if module.ends_with(".rs") {
+            assert_eq!(module.pop(), Some('s'));
+            assert_eq!(module.pop(), Some('r'));
+            assert_eq!(module.pop(), Some('.'));
+        } else {
+            eprintln!("module path probably inferred incorrectly (no .rs found): {:?} (inferred {})", filepath, module);
+        }
+        for x in mod_scope {
+            module.push_str("::");
+            module.push_str(x);
+        }
+
+        Self { crt, module, caller }
     }
     pub fn csv_header() -> &'static str {
         "crate, module, caller"
@@ -47,7 +91,7 @@ pub struct EffectSrcLoc {
     col: usize,
 }
 impl EffectSrcLoc {
-    pub fn from_filepath_loc(filepath: &Path, line: usize, col: usize) -> Self {
+    pub fn new(filepath: &Path, line: usize, col: usize) -> Self {
         // TBD: lots can go wrong -- consider returning Result<Self, Err>
         let dir = filepath.parent().unwrap().to_string_lossy().into_owned();
         let file = filepath.file_name().unwrap().to_string_lossy().into_owned();
@@ -81,12 +125,13 @@ impl Effect {
         caller: String,
         callee: String,
         filepath: &Path,
+        mod_scope: &[String],
         line: usize,
         col: usize,
     ) -> Self {
-        let caller_loc = EffectPathLoc::from_caller_name(caller);
+        let caller_loc = EffectPathLoc::new(filepath, mod_scope, caller);
         let pattern = "".to_string(); // TBD
-        let call_loc = EffectSrcLoc::from_filepath_loc(filepath, line, col);
+        let call_loc = EffectSrcLoc::new(filepath, line, col);
         Self { caller_loc, callee, pattern, call_loc }
     }
 

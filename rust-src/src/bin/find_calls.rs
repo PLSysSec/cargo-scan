@@ -13,13 +13,14 @@ use std::path::{Path, PathBuf};
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
+    // ../path/to/my_rust_crate/src/my_mod/my_file.rs
     filepath: PathBuf,
 }
 
 /// Stateful object to scan Rust source code for effects (fn calls of interest)
 #[derive(Debug)]
 struct Scanner<'a> {
-    // filepath -- only used to generate the Effect object
+    // filepath that the scanner is being run on
     filepath: &'a Path,
     // output
     results: Vec<Effect>,
@@ -371,6 +372,9 @@ impl<'a> Scanner<'a> {
         let s = i.to_string();
         self.use_names.get(&s).cloned().unwrap_or(s)
     }
+    fn get_mod_scope(&self) -> Vec<String> {
+        self.scope_mods.iter().map(|i| i.to_string()).collect()
+    }
     fn push_callsite(&mut self, callee_ident: &'a syn::Ident, callee_path: String) {
         // push an Effect to the list of results based on this call site.
 
@@ -379,6 +383,8 @@ impl<'a> Scanner<'a> {
             .scope_fun
             .expect("scan_expr_call_ident called outside of a function!")
             .to_string();
+
+        let mod_scope = self.get_mod_scope();
 
         // callee
         let call_line = callee_ident.span().start().line;
@@ -390,6 +396,7 @@ impl<'a> Scanner<'a> {
             caller_name,
             callee_path,
             self.filepath,
+            &mod_scope,
             call_line,
             call_col,
         ));
@@ -435,6 +442,6 @@ fn main() {
     // println!("Final scanner state: {:?}", scanner);
 
     for result in scanner.results {
-        println!("{:?}", result);
+        println!("{}", result.to_csv());
     }
 }
