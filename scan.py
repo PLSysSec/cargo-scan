@@ -80,8 +80,9 @@ OF_INTEREST_OTHER = [
 ]
 
 RESULTS_DIR = "data/results"
-RESULTS_ALL_SUFFIX = "all.csv"
-RESULTS_SUMMARY_SUFFIX = "summary.txt"
+RESULTS_ALL_SUFFIX = "_all.csv"
+RESULTS_PATTERN_SUFFIX = "_pattern.txt"
+RESULTS_SUMMARY_SUFFIX = "_summary.txt"
 
 # ===== Utility =====
 
@@ -99,6 +100,9 @@ logging.addLevelName(logging.ERROR, "\033[0;31m%s\033[0;0m" % "ERROR")
 
 def copy_file(src, dst):
     subprocess.run(["cp", src, dst], check=True)
+
+def make_path(dir, prefix, suffix):
+    return os.path.join(dir, f"{prefix}{suffix}")
 
 def truncate_str(s, n):
     assert n >= 3
@@ -183,29 +187,20 @@ def download_crate(crates_dir, crate, test_run):
             logging.info(f"Downloading crate: {target}")
             subprocess.run(["cargo", "download", "-x", crate, "-o", target], check=True)
 
-def save_results(results, results_prefix):
-    results_file = f"{results_prefix}_{RESULTS_ALL_SUFFIX}"
-    results_path = os.path.join(RESULTS_DIR, results_file)
-    logging.info(f"Saving raw results to {results_path}")
-    with open(results_path, 'w') as fh:
-        fh.write(Effect.csv_header() + '\n')
-        for effect in results:
-            fh.write(effect.to_csv() + '\n')
-
 def sort_summary_dict(d):
     return sorted(d.items(), key=lambda x: x[1], reverse=True)
 
-def make_summary(crate_summary, pattern_summary):
-    # Sanity check
-    assert sum(crate_summary.values()) == sum(pattern_summary.values())
-
+def make_pattern_summary(pattern_summary):
     result = ""
     result += "===== Patterns =====\n"
     result += "Total instances of each import pattern:\n"
     pattern_sorted = sort_summary_dict(pattern_summary)
     for p, n in pattern_sorted:
         result += f"{p}: {n}\n"
+    return result
 
+def make_crate_summary(crate_summary):
+    result = ""
     result += "===== Crate Summary =====\n"
     result += "Number of dangerous imports by crate:\n"
     crate_sorted = sort_summary_dict(crate_summary)
@@ -222,16 +217,6 @@ def make_summary(crate_summary, pattern_summary):
     result += f"{num_zero} crates with 0 dangerous imports\n"
 
     return result
-
-def save_summary(crate_summary, pattern_summary, results_prefix):
-    results_file = f"{results_prefix}_{RESULTS_SUMMARY_SUFFIX}"
-    results_path = os.path.join(RESULTS_DIR, results_file)
-
-    summary = make_summary(crate_summary, pattern_summary)
-
-    logging.info(f"Saving summary to {results_path}")
-    with open(results_path, 'w') as fh:
-        fh.write(summary)
 
 def is_of_interest(line, of_interest):
     found = None
@@ -449,18 +434,42 @@ def main():
         logging.info("=== Generating call graph as a PNG ===")
         view_callgraph_mirai(crate_dir)
 
+    # Sanity check
+    if sum(crate_summary.values()) != sum(pattern_summary.values()):
+        logging.error("Logic error: crate summary and pattern summary were inconsistent!")
+
     if args.output_prefix is None:
         results_str = "=== Results ===\n"
         if num_crates == 1:
             for result in results:
                 results_str += result.to_csv()
                 results_str += '\n'
-        results_str += make_summary(crate_summary, pattern_summary)
+        results_str += make_crate_summary(crate_summary)
         logging.info(results_str)
     else:
         logging.info(f"=== Saving results ===")
-        save_results(results, args.output_prefix)
-        save_summary(crate_summary, pattern_summary, args.output_prefix)
+
+        prefix = args.output_prefix
+        results_path = make_path(RESULTS_DIR, prefix, RESULTS_ALL_SUFFIX)
+        pattern_path = make_path(RESULTS_DIR, prefix, RESULTS_PATTERN_SUFFIX)
+        summary_path = make_path(RESULTS_DIR, prefix, RESULTS_SUMMARY_SUFFIX)
+
+        pat_str = make_pattern_summary(pattern_summary)
+        crate_str = make_crate_summary(crate_summary)
+
+        logging.info(f"Saving all results to {results_path}")
+        with open(results_path, 'w') as fh:
+            fh.write(Effect.csv_header() + '\n')
+            for effect in results:
+                fh.write(effect.to_csv() + '\n')
+
+        logging.info(f"Saving pattern totals to {pattern_path}")
+        with open(pattern_path, 'w') as fh:
+            fh.write(pat_str)
+
+        logging.info(f"Saving summary to {summary_path}")
+        with open(summary_path, 'w') as fh:
+            fh.write(crate_str)
 
 if __name__ == "__main__":
     main()
