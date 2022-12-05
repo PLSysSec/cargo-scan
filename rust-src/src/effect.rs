@@ -134,12 +134,6 @@ impl Effect {
         "crate, module, caller, callee, pattern, dir, file, loc"
     }
 
-    #[test]
-    fn test_csv_header() {
-        assert!(Self::csv_header().starts_with(EffectPathLoc::csv_header()));
-        assert!(Self::csv_header().ends_with(EffectSrcLoc::csv_header()));
-    }
-
     pub fn to_csv(&self) -> String {
         let caller_loc_csv = self.caller_loc.to_csv();
         let callee = sanitize_comma(&self.callee);
@@ -148,4 +142,10 @@ impl Effect {
 
         format!("{}, {}, {}, {}", caller_loc_csv, callee, pattern, call_loc_csv)
     }
+}
+
+#[test]
+fn test_csv_header() {
+    assert!(Effect::csv_header().starts_with(EffectPathLoc::csv_header()));
+    assert!(Effect::csv_header().ends_with(EffectSrcLoc::csv_header()));
 }
