@@ -44,6 +44,9 @@ CRATES_DIR = "data/packages"
 TEST_CRATES_DIR = "data/test-packages"
 RUST_SRC = "src"
 
+SYN_DEBUG = "./rust-src/target/debug/find_calls"
+SYN_RELEASE = "./rust-src/target/release/find_calls"
+
 MIRAI_CONFIG = "mirai/config.json"
 MIRAI_FLAGS_KEY = "MIRAI_FLAGS"
 MIRAI_FLAGS_VAL = f"--call_graph_config ../../../{MIRAI_CONFIG}"
@@ -150,7 +153,7 @@ class Effect:
 
         return ", ".join([crate, module, caller, callee, pattern, dir, file, loc])
 
-# ===== Saving results =====
+# ===== Used by both backends =====
 
 def count_lines(cratefile, header_row=True):
     with open(cratefile, 'r') as fh:
@@ -230,8 +233,6 @@ def save_summary(crate_summary, pattern_summary, results_prefix):
     with open(results_path, 'w') as fh:
         fh.write(summary)
 
-# ===== Used by both grep-like and mirai =====
-
 def is_of_interest(line, of_interest):
     found = None
     for p in of_interest:
@@ -241,128 +242,26 @@ def is_of_interest(line, of_interest):
             found = p
     return found
 
-# ===== Grep-like backend (simple parsing) =====
-
-def parse_use_core(expr, smry):
-    stack = []
-    cur = ""
-    pending = ""
-    for ch in expr:
-        if ch in '{,}':
-            cur, pending = cur + pending.strip(), ""
-        if ch == '{':
-            stack.append(cur)
-        elif ch == ',':
-            if not stack:
-                logging.warning(f"unexpected ,: {smry}")
-                return
-            yield cur
-            cur = stack[-1]
-        elif ch == '}':
-            if not stack:
-                logging.warning(f"unexpected }}: {smry}")
-                return
-            stack.pop()
-        else:
-            pending += ch
-    if stack:
-        logging.warning(f"unclosed {{: {smry}")
-    cur, pending = cur + pending.strip(), ""
-    yield cur
-
-def parse_use(expr):
-    """
-    Heuristically parse a use ...; expression, returning a list of crate
-    imports.
-
-    This function is hacky and best-effort (it prints warnings if
-    it detects anything it doesn't recognize).
-    Most of the logic is just dealing with {} replacements.
-
-    The input should start with 'use ' and end in a newline.
-    """
-    smry = truncate_str(expr, 100)
-
-    # Preconditions
-    if expr[-1] != '\n':
-        logging.warning(f"Expected newline-terminated use expression: {smry}")
-        return []
-    elif expr[0:4] != "use ":
-        logging.warning(f"Expected 'use' expression: {smry}")
-        return []
-    elif ";" not in expr:
-        logging.warning(f"Expected semicolon in: {smry}")
-        return []
-    elif '/' in expr:
-        logging.warning(f"Unexpected extra slash in: {smry}")
-        return []
-
-    # Remove 'use ' at the beginning and newlines
-    expr = expr[4:]
-    expr = expr.replace('\n', '')
-
-    # Remove semicolon at the end
-    if expr[-1] != ';':
-        logging.warning(f"Expected ; at end of use expression: {smry}")
-        return []
-    expr = expr[:-1]
-    if ';' in expr:
-        logging.warning(f"Unexpected extra semicolon in: {smry}")
-
-    # Sort final results
-    return sorted(list(parse_use_core(expr, smry)))
-
-def scan_use(crate, root, file, lineno, use_expr, of_interest):
-    """
-    Scan a single use ...; expression.
-    Return a list of pairs of a pattern and the CSV output.
-
-    Calls parse_use to parse the Rust syntax.
-    """
-    for use in parse_use(use_expr):
-        pat = is_of_interest(use, of_interest)
-        if pat is None:
-            logging.trace(f"Skipping: {use}")
-        else:
-            logging.trace(f"Of interest: {use}")
-            yield Effect(
-                crate,
-                "Unknown",
-                "Unknown",
-                use,
-                pat,
-                root,
-                file,
-                str(lineno),
-            )
-
-def scan_rs(fh):
-    """
-    Scan a rust file handle until at least one semicolon is found.
-    Ignore comments.
-
-    Yield (possibly multi-line) newline-terminated strings.
-    """
-    curr = ""
-    for lineno, line in enumerate(fh):
-        curr += line
-        if ';' in curr:
-            curr = re.sub("[ ]*//.*\n", "\n", curr)
-            curr = re.sub("/\*.*\*/", "", curr, flags=re.DOTALL)
-            curr = re.sub("/\*.*$", "", curr, flags=re.DOTALL)
-            curr = re.sub("^.*\*/", "", curr, flags=re.DOTALL)
-            yield lineno, curr
-            curr = ""
+# ===== Syn backend =====
 
 def scan_file(crate, root, file, of_interest):
     filepath = os.path.join(root, file)
     logging.trace(f"Scanning file: {filepath}")
-    with open(filepath) as fh:
-        scanner = scan_rs(fh)
-        for lineno, expr in scanner:
-            if m := re.fullmatch(".*^(pub )?(use .*\n)", expr, flags=re.MULTILINE | re.DOTALL):
-                # Scan use expression
-                yield from scan_use(crate, root, file, lineno, m[2], of_interest)
+
+    logging.debug(f"Running: {[SYN_DEBUG, filepath]}")
+    proc = subprocess.Popen([SYN_DEBUG, filepath], stdout=subprocess.PIPE)
+    for line in iter(proc.stdout.readline, b""):
+        line = line.strip().decode("utf-8")
+        eff = Effect(*line.split(", "))
+
+        # syn backend returns raw call sites, without a matched pattern
+        assert eff.pattern == "[none]"
+        eff.pattern = is_of_interest(eff.callee, of_interest)
+        if eff.pattern is None:
+            logging.trace(f"Skipping: {eff}")
+        else:
+            logging.trace(f"Of interest: {eff}")
+            yield eff
 
 def scan_crate(crate, crate_dir, of_interest):
     logging.debug(f"Scanning crate: {crate}")
