@@ -27,7 +27,7 @@ struct Scanner<'a> {
     // stack-based scopes for parsing (always empty at top-level)
     scope_mods: Vec<&'a syn::Ident>,
     scope_use: Vec<&'a syn::Ident>,
-    scope_fun: Option<&'a syn::Ident>,
+    scope_fun: Vec<&'a syn::Ident>,
     // collecting use statements that are in scope
     use_names: HashMap<String, String>,
     use_globs: Vec<String>,
@@ -41,7 +41,7 @@ impl<'a> Scanner<'a> {
         let results = Vec::new();
         let scope_mods = Vec::new();
         let scope_use = Vec::new();
-        let scope_fun = None;
+        let scope_fun = Vec::new();
         let use_names = HashMap::new();
         let use_globs = Vec::new();
         Self { filepath, results, scope_mods, scope_use, scope_fun, use_names, use_globs }
@@ -70,7 +70,7 @@ impl<'a> Scanner<'a> {
         }
     }
     fn scan_mod(&mut self, m: &'a syn::ItemMod) {
-        if let Some(existing_name) = self.scope_fun {
+        if let Some(existing_name) = self.scope_fun.last() {
             eprintln!(
                 "warning: found module {:?} when already in function {}",
                 m, existing_name
@@ -101,8 +101,7 @@ impl<'a> Scanner<'a> {
     }
     fn scan_use(&mut self, u: &'a syn::ItemUse) {
         // TBD: may need to do something special here if already inside a fn
-        // if let Some(existing_name) = self.scope_fun {
-        // }
+        // (scope_fun is nonempty)
         self.scan_use_tree(&u.tree);
     }
     fn scan_use_tree(&mut self, u: &'a syn::UseTree) {
@@ -143,17 +142,11 @@ impl<'a> Scanner<'a> {
     */
     fn scan_fn(&mut self, f: &'a syn::ItemFn) {
         let f_name = &f.sig.ident;
-        if let Some(existing_name) = self.scope_fun {
-            eprintln!(
-                "warning: found function {} when already in function {}",
-                f_name, existing_name
-            );
-        }
-        self.scope_fun = Some(f_name);
+        self.scope_fun.push(f_name);
         for s in &f.block.stmts {
             self.scan_fn_statement(s);
         }
-        self.scope_fun = None;
+        self.scope_fun.pop();
     }
     fn scan_fn_statement(&mut self, s: &'a syn::Stmt) {
         match s {
@@ -391,6 +384,7 @@ impl<'a> Scanner<'a> {
         // caller
         let caller_name = self
             .scope_fun
+            .last()
             .expect("scan_expr_call_ident called outside of a function!")
             .to_string();
 
