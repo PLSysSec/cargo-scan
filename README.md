@@ -11,6 +11,7 @@ This repository also collects related experiments, test crates, and experimental
 Make sure you have Python 3 (at least 3.7) and [Rust](https://www.rust-lang.org/tools/install), then run `make install`.
 
 This installs [cargo-download](https://crates.io/crates/cargo-download) and our fork of [MIRAI](https://github.com/facebookexperimental/MIRAI).
+It also builds the Rust source.
 Installation has currently been tested on Mac OS (Monterey) and Linux (Arch Linux).
 
 If you want to use the `-g` option, you also need to install [graphviz](https://graphviz.org/download/): on Mac, `brew install graphviz`.

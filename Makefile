@@ -6,6 +6,7 @@ install:
 	git submodule init
 	git submodule update
 	cd mirai/MIRAI && cargo install --locked --path ./checker
+	cd rust-src && cargo build && cargo build --release
 
 top10:
 	./scan.py -i data/crates-top10.csv -o top10
