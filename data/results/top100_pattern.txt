@@ -1,0 +1,21 @@
+===== Patterns =====
+Total instances of each import pattern:
+libc: 72
+std::net: 42
+std::env: 34
+std::fs: 32
+std::process: 19
+std::path: 16
+winapi: 16
+std::os: 9
+mio::unix: 4
+socket2: 3
+tokio::io: 2
+tokio::net: 2
+mio::net: 0
+tokio::fs: 0
+tokio::process: 0
+hyper::client: 0
+hyper::server: 0
+tokio_util::udp: 0
+tokio_util::net: 0

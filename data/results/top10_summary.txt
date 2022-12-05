@@ -1,28 +1,7 @@
-===== Patterns =====
-Total instances of each import pattern:
-std::path: 8
-std::process: 3
-std::env: 2
-std::fs: 1
-std::net: 0
-std::os: 0
-libc: 0
-winapi: 0
-mio::net: 0
-mio::unix: 0
-tokio::fs: 0
-tokio::io: 0
-tokio::net: 0
-tokio::process: 0
-hyper::client: 0
-hyper::server: 0
-tokio_util::udp: 0
-tokio_util::net: 0
-socket2: 0
 ===== Crate Summary =====
 Number of dangerous imports by crate:
-autocfg: 10
-proc-macro2: 4
+autocfg: 5
+rand: 1
 ===== Crate Totals =====
 2 crates with 1 or more dangerous imports
 8 crates with 0 dangerous imports

@@ -1,50 +1,32 @@
-===== Patterns =====
-Total instances of each import pattern:
-std::os: 157
-std::net: 89
-winapi: 78
-tokio::io: 75
-std::path: 66
-libc: 42
-std::process: 29
-std::fs: 23
-std::env: 13
-tokio::net: 5
-mio::net: 2
-mio::unix: 2
-tokio::fs: 0
-tokio::process: 0
-hyper::client: 0
-hyper::server: 0
-tokio_util::udp: 0
-tokio_util::net: 0
-socket2: 0
 ===== Crate Summary =====
 Number of dangerous imports by crate:
-tokio: 151
-mio: 133
-socket2: 65
-hyper: 56
-cc: 43
-tokio-util: 30
-h2: 21
-getrandom: 15
-autocfg: 10
-parking_lot_core: 9
-chrono: 9
-url: 7
-proc-macro2: 4
-num_cpus: 4
-pkg-config: 4
-memchr: 3
-clap: 3
-thiserror: 3
-version_check: 2
-atty: 2
+tokio: 47
+cc: 35
+mio: 26
+getrandom: 25
+hyper: 22
+socket2: 20
+num_cpus: 11
+version_check: 9
+chrono: 8
+ansi_term: 6
+autocfg: 5
+parking_lot_core: 5
+atty: 5
+env_logger: 5
+url: 4
+anyhow: 3
+memchr: 2
+unicode-width: 2
 rustc_version: 2
-env_logger: 2
-termcolor: 2
-crossbeam-channel: 1
+tokio-util: 2
+rand: 1
+time: 1
+semver: 1
+bytes: 1
+clap: 1
+pkg-config: 1
+h2: 1
 ===== Crate Totals =====
-24 crates with 1 or more dangerous imports
-76 crates with 0 dangerous imports
+27 crates with 1 or more dangerous imports
+73 crates with 0 dangerous imports
