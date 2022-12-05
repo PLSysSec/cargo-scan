@@ -10,13 +10,17 @@ fn sanitize_comma(s: &str) -> String {
     }
     s.replace(',', "")
 }
+fn sanitize_comma_or_else(s: Option<&str>, none_repr: &str) -> String {
+    let s = s.unwrap_or(none_repr);
+    sanitize_comma(s)
+}
 
 #[derive(Debug, Clone)]
 pub struct EffectPathLoc {
     // Name of crate, e.g. num_cpus
     crt: String,
-    // Full path to module, e.g. num_cpus::linux
-    module: String,
+    // Full path to module, if any, e.g. num_cpus::linux
+    module: Option<String>,
     // Caller function, e.g. logical_cpus
     caller: String,
 }
@@ -24,6 +28,8 @@ impl EffectPathLoc {
     pub fn new(filepath: &Path, mod_scope: &[String], caller: String) -> Self {
         // note: tries to infer the crate name and modules from the filepath
         // TBD: use Cargo.toml to get crate name & other info
+
+        // Infer crate
         let pre_src: Vec<String> = filepath
             .iter()
             .map(|x| {
@@ -34,7 +40,13 @@ impl EffectPathLoc {
             .take_while(|&x| x != "src")
             .map(|x| x.to_string())
             .collect();
-        let post_src: Vec<String> = filepath
+        let crt = pre_src.last().cloned().unwrap_or_else(|| {
+            eprintln!("warning: unable to infer crate from path: {:?}", filepath);
+            "".to_string()
+        });
+
+        // Infer module
+        let mut post_src: Vec<String> = filepath
             .iter()
             .map(|x| {
                 x.to_str().unwrap_or_else(|| {
@@ -46,20 +58,9 @@ impl EffectPathLoc {
             .filter(|&x| x != "main.rs" && x != "lib.rs")
             .map(|x| x.replace(".rs", ""))
             .collect();
-
-        let crt = pre_src.last().cloned().unwrap_or_else(|| {
-            eprintln!("warning: unable to infer crate from path: {:?}", filepath);
-            "".to_string()
-        });
-        let mut module = crt.clone();
-        for x in &post_src {
-            module.push_str("::");
-            module.push_str(x);
-        }
-        for x in mod_scope {
-            module.push_str("::");
-            module.push_str(x);
-        }
+        // add in file-level modules
+        post_src.extend_from_slice(mod_scope);
+        let module = if post_src.is_empty() { None } else { Some(post_src.join("::")) };
 
         Self { crt, module, caller }
     }
@@ -68,7 +69,7 @@ impl EffectPathLoc {
     }
     pub fn to_csv(&self) -> String {
         let crt = sanitize_comma(&self.crt);
-        let module = sanitize_comma(&self.module);
+        let module = sanitize_comma_or_else(self.module.as_deref(), "[crate]");
         let caller = sanitize_comma(&self.caller);
         format!("{}, {}, {}", crt, module, caller)
     }
@@ -142,7 +143,7 @@ impl Effect {
     pub fn to_csv(&self) -> String {
         let caller_loc_csv = self.caller_loc.to_csv();
         let callee = sanitize_comma(&self.callee);
-        let pattern = sanitize_comma(self.pattern.as_deref().unwrap_or("[none]"));
+        let pattern = sanitize_comma_or_else(self.pattern.as_deref(), "[none]");
         let call_loc_csv = self.call_loc.to_csv();
 
         format!("{}, {}, {}, {}", caller_loc_csv, callee, pattern, call_loc_csv)
