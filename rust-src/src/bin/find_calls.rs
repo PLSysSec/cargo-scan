@@ -57,10 +57,9 @@ impl<'a> Scanner<'a> {
         match i {
             syn::Item::Mod(m) => self.scan_mod(m),
             syn::Item::Use(u) => self.scan_use(u),
+            syn::Item::Impl(imp) => self.scan_impl(imp),
             syn::Item::Fn(fun) => self.scan_fn(fun),
             _ => (),
-            // TODO:
-            // syn::Item::Impl(i) => ...
             // For all syntax elements see
             // https://docs.rs/syn/latest/syn/enum.Item.html
             // Potentially interesting:
@@ -139,12 +138,97 @@ impl<'a> Scanner<'a> {
     }
 
     /*
-        Function declarations
+        Impl blocks
+    */
+    fn scan_impl(&mut self, imp: &'a syn::ItemImpl) {
+        // push the impl block scope to scope_mods
+        // TBD: trait impls should be scoped under trait name, not type name:
+        // if let Some((_, path, _)) = &imp.trait_ ...
+        //     self.scan_impl_type(&imp.self_ty);
+        let scope_adds = self.scan_impl_type(&imp.self_ty);
+
+        // scan the impl block
+        for item in &imp.items {
+            match item {
+                syn::ImplItem::Method(m) => {
+                    self.scan_method(m);
+                }
+                syn::ImplItem::Macro(_) => {
+                    // incompleteness
+                }
+                syn::ImplItem::Verbatim(v) => {
+                    eprintln!("warning: skipping Verbatim expression: {:?}", v);
+                }
+                _ => (),
+            }
+        }
+
+        for _ in 0..scope_adds {
+            self.scope_mods.pop();
+        }
+    }
+    fn scan_impl_type(&mut self, ty: &'a syn::Type) -> usize {
+        // return: the number of items added to scope_mods
+        match ty {
+            syn::Type::Group(x) => self.scan_impl_type(&x.elem),
+            syn::Type::Paren(x) => self.scan_impl_type(&x.elem),
+            syn::Type::Path(x) => self.scan_impl_type_path(&x.path),
+            syn::Type::Macro(_) => {
+                // incompleteness
+                0
+            }
+            syn::Type::Verbatim(v) => {
+                eprintln!("warning: skipping Verbatim expression: {:?}", v);
+                0
+            }
+            _ => {
+                eprintln!("warning: unexpected impl block type (ignoring): {:?}", ty);
+                0
+            }
+        }
+        // other cases -- mostly built-ins, so shouldn't really occur in
+        // impl blocks; only in impl Trait for blocks, which we should handle
+        // separately
+        // Array(x) => {}
+        // BareFn(x) => {}
+        // ImplTrait(x) => {}
+        // Infer(x) => {}
+        // Never(x) => {}
+        // Ptr(x) => {}
+        // Reference(x) => {}
+        // Slice(x) => {}
+        // TraitObject(x) => {}
+        // Tuple(x) => {}
+    }
+    fn scan_impl_type_path(&mut self, p: &'a syn::Path) -> usize {
+        let mut count = 0;
+        for seg in p.segments.iter() {
+            self.scope_mods.push(&seg.ident);
+            count += 1;
+        }
+        if count == 0 {
+            eprintln!("warning: unexpected empty impl type path: {:?}", p)
+        } else if count > 1 {
+            eprintln!("warning: found :: in impl type path; not sure if this case is handled correctly: {:?}", p)
+        }
+        count
+    }
+
+    /*
+        Function and method declarations
     */
     fn scan_fn(&mut self, f: &'a syn::ItemFn) {
         let f_name = &f.sig.ident;
         self.scope_fun.push(f_name);
         for s in &f.block.stmts {
+            self.scan_fn_statement(s);
+        }
+        self.scope_fun.pop();
+    }
+    fn scan_method(&mut self, m: &'a syn::ImplItemMethod) {
+        let m_name = &m.sig.ident;
+        self.scope_fun.push(m_name);
+        for s in &m.block.stmts {
             self.scan_fn_statement(s);
         }
         self.scope_fun.pop();
@@ -344,8 +428,8 @@ impl<'a> Scanner<'a> {
                     self.scan_fn_statement(s);
                 }
             }
-            syn::Expr::Verbatim(_) => {
-                eprintln!("warning: encountered Verbatim expression (skipping)");
+            syn::Expr::Verbatim(v) => {
+                eprintln!("warning: skipping Verbatim expression: {:?}", v);
             }
             syn::Expr::While(x) => {
                 self.scan_expr(&x.cond);
@@ -364,6 +448,10 @@ impl<'a> Scanner<'a> {
             }
         }
     }
+
+    /*
+        Function calls --what we're interested in
+    */
     fn scan_expr_call_args(
         &mut self,
         a: &'a syn::punctuated::Punctuated<syn::Expr, syn::token::Comma>,
@@ -426,7 +514,10 @@ impl<'a> Scanner<'a> {
             _ => {
                 let line = f.span().start().line;
                 let col = f.span().start().column;
-                eprintln!("encountered unexpected function call expression: {:?} ({}:{})", f, line, col)
+                eprintln!(
+                    "encountered unexpected function call expression: {:?} ({}:{})",
+                    f, line, col
+                )
             }
         }
     }
