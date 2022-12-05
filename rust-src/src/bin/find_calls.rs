@@ -265,7 +265,7 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Macro(_) => {
-                // Note that there is an inherent incompleteness in this case
+                // Note inherent incompleteness in this case
             }
             syn::Expr::Match(x) => {
                 self.scan_expr(&x.expr);
@@ -420,10 +420,13 @@ impl<'a> Scanner<'a> {
                 }
                 self.push_callsite(callee_ident, callee_path);
             }
+            syn::Expr::Macro(_) => {
+                // Note inherent incompleteness in this case
+            }
             _ => {
                 let line = f.span().start().line;
                 let col = f.span().start().column;
-                eprintln!("encountered unexpected function call which was not a path expression: {:?} ({}:{})", f, line, col)
+                eprintln!("encountered unexpected function call expression: {:?} ({}:{})", f, line, col)
             }
         }
     }
