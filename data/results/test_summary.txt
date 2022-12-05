@@ -1,11 +1,11 @@
 ===== Patterns =====
 Total instances of each import pattern:
-std::fs: 10
-std::env: 4
-std::process: 4
+libc: 6
+std::fs: 2
+std::process: 2
+std::env: 1
 std::net: 1
-std::os: 1
-libc: 1
+std::os: 0
 std::path: 0
 winapi: 0
 mio::net: 0
@@ -21,9 +21,10 @@ tokio_util::net: 0
 socket2: 0
 ===== Crate Summary =====
 Number of dangerous imports by crate:
-dummy: 15
-toy-crates: 4
-permissions-ex: 2
+toy-crates: 5
+permissions-ex: 3
+num_cpus_minimal: 2
+libc-ex: 2
 ===== Crate Totals =====
-3 crates with 1 or more dangerous imports
-3 crates with 0 dangerous imports
+4 crates with 1 or more dangerous imports
+2 crates with 0 dangerous imports
