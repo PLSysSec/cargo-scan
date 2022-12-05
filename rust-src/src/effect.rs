@@ -23,7 +23,7 @@ pub struct EffectPathLoc {
 impl EffectPathLoc {
     pub fn new(filepath: &Path, mod_scope: &[String], caller: String) -> Self {
         // note: tries to infer the crate name and modules from the filepath
-        // TBD: use Cargo.toml to get crate name
+        // TBD: use Cargo.toml to get crate name & other info
         let pre_src: Vec<String> = filepath
             .iter()
             .map(|x| {
@@ -43,7 +43,8 @@ impl EffectPathLoc {
             })
             .skip_while(|&x| x != "src")
             .skip(1)
-            .map(|x| x.to_string())
+            .filter(|&x| x != "main.rs" && x != "lib.rs")
+            .map(|x| x.replace(".rs", ""))
             .collect();
 
         let crt = pre_src.last().cloned().unwrap_or_else(|| {
@@ -54,13 +55,6 @@ impl EffectPathLoc {
         for x in &post_src {
             module.push_str("::");
             module.push_str(x);
-        }
-        if module.ends_with(".rs") {
-            assert_eq!(module.pop(), Some('s'));
-            assert_eq!(module.pop(), Some('r'));
-            assert_eq!(module.pop(), Some('.'));
-        } else {
-            eprintln!("module path probably inferred incorrectly (no .rs found): {:?} (inferred {})", filepath, module);
         }
         for x in mod_scope {
             module.push_str("::");
@@ -115,7 +109,7 @@ pub struct Effect {
     // Callee (effect) function, e.g. libc::sched_getaffinity
     callee: String,
     // Effect pattern -- prefix of callee (effect), e.g. libc
-    pattern: String,
+    pattern: Option<String>,
     // Location of call (Directory, file, line)
     call_loc: EffectSrcLoc,
 }
@@ -130,7 +124,7 @@ impl Effect {
         col: usize,
     ) -> Self {
         let caller_loc = EffectPathLoc::new(filepath, mod_scope, caller);
-        let pattern = "".to_string(); // TBD
+        let pattern = None;
         let call_loc = EffectSrcLoc::new(filepath, line, col);
         Self { caller_loc, callee, pattern, call_loc }
     }
@@ -148,7 +142,7 @@ impl Effect {
     pub fn to_csv(&self) -> String {
         let caller_loc_csv = self.caller_loc.to_csv();
         let callee = sanitize_comma(&self.callee);
-        let pattern = sanitize_comma(&self.pattern);
+        let pattern = sanitize_comma(self.pattern.as_deref().unwrap_or("[none]"));
         let call_loc_csv = self.call_loc.to_csv();
 
         format!("{}, {}, {}, {}", caller_loc_csv, callee, pattern, call_loc_csv)
