@@ -70,6 +70,12 @@ impl<'a> Scanner<'a> {
         }
     }
     fn scan_mod(&mut self, m: &'a syn::ItemMod) {
+        if let Some(existing_name) = self.scope_fun {
+            eprintln!(
+                "warning: found module {:?} when already in function {}",
+                m, existing_name
+            );
+        }
         // TBD: reset use state; handle super keywords
         if let Some((_, items)) = &m.content {
             self.scope_mods.push(&m.ident);
@@ -94,6 +100,9 @@ impl<'a> Scanner<'a> {
         self.use_names.insert(lookup_key.to_string(), self.scope_use_as_string());
     }
     fn scan_use(&mut self, u: &'a syn::ItemUse) {
+        // TBD: may need to do something special here if already inside a fn
+        // if let Some(existing_name) = self.scope_fun {
+        // }
         self.scan_use_tree(&u.tree);
     }
     fn scan_use_tree(&mut self, u: &'a syn::UseTree) {
@@ -151,11 +160,12 @@ impl<'a> Scanner<'a> {
             syn::Stmt::Local(l) => self.scan_fn_local(l),
             syn::Stmt::Expr(e) => self.scan_expr(e),
             syn::Stmt::Semi(e, _) => self.scan_expr(e),
-            syn::Stmt::Item(_) => eprintln!(
-                "warning: ignoring item within function block {:?}",
-                self.scope_fun
-            ),
+            syn::Stmt::Item(i) => self.scan_item_in_fn(i),
         }
+    }
+    fn scan_item_in_fn(&mut self, i: &'a syn::Item) {
+        // TBD: may need to track additional state here
+        self.scan_item(i);
     }
     fn scan_fn_local(&mut self, l: &'a syn::Local) {
         if let Some((_, b)) = &l.init {
