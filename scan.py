@@ -438,14 +438,20 @@ def main():
     if sum(crate_summary.values()) != sum(pattern_summary.values()):
         logging.error("Logic error: crate summary and pattern summary were inconsistent!")
 
+    logging.info("=== Results ===")
+
     if args.output_prefix is None:
-        results_str = "=== Results ===\n"
         if num_crates == 1:
+            results_str = "===== All Results =====\n"
             for result in results:
                 results_str += result.to_csv()
                 results_str += '\n'
-        results_str += make_crate_summary(crate_summary)
-        logging.info(results_str)
+            logging.info(results_str.rstrip())
+
+        else:
+            logging.info(make_pattern_summary(pattern_summary).rstrip())
+
+        logging.info(make_crate_summary(crate_summary))
     else:
         logging.info(f"=== Saving results ===")
 
