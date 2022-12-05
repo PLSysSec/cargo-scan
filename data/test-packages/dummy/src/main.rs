@@ -5,7 +5,7 @@ use std::os::*;
 
 // nested braces
 use std::fs::{mod1, mod2::{test1, test2}};
-use std::{a::b::{c::d, e::f}, process::{process::Command, Command}::*};
+use std::{a::b::{c::d, e::f}, process::{process::Command, Command}};
 
 // multi-line braces
 use std::fs::test::{
@@ -103,6 +103,3 @@ use windows_sys::Win32::{
         },
     },
 };
-
-// no semicolon
-use expr with no semicolon
