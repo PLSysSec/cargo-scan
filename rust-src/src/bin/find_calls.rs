@@ -41,13 +41,17 @@ struct Scanner<'a> {
     skipped_fn_calls: usize,
 }
 
-fn syn_warning<S: Spanned + Debug>(msg: &str, syn_node: S) {
-    let line = syn_node.span().start().line;
-    let col = syn_node.span().start().column;
-    eprintln!("Warning: {} ({:?}) ({}:{})", msg, syn_node, line, col);
-}
-
 impl<'a> Scanner<'a> {
+    /*
+        Reusable warning logger
+    */
+    fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
+        let file = self.filepath.to_string_lossy();
+        let line = syn_node.span().start().line;
+        let col = syn_node.span().start().column;
+        eprintln!("Warning: {} ({:?}) ({}:{}:{})", msg, syn_node, file, line, col);
+    }
+
     /*
         Top-level items and modules
     */
@@ -221,7 +225,7 @@ impl<'a> Scanner<'a> {
                     self.skipped_macros += 1;
                 }
                 syn::ImplItem::Verbatim(v) => {
-                    syn_warning("skipping Verbatim expression", v);
+                    self.syn_warning("skipping Verbatim expression", v);
                 }
                 _ => (),
             }
@@ -241,12 +245,16 @@ impl<'a> Scanner<'a> {
                 self.skipped_macros += 1;
                 0
             }
+            syn::Type::TraitObject(x) => {
+                self.syn_warning("skipping 'impl dyn Trait' block", x);
+                0
+            }
             syn::Type::Verbatim(v) => {
-                syn_warning("skipping Verbatim expression", v);
+                self.syn_warning("skipping Verbatim expression", v);
                 0
             }
             _ => {
-                syn_warning("unexpected impl block type (ignoring)", ty);
+                self.syn_warning("unexpected impl block type (ignoring)", ty);
                 0
             }
         }
@@ -269,7 +277,7 @@ impl<'a> Scanner<'a> {
         let fullpath = self.lookup_path(ty);
         self.scope_mods.extend(&fullpath);
         if fullpath.is_empty() {
-            syn_warning("unexpected empty impl type path", ty);
+            self.syn_warning("unexpected empty impl type path", ty);
         }
         fullpath.len()
     }
@@ -278,7 +286,7 @@ impl<'a> Scanner<'a> {
         let fullpath = self.lookup_path(tr);
         self.scope_mods.extend(&fullpath);
         if fullpath.is_empty() {
-            syn_warning("unexpected empty trait name path", tr);
+            self.syn_warning("unexpected empty trait name path", tr);
         }
         fullpath.len()
     }
@@ -357,7 +365,7 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Box(x) => {
-                syn_warning("encountered box expression (unstable feature)", x);
+                self.syn_warning("encountered box expression (unstable feature)", x);
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Break(x) => {
@@ -476,7 +484,7 @@ impl<'a> Scanner<'a> {
                 self.scan_expr(&x.expr);
             }
             syn::Expr::TryBlock(x) => {
-                syn_warning("encountered try block (unstable feature)", x);
+                self.syn_warning("encountered try block (unstable feature)", x);
                 for y in &x.block.stmts {
                     self.scan_fn_statement(y);
                 }
@@ -498,7 +506,7 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Verbatim(v) => {
-                syn_warning("skipping Verbatim expression", v);
+                self.syn_warning("skipping Verbatim expression", v);
             }
             syn::Expr::While(x) => {
                 self.scan_expr(&x.cond);
@@ -507,12 +515,12 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Yield(x) => {
-                syn_warning("encountered yield expression (unstable feature)", x);
+                self.syn_warning("encountered yield expression (unstable feature)", x);
                 if let Some(y) = &x.expr {
                     self.scan_expr(y);
                 }
             }
-            _ => syn_warning("encountered unknown expression", e),
+            _ => self.syn_warning("encountered unknown expression", e),
         }
     }
 
