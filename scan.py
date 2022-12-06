@@ -228,12 +228,13 @@ def is_of_interest(line, of_interest):
 
 # ===== Syn backend =====
 
-def scan_file(crate, root, file, of_interest):
+def scan_file(crate, root, file, of_interest, add_args):
     filepath = os.path.join(root, file)
     logging.trace(f"Scanning file: {filepath}")
 
-    logging.debug(f"Running: {[SYN_DEBUG, filepath]}")
-    proc = subprocess.Popen([SYN_DEBUG, filepath], stdout=subprocess.PIPE)
+    command = [SYN_DEBUG, filepath] + add_args
+    logging.debug(f"Running: {command}")
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE)
     for line in iter(proc.stdout.readline, b""):
         line = line.strip().decode("utf-8")
         eff = Effect(*line.split(", "))
@@ -247,7 +248,7 @@ def scan_file(crate, root, file, of_interest):
             logging.trace(f"Of interest: {eff}")
             yield eff
 
-def scan_crate(crate, crate_dir, of_interest):
+def scan_crate(crate, crate_dir, of_interest, add_args):
     logging.debug(f"Scanning crate: {crate}")
     src = os.path.join(crate_dir, RUST_SRC)
     for root, dirs, files in os.walk(src):
@@ -259,7 +260,7 @@ def scan_crate(crate, crate_dir, of_interest):
         dirs.sort()
         for file in files:
             if os.path.splitext(file)[1] == ".rs":
-                yield from scan_file(crate, root, file, of_interest)
+                yield from scan_file(crate, root, file, of_interest, add_args)
 
 # ===== MIRAI backend =====
 
@@ -320,11 +321,11 @@ def mirai_call_path_as_effect(crate, crate_dir, call_path, of_interest):
         callee_col,
     )
 
-def scan_crate_mirai(crate, crate_dir, of_interest):
+def scan_crate_mirai(crate, crate_dir, of_interest, add_args):
     # Run our MIRAI fork; yield effects
     os.environ[MIRAI_FLAGS_KEY] = MIRAI_FLAGS_VAL
     subprocess.run(["cargo", "clean"], cwd=crate_dir, check=True)
-    proc = subprocess.Popen(["cargo", "mirai"], cwd=crate_dir, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
+    proc = subprocess.Popen(["cargo", "mirai"] + add_args, cwd=crate_dir, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
     call_path = []
     for line in iter(proc.stdout.readline, b""):
         line = line.strip().decode("utf-8")
@@ -398,10 +399,13 @@ def main():
     if not args.std:
         of_interest += OF_INTEREST_OTHER
 
+    add_args = []
     if args.mirai:
         scan_fun = scan_crate_mirai
     else:
         scan_fun = scan_crate
+        if args.verbose >= 4:
+            add_args = ["-v"]
 
     logging.info(f"=== Scanning {crates_infostr} in {crates_dir} ===")
 
@@ -421,7 +425,7 @@ def main():
             sys.exit(1)
 
         crate_dir = os.path.join(crates_dir, crate)
-        for effect in scan_fun(crate, crate_dir, of_interest):
+        for effect in scan_fun(crate, crate_dir, of_interest, add_args):
             logging.debug(f"effect found: {effect.to_csv()}")
             results.append(effect)
             # Update summaries
