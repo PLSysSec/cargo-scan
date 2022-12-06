@@ -44,6 +44,9 @@ CRATES_DIR = "data/packages"
 TEST_CRATES_DIR = "data/test-packages"
 RUST_SRC = "src"
 
+SYN_DEBUG = "./rust-src/target/debug/find_calls"
+SYN_RELEASE = "./rust-src/target/release/find_calls"
+
 MIRAI_CONFIG = "mirai/config.json"
 MIRAI_FLAGS_KEY = "MIRAI_FLAGS"
 MIRAI_FLAGS_VAL = f"--call_graph_config ../../../{MIRAI_CONFIG}"
@@ -77,8 +80,9 @@ OF_INTEREST_OTHER = [
 ]
 
 RESULTS_DIR = "data/results"
-RESULTS_ALL_SUFFIX = "all.csv"
-RESULTS_SUMMARY_SUFFIX = "summary.txt"
+RESULTS_ALL_SUFFIX = "_all.csv"
+RESULTS_PATTERN_SUFFIX = "_pattern.txt"
+RESULTS_SUMMARY_SUFFIX = "_summary.txt"
 
 # ===== Utility =====
 
@@ -97,6 +101,9 @@ logging.addLevelName(logging.ERROR, "\033[0;31m%s\033[0;0m" % "ERROR")
 def copy_file(src, dst):
     subprocess.run(["cp", src, dst], check=True)
 
+def make_path(dir, prefix, suffix):
+    return os.path.join(dir, f"{prefix}{suffix}")
+
 def truncate_str(s, n):
     assert n >= 3
     if len(s) <= n:
@@ -104,12 +111,12 @@ def truncate_str(s, n):
     else:
         return s[:(n-3)] + "..."
 
+# ===== CSV output for effects =====
+
 def sanitize_comma(s):
     if "," in s:
         logging.warning(f"found unexpected comma in: {s}")
     return s.replace(',', '')
-
-# ===== CSV output for effects =====
 
 @dataclass
 class Effect:
@@ -118,25 +125,38 @@ class Effect:
     used as an intermediate output for both the grep-based and the
     mirai-based effects analysis
     """
+    # Name of crate, e.g. num_cpus
     crate: str
+    # Full path to caller function, e.g. num_cpus::linux::logical_cpus
+    caller: str
+    # Callee (effect) function, e.g. libc::sched_getaffinity
+    callee: str
+    # Effect pattern -- prefix of callee (effect), e.g. libc
     pattern: str
+    # Directory in which the call occurs
     dir: str
+    # File in which the call occurs -- in the above directory
     file: str
-    effect_fun: str
-    caller_fun: str
+    # Loc in which the call occurs -- in the above file
+    line: int
+    col: int
 
     def csv_header():
-        return ", ".join(["crate", "pattern of interest", "directory", "file", "use line"])
+        return ", ".join(["crate", "caller", "callee", "pattern", "dir", "file", "line, col"])
 
     def to_csv(self):
         crate = sanitize_comma(self.crate)
+        caller = sanitize_comma(self.caller)
+        callee = sanitize_comma(self.callee)
         pattern = sanitize_comma(self.pattern)
         dir = sanitize_comma(self.dir)
         file = sanitize_comma(self.file)
-        effect_fun = sanitize_comma(self.effect_fun)
-        return ", ".join([crate, pattern, dir, file, effect_fun])
+        line = str(self.line)
+        col = str(self.col)
 
-# ===== Saving results =====
+        return ", ".join([crate, caller, callee, pattern, dir, file, line, col])
+
+# ===== Used by both backends =====
 
 def count_lines(cratefile, header_row=True):
     with open(cratefile, 'r') as fh:
@@ -166,29 +186,20 @@ def download_crate(crates_dir, crate, test_run):
             logging.info(f"Downloading crate: {target}")
             subprocess.run(["cargo", "download", "-x", crate, "-o", target], check=True)
 
-def save_results(results, results_prefix):
-    results_file = f"{results_prefix}_{RESULTS_ALL_SUFFIX}"
-    results_path = os.path.join(RESULTS_DIR, results_file)
-    logging.info(f"Saving raw results to {results_path}")
-    with open(results_path, 'w') as fh:
-        fh.write(Effect.csv_header() + '\n')
-        for effect in results:
-            fh.write(effect.to_csv() + '\n')
-
 def sort_summary_dict(d):
     return sorted(d.items(), key=lambda x: x[1], reverse=True)
 
-def make_summary(crate_summary, pattern_summary):
-    # Sanity check
-    assert sum(crate_summary.values()) == sum(pattern_summary.values())
-
+def make_pattern_summary(pattern_summary):
     result = ""
     result += "===== Patterns =====\n"
     result += "Total instances of each import pattern:\n"
     pattern_sorted = sort_summary_dict(pattern_summary)
     for p, n in pattern_sorted:
         result += f"{p}: {n}\n"
+    return result
 
+def make_crate_summary(crate_summary):
+    result = ""
     result += "===== Crate Summary =====\n"
     result += "Number of dangerous imports by crate:\n"
     crate_sorted = sort_summary_dict(crate_summary)
@@ -206,18 +217,6 @@ def make_summary(crate_summary, pattern_summary):
 
     return result
 
-def save_summary(crate_summary, pattern_summary, results_prefix):
-    results_file = f"{results_prefix}_{RESULTS_SUMMARY_SUFFIX}"
-    results_path = os.path.join(RESULTS_DIR, results_file)
-
-    summary = make_summary(crate_summary, pattern_summary)
-
-    logging.info(f"Saving summary to {results_path}")
-    with open(results_path, 'w') as fh:
-        fh.write(summary)
-
-# ===== Grep-like backend (simple parsing) =====
-
 def is_of_interest(line, of_interest):
     found = None
     for p in of_interest:
@@ -227,119 +226,31 @@ def is_of_interest(line, of_interest):
             found = p
     return found
 
-def parse_use_core(expr, smry):
-    stack = []
-    cur = ""
-    pending = ""
-    for ch in expr:
-        if ch in '{,}':
-            cur, pending = cur + pending.strip(), ""
-        if ch == '{':
-            stack.append(cur)
-        elif ch == ',':
-            if not stack:
-                logging.warning(f"unexpected ,: {smry}")
-                return
-            yield cur
-            cur = stack[-1]
-        elif ch == '}':
-            if not stack:
-                logging.warning(f"unexpected }}: {smry}")
-                return
-            stack.pop()
-        else:
-            pending += ch
-    if stack:
-        logging.warning(f"unclosed {{: {smry}")
-    cur, pending = cur + pending.strip(), ""
-    yield cur
+# ===== Syn backend =====
 
-def parse_use(expr):
-    """
-    Heuristically parse a use ...; expression, returning a list of crate
-    imports.
-
-    This function is hacky and best-effort (it prints warnings if
-    it detects anything it doesn't recognize).
-    Most of the logic is just dealing with {} replacements.
-
-    The input should start with 'use ' and end in a newline.
-    """
-    smry = truncate_str(expr, 100)
-
-    # Preconditions
-    if expr[-1] != '\n':
-        logging.warning(f"Expected newline-terminated use expression: {smry}")
-        return []
-    elif expr[0:4] != "use ":
-        logging.warning(f"Expected 'use' expression: {smry}")
-        return []
-    elif ";" not in expr:
-        logging.warning(f"Expected semicolon in: {smry}")
-        return []
-    elif '/' in expr:
-        logging.warning(f"Unexpected extra slash in: {smry}")
-        return []
-
-    # Remove 'use ' at the beginning and newlines
-    expr = expr[4:]
-    expr = expr.replace('\n', '')
-
-    # Remove semicolon at the end
-    if expr[-1] != ';':
-        logging.warning(f"Expected ; at end of use expression: {smry}")
-        return []
-    expr = expr[:-1]
-    if ';' in expr:
-        logging.warning(f"Unexpected extra semicolon in: {smry}")
-
-    # Sort final results
-    return sorted(list(parse_use_core(expr, smry)))
-
-def scan_use(crate, root, file, use_expr, of_interest):
-    """
-    Scan a single use ...; expression.
-    Return a list of pairs of a pattern and the CSV output.
-
-    Calls parse_use to parse the Rust syntax.
-    """
-    for use in parse_use(use_expr):
-        pat = is_of_interest(use, of_interest)
-        if pat is None:
-            logging.trace(f"Skipping: {use}")
-        else:
-            logging.trace(f"Of interest: {use}")
-            yield Effect(crate, pat, root, file, use, "Unknown")
-
-def scan_rs(fh):
-    """
-    Scan a rust file handle until at least one semicolon is found.
-    Ignore comments.
-
-    Yield (possibly multi-line) newline-terminated strings.
-    """
-    curr = ""
-    for line in fh:
-        curr += line
-        if ';' in curr:
-            curr = re.sub("[ ]*//.*\n", "\n", curr)
-            curr = re.sub("/\*.*\*/", "", curr, flags=re.DOTALL)
-            curr = re.sub("/\*.*$", "", curr, flags=re.DOTALL)
-            curr = re.sub("^.*\*/", "", curr, flags=re.DOTALL)
-            yield curr
-            curr = ""
-
-def scan_file(crate, root, file, of_interest):
+def scan_file(crate, root, file, of_interest, add_args):
     filepath = os.path.join(root, file)
     logging.trace(f"Scanning file: {filepath}")
-    with open(filepath) as fh:
-        scanner = scan_rs(fh)
-        for expr in scanner:
-            if m := re.fullmatch(".*^(pub )?(use .*\n)", expr, flags=re.MULTILINE | re.DOTALL):
-                # Scan use expression
-                yield from scan_use(crate, root, file, m[2], of_interest)
 
-def scan_crate(crate, crate_dir, of_interest):
+    # Uncomment for additional debugging (slower)
+    # command = [SYN_DEBUG, filepath] + add_args
+    command = [SYN_RELEASE, filepath] + add_args
+    logging.debug(f"Running: {command}")
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+    for line in iter(proc.stdout.readline, b""):
+        line = line.strip().decode("utf-8")
+        eff = Effect(*line.split(", "))
+
+        # syn backend returns raw call sites, without a matched pattern
+        assert eff.pattern == "[none]"
+        eff.pattern = is_of_interest(eff.callee, of_interest)
+        if eff.pattern is None:
+            logging.trace(f"Skipping: {eff}")
+        else:
+            logging.trace(f"Of interest: {eff}")
+            yield eff
+
+def scan_crate(crate, crate_dir, of_interest, add_args):
     logging.debug(f"Scanning crate: {crate}")
     src = os.path.join(crate_dir, RUST_SRC)
     for root, dirs, files in os.walk(src):
@@ -351,7 +262,7 @@ def scan_crate(crate, crate_dir, of_interest):
         dirs.sort()
         for file in files:
             if os.path.splitext(file)[1] == ".rs":
-                yield from scan_file(crate, root, file, of_interest)
+                yield from scan_file(crate, root, file, of_interest, add_args)
 
 # ===== MIRAI backend =====
 
@@ -373,16 +284,20 @@ def parse_mirai_call_line(line):
     # ['DefId', '0:6', 'num_cpus[1818]::get_num_physical_cpus', 'src/lib.rs:324:20', '324:34', '#0']
     # ['DefId', '0:5', 'num_cpus[1818]::get_physical', 'src/lib.rs:109:5', '109:28', '#0']
     fun = re.sub(r"\[[0-9a-f]*\]", "", parts[2])
+    # module = fun.rsplit("::", 1)[0]
     src_dir, path = tuple(parts[3].split("/"))
-    return fun, src_dir, path
+    file, line, col = tuple(path.split(':', 2))
+    return fun, src_dir, file, line, col
 
-def mirai_call_path_as_effect(crate, call_path):
+def mirai_call_path_as_effect(crate, crate_dir, call_path, of_interest):
     # Convert a call path to an Effect object
-    # crate_dir is the name of the crate
+    # crate is the name of the crate
+    # crate_dir is the path to the crate (from scan.py top-level directory)
     # call_path is a nonempty list of (effect_fun, src_dir, path)
-    callee, src_dir, callee_path = call_path[0]
+    # of_interest is a list of patterns
+    callee_fun, src_dir, callee_file, callee_line, callee_col = call_path[0]
     if len(call_path) > 1:
-        caller, src_dir2, caller_path = call_path[1]
+        caller_fun, src_dir2, caller_file, caller_line, caller_col = call_path[1]
         if src_dir != src_dir2:
             logging.warning(f"MIRAI: callee and caller in different source dirs: {src_dir1} and {src_dir2}")
     else:
@@ -390,15 +305,29 @@ def mirai_call_path_as_effect(crate, call_path):
         caller = "Unknown"
         caller_path = "Unknown"
 
-    pattern = callee.split("::")[0] + "::" + callee.split("::")[1]
-    return Effect(crate, pattern, src_dir, callee_path, callee, caller)
+    dir = crate_dir + "/" + src_dir
 
-def scan_crate_mirai(crate, crate_dir, _of_interest):
+    pattern = is_of_interest(callee_fun, of_interest)
+    if pattern is None:
+        logging.warning("MIRAI: output didn't match any pattern of interest")
+        pattern = "::".join(callee_mod.split("::")[0:2])
+
+    return Effect(
+        crate,
+        caller_fun,
+        callee_fun,
+        pattern,
+        dir,
+        callee_file,
+        callee_line,
+        callee_col,
+    )
+
+def scan_crate_mirai(crate, crate_dir, of_interest, add_args):
     # Run our MIRAI fork; yield effects
-    # TBD: use the of_interest argument
     os.environ[MIRAI_FLAGS_KEY] = MIRAI_FLAGS_VAL
     subprocess.run(["cargo", "clean"], cwd=crate_dir, check=True)
-    proc = subprocess.Popen(["cargo", "mirai"], cwd=crate_dir, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
+    proc = subprocess.Popen(["cargo", "mirai"] + add_args, cwd=crate_dir, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
     call_path = []
     for line in iter(proc.stdout.readline, b""):
         line = line.strip().decode("utf-8")
@@ -407,7 +336,7 @@ def scan_crate_mirai(crate, crate_dir, _of_interest):
         elif line == "Call Path:":
             logging.trace("MIRAI: new call path")
             if call_path:
-                yield mirai_call_path_as_effect(crate, call_path)
+                yield mirai_call_path_as_effect(crate, crate_dir, call_path, of_interest)
             call_path = []
         elif line[0:6] == "Call: ":
             result = parse_mirai_call_line(line[6:])
@@ -417,7 +346,7 @@ def scan_crate_mirai(crate, crate_dir, _of_interest):
         else:
             logging.warning(f"Unrecognized MIRAI output line: {line}")
     if call_path:
-        yield mirai_call_path_as_effect(crate, call_path)
+        yield mirai_call_path_as_effect(crate, crate_dir, call_path, of_interest)
 
 def view_callgraph_mirai(crate_dir):
     subprocess.run(["dot", "-Tpng", "graph.dot", "-o", "graph.png"], cwd=crate_dir, check=True)
@@ -472,10 +401,13 @@ def main():
     if not args.std:
         of_interest += OF_INTEREST_OTHER
 
+    add_args = []
     if args.mirai:
         scan_fun = scan_crate_mirai
     else:
         scan_fun = scan_crate
+        if args.verbose >= 4:
+            add_args = ["-v"]
 
     logging.info(f"=== Scanning {crates_infostr} in {crates_dir} ===")
 
@@ -495,7 +427,7 @@ def main():
             sys.exit(1)
 
         crate_dir = os.path.join(crates_dir, crate)
-        for effect in scan_fun(crate, crate_dir, of_interest):
+        for effect in scan_fun(crate, crate_dir, of_interest, add_args):
             logging.debug(f"effect found: {effect.to_csv()}")
             results.append(effect)
             # Update summaries
@@ -507,18 +439,48 @@ def main():
         logging.info("=== Generating call graph as a PNG ===")
         view_callgraph_mirai(crate_dir)
 
+    # Sanity check
+    if sum(crate_summary.values()) != sum(pattern_summary.values()):
+        logging.error("Logic error: crate summary and pattern summary were inconsistent!")
+
+    logging.info("=== Results ===")
+
     if args.output_prefix is None:
-        results_str = "=== Results ===\n"
         if num_crates == 1:
+            results_str = "===== All Results =====\n"
             for result in results:
                 results_str += result.to_csv()
                 results_str += '\n'
-        results_str += make_summary(crate_summary, pattern_summary)
-        logging.info(results_str)
+            logging.info(results_str.rstrip())
+
+        else:
+            logging.info(make_pattern_summary(pattern_summary).rstrip())
+
+        logging.info(make_crate_summary(crate_summary))
     else:
         logging.info(f"=== Saving results ===")
-        save_results(results, args.output_prefix)
-        save_summary(crate_summary, pattern_summary, args.output_prefix)
+
+        prefix = args.output_prefix
+        results_path = make_path(RESULTS_DIR, prefix, RESULTS_ALL_SUFFIX)
+        pattern_path = make_path(RESULTS_DIR, prefix, RESULTS_PATTERN_SUFFIX)
+        summary_path = make_path(RESULTS_DIR, prefix, RESULTS_SUMMARY_SUFFIX)
+
+        pat_str = make_pattern_summary(pattern_summary)
+        crate_str = make_crate_summary(crate_summary)
+
+        logging.info(f"Saving all results to {results_path}")
+        with open(results_path, 'w') as fh:
+            fh.write(Effect.csv_header() + '\n')
+            for effect in results:
+                fh.write(effect.to_csv() + '\n')
+
+        logging.info(f"Saving pattern totals to {pattern_path}")
+        with open(pattern_path, 'w') as fh:
+            fh.write(pat_str)
+
+        logging.info(f"Saving summary to {summary_path}")
+        with open(summary_path, 'w') as fh:
+            fh.write(crate_str)
 
 if __name__ == "__main__":
     main()

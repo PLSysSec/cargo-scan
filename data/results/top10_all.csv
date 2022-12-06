@@ -1,15 +1,14 @@
-crate, pattern of interest, directory, file, use line
-proc-macro2, std::path, data/packages/proc-macro2/src, fallback.rs, std::path::Path
-proc-macro2, std::path, data/packages/proc-macro2/src, fallback.rs, std::path::PathBuf
-proc-macro2, std::path, data/packages/proc-macro2/src, lib.rs, std::path::PathBuf
-proc-macro2, std::path, data/packages/proc-macro2/src, wrapper.rs, std::path::PathBuf
-autocfg, std::env, data/packages/autocfg/src, lib.rs, std::env
-autocfg, std::fs, data/packages/autocfg/src, lib.rs, std::fs
-autocfg, std::path, data/packages/autocfg/src, lib.rs, std::path::Path
-autocfg, std::path, data/packages/autocfg/src, lib.rs, std::path::PathBuf
-autocfg, std::process, data/packages/autocfg/src, lib.rs, std::process::Command
-autocfg, std::process, data/packages/autocfg/src, lib.rs, std::process::Stdio
-autocfg, std::env, data/packages/autocfg/src, tests.rs, std::env
-autocfg, std::path, data/packages/autocfg/src, tests.rs, std::path::Path
-autocfg, std::path, data/packages/autocfg/src, version.rs, std::path::Path
-autocfg, std::process, data/packages/autocfg/src, version.rs, std::process::Command
+crate, caller, callee, pattern, dir, file, line, col
+rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, libc::pthread_atfork, libc, data/packages/rand/src/rngs/adapter, reseeding.rs, 321, 37
+proc-macro2, proc-macro2::fallback::Span::source_file, std::path::Path::new, std::path, data/packages/proc-macro2/src, fallback.rs, 498, 28
+autocfg, autocfg::AutoCfg::new, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 141, 19
+autocfg, autocfg::AutoCfg::with_dir, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 156, 25
+autocfg, autocfg::AutoCfg::with_dir, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 160, 26
+autocfg, autocfg::AutoCfg::probe, std::process::Command::new, std::process, data/packages/autocfg/src, lib.rs, 210, 35
+autocfg, autocfg::AutoCfg::probe, std::process::Stdio::piped, std::process, data/packages/autocfg/src, lib.rs, 225, 38
+autocfg, autocfg::dir_contains_target, std::path::PathBuf::from, std::path, data/packages/autocfg/src, lib.rs, 403, 48
+autocfg, autocfg::rustflags, std::env::var, std::env, data/packages/autocfg/src, lib.rs, 420, 24
+autocfg, autocfg::rustflags, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 437, 23
+autocfg, autocfg::rustflags, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 438, 49
+autocfg, autocfg::rustflags, std::env::var, std::env, data/packages/autocfg/src, lib.rs, 440, 36
+autocfg, autocfg::tests::super::AutoCfg::for_test, std::env::var_os, std::env, data/packages/autocfg/src, tests.rs, 20, 19
