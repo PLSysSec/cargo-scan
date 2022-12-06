@@ -154,17 +154,12 @@ impl<'a> Scanner<'a> {
     fn lookup_path(&self, p: &'a syn::Path) -> Vec<&'a syn::Ident> {
         let mut result = Vec::new();
         let mut it = p.segments.iter().map(|seg| &seg.ident);
-        let fst: &'a syn::Ident = it.next().unwrap();
+
         // first part of the path based on lookup
-        // TBD use extend
-        for i in self.lookup_ident(&fst).iter() {
-            let i: &'a syn::Ident = i;
-            result.push(i);
-        }
+        let fst: &'a syn::Ident = it.next().unwrap();
+        result.extend(self.lookup_ident(&fst));
         // second part of the path based on any additional sub-scoping
-        for i in it {
-            result.push(i);
-        }
+        result.extend(it);
 
         result
     }
@@ -243,17 +238,12 @@ impl<'a> Scanner<'a> {
         // Tuple(x) => {}
     }
     fn scan_impl_type_path(&mut self, p: &'a syn::Path) -> usize {
-        let mut count = 0;
-        for seg in p.segments.iter() {
-            self.scope_mods.push(&seg.ident);
-            count += 1;
-        }
-        if count == 0 {
+        let fullpath = self.lookup_path(p);
+        self.scope_mods.extend(&fullpath);
+        if fullpath.is_empty() {
             eprintln!("warning: unexpected empty impl type path: {:?}", p)
-        } else if count > 1 {
-            eprintln!("warning: found :: in impl type path; not sure if this case is handled correctly: {:?}", p)
         }
-        count
+        fullpath.len()
     }
 
     /*
@@ -349,7 +339,7 @@ impl<'a> Scanner<'a> {
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Closure(x) => {
-                // TODO: closures are a bit weird!
+                // TBD: closures are a bit weird!
                 // Note that the body expression doesn't get evaluated yet,
                 // and may be evaluated somewhere else.
                 // May need to do something more special here.
