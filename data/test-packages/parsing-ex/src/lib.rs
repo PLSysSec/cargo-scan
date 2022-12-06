@@ -106,3 +106,22 @@ impl From<MyTokenStream> for proc_macro2::TokenStream {
             .expect("failed to parse to compiler tokens")
     }
 }
+
+// more self-contained version
+
+mod struct_ex {
+    pub struct MyStruct(usize);
+}
+
+mod trait_ex {
+    pub trait MyTrait {
+        fn say_hello(&self) -> String;
+    }
+}
+
+// note that this impl is outside the mod scope for *both* the trait *and* the struct!
+impl trait_ex::MyTrait for struct_ex::MyStruct {
+    fn say_hello(&self) -> String {
+        "Hello!".to_string()
+    }
+}
