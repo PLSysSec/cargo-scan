@@ -29,6 +29,7 @@ struct Scanner<'a> {
     // output
     results: Vec<Effect>,
     // stack-based scopes for parsing (always empty at top-level)
+    // TBD: can probably combine all types of scope into one
     scope_mods: Vec<&'a syn::Ident>,
     scope_use: Vec<&'a syn::Ident>,
     scope_fun: Vec<&'a syn::Ident>,
@@ -88,19 +89,24 @@ impl<'a> Scanner<'a> {
         }
     }
     fn scan_mod(&mut self, m: &'a syn::ItemMod) {
-        if let Some(existing_name) = self.scope_fun.last() {
-            syn_warning(
-                &format!("found module when already in function {}", existing_name),
-                m,
-            )
-        }
         // TBD: reset use state; handle super keywords
         if let Some((_, items)) = &m.content {
+            // modules can exist inside of functions apparently
+            // handling that in what seems to be the most straightforward way
+            let n = self.scope_fun.len();
+            self.scope_mods.append(&mut self.scope_fun);
+            debug_assert!(self.scope_fun.is_empty());
+
             self.scope_mods.push(&m.ident);
             for i in items {
                 self.scan_item(i);
             }
             self.scope_mods.pop();
+
+            // restore scope_fun state
+            for _ in 0..n {
+                self.scope_fun.push(self.scope_mods.pop().unwrap());
+            }
         }
     }
 
