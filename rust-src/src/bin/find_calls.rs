@@ -412,7 +412,7 @@ impl<'a> Scanner<'a> {
                 // Arguments
                 self.scan_expr_call_args(&x.args);
                 // Function call
-                self.scan_expr_call_ident(&x.method);
+                self.scan_expr_call_method(&x.method);
             }
             syn::Expr::Paren(x) => {
                 self.scan_expr(&x.expr);
@@ -508,23 +508,24 @@ impl<'a> Scanner<'a> {
     fn get_mod_scope(&self) -> Vec<String> {
         self.scope_mods.iter().map(|i| i.to_string()).collect()
     }
-    fn push_callsite(&mut self, callee_ident: &'a syn::Ident, callee_path: String) {
+    fn push_callsite<S>(&mut self, callee_span: S, callee_path: String)
+    where
+        S: Spanned,
+    {
         // push an Effect to the list of results based on this call site.
 
         // caller
         let caller_name = self
             .scope_fun
             .last()
-            .expect("scan_expr_call_ident called outside of a function!")
+            .expect("push_callsite called outside of a function!")
             .to_string();
 
         let mod_scope = self.get_mod_scope();
 
         // callee
-        let call_line = callee_ident.span().start().line;
-        let call_col = callee_ident.span().start().column;
-        // TBD: callee_name could also be useful
-        // let callee_name = callee_ident.to_string();
+        let call_line = callee_span.span().start().line;
+        let call_col = callee_span.span().start().column;
 
         self.results.push(Effect::new(
             caller_name,
@@ -543,6 +544,15 @@ impl<'a> Scanner<'a> {
                 let callee_path_str = Self::path_to_string(&callee_path);
                 self.push_callsite(callee_ident, callee_path_str);
             }
+            syn::Expr::Paren(x) => {
+                // e.g. (my_struct.f)(x)
+                self.scan_expr_call(&x.expr);
+            }
+            syn::Expr::Field(x) => {
+                // e.g. my_struct.f: F where F: Fn(A) -> B
+                // Note: not a method call!
+                self.scan_expr_call_field(&x.member)
+            }
             syn::Expr::Macro(_) => {
                 // Note inherent incompleteness in this case
             }
@@ -556,7 +566,19 @@ impl<'a> Scanner<'a> {
             }
         }
     }
-    fn scan_expr_call_ident(&mut self, i: &'a syn::Ident) {
+    fn scan_expr_call_field(&mut self, m: &'a syn::Member) {
+        match m {
+            syn::Member::Named(i) => {
+                let callee_path = format!("[FIELD]::{}", i);
+                self.push_callsite(i, callee_path);
+            }
+            syn::Member::Unnamed(idx) => {
+                let callee_path = format!("[FIELD]::{}", idx.index);
+                self.push_callsite(idx, callee_path);
+            }
+        }
+    }
+    fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
         let callee_path = format!("[METHOD]::{}", i);
         self.push_callsite(i, callee_path);
     }
