@@ -17,6 +17,8 @@ use syn::spanned::Spanned;
 struct Args {
     // ../path/to/my_rust_crate/src/my_mod/my_file.rs
     filepath: PathBuf,
+    #[arg(short, long, default_value_t = false)]
+    verbose: bool,
 }
 
 /// Stateful object to scan Rust source code for effects (fn calls of interest)
@@ -33,6 +35,9 @@ struct Scanner<'a> {
     // collecting use statements that are in scope
     use_names: HashMap<String, Vec<&'a syn::Ident>>,
     use_globs: Vec<Vec<&'a syn::Ident>>,
+    // info about skipped nodes
+    skipped_macros: usize,
+    skipped_fn_calls: usize,
 }
 
 fn syn_warning<S: Spanned + Debug>(msg: &str, syn_node: S) {
@@ -46,13 +51,17 @@ impl<'a> Scanner<'a> {
         Top-level items and modules
     */
     fn new(filepath: &'a Path) -> Self {
-        let results = Vec::new();
-        let scope_mods = Vec::new();
-        let scope_use = Vec::new();
-        let scope_fun = Vec::new();
-        let use_names = HashMap::new();
-        let use_globs = Vec::new();
-        Self { filepath, results, scope_mods, scope_use, scope_fun, use_names, use_globs }
+        Self {
+            filepath,
+            results: Vec::new(),
+            scope_mods: Vec::new(),
+            scope_use: Vec::new(),
+            scope_fun: Vec::new(),
+            use_names: HashMap::new(),
+            use_globs: Vec::new(),
+            skipped_macros: 0,
+            skipped_fn_calls: 0,
+        }
     }
     fn scan_file(&mut self, f: &'a syn::File) {
         // scan the file and return a list of all calls in it
@@ -66,13 +75,15 @@ impl<'a> Scanner<'a> {
             syn::Item::Use(u) => self.scan_use(u),
             syn::Item::Impl(imp) => self.scan_impl(imp),
             syn::Item::Fn(fun) => self.scan_fn(fun),
+            syn::Item::Macro(_) => {
+                self.skipped_macros += 1;
+            }
             _ => (),
             // For all syntax elements see
             // https://docs.rs/syn/latest/syn/enum.Item.html
             // Potentially interesting:
             // Trait(t) -- default impls are an issue here
             // ForeignMod(ItemForeignMod) -- extern items like extern "C" { ... }
-            // Macro, Macro2 -- macro invocations and declarations
             // Const(ItemConst), Static(ItemStatic) -- for information flow
         }
     }
@@ -201,7 +212,7 @@ impl<'a> Scanner<'a> {
                     self.scan_method(m);
                 }
                 syn::ImplItem::Macro(_) => {
-                    // incompleteness
+                    self.skipped_macros += 1;
                 }
                 syn::ImplItem::Verbatim(v) => {
                     syn_warning("skipping Verbatim expression", v);
@@ -221,7 +232,7 @@ impl<'a> Scanner<'a> {
             syn::Type::Paren(x) => self.scan_impl_type(&x.elem),
             syn::Type::Path(x) => self.scan_impl_type_path(&x.path),
             syn::Type::Macro(_) => {
-                // incompleteness
+                self.skipped_macros += 1;
                 0
             }
             syn::Type::Verbatim(v) => {
@@ -401,7 +412,7 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Macro(_) => {
-                // Note inherent incompleteness in this case
+                self.skipped_macros += 1;
             }
             syn::Expr::Match(x) => {
                 self.scan_expr(&x.expr);
@@ -559,10 +570,12 @@ impl<'a> Scanner<'a> {
                 self.scan_expr_call_field(&x.member)
             }
             syn::Expr::Macro(_) => {
-                // Note inherent incompleteness in this case
+                self.skipped_macros += 1;
             }
             _ => {
-                syn_warning("encountered unexpected function call expression", f);
+                // anything else could be a function, too -- could return a closure
+                // or fn pointer. No way to tell w/o type information.
+                self.skipped_fn_calls += 1;
             }
         }
     }
@@ -616,5 +629,21 @@ fn main() {
 
     for result in scanner.results {
         println!("{}", result.to_csv());
+    }
+
+    if args.verbose {
+        if scanner.skipped_fn_calls > 0 {
+            eprintln!(
+                "Note: analysis skipped {} function calls \
+                (closures or other complex expressions called as functions)",
+                scanner.skipped_fn_calls
+            );
+        }
+        if scanner.skipped_macros > 0 {
+            eprintln!(
+                "Note: analysis skipped {} macro invocations",
+                scanner.skipped_macros
+            );
+        }
     }
 }
