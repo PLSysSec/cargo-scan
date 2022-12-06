@@ -1,7 +1,14 @@
 crate, module, caller, callee, pattern, dir, file, loc
 rand, rngs::adapter::reseeding::fork, register_fork_handler, libc::pthread_atfork, libc, data/packages/rand/src/rngs/adapter, reseeding.rs, 321:37
+proc-macro2, fallback::Span, source_file, std::path::Path::new, std::path, data/packages/proc-macro2/src, fallback.rs, 498:28
+autocfg, AutoCfg, new, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 141:19
+autocfg, AutoCfg, with_dir, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 156:25
+autocfg, AutoCfg, with_dir, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 160:26
+autocfg, AutoCfg, probe, std::process::Command::new, std::process, data/packages/autocfg/src, lib.rs, 210:35
+autocfg, AutoCfg, probe, std::process::Stdio::piped, std::process, data/packages/autocfg/src, lib.rs, 225:38
 autocfg, [crate], dir_contains_target, std::path::PathBuf::from, std::path, data/packages/autocfg/src, lib.rs, 403:48
 autocfg, [crate], rustflags, std::env::var, std::env, data/packages/autocfg/src, lib.rs, 420:24
 autocfg, [crate], rustflags, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 437:23
 autocfg, [crate], rustflags, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 438:49
 autocfg, [crate], rustflags, std::env::var, std::env, data/packages/autocfg/src, lib.rs, 440:36
+autocfg, tests::super::AutoCfg, for_test, std::env::var_os, std::env, data/packages/autocfg/src, tests.rs, 20:19

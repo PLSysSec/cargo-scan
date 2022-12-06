@@ -1,12 +1,12 @@
 ===== Patterns =====
 Total instances of each import pattern:
-std::env: 4
-std::path: 1
+std::env: 8
+std::path: 2
+std::process: 2
 libc: 1
 std::fs: 0
 std::net: 0
 std::os: 0
-std::process: 0
 winapi: 0
 mio::net: 0
 mio::unix: 0
