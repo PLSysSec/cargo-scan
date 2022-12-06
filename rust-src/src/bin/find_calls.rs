@@ -179,10 +179,13 @@ impl<'a> Scanner<'a> {
     */
     fn scan_impl(&mut self, imp: &'a syn::ItemImpl) {
         // push the impl block scope to scope_mods
-        // TBD: trait impls should be scoped under trait name, not type name:
-        // if let Some((_, path, _)) = &imp.trait_ ...
-        //     self.scan_impl_type(&imp.self_ty);
-        let scope_adds = self.scan_impl_type(&imp.self_ty);
+        let scope_adds = if let Some((_, tr, _)) = &imp.trait_ {
+            // scope trait impls under trait name
+            self.scan_impl_trait_path(tr)
+        } else {
+            // scope type impls under type name
+            self.scan_impl_type(&imp.self_ty)
+        };
 
         // scan the impl block
         for item in &imp.items {
@@ -237,11 +240,21 @@ impl<'a> Scanner<'a> {
         // TraitObject(x) => {}
         // Tuple(x) => {}
     }
-    fn scan_impl_type_path(&mut self, p: &'a syn::Path) -> usize {
-        let fullpath = self.lookup_path(p);
+    fn scan_impl_type_path(&mut self, ty: &'a syn::Path) -> usize {
+        // return: the number of items added to scope_mods
+        let fullpath = self.lookup_path(ty);
         self.scope_mods.extend(&fullpath);
         if fullpath.is_empty() {
-            eprintln!("warning: unexpected empty impl type path: {:?}", p)
+            eprintln!("warning: unexpected empty impl type path: {:?}", ty)
+        }
+        fullpath.len()
+    }
+    fn scan_impl_trait_path(&mut self, tr: &'a syn::Path) -> usize {
+        // return: the number of items added to scope_mods
+        let fullpath = self.lookup_path(tr);
+        self.scope_mods.extend(&fullpath);
+        if fullpath.is_empty() {
+            eprintln!("warning: unexpected empty trait name path: {:?}", tr);
         }
         fullpath.len()
     }
