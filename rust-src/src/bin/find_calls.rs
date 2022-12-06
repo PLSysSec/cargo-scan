@@ -6,6 +6,7 @@ Parse a Rust source file and find all function calls, printing them to stdout
 use cargo_scan::effect::Effect;
 use clap::Parser;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -32,6 +33,12 @@ struct Scanner<'a> {
     // collecting use statements that are in scope
     use_names: HashMap<String, Vec<&'a syn::Ident>>,
     use_globs: Vec<Vec<&'a syn::Ident>>,
+}
+
+fn syn_warning<S: Spanned + Debug>(msg: &str, syn_node: S) {
+    let line = syn_node.span().start().line;
+    let col = syn_node.span().start().column;
+    eprintln!("Warning: {} ({:?}) ({}:{})", msg, syn_node, line, col);
 }
 
 impl<'a> Scanner<'a> {
@@ -71,10 +78,10 @@ impl<'a> Scanner<'a> {
     }
     fn scan_mod(&mut self, m: &'a syn::ItemMod) {
         if let Some(existing_name) = self.scope_fun.last() {
-            eprintln!(
-                "warning: found module {:?} when already in function {}",
-                m, existing_name
-            );
+            syn_warning(
+                &format!("found module when already in function {}", existing_name),
+                m,
+            )
         }
         // TBD: reset use state; handle super keywords
         if let Some((_, items)) = &m.content {
@@ -197,7 +204,7 @@ impl<'a> Scanner<'a> {
                     // incompleteness
                 }
                 syn::ImplItem::Verbatim(v) => {
-                    eprintln!("warning: skipping Verbatim expression: {:?}", v);
+                    syn_warning("skipping Verbatim expression", v);
                 }
                 _ => (),
             }
@@ -218,11 +225,11 @@ impl<'a> Scanner<'a> {
                 0
             }
             syn::Type::Verbatim(v) => {
-                eprintln!("warning: skipping Verbatim expression: {:?}", v);
+                syn_warning("skipping Verbatim expression", v);
                 0
             }
             _ => {
-                eprintln!("warning: unexpected impl block type (ignoring): {:?}", ty);
+                syn_warning("unexpected impl block type (ignoring)", ty);
                 0
             }
         }
@@ -245,7 +252,7 @@ impl<'a> Scanner<'a> {
         let fullpath = self.lookup_path(ty);
         self.scope_mods.extend(&fullpath);
         if fullpath.is_empty() {
-            eprintln!("warning: unexpected empty impl type path: {:?}", ty)
+            syn_warning("unexpected empty impl type path", ty);
         }
         fullpath.len()
     }
@@ -254,7 +261,7 @@ impl<'a> Scanner<'a> {
         let fullpath = self.lookup_path(tr);
         self.scope_mods.extend(&fullpath);
         if fullpath.is_empty() {
-            eprintln!("warning: unexpected empty trait name path: {:?}", tr);
+            syn_warning("unexpected empty trait name path", tr);
         }
         fullpath.len()
     }
@@ -333,7 +340,7 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Box(x) => {
-                eprintln!("warning: encountered box expression (unstable feature)");
+                syn_warning("encountered box expression (unstable feature)", x);
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Break(x) => {
@@ -452,7 +459,7 @@ impl<'a> Scanner<'a> {
                 self.scan_expr(&x.expr);
             }
             syn::Expr::TryBlock(x) => {
-                eprintln!("warning: encountered try block (unstable feature)");
+                syn_warning("encountered try block (unstable feature)", x);
                 for y in &x.block.stmts {
                     self.scan_fn_statement(y);
                 }
@@ -474,7 +481,7 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Verbatim(v) => {
-                eprintln!("warning: skipping Verbatim expression: {:?}", v);
+                syn_warning("skipping Verbatim expression", v);
             }
             syn::Expr::While(x) => {
                 self.scan_expr(&x.cond);
@@ -483,14 +490,12 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Yield(x) => {
-                eprintln!("warning: encountered yield expression (unstable feature)");
+                syn_warning("encountered yield expression (unstable feature)", x);
                 if let Some(y) = &x.expr {
                     self.scan_expr(y);
                 }
             }
-            _ => {
-                eprintln!("warning: encountered unknown expression")
-            }
+            _ => syn_warning("encountered unknown expression", e),
         }
     }
 
@@ -557,12 +562,7 @@ impl<'a> Scanner<'a> {
                 // Note inherent incompleteness in this case
             }
             _ => {
-                let line = f.span().start().line;
-                let col = f.span().start().column;
-                eprintln!(
-                    "encountered unexpected function call expression: {:?} ({}:{})",
-                    f, line, col
-                )
+                syn_warning("encountered unexpected function call expression", f);
             }
         }
     }
