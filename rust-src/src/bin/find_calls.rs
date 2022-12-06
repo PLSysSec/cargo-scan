@@ -30,8 +30,8 @@ struct Scanner<'a> {
     scope_use: Vec<&'a syn::Ident>,
     scope_fun: Vec<&'a syn::Ident>,
     // collecting use statements that are in scope
-    use_names: HashMap<String, String>,
-    use_globs: Vec<String>,
+    use_names: HashMap<String, Vec<&'a syn::Ident>>,
+    use_globs: Vec<Vec<&'a syn::Ident>>,
 }
 
 impl<'a> Scanner<'a> {
@@ -89,15 +89,13 @@ impl<'a> Scanner<'a> {
     /*
         Use statements
     */
-    fn scope_use_as_string(&self) -> String {
-        let v: Vec<String> =
-            self.scope_use.iter().map(|ident| ident.to_string()).collect();
-        v.join("::")
+    fn scope_use_snapshot(&self) -> Vec<&'a syn::Ident> {
+        self.scope_use.clone()
     }
     fn save_scope_use_under(&mut self, lookup_key: &'a syn::Ident) {
         // save the use scope under an identifier/lookup key
         // TBD: maybe warn if there is a name conflict
-        self.use_names.insert(lookup_key.to_string(), self.scope_use_as_string());
+        self.use_names.insert(lookup_key.to_string(), self.scope_use_snapshot());
     }
     fn scan_use(&mut self, u: &'a syn::ItemUse) {
         // TBD: may need to do something special here if already inside a fn
@@ -129,12 +127,56 @@ impl<'a> Scanner<'a> {
         self.scope_use.pop();
     }
     fn scan_use_glob(&mut self, _g: &'a syn::UseGlob) {
-        self.use_globs.push(self.scope_use_as_string());
+        self.use_globs.push(self.scope_use_snapshot());
     }
     fn scan_use_group(&mut self, g: &'a syn::UseGroup) {
         for t in g.items.iter() {
             self.scan_use_tree(t);
         }
+    }
+
+    // use map lookups
+    // weird signature: need a double reference on i because i is owned by cur function
+    // all hail the borrow checker for catching this error
+    fn lookup_ident<'b>(&'b self, i: &'b &'a syn::Ident) -> &'b [&'a syn::Ident]
+    where
+        'a: 'b,
+    {
+        let s = i.to_string();
+        self.use_names
+            .get(&s)
+            .map(|v| v.as_slice())
+            .unwrap_or_else(|| std::slice::from_ref(i))
+    }
+    // this one creates a new path, so it has to return a Vec anyway
+    // precond: input path must be nonempty
+    // return: nonempty Vec of identifiers in the full path
+    fn lookup_path(&self, p: &'a syn::Path) -> Vec<&'a syn::Ident> {
+        let mut result = Vec::new();
+        let mut it = p.segments.iter().map(|seg| &seg.ident);
+        let fst: &'a syn::Ident = it.next().unwrap();
+        // first part of the path based on lookup
+        // TBD use extend
+        for i in self.lookup_ident(&fst).iter() {
+            let i: &'a syn::Ident = i;
+            result.push(i);
+        }
+        // second part of the path based on any additional sub-scoping
+        for i in it {
+            result.push(i);
+        }
+
+        result
+    }
+    fn path_to_string(p: &[&'a syn::Ident]) -> String {
+        let mut result: String = "".to_string();
+        for i in p {
+            result.push_str(&i.to_string());
+            result.push_str("::");
+        }
+        assert_eq!(result.pop(), Some(':'));
+        assert_eq!(result.pop(), Some(':'));
+        result
     }
 
     /*
@@ -460,10 +502,6 @@ impl<'a> Scanner<'a> {
             self.scan_expr(y);
         }
     }
-    fn lookup_ident(&self, i: &'a syn::Ident) -> String {
-        let s = i.to_string();
-        self.use_names.get(&s).cloned().unwrap_or(s)
-    }
     fn get_mod_scope(&self) -> Vec<String> {
         self.scope_mods.iter().map(|i| i.to_string()).collect()
     }
@@ -497,16 +535,10 @@ impl<'a> Scanner<'a> {
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
         match f {
             syn::Expr::Path(p) => {
-                let mut it = p.path.segments.iter().map(|seg| &seg.ident);
-                let fst = it.next().unwrap();
-                let mut callee_path = self.lookup_ident(fst);
-                let mut callee_ident = fst;
-                for id in it {
-                    callee_path.push_str("::");
-                    callee_path.push_str(&id.to_string());
-                    callee_ident = id; // overwrite
-                }
-                self.push_callsite(callee_ident, callee_path);
+                let callee_path = self.lookup_path(&p.path);
+                let callee_ident = callee_path.last().unwrap();
+                let callee_path_str = Self::path_to_string(&callee_path);
+                self.push_callsite(callee_ident, callee_path_str);
             }
             syn::Expr::Macro(_) => {
                 // Note inherent incompleteness in this case
