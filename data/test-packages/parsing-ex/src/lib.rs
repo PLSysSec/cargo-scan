@@ -67,3 +67,42 @@ pub fn syn_token_as_fn() {
 //     }
 //     Ok(!trailing_dot)
 // }
+
+/*
+    Example from proc-macro2/src/fallback.rs
+*/
+
+use std::fmt::{self, Display};
+use std::str::FromStr;
+
+struct MyTokenStream(String);
+
+impl FromStr for MyTokenStream {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(s.to_string()))
+    }
+}
+impl Display for MyTokenStream {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<proc_macro2::TokenStream> for MyTokenStream {
+    fn from(inner: proc_macro2::TokenStream) -> MyTokenStream {
+        inner
+            .to_string()
+            .parse()
+            .expect("compiler token stream parse failed")
+    }
+}
+
+impl From<MyTokenStream> for proc_macro2::TokenStream {
+    fn from(inner: MyTokenStream) -> proc_macro2::TokenStream {
+        inner
+            .to_string()
+            .parse()
+            .expect("failed to parse to compiler tokens")
+    }
+}
