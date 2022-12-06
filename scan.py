@@ -232,7 +232,9 @@ def scan_file(crate, root, file, of_interest, add_args):
     filepath = os.path.join(root, file)
     logging.trace(f"Scanning file: {filepath}")
 
-    command = [SYN_DEBUG, filepath] + add_args
+    # Uncomment for additional debugging (slower)
+    # command = [SYN_DEBUG, filepath] + add_args
+    command = [SYN_RELEASE, filepath] + add_args
     logging.debug(f"Running: {command}")
     proc = subprocess.Popen(command, stdout=subprocess.PIPE)
     for line in iter(proc.stdout.readline, b""):
