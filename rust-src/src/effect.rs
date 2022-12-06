@@ -65,13 +65,17 @@ impl EffectPathLoc {
         Self { crt, module, caller }
     }
     pub fn csv_header() -> &'static str {
-        "crate, module, caller"
+        "crate, caller"
     }
     pub fn to_csv(&self) -> String {
         let crt = sanitize_comma(&self.crt);
-        let module = sanitize_comma_or_else(self.module.as_deref(), "[crate]");
         let caller = sanitize_comma(&self.caller);
-        format!("{}, {}, {}", crt, module, caller)
+        if let Some(m) = &self.module {
+            let module = sanitize_comma(m);
+            format!("{}, {}::{}::{}", crt, crt, module, caller)
+        } else {
+            format!("{}, {}::{}", crt, crt, caller)
+        }
     }
 }
 
@@ -93,13 +97,12 @@ impl EffectSrcLoc {
         Self { dir, file, line, col }
     }
     pub fn csv_header() -> &'static str {
-        "dir, file, loc"
+        "dir, file, line, col"
     }
     pub fn to_csv(&self) -> String {
         let dir = sanitize_comma(&self.dir);
         let file = sanitize_comma(&self.file);
-        let loc = sanitize_comma(&format!("{}:{}", self.line, self.col));
-        format!("{}, {}, {}", dir, file, loc)
+        format!("{}, {}, {}, {}", dir, file, self.line, self.col)
     }
 }
 
@@ -131,7 +134,7 @@ impl Effect {
     }
 
     pub fn csv_header() -> &'static str {
-        "crate, module, caller, callee, pattern, dir, file, loc"
+        "crate, caller, callee, pattern, dir, file, line, col"
     }
 
     pub fn to_csv(&self) -> String {

@@ -127,9 +127,7 @@ class Effect:
     """
     # Name of crate, e.g. num_cpus
     crate: str
-    # Full path to module, e.g. num_cpus::linux
-    module: str
-    # Caller function, e.g. logical_cpus
+    # Full path to caller function, e.g. num_cpus::linux::logical_cpus
     caller: str
     # Callee (effect) function, e.g. libc::sched_getaffinity
     callee: str
@@ -140,22 +138,23 @@ class Effect:
     # File in which the call occurs -- in the above directory
     file: str
     # Loc in which the call occurs -- in the above file
-    loc: str
+    line: int
+    col: int
 
     def csv_header():
-        return ", ".join(["crate", "module", "caller", "callee", "pattern", "dir", "file", "loc"])
+        return ", ".join(["crate", "caller", "callee", "pattern", "dir", "file", "line, col"])
 
     def to_csv(self):
         crate = sanitize_comma(self.crate)
-        module = sanitize_comma(self.module)
         caller = sanitize_comma(self.caller)
         callee = sanitize_comma(self.callee)
         pattern = sanitize_comma(self.pattern)
         dir = sanitize_comma(self.dir)
         file = sanitize_comma(self.file)
-        loc = sanitize_comma(self.loc)
+        line = str(self.line)
+        col = str(self.col)
 
-        return ", ".join([crate, module, caller, callee, pattern, dir, file, loc])
+        return ", ".join([crate, caller, callee, pattern, dir, file, line, col])
 
 # ===== Used by both backends =====
 
@@ -282,10 +281,10 @@ def parse_mirai_call_line(line):
     # ['DefId', '0:6', 'num_cpus[1818]::get_num_physical_cpus', 'src/lib.rs:324:20', '324:34', '#0']
     # ['DefId', '0:5', 'num_cpus[1818]::get_physical', 'src/lib.rs:109:5', '109:28', '#0']
     fun = re.sub(r"\[[0-9a-f]*\]", "", parts[2])
-    module = fun.rsplit("::", 1)[0]
+    # module = fun.rsplit("::", 1)[0]
     src_dir, path = tuple(parts[3].split("/"))
-    file, loc = tuple(path.split(':', 1))
-    return module, fun, src_dir, file, loc
+    file, line, col = tuple(path.split(':', 2))
+    return fun, src_dir, file, line, col
 
 def mirai_call_path_as_effect(crate, crate_dir, call_path, of_interest):
     # Convert a call path to an Effect object
@@ -293,9 +292,9 @@ def mirai_call_path_as_effect(crate, crate_dir, call_path, of_interest):
     # crate_dir is the path to the crate (from scan.py top-level directory)
     # call_path is a nonempty list of (effect_fun, src_dir, path)
     # of_interest is a list of patterns
-    callee_mod, callee_fun, src_dir, callee_file, callee_loc = call_path[0]
+    callee_fun, src_dir, callee_file, callee_line, callee_col = call_path[0]
     if len(call_path) > 1:
-        caller_mod, caller_fun, src_dir2, caller_file, caller_loc = call_path[1]
+        caller_fun, src_dir2, caller_file, caller_line, caller_col = call_path[1]
         if src_dir != src_dir2:
             logging.warning(f"MIRAI: callee and caller in different source dirs: {src_dir1} and {src_dir2}")
     else:
@@ -312,13 +311,13 @@ def mirai_call_path_as_effect(crate, crate_dir, call_path, of_interest):
 
     return Effect(
         crate,
-        caller_mod,
         caller_fun,
         callee_fun,
         pattern,
         dir,
         callee_file,
-        callee_loc,
+        callee_line,
+        callee_col,
     )
 
 def scan_crate_mirai(crate, crate_dir, of_interest):
