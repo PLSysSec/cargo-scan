@@ -1,32 +1,35 @@
 ===== Crate Summary =====
 Number of dangerous imports by crate:
-tokio: 47
-cc: 35
-mio: 26
-getrandom: 25
-hyper: 22
-socket2: 20
-num_cpus: 11
+tokio: 113
+cc: 73
+mio: 44
+hyper: 30
+getrandom: 28
+parking_lot_core: 27
+socket2: 25
+termcolor: 15
+pkg-config: 14
+tokio-util: 13
+num_cpus: 12
+autocfg: 11
+chrono: 11
 version_check: 9
-chrono: 8
+clap: 9
+env_logger: 7
+anyhow: 7
 ansi_term: 6
-autocfg: 5
-parking_lot_core: 5
 atty: 5
-env_logger: 5
 url: 4
-anyhow: 3
 memchr: 2
 unicode-width: 2
 rustc_version: 2
-tokio-util: 2
+crossbeam-channel: 2
+h2: 2
 rand: 1
+proc-macro2: 1
 time: 1
 semver: 1
 bytes: 1
-clap: 1
-pkg-config: 1
-h2: 1
 ===== Crate Totals =====
-27 crates with 1 or more dangerous imports
-73 crates with 0 dangerous imports
+30 crates with 1 or more dangerous imports
+70 crates with 0 dangerous imports
