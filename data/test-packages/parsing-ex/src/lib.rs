@@ -125,3 +125,11 @@ impl trait_ex::MyTrait for struct_ex::MyStruct {
         "Hello!".to_string()
     }
 }
+
+/*
+    effect inside macro
+*/
+
+pub fn effect_inside_macro() {
+    dbg!(std::env::var("HOME").unwrap());
+}
