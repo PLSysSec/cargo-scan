@@ -626,29 +626,20 @@ impl<'a> Scanner<'a> {
 /// Load the Rust file at the filepath and scan it
 pub fn load_and_scan(filepath: &Path) -> ScanResults {
     // based on example at https://docs.rs/syn/latest/syn/struct.File.html
-    let mut file = File::open(&filepath).unwrap_or_else(|err| {
-        panic!(
-            "scanner.rs: Error: Unable to open file: {:?} ({:?})",
-            filepath, err
-        )
+    let mut file = File::open(filepath).unwrap_or_else(|err| {
+        panic!("scanner.rs: Error: Unable to open file: {:?} ({:?})", filepath, err)
     });
 
     let mut src = String::new();
     file.read_to_string(&mut src).unwrap_or_else(|err| {
-        panic!(
-            "scanner.rs: Error: Unable to read file: {:?} ({:?})",
-            filepath, err
-        )
+        panic!("scanner.rs: Error: Unable to read file: {:?} ({:?})", filepath, err)
     });
 
     let syntax_tree = syn::parse_file(&src).unwrap_or_else(|err| {
-        panic!(
-            "scanner.rs: Error: Unable to parse file: {:?} ({:?})",
-            filepath, err
-        )
+        panic!("scanner.rs: Error: Unable to parse file: {:?} ({:?})", filepath, err)
     });
 
-    let mut scanner = Scanner::new(&filepath);
+    let mut scanner = Scanner::new(filepath);
     scanner.scan_file(&syntax_tree);
 
     // for debugging
