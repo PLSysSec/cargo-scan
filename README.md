@@ -18,21 +18,20 @@ If you want to use the `-g` option, you also need to install [graphviz](https://
 
 ## Running a scan
 
-To scan a crate, looking for dangerous import patterns:
+To scan a crate, looking for dangerous function calls:
 ```
 ./scan.py -c <crate name>
 ```
 
-To scan a crate, using MIRAI to locate dangerous functions in the call graph (this can take a bit of time):
+This uses the default backend based on source-code syntax. To scan a crate using the MIRAI backend instead:
 ```
 ./scan.py -c <crate name> -m
 ```
 
-Both of the above will download the requested crate to `data/packages`. To instead scan a test crate in `data/test-packages`:
+Both of the above will download the requested crate to `data/packages` from [crates.io](crates.io).
+To try out the tool on your own example crate, add it as a folder under `data/test-packages`, then run using the `-t` option:
 ```
 ./scan.py -c <crate name> -t
 ```
-
-You can play around with this by adding your own example Rust crates in `data/test-packages`.
 
 For additional options, run `./scan.py -h` or run one of the pre-defined experiments that can be found in `Makefile`.
