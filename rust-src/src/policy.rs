@@ -55,9 +55,8 @@ impl FromStr for Effect {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (s1, s2) = s.split_once(' ').ok_or("expected space in Effect")?;
         if s1 == "exec" {
-            let (com, args) = s2
-                .split_once(' ')
-                .ok_or("expected space after exec command name")?;
+            let (com, args) =
+                s2.split_once(' ').ok_or("expected space after exec command name")?;
             let com = Expr(com.to_string());
             let args = Expr(args.to_string());
             return Ok(Self::Exec(com, args));
@@ -224,13 +223,7 @@ impl Statement {
         let region = Region::module(cr, md);
         Self::Allow { region, effect }
     }
-    pub fn allow_fn(
-        cr: &str,
-        md: &str,
-        fun: &str,
-        args: &str,
-        effect: Effect,
-    ) -> Self {
+    pub fn allow_fn(cr: &str, md: &str, fun: &str, args: &str, effect: Effect) -> Self {
         let region = Region::function_call(cr, md, fun, args);
         Self::Allow { region, effect }
     }
@@ -241,13 +234,7 @@ impl Statement {
     // pub fn require_mod(name: &str, effect: Effect) -> Self {
     //     Self::Require(Region::Module(name.to_string()), effect)
     // }
-    pub fn require_fn(
-        cr: &str,
-        md: &str,
-        fun: &str,
-        args: &str,
-        effect: Effect,
-    ) -> Self {
+    pub fn require_fn(cr: &str, md: &str, fun: &str, args: &str, effect: Effect) -> Self {
         let region = Region::function_call(cr, md, fun, args);
         Self::Require { region, effect }
     }
@@ -274,11 +261,7 @@ pub struct Policy {
     statements: Vec<Statement>,
 }
 impl Policy {
-    pub fn new(
-        crate_name: &str,
-        crate_version: &str,
-        policy_version: &str,
-    ) -> Self {
+    pub fn new(crate_name: &str, crate_version: &str, policy_version: &str) -> Self {
         let crate_name = crate_name.to_string();
         let crate_version = crate_version.to_string();
         let policy_version = policy_version.to_string();
@@ -294,24 +277,10 @@ impl Policy {
     pub fn allow_mod(&mut self, cr: &str, md: &str, eff: Effect) {
         self.add_statement(Statement::allow_mod(cr, md, eff))
     }
-    pub fn allow_fn(
-        &mut self,
-        cr: &str,
-        md: &str,
-        fun: &str,
-        args: &str,
-        eff: Effect,
-    ) {
+    pub fn allow_fn(&mut self, cr: &str, md: &str, fun: &str, args: &str, eff: Effect) {
         self.add_statement(Statement::allow_fn(cr, md, fun, args, eff))
     }
-    pub fn require_fn(
-        &mut self,
-        cr: &str,
-        md: &str,
-        fun: &str,
-        args: &str,
-        eff: Effect,
-    ) {
+    pub fn require_fn(&mut self, cr: &str, md: &str, fun: &str, args: &str, eff: Effect) {
         self.add_statement(Statement::require_fn(cr, md, fun, args, eff))
     }
     pub fn trust_crate(&mut self, cr: &str) {
@@ -338,21 +307,9 @@ mod tests {
         policy.require_fn(cr, md, "save_data", "path", Effect::fs_create("path"));
         policy.require_fn(cr, md, "save_data", "path", Effect::fs_write("path"));
         // TODO: path is a variable, -f is a string
-        policy.allow_fn(
-            cr,
-            md,
-            "remove",
-            "path",
-            Effect::exec("rm", &["-f", "path"]),
-        );
+        policy.allow_fn(cr, md, "remove", "path", Effect::exec("rm", &["-f", "path"]));
         policy.allow_fn(cr, md, "save_data", "path", Effect::fs_delete("path"));
-        policy.allow_fn(
-            cr,
-            md,
-            "prepare_data",
-            "",
-            Effect::fs_append("my_app.log"),
-        );
+        policy.allow_fn(cr, md, "prepare_data", "", Effect::fs_append("my_app.log"));
         // example of trust statements
         policy.trust_fn(cr, md, "prepare_data");
 
