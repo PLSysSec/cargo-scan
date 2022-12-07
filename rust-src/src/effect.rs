@@ -1,5 +1,5 @@
 /*
-Representation of an Effect location in source code
+    Representation of an Effect location in source code
 */
 
 use std::path::Path;

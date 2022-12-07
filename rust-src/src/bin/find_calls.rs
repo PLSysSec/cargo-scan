@@ -1,6 +1,6 @@
 /*
-Parse a Rust source file and find all function calls, printing them to stdout
-(one per line).
+    Parse a Rust source file and find all function calls, printing them to stdout
+    (one per line).
 */
 
 use cargo_scan::scanner;
