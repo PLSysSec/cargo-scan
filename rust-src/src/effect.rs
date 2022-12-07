@@ -19,9 +19,7 @@ fn sanitize_comma_or_else(s: Option<&str>, none_repr: &str) -> String {
 pub struct EffectPathLoc {
     // Name of crate, e.g. num_cpus
     crt: String,
-    // Full path to module, if any, e.g. num_cpus::linux
-    module: Option<String>,
-    // Caller function, e.g. logical_cpus
+    // Full path to caller function, e.g. num_cpus::linux::logical_cpus
     caller: String,
 }
 impl EffectPathLoc {
@@ -58,11 +56,16 @@ impl EffectPathLoc {
             .filter(|&x| x != "main.rs" && x != "lib.rs")
             .map(|x| x.replace(".rs", ""))
             .collect();
-        // add in file-level modules
-        post_src.extend_from_slice(mod_scope);
-        let module = if post_src.is_empty() { None } else { Some(post_src.join("::")) };
 
-        Self { crt, module, caller }
+        // combine crate, module scope, and file-level modules (mod_scope)
+        // to form full scope to caller
+        let mut full_scope: Vec<String> = vec![crt.clone()];
+        full_scope.append(&mut post_src);
+        full_scope.extend_from_slice(mod_scope);
+        full_scope.push(caller);
+
+        let caller = post_src.join("::");
+        Self { crt, caller }
     }
     pub fn csv_header() -> &'static str {
         "crate, caller"
@@ -70,12 +73,7 @@ impl EffectPathLoc {
     pub fn to_csv(&self) -> String {
         let crt = sanitize_comma(&self.crt);
         let caller = sanitize_comma(&self.caller);
-        if let Some(m) = &self.module {
-            let module = sanitize_comma(m);
-            format!("{}, {}::{}::{}", crt, crt, module, caller)
-        } else {
-            format!("{}, {}::{}", crt, crt, caller)
-        }
+        format!("{}, {}", crt, caller)
     }
 }
 
