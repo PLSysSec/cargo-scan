@@ -25,17 +25,34 @@ if sys.version_info < MIN_PYTHON:
     found = f"{sys.version_info.major}.{sys.version_info.minor}"
     sys.exit(f"Error: Python {version} or later is required (found {found}).")
 
-def check_installed(args, check_exit_code=True):
+def check_installed(cmd, test_arg="--version", check_exit_code=True):
+    args = cmd + [test_arg]
     try:
         subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=check_exit_code)
     except Exception as e:
-        sys.exit(f"missing dependency: command {args} failed ({e})")
+        sys.exit(f"missing dependency: {cmd} (run `make install`)")
 
-check_installed(["rustc", "--version"])
-check_installed(["cargo", "download", "--version"], check_exit_code=False)
-check_installed(["cargo", "mirai", "--version"])
+# Dependencies
+RUSTC = ["rustc"]
+CARGO = ["cargo"]
+SYN_DEBUG = ["./rust-src/target/debug/find_calls"]
+SYN_RELEASE = ["./rust-src/target/release/find_calls"]
+CARGO_MIRAI = CARGO + ["mirai"]
+CARGO_DOWNLOAD = CARGO + ["download"]
 
-# ===== Constants =====
+check_installed(RUSTC)
+check_installed(CARGO)
+check_installed(SYN_DEBUG)
+check_installed(SYN_RELEASE)
+check_installed(CARGO_MIRAI)
+check_installed(CARGO_DOWNLOAD, check_exit_code=False)
+
+# Unchecked dependencies
+CP = ["cp"]
+OPEN = ["open"]
+GRAPHVIZ_DOT = ["dot"] # for -g option
+
+# ===== Additional constants =====
 
 # Number of progress tracking messages to display
 PROGRESS_INCS = 5
@@ -43,9 +60,6 @@ PROGRESS_INCS = 5
 CRATES_DIR = "data/packages"
 TEST_CRATES_DIR = "data/test-packages"
 RUST_SRC = "src"
-
-SYN_DEBUG = "./rust-src/target/debug/find_calls"
-SYN_RELEASE = "./rust-src/target/release/find_calls"
 
 MIRAI_CONFIG = "mirai/config.json"
 MIRAI_FLAGS_KEY = "MIRAI_FLAGS"
@@ -99,7 +113,7 @@ logging.addLevelName(logging.WARNING, "\033[0;33m%s\033[0;0m" % "WARNING")
 logging.addLevelName(logging.ERROR, "\033[0;31m%s\033[0;0m" % "ERROR")
 
 def copy_file(src, dst):
-    subprocess.run(["cp", src, dst], check=True)
+    subprocess.run(CP + [src, dst], check=True)
 
 def make_path(dir, prefix, suffix):
     return os.path.join(dir, f"{prefix}{suffix}")
@@ -184,7 +198,7 @@ def download_crate(crates_dir, crate, test_run):
             logging.warning(f"Crate not found during test run: {target}")
         else:
             logging.info(f"Downloading crate: {target}")
-            subprocess.run(["cargo", "download", "-x", crate, "-o", target], check=True)
+            subprocess.run(CARGO_DOWNLOAD + ["-x", crate, "-o", target], check=True)
 
 def sort_summary_dict(d):
     return sorted(d.items(), key=lambda x: x[1], reverse=True)
@@ -234,7 +248,7 @@ def scan_file(crate, root, file, of_interest, add_args):
 
     # Uncomment for additional debugging (slower)
     # command = [SYN_DEBUG, filepath] + add_args
-    command = [SYN_RELEASE, filepath] + add_args
+    command = SYN_RELEASE + [filepath] + add_args
     logging.debug(f"Running: {command}")
     proc = subprocess.Popen(command, stdout=subprocess.PIPE)
     for line in iter(proc.stdout.readline, b""):
@@ -326,8 +340,8 @@ def mirai_call_path_as_effect(crate, crate_dir, call_path, of_interest):
 def scan_crate_mirai(crate, crate_dir, of_interest, add_args):
     # Run our MIRAI fork; yield effects
     os.environ[MIRAI_FLAGS_KEY] = MIRAI_FLAGS_VAL
-    subprocess.run(["cargo", "clean"], cwd=crate_dir, check=True)
-    proc = subprocess.Popen(["cargo", "mirai"] + add_args, cwd=crate_dir, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
+    subprocess.run(CARGO + ["clean"], cwd=crate_dir, check=True)
+    proc = subprocess.Popen(CARGO_MIRAI + add_args, cwd=crate_dir, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
     call_path = []
     for line in iter(proc.stdout.readline, b""):
         line = line.strip().decode("utf-8")
@@ -349,8 +363,8 @@ def scan_crate_mirai(crate, crate_dir, of_interest, add_args):
         yield mirai_call_path_as_effect(crate, crate_dir, call_path, of_interest)
 
 def view_callgraph_mirai(crate_dir):
-    subprocess.run(["dot", "-Tpng", "graph.dot", "-o", "graph.png"], cwd=crate_dir, check=True)
-    subprocess.run(["open", "graph.png"], cwd=crate_dir, check=True)
+    subprocess.run(GRAPHVIZ_DOT + ["-Tpng", "graph.dot", "-o", "graph.png"], cwd=crate_dir, check=True)
+    subprocess.run(OPEN + ["graph.png"], cwd=crate_dir, check=True)
 
 # ===== Entrypoint =====
 
