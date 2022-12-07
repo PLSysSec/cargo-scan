@@ -9,23 +9,23 @@ install:
 	cd rust-src && cargo build && cargo build --release
 
 top10:
-	./scan.py -i data/crates-top10.csv -o top10
+	./scan.py -i data/crate-lists/top10.csv -o top10
 
 top100:
-	./scan.py -i data/crates-top100.csv -o top100
+	./scan.py -i data/crate-lists/top100.csv -o top100
 
 top1000:
-	./scan.py -i data/crates-top1000.csv -o top1000
+	./scan.py -i data/crate-lists/top1000.csv -o top1000
 
 top10000:
-	./scan.py -i data/crates-top10000.csv -o top10000
+	./scan.py -i data/crate-lists/top10000.csv -o top10000
 
 test:
-	./scan.py -t -i data/test-crates.csv -o test -vvv
+	./scan.py -t -i data/crate-lists/test-crates.csv -o test -vvv
 
 mozilla:
-	./scan.py -i data/mozilla-exempt.csv -o mozilla-exempt
-	./scan.py -i data/mozilla-audits.csv -o mozilla-audits
+	./scan.py -i data/crate-lists/mozilla-exempt.csv -o mozilla-exempt
+	./scan.py -i data/crate-lists/mozilla-audits.csv -o mozilla-audits
 
 small: test top10 top100
 

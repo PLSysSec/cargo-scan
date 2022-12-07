@@ -12,8 +12,8 @@ import sys
 csv.field_size_limit(sys.maxsize)
 
 CRATES_CSV = "/Users/caleb/Downloads/2022-09-25-020017/data/crates.csv"
-OUT_CSV = "data/crates.csv"
-OUT_CSV_FIRST1000 = "data/crates-top1000.csv"
+OUT_CSV = "data/crate-lists/all.csv"
+OUT_CSV_FIRST1000 = "data/crate-lists/top1000.csv"
 
 with open(CRATES_CSV, newline='') as infile:
     in_reader = csv.reader(infile, delimiter=',')
