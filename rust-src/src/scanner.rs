@@ -5,6 +5,8 @@
 use super::effect::Effect;
 use std::collections::HashMap;
 use std::fmt::Debug;
+use std::fs::File;
+use std::io::Read;
 use std::path::Path;
 use syn::spanned::Spanned;
 
@@ -14,7 +16,7 @@ pub struct Scanner<'a> {
     // filepath that the scanner is being run on
     filepath: &'a Path,
     // output
-    pub results: Vec<Effect>,
+    effects: Vec<Effect>,
     // stack-based scopes for parsing (always empty at top-level)
     // TBD: can probably combine all types of scope into one
     scope_mods: Vec<&'a syn::Ident>,
@@ -24,19 +26,26 @@ pub struct Scanner<'a> {
     use_names: HashMap<String, Vec<&'a syn::Ident>>,
     use_globs: Vec<Vec<&'a syn::Ident>>,
     // info about skipped nodes
+    skipped_macros: usize,
+    skipped_fn_calls: usize,
+}
+
+/// Results of a scan
+pub struct ScanResults {
+    pub effects: Vec<Effect>,
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
 }
 
 impl<'a> Scanner<'a> {
     /*
-        Public API:
-        Top-level items and modules
+        Main public API
     */
+    /// Create a new scanner tied to a filepath
     pub fn new(filepath: &'a Path) -> Self {
         Self {
             filepath,
-            results: Vec::new(),
+            effects: Vec::new(),
             scope_mods: Vec::new(),
             scope_use: Vec::new(),
             scope_fun: Vec::new(),
@@ -46,6 +55,21 @@ impl<'a> Scanner<'a> {
             skipped_fn_calls: 0,
         }
     }
+    /// Results of the scan (consumes the scanner)
+    pub fn get_results(self) -> ScanResults {
+        ScanResults {
+            effects: self.effects,
+            skipped_macros: self.skipped_macros,
+            skipped_fn_calls: self.skipped_fn_calls,
+        }
+    }
+
+    /*
+        Additional top-level items and modules
+
+        These are public, with the caveat that the Scanner currently assumes
+        they are all run on syntax within the same file.
+    */
     pub fn scan_file(&mut self, f: &'a syn::File) {
         // scan the file and return a list of all calls in it
         for i in &f.items {
@@ -545,7 +569,7 @@ impl<'a> Scanner<'a> {
         let call_line = callee_span.span().start().line;
         let call_col = callee_span.span().start().column;
 
-        self.results.push(Effect::new(
+        self.effects.push(Effect::new(
             caller_name,
             callee_path,
             self.filepath,
@@ -597,4 +621,38 @@ impl<'a> Scanner<'a> {
         let callee_path = format!("[METHOD]::{}", i);
         self.push_callsite(i, callee_path);
     }
+}
+
+/// Load the Rust file at the filepath and scan it
+pub fn load_and_scan(filepath: &Path) -> ScanResults {
+    // based on example at https://docs.rs/syn/latest/syn/struct.File.html
+    let mut file = File::open(&filepath).unwrap_or_else(|err| {
+        panic!(
+            "scanner.rs: Error: Unable to open file: {:?} ({:?})",
+            filepath, err
+        )
+    });
+
+    let mut src = String::new();
+    file.read_to_string(&mut src).unwrap_or_else(|err| {
+        panic!(
+            "scanner.rs: Error: Unable to read file: {:?} ({:?})",
+            filepath, err
+        )
+    });
+
+    let syntax_tree = syn::parse_file(&src).unwrap_or_else(|err| {
+        panic!(
+            "scanner.rs: Error: Unable to parse file: {:?} ({:?})",
+            filepath, err
+        )
+    });
+
+    let mut scanner = Scanner::new(&filepath);
+    scanner.scan_file(&syntax_tree);
+
+    // for debugging
+    // println!("Final scanner state: {:?}", scanner);
+
+    scanner.get_results()
 }
