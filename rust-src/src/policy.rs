@@ -6,6 +6,7 @@
 */
 
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use std::collections::HashSet;
 use std::fmt::{self, Display};
 use std::str::FromStr;
 
@@ -259,6 +260,42 @@ impl Policy {
     }
     pub fn trust_fn(&mut self, cr: &str, md: &str, fun: &str) {
         self.add_statement(Statement::trust_fn(cr, md, fun))
+    }
+}
+
+/// Quick-lookup summary of the policy.
+/// Note: may make more sense to merge these fields into Policy eventually; current separate
+/// because would require custom serialization/deserialization logic.
+#[allow(dead_code, unused_variables)]
+#[derive(Debug)]
+pub struct PolicyLookup {
+    allow_set: HashSet<Ident>,
+    require_set: HashSet<Ident>,
+}
+#[allow(dead_code, unused_variables)]
+impl PolicyLookup {
+    pub fn empty() -> Self {
+        Self { allow_set: HashSet::new(), require_set: HashSet::new() }
+    }
+    pub fn from_policy(p: &Policy) -> Self {
+        let mut result = Self::empty();
+        for stmt in &p.statements {
+            result.add_statement(stmt);
+        }
+        result
+    }
+    pub fn add_statement(&mut self, stmt: &Statement) {
+        match stmt {
+            Statement::Allow { region: r, effect: e } => {
+                unimplemented!()
+            }
+            Statement::Require { region: r, effect: e } => {
+                unimplemented!()
+            }
+            Statement::Trust { region: _ } => {
+                unimplemented!()
+            }
+        }
     }
 }
 
