@@ -13,31 +13,25 @@ use std::str::FromStr;
 pub struct Expr(String);
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Args(String);
+pub struct Ident(String);
 
 #[derive(Debug, PartialEq, Eq)]
+pub struct Args(String);
+
+/// Simplified effect model
+/// Serialized syntax: [fn name]([args]) or [fn name](*)
+#[derive(Debug, PartialEq, Eq)]
 pub enum Effect {
-    EnvRead(Expr),
-    EnvWrite(Expr),
-    FsRead(Expr),
-    FsWrite(Expr),
-    // TBD
-    // NetRecv(String),
-    // NetSend(String),
-    Exec(Expr, Expr),
+    // effectful stdlib function call on any args
+    FnAll(Ident),
+    // effectful stdlib function call on specific args
+    FnCall(Ident, Args),
 }
 impl Display for Effect {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::EnvRead(e) => write!(f, "env_read {}", e.0),
-            Self::EnvWrite(e) => write!(f, "env_write {}", e.0),
-            Self::FsRead(e) => write!(f, "fs_read {}", e.0),
-            Self::FsWrite(e) => write!(f, "fs_write {}", e.0),
-            Self::Exec(e1, e2) => {
-                // precondition
-                debug_assert!(!e1.0.contains(' '));
-                write!(f, "exec {} {}", e1.0, e2.0)
-            }
+            Self::FnAll(ident) => write!(f, "{}(*)", ident.0),
+            Self::FnCall(ident, args) => write!(f, "{}({})", ident.0, args.0),
         }
     }
 }
@@ -53,23 +47,17 @@ impl FromStr for Effect {
     type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (s1, s2) = s.split_once(' ').ok_or("expected space in Effect")?;
-        if s1 == "exec" {
-            let (com, args) =
-                s2.split_once(' ').ok_or("expected space after exec command name")?;
-            let com = Expr(com.to_string());
-            let args = Expr(args.to_string());
-            return Ok(Self::Exec(com, args));
+        let (s1, s23) = s.split_once('(').ok_or("expected ( in Effect")?;
+        let (s2, s3) = s23.split_once(')').ok_or("expected ) in Effect")?;
+        if !s3.is_empty() {
+            Err("expected empty string after )")
+        } else if s1.is_empty() {
+            Err("expected nonempty fn name")
+        } else if s2 == "*" {
+            Ok(Self::all(s1))
+        } else {
+            Ok(Self::call(s1, s2))
         }
-        let e = Expr(s2.to_string());
-        let eff = match s1 {
-            "env_read" => Self::EnvRead(e),
-            "env_write" => Self::EnvWrite(e),
-            "fs_read" => Self::FsRead(e),
-            "fs_write" => Self::FsWrite(e),
-            _ => return Err("unrecognized effect name"),
-        };
-        Ok(eff)
     }
 }
 impl<'de> Deserialize<'de> for Effect {
@@ -81,34 +69,14 @@ impl<'de> Deserialize<'de> for Effect {
     }
 }
 impl Effect {
-    pub fn env_read(s: &str) -> Self {
-        Self::EnvRead(Expr(s.to_string()))
+    pub fn all(s1: &str) -> Self {
+        let name = Ident(s1.to_string());
+        Self::FnAll(name)
     }
-    pub fn env_write(s: &str) -> Self {
-        Self::EnvWrite(Expr(s.to_string()))
-    }
-    pub fn fs_read(s: &str) -> Self {
-        Self::FsRead(Expr(s.to_string()))
-    }
-    pub fn fs_write(s: &str) -> Self {
-        Self::FsWrite(Expr(s.to_string()))
-    }
-    pub fn fs_create(s: &str) -> Self {
-        // TBD: distinguish more
-        Self::FsWrite(Expr(s.to_string()))
-    }
-    pub fn fs_delete(s: &str) -> Self {
-        // TBD: distinguish more
-        Self::FsWrite(Expr(s.to_string()))
-    }
-    pub fn fs_append(s: &str) -> Self {
-        // TBD: distinguish more
-        Self::FsWrite(Expr(s.to_string()))
-    }
-    pub fn exec(cmd: &str, args: &[&str]) -> Self {
-        let cmd = Expr(cmd.to_string());
-        let args = Expr(format!("{:?}", args));
-        Self::Exec(cmd, args)
+    pub fn call(s1: &str, s2: &str) -> Self {
+        let name = Ident(s1.to_string());
+        let args = Args(s2.to_string());
+        Self::FnCall(name, args)
     }
 }
 
@@ -300,16 +268,23 @@ mod tests {
 
     #[test]
     fn test_policy_serialize_deserialize() {
+        // Note: this example uses dummy strings that don't correspond
+        // to real effects
         let cr = "permissions-ex";
         let md = "lib";
         let mut policy = Policy::new(cr, "0.1", "0.1");
-        policy.require_fn(cr, md, "remove", "path", Effect::fs_delete("path"));
-        policy.require_fn(cr, md, "save_data", "path", Effect::fs_create("path"));
-        policy.require_fn(cr, md, "save_data", "path", Effect::fs_write("path"));
-        // TODO: path is a variable, -f is a string
-        policy.allow_fn(cr, md, "remove", "path", Effect::exec("rm", &["-f", "path"]));
-        policy.allow_fn(cr, md, "save_data", "path", Effect::fs_delete("path"));
-        policy.allow_fn(cr, md, "prepare_data", "", Effect::fs_append("my_app.log"));
+        let eff1 = Effect::call("fs::delete", "path");
+        policy.require_fn(cr, md, "remove", "path", eff1);
+        let eff2 = Effect::call("fs::create", "path");
+        policy.require_fn(cr, md, "save_data", "path", eff2);
+        let eff3 = Effect::call("fs::write", "path");
+        policy.require_fn(cr, md, "save_data", "path", eff3);
+        let eff4 = Effect::call("process::exec", "rm -f path");
+        policy.allow_fn(cr, md, "remove", "path", eff4);
+        let eff5 = Effect::call("fs::delete", "path");
+        policy.allow_fn(cr, md, "save_data", "path", eff5);
+        let eff6 = Effect::call("fs::append", "my_app.log");
+        policy.allow_fn(cr, md, "prepare_data", "", eff6);
         // example of trust statements
         policy.trust_fn(cr, md, "prepare_data");
 
