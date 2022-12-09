@@ -25,18 +25,15 @@ pub struct Args(String);
 /// Simplified effect model
 /// Serialized syntax: [fn name]([args]) or [fn name](*)
 #[derive(Debug, PartialEq, Eq)]
-pub enum Effect {
-    // effectful stdlib function call on any args
-    FnAll(IdentPath),
-    // effectful stdlib function call on specific args
-    FnCall(IdentPath, Args),
+pub struct Effect {
+    /// libc, std::env, std::env::var_os
+    fn_path: IdentPath,
+    /// arguments constraint (or * for all matches)
+    arg_pattern: Args,
 }
 impl Display for Effect {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::FnAll(ident) => write!(f, "{}(*)", ident.0),
-            Self::FnCall(ident, args) => write!(f, "{}({})", ident.0, args.0),
-        }
+        write!(f, "{}({})", self.fn_path.0, self.arg_pattern.0)
     }
 }
 impl Serialize for Effect {
@@ -57,10 +54,8 @@ impl FromStr for Effect {
             Err("expected empty string after )")
         } else if s1.is_empty() {
             Err("expected nonempty fn name")
-        } else if s2 == "*" {
-            Ok(Self::all(s1))
         } else {
-            Ok(Self::call(s1, s2))
+            Ok(Self::new(s1, s2))
         }
     }
 }
@@ -73,14 +68,13 @@ impl<'de> Deserialize<'de> for Effect {
     }
 }
 impl Effect {
-    pub fn all(s1: &str) -> Self {
-        let name = IdentPath(s1.to_string());
-        Self::FnAll(name)
+    pub fn new(fn_path: &str, arg_pattern: &str) -> Self {
+        let fn_path = IdentPath(fn_path.to_string());
+        let arg_pattern = Args(arg_pattern.to_string());
+        Self { fn_path, arg_pattern }
     }
-    pub fn call(s1: &str, s2: &str) -> Self {
-        let name = IdentPath(s1.to_string());
-        let args = Args(s2.to_string());
-        Self::FnCall(name, args)
+    pub fn all(s1: &str) -> Self {
+        Self::new(s1, "*")
     }
 }
 
@@ -111,11 +105,12 @@ impl FromStr for Region {
         let (s1, s23) = s.split_once('(').ok_or("expected ( in Region")?;
         let (s2, s3) = s23.split_once(')').ok_or("expected ) in Region")?;
         if !s3.is_empty() {
-            return Err("expected empty string after )");
+            Err("expected empty string after )")
         } else if s1.is_empty() {
-            return Err("expected nonempty fn name");
+            Err("expected nonempty fn name")
+        } else {
+            Ok(Self::new(s1, s2))
         }
-        Ok(Self::new(s1, s2))
     }
 }
 impl<'de> Deserialize<'de> for Region {
@@ -302,17 +297,17 @@ mod tests {
         let cr = "permissions-ex";
         let md = "lib";
         let mut policy = Policy::new(cr, "0.1", "0.1");
-        let eff1 = Effect::call("fs::delete", "path");
+        let eff1 = Effect::new("fs::delete", "path");
         policy.require_fn(cr, md, "remove", "path", eff1);
-        let eff2 = Effect::call("fs::create", "path");
+        let eff2 = Effect::new("fs::create", "path");
         policy.require_fn(cr, md, "save_data", "path", eff2);
-        let eff3 = Effect::call("fs::write", "path");
+        let eff3 = Effect::new("fs::write", "path");
         policy.require_fn(cr, md, "save_data", "path", eff3);
-        let eff4 = Effect::call("process::exec", "rm -f path");
+        let eff4 = Effect::new("process::exec", "rm -f path");
         policy.allow_fn(cr, md, "remove", "path", eff4);
-        let eff5 = Effect::call("fs::delete", "path");
+        let eff5 = Effect::new("fs::delete", "path");
         policy.allow_fn(cr, md, "save_data", "path", eff5);
-        let eff6 = Effect::call("fs::append", "my_app.log");
+        let eff6 = Effect::new("fs::append", "my_app.log");
         policy.allow_fn(cr, md, "prepare_data", "", eff6);
         // example of trust statements
         policy.trust_fn(cr, md, "prepare_data");
