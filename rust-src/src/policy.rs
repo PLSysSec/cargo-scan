@@ -6,25 +6,30 @@
 */
 
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fmt::{self, Display};
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Expr(String);
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Ident(String);
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IdentPath(String);
+impl Display for IdentPath {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Args(String);
 
 /// Simplified effect model
 /// Serialized syntax: [fn name]([args]) or [fn name](*)
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Effect {
     /// libc, std::env, std::env::var_os
     fn_path: IdentPath,
@@ -78,7 +83,7 @@ impl Effect {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Region {
     /// crate, crate::mod, or crate::mod::fun (all matches)
     fn_path: IdentPath,
@@ -256,13 +261,13 @@ impl Policy {
 #[allow(dead_code, unused_variables)]
 #[derive(Debug)]
 pub struct PolicyLookup {
-    allow_set: HashSet<IdentPath>,
-    require_set: HashSet<IdentPath>,
+    allow_sets: HashMap<IdentPath, HashSet<IdentPath>>,
+    require_sets: HashMap<IdentPath, HashSet<IdentPath>>,
 }
 #[allow(dead_code, unused_variables)]
 impl PolicyLookup {
     pub fn empty() -> Self {
-        Self { allow_set: HashSet::new(), require_set: HashSet::new() }
+        Self { allow_sets: HashMap::new(), require_sets: HashMap::new() }
     }
     pub fn from_policy(p: &Policy) -> Self {
         let mut result = Self::empty();
@@ -274,13 +279,62 @@ impl PolicyLookup {
     pub fn add_statement(&mut self, stmt: &Statement) {
         match stmt {
             Statement::Allow { region: r, effect: e } => {
-                unimplemented!()
+                let caller = r.fn_path.clone();
+                let eff = e.fn_path.clone();
+                self.allow_sets.entry(caller).or_default().insert(eff);
             }
             Statement::Require { region: r, effect: e } => {
-                unimplemented!()
+                let caller = r.fn_path.clone();
+                let eff = e.fn_path.clone();
+                self.require_sets.entry(caller).or_default().insert(eff);
             }
             Statement::Trust { region: _ } => {
                 unimplemented!()
+            }
+        }
+    }
+    /// Mark a fn call is an interesting/dangerous call.
+    /// This must be done before any check_edge invocations.
+    ///
+    /// We re-use the require list for this, since it serves the same purpose!
+    pub fn mark_of_interest(&mut self, callee: &IdentPath) {
+        self.require_sets.entry(callee.clone()).or_default().insert(callee.clone());
+    }
+
+    // internal function for check_edge
+    fn allow_list_contains(
+        &self,
+        caller: &IdentPath,
+        effect: &IdentPath,
+    ) -> Result<(), String> {
+        if let Some(allow) = self.allow_sets.get(caller) {
+            if allow.contains(effect) {
+                Ok(())
+            } else {
+                Err(format!(
+                    "Allow list for function {} missing effect {}",
+                    caller, effect
+                ))
+            }
+        } else {
+            Err(format!("No allow list for function {} with effect {}", caller, effect))
+        }
+    }
+
+    /// Check a call graph edge against the policy.
+    /// Currently, edges can be read in in any order; the lookup does
+    /// not need any particular order. This may change later.
+    pub fn check_edge(
+        &self,
+        caller: &IdentPath,
+        callee: &IdentPath,
+        error_list: &mut Vec<String>,
+    ) {
+        if let Some(require) = self.require_sets.get(callee) {
+            for req in require {
+                self.allow_list_contains(caller, req).unwrap_or_else(|err| {
+                    error_list.push(err);
+                });
             }
         }
     }
