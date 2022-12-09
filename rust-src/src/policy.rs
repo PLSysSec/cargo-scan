@@ -17,6 +17,9 @@ pub struct Expr(String);
 pub struct Ident(String);
 
 #[derive(Debug, PartialEq, Eq)]
+pub struct IdentPath(String);
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct Args(String);
 
 /// Simplified effect model
@@ -24,9 +27,9 @@ pub struct Args(String);
 #[derive(Debug, PartialEq, Eq)]
 pub enum Effect {
     // effectful stdlib function call on any args
-    FnAll(Ident),
+    FnAll(IdentPath),
     // effectful stdlib function call on specific args
-    FnCall(Ident, Args),
+    FnCall(IdentPath, Args),
 }
 impl Display for Effect {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -71,38 +74,26 @@ impl<'de> Deserialize<'de> for Effect {
 }
 impl Effect {
     pub fn all(s1: &str) -> Self {
-        let name = Ident(s1.to_string());
+        let name = IdentPath(s1.to_string());
         Self::FnAll(name)
     }
     pub fn call(s1: &str, s2: &str) -> Self {
-        let name = Ident(s1.to_string());
+        let name = IdentPath(s1.to_string());
         let args = Args(s2.to_string());
         Self::FnCall(name, args)
     }
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum Region {
-    // crate
-    Crate(String),
-    // crate::mod
-    Module(String, String),
-    // crate::mod::fun
-    Function(String, String, String),
-    // crate::mod::fun::args
-    FunctionCall(String, String, String, Args),
+pub struct Region {
+    /// crate, crate::mod, or crate::mod::fun (all matches)
+    fn_path: IdentPath,
+    /// arguments constraint (or * for all matches)
+    arg_pattern: Args,
 }
 impl Display for Region {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // TODO: debug assert that strings are alphanumeric, no ::
-        match self {
-            Self::Crate(cr) => write!(f, "{}", cr),
-            Self::Module(cr, md) => write!(f, "{}::{}", cr, md),
-            Self::Function(cr, md, fun) => write!(f, "{}::{}::{}", cr, md, fun),
-            Self::FunctionCall(cr, md, fun, args) => {
-                write!(f, "{}::{}::{}::{}", cr, md, fun, args.0)
-            }
-        }
+        write!(f, "{}({})", self.fn_path.0, self.arg_pattern.0)
     }
 }
 impl Serialize for Region {
@@ -117,15 +108,14 @@ impl FromStr for Region {
     type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.split("::").collect();
-        let reg = match parts.as_slice() {
-            [cr] => Self::whole_crate(cr),
-            [cr, md] => Self::module(cr, md),
-            [cr, md, fun] => Self::function(cr, md, fun),
-            [cr, md, fun, args] => Self::function_call(cr, md, fun, args),
-            _ => return Err("expected at most 3 :: separators in Region"),
-        };
-        Ok(reg)
+        let (s1, s23) = s.split_once('(').ok_or("expected ( in Region")?;
+        let (s2, s3) = s23.split_once(')').ok_or("expected ) in Region")?;
+        if !s3.is_empty() {
+            return Err("expected empty string after )");
+        } else if s1.is_empty() {
+            return Err("expected nonempty fn name");
+        }
+        Ok(Self::new(s1, s2))
     }
 }
 impl<'de> Deserialize<'de> for Region {
@@ -137,27 +127,29 @@ impl<'de> Deserialize<'de> for Region {
     }
 }
 impl Region {
+    pub fn new(fn_path: &str, arg_pattern: &str) -> Self {
+        let fn_path = IdentPath(fn_path.to_string());
+        let arg_pattern = Args(arg_pattern.to_string());
+        Self { fn_path, arg_pattern }
+    }
+    pub fn new_all(fn_path: &str) -> Self {
+        Self::new(fn_path, "*")
+    }
     pub fn whole_crate(cr: &str) -> Self {
-        let cr = cr.to_string();
-        Self::Crate(cr)
+        let path = format!("{}::*", cr);
+        Self::new_all(&path)
     }
     pub fn module(cr: &str, md: &str) -> Self {
-        let cr = cr.to_string();
-        let md = md.to_string();
-        Self::Module(cr, md)
+        let path = format!("{}::{}::*", cr, md);
+        Self::new_all(&path)
     }
     pub fn function(cr: &str, md: &str, fun: &str) -> Self {
-        let cr = cr.to_string();
-        let md = md.to_string();
-        let fun = fun.to_string();
-        Self::Function(cr, md, fun)
+        let path = format!("{}::{}::{}", cr, md, fun);
+        Self::new_all(&path)
     }
     pub fn function_call(cr: &str, md: &str, fun: &str, args: &str) -> Self {
-        let cr = cr.to_string();
-        let md = md.to_string();
-        let fun = fun.to_string();
-        let args = Args(args.to_string());
-        Self::FunctionCall(cr, md, fun, args)
+        let path = format!("{}::{}::{}", cr, md, fun);
+        Self::new(&path, args)
     }
 }
 
@@ -269,8 +261,8 @@ impl Policy {
 #[allow(dead_code, unused_variables)]
 #[derive(Debug)]
 pub struct PolicyLookup {
-    allow_set: HashSet<Ident>,
-    require_set: HashSet<Ident>,
+    allow_set: HashSet<IdentPath>,
+    require_set: HashSet<IdentPath>,
 }
 #[allow(dead_code, unused_variables)]
 impl PolicyLookup {
