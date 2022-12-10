@@ -394,18 +394,65 @@ mod tests {
     fn test_policy_lookup_trivial() {
         let policy = ex_policy();
         let lookup = ex_lookup(&policy);
+
+        let foo = IdentPath("foo".to_string());
+        let bar = IdentPath("bar".to_string());
+        let eff = IdentPath("std::effect".to_string());
+
         println!("{:?}", policy);
         println!("{:?}", lookup);
 
         // this should pass since it's just an edge between two random
         // non-effectful functions
-        let foo = IdentPath("foo".to_string());
-        let bar = IdentPath("bar".to_string());
-        let eff = IdentPath("std::effect".to_string());
         assert!(lookup.check_edge_bool(&foo, &bar));
 
         // this should fail since we haven't allowed anything
         assert!(!lookup.check_edge_bool(&foo, &eff));
+    }
+
+    #[test]
+    fn test_policy_lookup_allow() {
+        let mut policy = ex_policy();
+        policy.allow_simple("foo", "std::effect");
+        let lookup = ex_lookup(&policy);
+
+        let foo = IdentPath("foo".to_string());
+        let bar = IdentPath("bar".to_string());
+        let eff1 = IdentPath("std::effect".to_string());
+        let eff2 = IdentPath("libc::effect".to_string());
+
+        println!("{:?}", policy);
+        println!("{:?}", lookup);
+
+        assert!(lookup.check_edge_bool(&foo, &eff1));
+        assert!(!lookup.check_edge_bool(&foo, &eff2));
+        assert!(!lookup.check_edge_bool(&bar, &eff1));
+        assert!(lookup.check_edge_bool(&bar, &foo));
+    }
+
+    #[test]
+    fn test_policy_lookup_require() {
+        let mut policy = ex_policy();
+        policy.require_simple("foo", "std::effect");
+        let lookup = ex_lookup(&policy);
+
+        let foo = IdentPath("foo".to_string());
+        let bar = IdentPath("bar".to_string());
+        let eff1 = IdentPath("std::effect".to_string());
+        let eff2 = IdentPath("libc::effect".to_string());
+
+        println!("{:?}", policy);
+        println!("{:?}", lookup);
+
+        // Cases the same as test_policy_lookup_allow
+        assert!(lookup.check_edge_bool(&foo, &eff1));
+        assert!(!lookup.check_edge_bool(&foo, &eff2));
+        assert!(!lookup.check_edge_bool(&bar, &eff1));
+        // New case: can't have edge from foo to bar due to requirement
+        // on callers of bar
+        assert!(!lookup.check_edge_bool(&bar, &foo));
+        // Reverse edge is OK
+        assert!(lookup.check_edge_bool(&foo, &bar));
     }
 
     #[test]
