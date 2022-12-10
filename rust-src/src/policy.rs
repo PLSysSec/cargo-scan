@@ -391,6 +391,24 @@ mod tests {
     }
 
     #[test]
+    fn test_policy_lookup_trivial() {
+        let policy = ex_policy();
+        let lookup = ex_lookup(&policy);
+        println!("{:?}", policy);
+        println!("{:?}", lookup);
+
+        // this should pass since it's just an edge between two random
+        // non-effectful functions
+        let foo = IdentPath("foo".to_string());
+        let bar = IdentPath("bar".to_string());
+        let eff = IdentPath("std::effect".to_string());
+        assert!(lookup.check_edge_bool(&foo, &bar));
+
+        // this should fail since we haven't allowed anything
+        assert!(!lookup.check_edge_bool(&foo, &eff));
+    }
+
+    #[test]
     fn test_policy_lookup_1() {
         let mut policy = ex_policy();
         policy.allow_simple("foo::bar", "libc::effect");
@@ -446,7 +464,7 @@ mod tests {
     }
 
     #[test]
-    fn test_policy_cycle() {
+    fn test_policy_lookup_cycle() {
         // Interesting case involving cycles
         // I think this should be allowed but it's up for discussion
         // Solution is to mark program entrypoints that can't have
