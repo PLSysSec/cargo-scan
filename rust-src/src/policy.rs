@@ -176,6 +176,16 @@ impl Display for Statement {
     }
 }
 impl Statement {
+    pub fn allow_simple(path: &str, effect: &str) -> Self {
+        let region = Region::new_all(path);
+        let effect = Effect::all(effect);
+        Self::Allow { region, effect }
+    }
+    pub fn require_simple(path: &str, effect: &str) -> Self {
+        let region = Region::new_all(path);
+        let effect = Effect::all(effect);
+        Self::Require { region, effect }
+    }
     pub fn allow_crate(cr: &str, effect: Effect) -> Self {
         let region = Region::whole_crate(cr);
         Self::Allow { region, effect }
@@ -231,6 +241,12 @@ impl Policy {
     }
     pub fn add_statement(&mut self, s: Statement) {
         self.statements.push(s);
+    }
+    pub fn allow_simple(&mut self, path: &str, effect: &str) {
+        self.add_statement(Statement::allow_simple(path, effect));
+    }
+    pub fn require_simple(&mut self, path: &str, effect: &str) {
+        self.add_statement(Statement::require_simple(path, effect));
     }
     pub fn allow_crate(&mut self, cr: &str, eff: Effect) {
         self.add_statement(Statement::allow_crate(cr, eff))
@@ -321,6 +337,14 @@ impl PolicyLookup {
         }
     }
 
+    /// Iterate over effects required at a particular path
+    pub fn iter_requirements(
+        &self,
+        callee: &IdentPath,
+    ) -> impl Iterator<Item = &IdentPath> {
+        self.require_sets.get(callee).into_iter().flat_map(|require| require.iter())
+    }
+
     /// Check a call graph edge against the policy.
     /// Currently, edges can be read in in any order; the lookup does
     /// not need any particular order. This may change later.
@@ -330,13 +354,23 @@ impl PolicyLookup {
         callee: &IdentPath,
         error_list: &mut Vec<String>,
     ) {
-        if let Some(require) = self.require_sets.get(callee) {
-            for req in require {
-                self.allow_list_contains(caller, req).unwrap_or_else(|err| {
-                    error_list.push(err);
-                });
+        for req in self.iter_requirements(callee) {
+            self.allow_list_contains(caller, req).unwrap_or_else(|err| {
+                error_list.push(err);
+            });
+        }
+    }
+
+    /// Check a call graph edge against the policy.
+    /// Rather than returning a list of errors, just return a Boolean
+    /// of whether it passes or not.
+    pub fn check_edge_bool(&self, caller: &IdentPath, callee: &IdentPath) -> bool {
+        for req in self.iter_requirements(callee) {
+            if self.allow_list_contains(caller, req).is_err() {
+                return false;
             }
         }
+        true
     }
 }
 
@@ -375,5 +409,94 @@ mod tests {
         println!("Policy deserialized again: {:?}", policy2);
 
         assert_eq!(policy, policy2);
+    }
+
+    fn ex_policy() -> Policy {
+        let cr = "ex";
+        Policy::new(cr, "0.1", "0.1")
+    }
+
+    fn ex_lookup(policy: &Policy) -> PolicyLookup {
+        let eff1 = IdentPath("libc::effect".to_string());
+        let eff2 = IdentPath("std::effect".to_string());
+        let mut lookup = PolicyLookup::from_policy(policy);
+        lookup.mark_of_interest(&eff1);
+        lookup.mark_of_interest(&eff2);
+        lookup
+    }
+
+    #[test]
+    fn test_policy_lookup_1() {
+        let mut policy = ex_policy();
+        policy.allow_simple("foo::bar", "libc::effect");
+        policy.allow_simple("foo::bar", "libc::non_effect");
+        let lookup = ex_lookup(&policy);
+
+        let bar = IdentPath("foo::bar".to_string());
+        let eff1 = IdentPath("libc::effect".to_string());
+        let eff2 = IdentPath("std::effect".to_string());
+        let eff3 = IdentPath("libc::non_effect".to_string());
+        let eff4 = IdentPath("std::non_effect".to_string());
+        let eff5 = IdentPath("libc::other_effect".to_string());
+        let eff6 = IdentPath("std::other_effect".to_string());
+
+        assert!(lookup.check_edge_bool(&bar, &eff1));
+        assert!(lookup.check_edge_bool(&bar, &eff2));
+        assert!(lookup.check_edge_bool(&bar, &eff3));
+        assert!(lookup.check_edge_bool(&bar, &eff4));
+        assert!(!lookup.check_edge_bool(&bar, &eff5));
+        assert!(!lookup.check_edge_bool(&bar, &eff6));
+    }
+
+    #[test]
+    fn test_policy_lookup_2() {
+        let mut policy = ex_policy();
+        policy.allow_simple("foo::bar", "std::effect");
+        policy.require_simple("foo::bar", "libc::effect");
+        policy.require_simple("foo::f1", "libc::effect");
+        policy.require_simple("foo::f2", "libc::effect");
+        policy.allow_simple("foo::g1", "libc::effect");
+        policy.allow_simple("foo::g2", "libc::effect");
+        let lookup = ex_lookup(&policy);
+
+        let bar = IdentPath("foo::bar".to_string());
+        let f1 = IdentPath("foo::f1".to_string());
+        let f2 = IdentPath("foo::f2".to_string());
+        let g1 = IdentPath("foo::g1".to_string());
+        let g2 = IdentPath("foo::g2".to_string());
+        let g3 = IdentPath("foo::g3".to_string());
+        let eff1 = IdentPath("libc::effect".to_string());
+        let eff2 = IdentPath("std::effect".to_string());
+
+        assert!(lookup.check_edge_bool(&bar, &eff1));
+        assert!(lookup.check_edge_bool(&bar, &eff2));
+        assert!(lookup.check_edge_bool(&f1, &bar));
+        assert!(lookup.check_edge_bool(&f2, &f1));
+        assert!(lookup.check_edge_bool(&g1, &f1));
+        assert!(lookup.check_edge_bool(&g2, &f2));
+        assert!(lookup.check_edge_bool(&g2, &f1));
+        assert!(lookup.check_edge_bool(&g3, &g2));
+        assert!(!lookup.check_edge_bool(&g3, &f1));
+        assert!(!lookup.check_edge_bool(&g3, &f2));
+    }
+
+    #[test]
+    fn test_policy_cycle() {
+        // Interesting case involving cycles
+        // I think this should be allowed but it's up for discussion
+        // Solution is to mark program entrypoints that can't have
+        // require statements
+
+        // Notice: no allow statements
+        let mut policy = ex_policy();
+        policy.require_simple("foo", "libc::effect");
+        policy.require_simple("bar", "libc::effect");
+        let lookup = ex_lookup(&policy);
+
+        let foo = IdentPath("foo".to_string());
+        let bar = IdentPath("bar".to_string());
+
+        assert!(lookup.check_edge_bool(&foo, &bar));
+        assert!(lookup.check_edge_bool(&bar, &foo));
     }
 }
