@@ -271,6 +271,10 @@ impl PolicyLookup {
                 let caller = r.fn_path.clone();
                 let eff = e.fn_path.clone();
                 self.require_sets.entry(caller).or_default().insert(eff);
+                // require encompasses allow
+                let caller = r.fn_path.clone();
+                let eff = e.fn_path.clone();
+                self.allow_sets.entry(caller).or_default().insert(eff);
             }
             Statement::Trust { region: _ } => {
                 unimplemented!()
@@ -406,7 +410,7 @@ mod tests {
         // non-effectful functions
         assert!(lookup.check_edge_bool(&foo, &bar));
 
-        // this should fail since we haven't allowed anything
+        // this should fail since we haven't allowed the effect
         assert!(!lookup.check_edge_bool(&foo, &eff));
     }
 
@@ -420,12 +424,14 @@ mod tests {
         let bar = IdentPath("bar".to_string());
         let eff1 = IdentPath("std::effect".to_string());
         let eff2 = IdentPath("libc::effect".to_string());
+        let eff3 = IdentPath("std::non_effect".to_string());
 
         println!("{:?}", policy);
         println!("{:?}", lookup);
 
         assert!(lookup.check_edge_bool(&foo, &eff1));
         assert!(!lookup.check_edge_bool(&foo, &eff2));
+        assert!(lookup.check_edge_bool(&foo, &eff3));
         assert!(!lookup.check_edge_bool(&bar, &eff1));
         assert!(lookup.check_edge_bool(&bar, &foo));
     }
@@ -467,15 +473,11 @@ mod tests {
         let eff2 = IdentPath("std::effect".to_string());
         let eff3 = IdentPath("libc::non_effect".to_string());
         let eff4 = IdentPath("std::non_effect".to_string());
-        let eff5 = IdentPath("libc::other_effect".to_string());
-        let eff6 = IdentPath("std::other_effect".to_string());
 
         assert!(lookup.check_edge_bool(&bar, &eff1));
-        assert!(lookup.check_edge_bool(&bar, &eff2));
+        assert!(!lookup.check_edge_bool(&bar, &eff2));
         assert!(lookup.check_edge_bool(&bar, &eff3));
         assert!(lookup.check_edge_bool(&bar, &eff4));
-        assert!(!lookup.check_edge_bool(&bar, &eff5));
-        assert!(!lookup.check_edge_bool(&bar, &eff6));
     }
 
     #[test]
