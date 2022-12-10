@@ -7,7 +7,10 @@
 
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::{HashMap, HashSet};
+use std::error::Error;
+use std::ffi::OsStr;
 use std::fmt::{self, Display};
+use std::path::Path;
 use std::str::FromStr;
 
 /// An Rust name identifier, without colons
@@ -218,6 +221,12 @@ impl Policy {
         let policy_version = policy_version.to_string();
         let statements = Vec::new();
         Policy { crate_name, crate_version, policy_version, statements }
+    }
+    pub fn from_file(file: &Path) -> Result<Self, Box<dyn Error>> {
+        debug_assert_eq!(file.extension(), Some(OsStr::new("toml")));
+        let toml_str = std::fs::read_to_string(file)?;
+        let policy: Policy = toml::from_str(&toml_str)?;
+        Ok(policy)
     }
     pub fn add_statement(&mut self, s: Statement) {
         self.statements.push(s);
@@ -530,5 +539,32 @@ mod tests {
 
         assert!(lookup.check_edge_bool(&foo, &bar));
         assert!(lookup.check_edge_bool(&bar, &foo));
+    }
+
+    #[test]
+    fn test_policy_from_file() {
+        let policy_file = Path::new("../policies/permissions-ex.toml");
+        let policy1 = Policy::from_file(policy_file).unwrap();
+
+        let mut policy2 = Policy::new("permissions-ex", "0.1", "0.1");
+        let eff1 = Effect::new("fs::delete", "path");
+        policy2.require("permissions-ex::remove", "path", eff1);
+        let eff2 = Effect::new("fs::create", "path");
+        policy2.require("permissions-ex::save_data", "path", eff2);
+        let eff3 = Effect::new("fs::write", "path");
+        policy2.require("permissions-ex::save_data", "path", eff3);
+        let eff4 = Effect::new("process::exec", "rm -f path");
+        policy2.allow("permissions-ex::remove", "path", eff4);
+        let eff5 = Effect::new("fs::delete", "path");
+        policy2.allow("permissions-ex::save_data", "path", eff5);
+        let eff6 = Effect::new("fs::append", "my_app.log");
+        policy2.allow("permissions-ex::prepare_data", "", eff6);
+
+        let policy1_toml = toml::to_string(&policy1).unwrap();
+        let policy2_toml = toml::to_string(&policy2).unwrap();
+        println!("policy 1: {:?} {}", policy1, policy1_toml);
+        println!("policy 2: {:?} {}", policy2, policy2_toml);
+
+        assert_eq!(policy1, policy2);
     }
 }
