@@ -27,6 +27,12 @@ impl Display for IdentPath {
         self.0.fmt(f)
     }
 }
+impl IdentPath {
+    pub fn new(s: &str) -> Self {
+        // TBD: check stuff
+        Self(s.to_string())
+    }
+}
 
 /// A Rust Arguments pattern
 /// TBD

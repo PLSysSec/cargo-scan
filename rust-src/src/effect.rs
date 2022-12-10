@@ -131,6 +131,19 @@ impl Effect {
         Self { caller_loc, callee, pattern, call_loc }
     }
 
+    pub fn caller_path(&self) -> &str {
+        &self.caller_loc.caller
+    }
+
+    pub fn callee_path(&self) -> &str {
+        &self.callee
+    }
+
+    /// Get the caller and callee as full paths
+    pub fn caller_callee(&self) -> (&str, &str) {
+        (self.caller_path(), self.callee_path())
+    }
+
     pub fn csv_header() -> &'static str {
         "crate, caller, callee, pattern, dir, file, line, col"
     }
