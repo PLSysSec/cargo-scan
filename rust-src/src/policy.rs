@@ -1,5 +1,5 @@
 /*
-    Type representing an audit policy.
+    Audit policy language.
 
     Serializes to and deserializes from a .policy file.
     See example .policy files in policies/
@@ -10,12 +10,13 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::{self, Display};
 use std::str::FromStr;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Expr(String);
-
+/// An Rust name identifier, without colons
+/// E.g.: env
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Ident(String);
 
+/// A Rust path identifier, with colons
+/// E.g.: std::env::var_os
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IdentPath(String);
 impl Display for IdentPath {
@@ -24,6 +25,8 @@ impl Display for IdentPath {
     }
 }
 
+/// A Rust Arguments pattern
+/// TBD
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Args(String);
 
@@ -186,39 +189,16 @@ impl Statement {
         let effect = Effect::all(effect);
         Self::Require { region, effect }
     }
-    pub fn allow_crate(cr: &str, effect: Effect) -> Self {
-        let region = Region::whole_crate(cr);
+    pub fn allow(path: &str, args: &str, effect: Effect) -> Self {
+        let region = Region::new(path, args);
         Self::Allow { region, effect }
     }
-    pub fn allow_mod(cr: &str, md: &str, effect: Effect) -> Self {
-        let region = Region::module(cr, md);
-        Self::Allow { region, effect }
-    }
-    pub fn allow_fn(cr: &str, md: &str, fun: &str, args: &str, effect: Effect) -> Self {
-        let region = Region::function_call(cr, md, fun, args);
-        Self::Allow { region, effect }
-    }
-    // Q: do we need these?
-    // pub fn require_crate(name: &str, effect: Effect) -> Self {
-    //     Self::Require(Region::Crate(name.to_string()), effect)
-    // }
-    // pub fn require_mod(name: &str, effect: Effect) -> Self {
-    //     Self::Require(Region::Module(name.to_string()), effect)
-    // }
-    pub fn require_fn(cr: &str, md: &str, fun: &str, args: &str, effect: Effect) -> Self {
-        let region = Region::function_call(cr, md, fun, args);
+    pub fn require(path: &str, args: &str, effect: Effect) -> Self {
+        let region = Region::new(path, args);
         Self::Require { region, effect }
     }
-    pub fn trust_crate(cr: &str) -> Self {
-        let region = Region::whole_crate(cr);
-        Self::Trust { region }
-    }
-    pub fn trust_mod(cr: &str, md: &str) -> Self {
-        let region = Region::module(cr, md);
-        Self::Trust { region }
-    }
-    pub fn trust_fn(cr: &str, md: &str, fun: &str) -> Self {
-        let region = Region::function(cr, md, fun);
+    pub fn trust(path: &str) -> Self {
+        let region = Region::new_all(path);
         Self::Trust { region }
     }
 }
@@ -248,26 +228,14 @@ impl Policy {
     pub fn require_simple(&mut self, path: &str, effect: &str) {
         self.add_statement(Statement::require_simple(path, effect));
     }
-    pub fn allow_crate(&mut self, cr: &str, eff: Effect) {
-        self.add_statement(Statement::allow_crate(cr, eff))
+    pub fn allow(&mut self, path: &str, args: &str, eff: Effect) {
+        self.add_statement(Statement::allow(path, args, eff))
     }
-    pub fn allow_mod(&mut self, cr: &str, md: &str, eff: Effect) {
-        self.add_statement(Statement::allow_mod(cr, md, eff))
+    pub fn require(&mut self, path: &str, args: &str, eff: Effect) {
+        self.add_statement(Statement::require(path, args, eff))
     }
-    pub fn allow_fn(&mut self, cr: &str, md: &str, fun: &str, args: &str, eff: Effect) {
-        self.add_statement(Statement::allow_fn(cr, md, fun, args, eff))
-    }
-    pub fn require_fn(&mut self, cr: &str, md: &str, fun: &str, args: &str, eff: Effect) {
-        self.add_statement(Statement::require_fn(cr, md, fun, args, eff))
-    }
-    pub fn trust_crate(&mut self, cr: &str) {
-        self.add_statement(Statement::trust_crate(cr))
-    }
-    pub fn trust_mod(&mut self, cr: &str, md: &str) {
-        self.add_statement(Statement::trust_mod(cr, md))
-    }
-    pub fn trust_fn(&mut self, cr: &str, md: &str, fun: &str) {
-        self.add_statement(Statement::trust_fn(cr, md, fun))
+    pub fn trust(&mut self, path: &str) {
+        self.add_statement(Statement::trust(path))
     }
 }
 
@@ -383,22 +351,19 @@ mod tests {
         // Note: this example uses dummy strings that don't correspond
         // to real effects
         let cr = "permissions-ex";
-        let md = "lib";
         let mut policy = Policy::new(cr, "0.1", "0.1");
         let eff1 = Effect::new("fs::delete", "path");
-        policy.require_fn(cr, md, "remove", "path", eff1);
+        policy.require("permissions-ex::lib::remove", "path", eff1);
         let eff2 = Effect::new("fs::create", "path");
-        policy.require_fn(cr, md, "save_data", "path", eff2);
+        policy.require("permissions-ex::lib::save_data", "path", eff2);
         let eff3 = Effect::new("fs::write", "path");
-        policy.require_fn(cr, md, "save_data", "path", eff3);
+        policy.require("permissions-ex::lib::save_data", "path", eff3);
         let eff4 = Effect::new("process::exec", "rm -f path");
-        policy.allow_fn(cr, md, "remove", "path", eff4);
+        policy.allow("permissions-ex::lib::remove", "path", eff4);
         let eff5 = Effect::new("fs::delete", "path");
-        policy.allow_fn(cr, md, "save_data", "path", eff5);
+        policy.allow("permissions-ex::lib::save_data", "path", eff5);
         let eff6 = Effect::new("fs::append", "my_app.log");
-        policy.allow_fn(cr, md, "prepare_data", "", eff6);
-        // example of trust statements
-        policy.trust_fn(cr, md, "prepare_data");
+        policy.allow("permissions-ex::lib::prepare_data", "", eff6);
 
         println!("Policy example: {:?}", policy);
 
