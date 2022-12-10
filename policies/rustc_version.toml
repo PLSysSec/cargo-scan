@@ -1,10 +1,28 @@
-[policy]
-crate = rustc_version
-policy-version = 0.1
+crate_name = "rustc_version"
+crate_version = "0.1"
+policy_version = "0.1"
 
-[statements]
-allow crate read_env("RUSTC")
-allow crate exec("rustc", "-vV")
-allow crate exec(env::var_os("RUSTC"), "-vV")
-require VersionMeta::for_command(cmd) exec(cmd, "-vV")
-trust env::var_os
+[[statements]]
+type = "Allow"
+region = "rustc_version::*(*)"
+effect = "std::env::var(\"RUSTC\")"
+
+[[statements]]
+type = "Allow"
+region = "rustc_version::*(*)"
+effect = "std::env::var_os(\"RUSTC\")"
+
+[[statements]]
+type = "Allow"
+region = "rustc_version::*(*)"
+effect = "std::process::exec([\"rustc\", \"-vV\"])"
+
+[[statements]]
+type = "Allow"
+region = "rustc_version::*(*)"
+effect = "std::process::exec([RUSTC, \"-vV\"])"
+
+[[statements]]
+type = "Allow"
+region = "VersionMeta::for_command(cmd)"
+effect = "exec([cmd, \"-vV\"])"
