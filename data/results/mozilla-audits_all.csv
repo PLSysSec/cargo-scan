@@ -1,863 +1,853 @@
-crate, pattern of interest, directory, file, use line
-android_system_properties, std::os, data/packages/android_system_properties/src, lib.rs, std::os::raw::c_char
-android_system_properties, std::os, data/packages/android_system_properties/src, lib.rs, std::os::raw::c_int
-android_system_properties, std::os, data/packages/android_system_properties/src, lib.rs, std::os::raw::c_void
-android_system_properties, std::os, data/packages/android_system_properties/src, lib.rs, std::os::raw::c_char
-android_system_properties, std::os, data/packages/android_system_properties/src, lib.rs, std::os::raw::c_int
-android_system_properties, std::os, data/packages/android_system_properties/src, lib.rs, std::os::raw::c_void
-arbitrary, std::net, data/packages/arbitrary/src, lib.rs, std::net::Ipv4Addr
-arbitrary, std::net, data/packages/arbitrary/src, lib.rs, std::net::Ipv6Addr
-arbitrary, std::path, data/packages/arbitrary/src, lib.rs, std::path::PathBuf
-arbitrary, std::net, data/packages/arbitrary/src, lib.rs, std::net::Ipv4Addr
-arbitrary, std::net, data/packages/arbitrary/src, lib.rs, std::net::Ipv6Addr
-arbitrary, std::path, data/packages/arbitrary/src, lib.rs, std::path::PathBuf
-autocfg, std::env, data/packages/autocfg/src, lib.rs, std::env
-autocfg, std::fs, data/packages/autocfg/src, lib.rs, std::fs
-autocfg, std::path, data/packages/autocfg/src, lib.rs, std::path::Path
-autocfg, std::path, data/packages/autocfg/src, lib.rs, std::path::PathBuf
-autocfg, std::process, data/packages/autocfg/src, lib.rs, std::process::Command
-autocfg, std::process, data/packages/autocfg/src, lib.rs, std::process::Stdio
-autocfg, std::env, data/packages/autocfg/src, tests.rs, std::env
-autocfg, std::path, data/packages/autocfg/src, tests.rs, std::path::Path
-autocfg, std::path, data/packages/autocfg/src, version.rs, std::path::Path
-autocfg, std::process, data/packages/autocfg/src, version.rs, std::process::Command
-bindgen, std::os, data/packages/bindgen/src, clang.rs, std::os::raw::c_char
-bindgen, std::os, data/packages/bindgen/src, clang.rs, std::os::raw::c_int
-bindgen, std::os, data/packages/bindgen/src, clang.rs, std::os::raw::c_longlong
-bindgen, std::os, data/packages/bindgen/src, clang.rs, std::os::raw::c_uint
-bindgen, std::os, data/packages/bindgen/src, clang.rs, std::os::raw::c_ulong
-bindgen, std::os, data/packages/bindgen/src, clang.rs, std::os::raw::c_ulonglong
-bindgen, std::path, data/packages/bindgen/src, deps.rs, std::path::PathBuf
-bindgen, std::fs, data/packages/bindgen/src, lib.rs, std::fs::File
-bindgen, std::fs, data/packages/bindgen/src, lib.rs, std::fs::OpenOptions
-bindgen, std::path, data/packages/bindgen/src, lib.rs, std::path::Path
-bindgen, std::path, data/packages/bindgen/src, lib.rs, std::path::PathBuf
-bindgen, std::process, data/packages/bindgen/src, lib.rs, std::process::Command
-bindgen, std::process, data/packages/bindgen/src, lib.rs, std::process::Stdio
-bindgen, std::env, data/packages/bindgen/src, lib.rs, std::env
-bindgen, std::env, data/packages/bindgen/src, main.rs, std::env
-bindgen, std::fs, data/packages/bindgen/src, options.rs, std::fs::File
-bindgen, std::path, data/packages/bindgen/src, options.rs, std::path::PathBuf
-bindgen, std::fs, data/packages/bindgen/src/ir, dot.rs, std::fs::File
-bindgen, std::path, data/packages/bindgen/src/ir, dot.rs, std::path::Path
-build-parallel, std::env, data/packages/build-parallel/src, lib.rs, std::env
-camino, std::fs, data/packages/camino/src, lib.rs, std::fs::Metadata
-camino, std::fs, data/packages/camino/src, lib.rs, std::fs::self
-camino, std::path, data/packages/camino/src, lib.rs, std::path::*
-camino, std::path, data/packages/camino/src, tests.rs, std::path::Path
-camino, std::path, data/packages/camino/src, tests.rs, std::path::PathBuf
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::shared::minwindef::LPVOID
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::shared::
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::shared::winerror::HRESULT
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::shared::wtypesbase::CLSCTX
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::shared::wtypesbase::CLSCTX_INPROC_SERVER
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::shared::wtypesbase::CLSCTX_LOCAL_SERVER
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::um::
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::um::combaseapi::CoCreateInstance
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::um::combaseapi::CoInitializeEx
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::um::combaseapi::CoTaskMemFree
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::um::combaseapi::CoUninitialize
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::um::objbase::COINIT_APARTMENTTHREADED
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::um::objbase::COINIT_MULTITHREADED
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::um::unknwnbase::IUnknown
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::Class
-comedy, winapi, data/packages/comedy/src, com.rs, winapi::Interface
-comedy, winapi, data/packages/comedy/src, error.rs, winapi::shared::minwindef::DWORD
-comedy, winapi, data/packages/comedy/src, error.rs, winapi::shared::winerror::
-comedy, winapi, data/packages/comedy/src, error.rs, winapi::shared::winerror::ERROR_SUCCESS
-comedy, winapi, data/packages/comedy/src, error.rs, winapi::shared::winerror::FACILITY_WIN32
-comedy, winapi, data/packages/comedy/src, error.rs, winapi::shared::winerror::HRESULT
-comedy, winapi, data/packages/comedy/src, error.rs, winapi::shared::winerror::HRESULT_FROM_WIN32
-comedy, winapi, data/packages/comedy/src, error.rs, winapi::shared::winerror::SUCCEEDED
-comedy, winapi, data/packages/comedy/src, error.rs, winapi::shared::winerror::S_OK
-comedy, winapi, data/packages/comedy/src, error.rs, winapi::um::errhandlingapi::GetLastError
-comedy, winapi, data/packages/comedy/src, handle.rs, winapi::shared::minwindef::DWORD
-comedy, winapi, data/packages/comedy/src, handle.rs, winapi::shared::ntdef::NULL
-comedy, winapi, data/packages/comedy/src, handle.rs, winapi::um::errhandlingapi::GetLastError
-comedy, winapi, data/packages/comedy/src, handle.rs, winapi::um::handleapi::CloseHandle
-comedy, winapi, data/packages/comedy/src, handle.rs, winapi::um::handleapi::INVALID_HANDLE_VALUE
-comedy, winapi, data/packages/comedy/src, handle.rs, winapi::um::winnt::HANDLE
-crossbeam-channel, std::process, data/packages/crossbeam-channel/src, counter.rs, std::process
-cubeb, std::os, data/packages/cubeb/src, stream.rs, std::os::raw::c_long
-cubeb, std::os, data/packages/cubeb/src, stream.rs, std::os::raw::c_void
-cubeb, std::os, data/packages/cubeb/src, stream.rs, std::os::raw::c_long
-cubeb, std::os, data/packages/cubeb/src, stream.rs, std::os::raw::c_void
-cubeb-backend, std::os, data/packages/cubeb-backend/src, capi.rs, std::os::raw::c_char
-cubeb-backend, std::os, data/packages/cubeb-backend/src, capi.rs, std::os::raw::c_int
-cubeb-backend, std::os, data/packages/cubeb-backend/src, capi.rs, std::os::raw::c_void
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_char
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_float
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_int
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_uint
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_void
-cubeb-backend, std::os, data/packages/cubeb-backend/src, traits.rs, std::os::raw::c_void
-cubeb-backend, std::os, data/packages/cubeb-backend/src, capi.rs, std::os::raw::c_char
-cubeb-backend, std::os, data/packages/cubeb-backend/src, capi.rs, std::os::raw::c_int
-cubeb-backend, std::os, data/packages/cubeb-backend/src, capi.rs, std::os::raw::c_void
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_char
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_float
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_int
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_uint
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_void
-cubeb-backend, std::os, data/packages/cubeb-backend/src, traits.rs, std::os::raw::c_void
-cubeb-backend, std::os, data/packages/cubeb-backend/src, capi.rs, std::os::raw::c_char
-cubeb-backend, std::os, data/packages/cubeb-backend/src, capi.rs, std::os::raw::c_int
-cubeb-backend, std::os, data/packages/cubeb-backend/src, capi.rs, std::os::raw::c_void
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_char
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_float
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_int
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_uint
-cubeb-backend, std::os, data/packages/cubeb-backend/src, ops.rs, std::os::raw::c_void
-cubeb-backend, std::os, data/packages/cubeb-backend/src, traits.rs, std::os::raw::c_void
-cubeb-core, std::os, data/packages/cubeb-core/src, call.rs, std::os::raw::c_int
-cubeb-core, std::os, data/packages/cubeb-core/src, context.rs, std::os::raw::c_void
-cubeb-core, std::os, data/packages/cubeb-core/src, error.rs, std::os::raw::c_int
-cubeb-core, std::os, data/packages/cubeb-core/src, stream.rs, std::os::raw::c_void
-cubeb-core, std::os, data/packages/cubeb-core/src, util.rs, std::os::raw::c_char
-cubeb-core, std::os, data/packages/cubeb-core/src, call.rs, std::os::raw::c_int
-cubeb-core, std::os, data/packages/cubeb-core/src, context.rs, std::os::raw::c_void
-cubeb-core, std::os, data/packages/cubeb-core/src, error.rs, std::os::raw::c_int
-cubeb-core, std::os, data/packages/cubeb-core/src, stream.rs, std::os::raw::c_void
-cubeb-core, std::os, data/packages/cubeb-core/src, util.rs, std::os::raw::c_char
-cubeb-core, std::os, data/packages/cubeb-core/src, call.rs, std::os::raw::c_int
-cubeb-core, std::os, data/packages/cubeb-core/src, context.rs, std::os::raw::c_void
-cubeb-core, std::os, data/packages/cubeb-core/src, error.rs, std::os::raw::c_int
-cubeb-core, std::os, data/packages/cubeb-core/src, stream.rs, std::os::raw::c_void
-cubeb-core, std::os, data/packages/cubeb-core/src, util.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, callbacks.rs, std::os::raw::c_long
-cubeb-sys, std::os, data/packages/cubeb-sys/src, callbacks.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, channel.rs, std::os::raw::c_int as c_enum
-cubeb-sys, std::os, data/packages/cubeb-sys/src, channel.rs, std::os::raw::c_uint as c_enum
-cubeb-sys, std::os, data/packages/cubeb-sys/src, context.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, context.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, context.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, context.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, device.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, device.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, device.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, device.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, error.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, internal.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, internal.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, log.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, log.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, log.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, mixer.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, mixer.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, mixer.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, resampler.rs, std::os::raw::c_long
-cubeb-sys, std::os, data/packages/cubeb-sys/src, resampler.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, resampler.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_float
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, callbacks.rs, std::os::raw::c_long
-cubeb-sys, std::os, data/packages/cubeb-sys/src, callbacks.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, channel.rs, std::os::raw::c_int as c_enum
-cubeb-sys, std::os, data/packages/cubeb-sys/src, channel.rs, std::os::raw::c_uint as c_enum
-cubeb-sys, std::os, data/packages/cubeb-sys/src, context.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, context.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, context.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, context.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, device.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, device.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, device.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, device.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, error.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, internal.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, internal.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, log.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, log.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, log.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, mixer.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, mixer.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, mixer.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, resampler.rs, std::os::raw::c_long
-cubeb-sys, std::os, data/packages/cubeb-sys/src, resampler.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, resampler.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_float
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, callbacks.rs, std::os::raw::c_long
-cubeb-sys, std::os, data/packages/cubeb-sys/src, callbacks.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, channel.rs, std::os::raw::c_int as c_enum
-cubeb-sys, std::os, data/packages/cubeb-sys/src, channel.rs, std::os::raw::c_uint as c_enum
-cubeb-sys, std::os, data/packages/cubeb-sys/src, context.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, context.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, context.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, context.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, device.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, device.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, device.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, device.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, error.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, internal.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, internal.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, log.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, log.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, log.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, mixer.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, mixer.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, mixer.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, resampler.rs, std::os::raw::c_long
-cubeb-sys, std::os, data/packages/cubeb-sys/src, resampler.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, resampler.rs, std::os::raw::c_void
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_char
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_float
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_int
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_uint
-cubeb-sys, std::os, data/packages/cubeb-sys/src, stream.rs, std::os::raw::c_void
-d3d12, winapi, data/packages/d3d12/src, com.rs, winapi::Interface
-d3d12, winapi, data/packages/d3d12/src, com.rs, winapi::ctypes::c_void
-d3d12, winapi, data/packages/d3d12/src, com.rs, winapi::um::unknwnbase::IUnknown
-d3d12, winapi, data/packages/d3d12/src, command_allocator.rs, winapi::um::d3d12
-d3d12, winapi, data/packages/d3d12/src, command_list.rs, winapi::um::d3d12
-d3d12, winapi, data/packages/d3d12/src, debug.rs, winapi::um::d3d12sdklayers
-d3d12, winapi, data/packages/d3d12/src, debug.rs, winapi::Interface as _
-d3d12, winapi, data/packages/d3d12/src, descriptor.rs, winapi::shared::dxgiformat
-d3d12, winapi, data/packages/d3d12/src, descriptor.rs, winapi::um::d3d12
-d3d12, winapi, data/packages/d3d12/src, device.rs, winapi::Interface
-d3d12, winapi, data/packages/d3d12/src, device.rs, winapi::um::d3d12
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::Interface
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::shared::
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::shared::dxgi
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::shared::dxgi1_2
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::shared::dxgi1_3
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::shared::dxgi1_4
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::shared::dxgi1_5
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::shared::dxgi1_6
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::shared::dxgiformat
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::shared::dxgitype
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::shared::minwindef::TRUE
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::shared::windef::HWND
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::um::d3d12
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::um::dxgidebug
-d3d12, winapi, data/packages/d3d12/src, dxgi.rs, winapi::um::unknwnbase::IUnknown
-d3d12, winapi, data/packages/d3d12/src, heap.rs, winapi::um::d3d12
-d3d12, winapi, data/packages/d3d12/src, lib.rs, winapi::
-d3d12, winapi, data/packages/d3d12/src, lib.rs, winapi::shared::dxgiformat
-d3d12, winapi, data/packages/d3d12/src, lib.rs, winapi::um::d3d12
-d3d12, winapi, data/packages/d3d12/src, lib.rs, winapi::um::d3dcommon
-d3d12, winapi, data/packages/d3d12/src, lib.rs, winapi::shared::winerror::HRESULT
-d3d12, winapi, data/packages/d3d12/src, pso.rs, winapi::um::d3d12
-d3d12, winapi, data/packages/d3d12/src, pso.rs, winapi::um::d3dcompiler
-d3d12, winapi, data/packages/d3d12/src, query.rs, winapi::um::d3d12
-d3d12, winapi, data/packages/d3d12/src, queue.rs, winapi::um::d3d12
-d3d12, winapi, data/packages/d3d12/src, resource.rs, winapi::um::d3d12
-d3d12, winapi, data/packages/d3d12/src, sync.rs, winapi::um::d3d12
-d3d12, winapi, data/packages/d3d12/src, sync.rs, winapi::um::synchapi
-d3d12, winapi, data/packages/d3d12/src, sync.rs, winapi::um::winnt
-devd-rs, libc, data/packages/devd-rs/src, lib.rs, libc::AF_UNIX
-devd-rs, libc, data/packages/devd-rs/src, lib.rs, libc::POLLIN
-devd-rs, libc, data/packages/devd-rs/src, lib.rs, libc::SOCK_SEQPACKET
-devd-rs, libc, data/packages/devd-rs/src, lib.rs, libc::c_int
-devd-rs, libc, data/packages/devd-rs/src, lib.rs, libc::connect
-devd-rs, libc, data/packages/devd-rs/src, lib.rs, libc::nfds_t
-devd-rs, libc, data/packages/devd-rs/src, lib.rs, libc::poll
-devd-rs, libc, data/packages/devd-rs/src, lib.rs, libc::pollfd
-devd-rs, libc, data/packages/devd-rs/src, lib.rs, libc::sockaddr_un
-devd-rs, libc, data/packages/devd-rs/src, lib.rs, libc::socket
-devd-rs, std::os, data/packages/devd-rs/src, lib.rs, std::os::unix::io::FromRawFd
-devd-rs, std::os, data/packages/devd-rs/src, lib.rs, std::os::unix::io::RawFd
-devd-rs, std::os, data/packages/devd-rs/src, lib.rs, std::os::unix::net::UnixStream
-filetime_win, winapi, data/packages/filetime_win/src, lib.rs, winapi::shared::minwindef::FILETIME
-filetime_win, winapi, data/packages/filetime_win/src, lib.rs, winapi::shared::minwindef::DWORD
-filetime_win, winapi, data/packages/filetime_win/src, lib.rs, winapi::shared::minwindef::WORD
-filetime_win, winapi, data/packages/filetime_win/src, lib.rs, winapi::shared::ntdef::ULARGE_INTEGER
-filetime_win, winapi, data/packages/filetime_win/src, lib.rs, winapi::um::minwinbase::SYSTEMTIME
-filetime_win, winapi, data/packages/filetime_win/src, lib.rs, winapi::um::sysinfoapi::GetSystemTime
-filetime_win, winapi, data/packages/filetime_win/src, lib.rs, winapi::um::timezoneapi::FileTimeToSystemTime
-filetime_win, winapi, data/packages/filetime_win/src, lib.rs, winapi::um::timezoneapi::SystemTimeToFileTime
-fluent-syntax, std::env, data/packages/fluent-syntax/src/bin, parser.rs, std::env
-fluent-syntax, std::fs, data/packages/fluent-syntax/src/bin, parser.rs, std::fs::File
-fluent-syntax, std::fs, data/packages/fluent-syntax/src/bin, update_fixtures.rs, std::fs
-fluent-testing, std::path, data/packages/fluent-testing/src, fs.rs, std::path::PathBuf
-fs-err, std::fs, data/packages/fs-err/src, dir.rs, std::fs
-fs-err, std::path, data/packages/fs-err/src, dir.rs, std::path::PathBuf
-fs-err, std::path, data/packages/fs-err/src, errors.rs, std::path::PathBuf
-fs-err, std::fs, data/packages/fs-err/src, file.rs, std::fs
-fs-err, std::path, data/packages/fs-err/src, file.rs, std::path::Path
-fs-err, std::path, data/packages/fs-err/src, file.rs, std::path::PathBuf
-fs-err, std::fs, data/packages/fs-err/src, lib.rs, std::fs
-fs-err, std::path, data/packages/fs-err/src, lib.rs, std::path::Path
-fs-err, std::path, data/packages/fs-err/src, lib.rs, std::path::PathBuf
-fs-err, std::fs, data/packages/fs-err/src, open_options.rs, std::fs
-fs-err, std::path, data/packages/fs-err/src, open_options.rs, std::path::PathBuf
-fs-err, std::fs, data/packages/fs-err/src, path.rs, std::fs
-fs-err, std::path, data/packages/fs-err/src, path.rs, std::path::Path
-fs-err, std::path, data/packages/fs-err/src, path.rs, std::path::PathBuf
-getrandom, libc, data/packages/getrandom/src, 3ds.rs, crate::util_libc::sys_fill_exact
-getrandom, libc, data/packages/getrandom/src, bsd_arandom.rs, crate::util_libc::sys_fill_exact
-getrandom, libc, data/packages/getrandom/src, dragonfly.rs, crate::util_libc::Weak
-getrandom, libc, data/packages/getrandom/src, dragonfly.rs, crate::util_libc::sys_fill_exact
-getrandom, libc, data/packages/getrandom/src, linux_android.rs, crate::util_libc::last_os_error
-getrandom, libc, data/packages/getrandom/src, linux_android.rs, crate::util_libc::sys_fill_exact
-getrandom, libc, data/packages/getrandom/src, macos.rs, crate::util_libc::Weak
-getrandom, libc, data/packages/getrandom/src, macos.rs, crate::util_libc::last_os_error
-getrandom, libc, data/packages/getrandom/src, openbsd.rs, crate::util_libc::last_os_error
-getrandom, libc, data/packages/getrandom/src, solaris_illumos.rs, crate::util_libc::Weak
-getrandom, libc, data/packages/getrandom/src, solaris_illumos.rs, crate::util_libc::sys_fill_exact
-getrandom, libc, data/packages/getrandom/src, use_file.rs, crate::util_libc::open_readonly
-getrandom, libc, data/packages/getrandom/src, use_file.rs, crate::util_libc::sys_fill_exact
-getrandom, libc, data/packages/getrandom/src, util_libc.rs, libc::c_void
-getrandom, libc, data/packages/getrandom/src, vxworks.rs, crate::util_libc::last_os_error
-glean, std::path, data/packages/glean/src, configuration.rs, std::path::PathBuf
-glean, std::path, data/packages/glean/src, configuration.rs, std::path::PathBuf
-glean, std::path, data/packages/glean/src, configuration.rs, std::path::PathBuf
-glean, std::path, data/packages/glean/src, configuration.rs, std::path::PathBuf
-glean, std::path, data/packages/glean/src, configuration.rs, std::path::PathBuf
-glean, std::path, data/packages/glean/src, configuration.rs, std::path::PathBuf
-glean, std::path, data/packages/glean/src, configuration.rs, std::path::PathBuf
-glean, std::path, data/packages/glean/src, configuration.rs, std::path::PathBuf
-glean-core, std::env, data/packages/glean-core/src, coverage.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::OpenOptions
-glean-core, std::env, data/packages/glean-core/src, debug.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, fd_logger.rs, std::fs::File
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::windows::io::FromRawHandle
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::unix::io::FromRawFd
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/database, mod.rs, std::fs
-glean-core, std::path, data/packages/glean-core/src/database, mod.rs, std::path::Path
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::OpenOptions
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::self
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::PathBuf
-glean-core, std::path, data/packages/glean-core/src/upload, mod.rs, std::path::PathBuf
-glean-core, std::env, data/packages/glean-core/src, coverage.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::OpenOptions
-glean-core, std::env, data/packages/glean-core/src, debug.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, fd_logger.rs, std::fs::File
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::windows::io::FromRawHandle
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::unix::io::FromRawFd
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/database, mod.rs, std::fs
-glean-core, std::path, data/packages/glean-core/src/database, mod.rs, std::path::Path
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::OpenOptions
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::self
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::PathBuf
-glean-core, std::path, data/packages/glean-core/src/upload, mod.rs, std::path::PathBuf
-glean-core, std::env, data/packages/glean-core/src, coverage.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::OpenOptions
-glean-core, std::env, data/packages/glean-core/src, debug.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, fd_logger.rs, std::fs::File
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::windows::io::FromRawHandle
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::unix::io::FromRawFd
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/database, mod.rs, std::fs
-glean-core, std::path, data/packages/glean-core/src/database, mod.rs, std::path::Path
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::OpenOptions
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::self
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::PathBuf
-glean-core, std::path, data/packages/glean-core/src/upload, mod.rs, std::path::PathBuf
-glean-core, std::env, data/packages/glean-core/src, coverage.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::OpenOptions
-glean-core, std::env, data/packages/glean-core/src, debug.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, fd_logger.rs, std::fs::File
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::windows::io::FromRawHandle
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::unix::io::FromRawFd
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/database, mod.rs, std::fs
-glean-core, std::path, data/packages/glean-core/src/database, mod.rs, std::path::Path
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::OpenOptions
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::self
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::PathBuf
-glean-core, std::path, data/packages/glean-core/src/upload, mod.rs, std::path::PathBuf
-glean-core, std::env, data/packages/glean-core/src, coverage.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::OpenOptions
-glean-core, std::env, data/packages/glean-core/src, debug.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, fd_logger.rs, std::fs::File
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::windows::io::FromRawHandle
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::unix::io::FromRawFd
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/database, mod.rs, std::fs
-glean-core, std::path, data/packages/glean-core/src/database, mod.rs, std::path::Path
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::OpenOptions
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::self
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::PathBuf
-glean-core, std::path, data/packages/glean-core/src/upload, mod.rs, std::path::PathBuf
-glean-core, std::env, data/packages/glean-core/src, coverage.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::OpenOptions
-glean-core, std::env, data/packages/glean-core/src, debug.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, fd_logger.rs, std::fs::File
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::windows::io::FromRawHandle
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::unix::io::FromRawFd
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/database, mod.rs, std::fs
-glean-core, std::path, data/packages/glean-core/src/database, mod.rs, std::path::Path
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::OpenOptions
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::self
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::PathBuf
-glean-core, std::path, data/packages/glean-core/src/upload, mod.rs, std::path::PathBuf
-glean-core, std::env, data/packages/glean-core/src, coverage.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::OpenOptions
-glean-core, std::env, data/packages/glean-core/src, debug.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, fd_logger.rs, std::fs::File
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::windows::io::FromRawHandle
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::unix::io::FromRawFd
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/database, mod.rs, std::fs
-glean-core, std::path, data/packages/glean-core/src/database, mod.rs, std::path::Path
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::OpenOptions
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::self
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::PathBuf
-glean-core, std::path, data/packages/glean-core/src/upload, mod.rs, std::path::PathBuf
-glean-core, std::env, data/packages/glean-core/src, coverage.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src, coverage.rs, std::fs::OpenOptions
-glean-core, std::env, data/packages/glean-core/src, debug.rs, std::env
-glean-core, std::fs, data/packages/glean-core/src, fd_logger.rs, std::fs::File
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::windows::io::FromRawHandle
-glean-core, std::os, data/packages/glean-core/src, fd_logger.rs, std::os::unix::io::FromRawFd
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/core, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/database, mod.rs, std::fs
-glean-core, std::path, data/packages/glean-core/src/database, mod.rs, std::path::Path
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::OpenOptions
-glean-core, std::fs, data/packages/glean-core/src/event_database, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/event_database, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/ping, mod.rs, std::fs::create_dir_all
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/ping, mod.rs, std::path::PathBuf
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::File
-glean-core, std::fs, data/packages/glean-core/src/upload, directory.rs, std::fs::self
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::Path
-glean-core, std::path, data/packages/glean-core/src/upload, directory.rs, std::path::PathBuf
-glean-core, std::path, data/packages/glean-core/src/upload, mod.rs, std::path::PathBuf
-guid_win, std::os, data/packages/guid_win/src, lib.rs, std::os::windows::ffi::OsStrExt
-guid_win, std::os, data/packages/guid_win/src, lib.rs, std::os::windows::ffi::OsStringExt
-guid_win, winapi, data/packages/guid_win/src, lib.rs, winapi::ctypes
-guid_win, winapi, data/packages/guid_win/src, lib.rs, winapi::shared::guiddef::GUID
-guid_win, winapi, data/packages/guid_win/src, lib.rs, winapi::um::combaseapi::CLSIDFromString
-guid_win, winapi, data/packages/guid_win/src, lib.rs, winapi::um::combaseapi::StringFromGUID2
-h2, tokio::io, data/packages/h2/src, client.rs, tokio::io::AsyncRead
-h2, tokio::io, data/packages/h2/src, client.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src, client.rs, tokio::io::AsyncWriteExt
-h2, tokio::io, data/packages/h2/src, server.rs, tokio::io::AsyncRead
-h2, tokio::io, data/packages/h2/src, server.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src, server.rs, tokio::io::ReadBuf
-h2, tokio::io, data/packages/h2/src/codec, framed_read.rs, tokio::io::AsyncRead
-h2, tokio::io, data/packages/h2/src/codec, framed_write.rs, tokio::io::AsyncRead
-h2, tokio::io, data/packages/h2/src/codec, framed_write.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src/codec, framed_write.rs, tokio::io::ReadBuf
-h2, tokio::io, data/packages/h2/src/codec, mod.rs, tokio::io::AsyncRead
-h2, tokio::io, data/packages/h2/src/codec, mod.rs, tokio::io::AsyncWrite
-h2, std::fs, data/packages/h2/src/hpack/test, fixture.rs, std::fs::File
-h2, std::path, data/packages/h2/src/hpack/test, fixture.rs, std::path::Path
-h2, tokio::io, data/packages/h2/src/proto, connection.rs, tokio::io::AsyncRead
-h2, tokio::io, data/packages/h2/src/proto, connection.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src/proto, go_away.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src/proto, mod.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src/proto, ping_pong.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src/proto/streams, send.rs, tokio::io::AsyncWrite
-h2, tokio::io, data/packages/h2/src/proto/streams, streams.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src, upgrade.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src, upgrade.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src, upgrade.rs, tokio::io::ReadBuf
-hyper, tokio::io, data/packages/hyper/src/client, conn.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/client, conn.rs, tokio::io::AsyncWrite
-hyper, tokio::net, data/packages/hyper/src/client, tests.rs, tokio::net::TcpStream
-hyper, std::net, data/packages/hyper/src/client/connect, dns.rs, std::net::Ipv4Addr
-hyper, std::net, data/packages/hyper/src/client/connect, dns.rs, std::net::Ipv6Addr
-hyper, std::net, data/packages/hyper/src/client/connect, dns.rs, std::net::SocketAddr
-hyper, std::net, data/packages/hyper/src/client/connect, dns.rs, std::net::SocketAddrV4
-hyper, std::net, data/packages/hyper/src/client/connect, dns.rs, std::net::SocketAddrV6
-hyper, std::net, data/packages/hyper/src/client/connect, dns.rs, std::net::ToSocketAddrs
-hyper, std::net, data/packages/hyper/src/client/connect, http.rs, std::net::IpAddr
-hyper, std::net, data/packages/hyper/src/client/connect, http.rs, std::net::Ipv4Addr
-hyper, std::net, data/packages/hyper/src/client/connect, http.rs, std::net::Ipv6Addr
-hyper, std::net, data/packages/hyper/src/client/connect, http.rs, std::net::SocketAddr
-hyper, tokio::net, data/packages/hyper/src/client/connect, http.rs, tokio::net::TcpSocket
-hyper, tokio::net, data/packages/hyper/src/client/connect, http.rs, tokio::net::TcpStream
-hyper, tokio::io, data/packages/hyper/src/common/io, rewind.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/common/io, rewind.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/common/io, rewind.rs, tokio::io::ReadBuf
-hyper, libc, data/packages/hyper/src/ffi, body.rs, libc::c_int
-hyper, libc, data/packages/hyper/src/ffi, body.rs, libc::size_t
-hyper, libc, data/packages/hyper/src/ffi, client.rs, libc::c_int
-hyper, libc, data/packages/hyper/src/ffi, error.rs, libc::size_t
-hyper, libc, data/packages/hyper/src/ffi, http_types.rs, libc::c_int
-hyper, libc, data/packages/hyper/src/ffi, http_types.rs, libc::size_t
-hyper, libc, data/packages/hyper/src/ffi, io.rs, libc::size_t
-hyper, tokio::io, data/packages/hyper/src/ffi, io.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/ffi, io.rs, tokio::io::AsyncWrite
-hyper, libc, data/packages/hyper/src/ffi, task.rs, libc::c_int
-hyper, tokio::io, data/packages/hyper/src/proto/h1, conn.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/proto/h1, conn.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/proto/h1, dispatch.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/proto/h1, dispatch.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/proto/h1, io.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/proto/h1, io.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/proto/h1, io.rs, tokio::io::ReadBuf
-hyper, tokio::io, data/packages/hyper/src/proto/h2, client.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/proto/h2, client.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/proto/h2, mod.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/proto/h2, mod.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/proto/h2, mod.rs, tokio::io::ReadBuf
-hyper, tokio::io, data/packages/hyper/src/proto/h2, server.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/proto/h2, server.rs, tokio::io::AsyncWrite
-hyper, std::net, data/packages/hyper/src/server, server.rs, std::net::SocketAddr
-hyper, std::net, data/packages/hyper/src/server, server.rs, std::net::TcpListener as StdTcpListener
-hyper, tokio::io, data/packages/hyper/src/server, server.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/server, server.rs, tokio::io::AsyncWrite
-hyper, tokio::io, data/packages/hyper/src/server, shutdown.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/server, shutdown.rs, tokio::io::AsyncWrite
-hyper, std::net, data/packages/hyper/src/server, tcp.rs, std::net::SocketAddr
-hyper, std::net, data/packages/hyper/src/server, tcp.rs, std::net::TcpListener as StdTcpListener
-hyper, tokio::net, data/packages/hyper/src/server, tcp.rs, tokio::net::TcpListener
-hyper, tokio::io, data/packages/hyper/src/service, make.rs, tokio::io::AsyncRead
-hyper, tokio::io, data/packages/hyper/src/service, make.rs, tokio::io::AsyncWrite
-memmap2, std::fs, data/packages/memmap2/src, lib.rs, std::fs::File
-memmap2, std::os, data/packages/memmap2/src, lib.rs, std::os::unix::io::AsRawFd
-memmap2, std::os, data/packages/memmap2/src, lib.rs, std::os::unix::io::RawFd
-memmap2, std::os, data/packages/memmap2/src, lib.rs, std::os::windows::io::AsRawHandle
-memmap2, std::os, data/packages/memmap2/src, lib.rs, std::os::windows::io::RawHandle
-memmap2, std::fs, data/packages/memmap2/src, stub.rs, std::fs::File
-memmap2, std::fs, data/packages/memmap2/src, unix.rs, std::fs::File
-memmap2, std::os, data/packages/memmap2/src, unix.rs, std::os::unix::io::FromRawFd
-memmap2, std::os, data/packages/memmap2/src, unix.rs, std::os::unix::io::RawFd
-memmap2, std::fs, data/packages/memmap2/src, windows.rs, std::fs::File
-memmap2, std::os, data/packages/memmap2/src, windows.rs, std::os::raw::c_void
-memmap2, std::os, data/packages/memmap2/src, windows.rs, std::os::windows::io::FromRawHandle
-memmap2, std::os, data/packages/memmap2/src, windows.rs, std::os::windows::io::RawHandle
-metal, std::path, data/packages/metal/src, capturedescriptor.rs, std::path::Path
-metal, std::os, data/packages/metal/src, device.rs, std::os::raw::c_char
-metal, std::path, data/packages/metal/src, device.rs, std::path::Path
-metal, std::os, data/packages/metal/src, lib.rs, std::os::raw::c_void
-metal, std::os, data/packages/metal/src, library.rs, std::os::raw::c_char
-metal, std::os, data/packages/metal/src, library.rs, std::os::raw::c_void
-mozprofile, std::fs, data/packages/mozprofile/src, profile.rs, std::fs::File
-mozprofile, std::path, data/packages/mozprofile/src, profile.rs, std::path::Path
-mozprofile, std::path, data/packages/mozprofile/src, profile.rs, std::path::PathBuf
-mozrunner, std::path, data/packages/mozrunner/src, path.rs, std::path::Path
-mozrunner, std::path, data/packages/mozrunner/src, path.rs, std::path::PathBuf
-mozrunner, std::path, data/packages/mozrunner/src, runner.rs, std::path::Path
-mozrunner, std::path, data/packages/mozrunner/src, runner.rs, std::path::PathBuf
-mozrunner, std::process, data/packages/mozrunner/src, runner.rs, std::process
-mozrunner, std::process, data/packages/mozrunner/src, runner.rs, std::process::Child
-mozrunner, std::process, data/packages/mozrunner/src, runner.rs, std::process::Command
-mozrunner, std::process, data/packages/mozrunner/src, runner.rs, std::process::Stdio
-mozversion, std::path, data/packages/mozversion/src, lib.rs, std::path::Path
-mozversion, std::process, data/packages/mozversion/src, lib.rs, std::process::Command
-mozversion, std::process, data/packages/mozversion/src, lib.rs, std::process::Stdio
-naga, std::path, data/packages/naga/src/front/spv, mod.rs, std::path::PathBuf
-naga, std::path, data/packages/naga/src/front/spv, mod.rs, std::path::PathBuf
-os_str_bytes, std::path, data/packages/os_str_bytes/src, lib.rs, std::path::Path
-os_str_bytes, std::path, data/packages/os_str_bytes/src, lib.rs, std::path::PathBuf
-os_str_bytes, std::os, data/packages/os_str_bytes/src/common, mod.rs, std::os::fortanix_sgx as os
-os_str_bytes, std::os, data/packages/os_str_bytes/src/common, mod.rs, std::os::solid as os
-os_str_bytes, std::os, data/packages/os_str_bytes/src/common, mod.rs, std::os::unix as os
-os_str_bytes, std::os, data/packages/os_str_bytes/src/common, mod.rs, std::os::wasi as os
-os_str_bytes, std::os, data/packages/os_str_bytes/src/windows, mod.rs, std::os::windows::ffi::OsStrExt
-os_str_bytes, std::os, data/packages/os_str_bytes/src/windows, mod.rs, std::os::windows::ffi::OsStringExt
-proc-macro2, std::path, data/packages/proc-macro2/src, fallback.rs, std::path::Path
-proc-macro2, std::path, data/packages/proc-macro2/src, fallback.rs, std::path::PathBuf
-proc-macro2, std::path, data/packages/proc-macro2/src, lib.rs, std::path::PathBuf
-proc-macro2, std::path, data/packages/proc-macro2/src, wrapper.rs, std::path::PathBuf
-proc-macro2, std::path, data/packages/proc-macro2/src, fallback.rs, std::path::Path
-proc-macro2, std::path, data/packages/proc-macro2/src, fallback.rs, std::path::PathBuf
-proc-macro2, std::path, data/packages/proc-macro2/src, lib.rs, std::path::PathBuf
-proc-macro2, std::path, data/packages/proc-macro2/src, wrapper.rs, std::path::PathBuf
-qcms, libc, data/packages/qcms/src, c_bindings.rs, libc::FILE
-qcms, libc, data/packages/qcms/src, c_bindings.rs, libc::fclose
-qcms, libc, data/packages/qcms/src, c_bindings.rs, libc::fopen
-qcms, libc, data/packages/qcms/src, c_bindings.rs, libc::fread
-qcms, libc, data/packages/qcms/src, c_bindings.rs, libc::free
-qcms, libc, data/packages/qcms/src, c_bindings.rs, libc::malloc
-qcms, libc, data/packages/qcms/src, c_bindings.rs, libc::memset
-rayon-core, std::env, data/packages/rayon-core/src, lib.rs, std::env
-rayon-core, std::env, data/packages/rayon-core/src, log.rs, std::env
-rayon-core, std::fs, data/packages/rayon-core/src, log.rs, std::fs::File
-rure, libc, data/packages/rure/src, error.rs, libc::c_char
-rure, libc, data/packages/rure/src, rure.rs, libc::c_char
-rure, libc, data/packages/rure/src, rure.rs, libc::size_t
-rustc_version, std::process, data/packages/rustc_version/src, lib.rs, std::process::Command
-rustc_version, std::env, data/packages/rustc_version/src, lib.rs, std::env
-rustversion, std::env, data/packages/rustversion/src, time.rs, std::env
-thiserror, std::path, data/packages/thiserror/src, display.rs, std::path::Path
-thiserror, std::path, data/packages/thiserror/src, display.rs, std::path::PathBuf
-thiserror, std::path, data/packages/thiserror/src, display.rs, std::path::self
-unic-langid-impl, std::fs, data/packages/unic-langid-impl/src/bin, generate_layout.rs, std::fs
-unic-langid-impl, std::fs, data/packages/unic-langid-impl/src/bin, generate_likelysubtags.rs, std::fs
-uniffi, std::process, data/packages/uniffi/src, testing.rs, std::process::Command
-uniffi, std::process, data/packages/uniffi/src, testing.rs, std::process::Stdio
-uniffi, std::os, data/packages/uniffi/src/ffi, foreigncallbacks.rs, std::os::raw::c_int
-uniffi, std::process, data/packages/uniffi/src, testing.rs, std::process::Command
-uniffi, std::process, data/packages/uniffi/src, testing.rs, std::process::Stdio
-uniffi, std::os, data/packages/uniffi/src/ffi, foreigncallbacks.rs, std::os::raw::c_int
-uniffi, std::process, data/packages/uniffi/src, testing.rs, std::process::Command
-uniffi, std::process, data/packages/uniffi/src, testing.rs, std::process::Stdio
-uniffi, std::os, data/packages/uniffi/src/ffi, foreigncallbacks.rs, std::os::raw::c_int
-uniffi, std::process, data/packages/uniffi/src, testing.rs, std::process::Command
-uniffi, std::process, data/packages/uniffi/src, testing.rs, std::process::Stdio
-uniffi, std::os, data/packages/uniffi/src/ffi, foreigncallbacks.rs, std::os::raw::c_int
-uniffi_bindgen, std::env, data/packages/uniffi_bindgen/src, lib.rs, std::env
-uniffi_bindgen, std::process, data/packages/uniffi_bindgen/src, lib.rs, std::process::Command
-uniffi_bindgen, std::env, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, std::env
-uniffi_bindgen, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, std::process::Command
-uniffi_bindgen, std::env, data/packages/uniffi_bindgen/src, lib.rs, std::env
-uniffi_bindgen, std::process, data/packages/uniffi_bindgen/src, lib.rs, std::process::Command
-uniffi_bindgen, std::env, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, std::env
-uniffi_bindgen, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, std::process::Command
-uniffi_bindgen, std::env, data/packages/uniffi_bindgen/src, lib.rs, std::env
-uniffi_bindgen, std::process, data/packages/uniffi_bindgen/src, lib.rs, std::process::Command
-uniffi_bindgen, std::env, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, std::env
-uniffi_bindgen, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, std::process::Command
-uniffi_bindgen, std::env, data/packages/uniffi_bindgen/src, lib.rs, std::env
-uniffi_bindgen, std::process, data/packages/uniffi_bindgen/src, lib.rs, std::process::Command
-uniffi_bindgen, std::env, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, std::env
-uniffi_bindgen, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, std::process::Command
-uniffi_build, std::env, data/packages/uniffi_build/src, lib.rs, std::env
-uniffi_build, std::env, data/packages/uniffi_build/src, lib.rs, std::env
-uniffi_build, std::env, data/packages/uniffi_build/src, lib.rs, std::env
-uniffi_build, std::env, data/packages/uniffi_build/src, lib.rs, std::env
-uniffi_macros, std::env, data/packages/uniffi_macros/src, lib.rs, std::env
-uniffi_macros, std::env, data/packages/uniffi_macros/src, lib.rs, std::env
-uniffi_macros, std::env, data/packages/uniffi_macros/src, lib.rs, std::env
-uniffi_macros, std::env, data/packages/uniffi_macros/src, lib.rs, std::env
-wast, std::path, data/packages/wast/src, error.rs, std::path::Path
-wast, std::path, data/packages/wast/src, error.rs, std::path::PathBuf
-wast, std::path, data/packages/wast/src, error.rs, std::path::Path
-wast, std::path, data/packages/wast/src, error.rs, std::path::PathBuf
-wast, std::path, data/packages/wast/src, error.rs, std::path::Path
-wast, std::path, data/packages/wast/src, error.rs, std::path::PathBuf
-webdriver, std::net, data/packages/webdriver/src, server.rs, std::net::SocketAddr
-webdriver, std::net, data/packages/webdriver/src, server.rs, std::net::TcpListener as StdTcpListener
-webdriver, tokio::net, data/packages/webdriver/src, server.rs, tokio::net::TcpListener
-wgpu-core, std::os, data/packages/wgpu-core/src, lib.rs, std::os::raw::c_char
-wgpu-core, std::os, data/packages/wgpu-core/src, lib.rs, std::os::raw::c_char
-wgpu-hal, std::os, data/packages/wgpu-hal/src/auxil, renderdoc.rs, std::os
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, conv.rs, winapi::shared::dxgiformat
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, exception.rs, winapi::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, exception.rs, winapi::um::errhandlingapi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, exception.rs, winapi::um::winnt
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, exception.rs, winapi::vc::excpt
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::Interface
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::shared::dxgi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::shared::dxgi1_2
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::shared::dxgi1_4
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::shared::dxgi1_6
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::shared::winerror
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, result.rs, winapi::shared::winerror
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, adapter.rs, winapi::um::d3d11
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, adapter.rs, winapi::um::d3dcommon
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, device.rs, winapi::um::d3d11
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::shared::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::shared::dxgi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::shared::minwindef::HMODULE
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::shared::minwindef::UINT
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::shared::winerror
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::um::d3d11
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::um::d3d11_1
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::um::d3d11_2
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::um::d3dcommon
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, mod.rs, winapi::um::d3d11
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, mod.rs, winapi::um::d3d11_1
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, mod.rs, winapi::um::d3d11_2
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::shared::dxgi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::shared::dxgi1_2
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::shared::windef
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::shared::winerror
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::um::d3d12
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::um::d3d12sdklayers
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::um::winuser
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, command.rs, winapi::um::d3d12
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, conv.rs, winapi::um::d3d12
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, conv.rs, winapi::um::d3dcommon
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::Interface
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::shared::dxgiformat
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::shared::dxgitype
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::shared::winerror
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::um::d3d12
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::um::d3dcompiler
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::um::synchapi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::um::winbase
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, instance.rs, winapi::shared::dxgi1_5
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, instance.rs, winapi::shared::minwindef
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::Interface as _
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::shared::dxgi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::shared::dxgi1_4
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::shared::dxgitype
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::shared::windef
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::shared::winerror
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::um::d3d12
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::um::dcomp
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::um::synchapi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::um::winbase
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::um::winnt
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, view.rs, winapi::um::d3d12
-wgpu-hal, std::os, data/packages/wgpu-hal/src/gles, egl.rs, std::os::raw
-wgpu-hal, std::os, data/packages/wgpu-hal/src/metal, surface.rs, std::os::raw::c_void
-wgpu-hal, std::os, data/packages/wgpu-hal/src/auxil, renderdoc.rs, std::os
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, conv.rs, winapi::shared::dxgiformat
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, exception.rs, winapi::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, exception.rs, winapi::um::errhandlingapi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, exception.rs, winapi::um::winnt
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, exception.rs, winapi::vc::excpt
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::Interface
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::shared::dxgi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::shared::dxgi1_2
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::shared::dxgi1_4
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::shared::dxgi1_6
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, winapi::shared::winerror
-wgpu-hal, winapi, data/packages/wgpu-hal/src/auxil/dxgi, result.rs, winapi::shared::winerror
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, adapter.rs, winapi::um::d3d11
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, adapter.rs, winapi::um::d3dcommon
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, device.rs, winapi::um::d3d11
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::shared::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::shared::dxgi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::shared::minwindef::HMODULE
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::shared::minwindef::UINT
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::shared::winerror
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::um::d3d11
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::um::d3d11_1
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::um::d3d11_2
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, library.rs, winapi::um::d3dcommon
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, mod.rs, winapi::um::d3d11
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, mod.rs, winapi::um::d3d11_1
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx11, mod.rs, winapi::um::d3d11_2
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::shared::dxgi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::shared::dxgi1_2
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::shared::windef
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::shared::winerror
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::um::d3d12
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::um::d3d12sdklayers
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, winapi::um::winuser
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, command.rs, winapi::um::d3d12
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, conv.rs, winapi::um::d3d12
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, conv.rs, winapi::um::d3dcommon
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::Interface
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::shared::dxgiformat
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::shared::dxgitype
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::shared::winerror
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::um::d3d12
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::um::d3dcompiler
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::um::synchapi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, device.rs, winapi::um::winbase
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, instance.rs, winapi::shared::dxgi1_5
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, instance.rs, winapi::shared::minwindef
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::Interface as _
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::shared::dxgi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::shared::dxgi1_4
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::shared::dxgitype
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::shared::windef
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::shared::winerror
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::um::d3d12
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::um::dcomp
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::um::synchapi
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::um::winbase
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, winapi::um::winnt
-wgpu-hal, winapi, data/packages/wgpu-hal/src/dx12, view.rs, winapi::um::d3d12
-wgpu-hal, std::os, data/packages/wgpu-hal/src/gles, egl.rs, std::os::raw
-wgpu-hal, std::os, data/packages/wgpu-hal/src/metal, surface.rs, std::os::raw::c_void
-whatsys, libc, data/packages/whatsys/src, apple.rs, libc::c_int
-whatsys, libc, data/packages/whatsys/src, windows.rs, libc::c_char
-whatsys, libc, data/packages/whatsys/src, windows.rs, libc::c_int
+crate, caller, callee, pattern, dir, file, line, col
+android_system_properties, android_system_properties::AndroidSystemProperties::new, libc::dlopen, libc, data/packages/android_system_properties/src, lib.rs, 97, 37
+android_system_properties, android_system_properties::AndroidSystemProperties::load_fn, libc::dlsym, libc, data/packages/android_system_properties/src, lib.rs, 112, 31
+android_system_properties, android_system_properties::Drop::drop, libc::dlclose, libc, data/packages/android_system_properties/src, lib.rs, 217, 22
+android_system_properties, android_system_properties::AndroidSystemProperties::new, libc::dlopen, libc, data/packages/android_system_properties/src, lib.rs, 97, 37
+android_system_properties, android_system_properties::AndroidSystemProperties::load_fn, libc::dlsym, libc, data/packages/android_system_properties/src, lib.rs, 112, 31
+android_system_properties, android_system_properties::Drop::drop, libc::dlclose, libc, data/packages/android_system_properties/src, lib.rs, 217, 22
+anyhow, anyhow::backtrace::capture::core::fmt::Debug::fmt, std::env::current_dir, std::env, data/packages/anyhow/src, backtrace.rs, 177, 21
+anyhow, anyhow::backtrace::capture::self::capture::Backtrace::enabled, std::env::var_os, std::env, data/packages/anyhow/src, backtrace.rs, 190, 37
+anyhow, anyhow::backtrace::capture::self::capture::Backtrace::enabled, std::env::var_os, std::env, data/packages/anyhow/src, backtrace.rs, 192, 35
+anyhow, anyhow::backtrace::capture::core::fmt::Display::fmt, std::env::current_dir, std::env, data/packages/anyhow/src, backtrace.rs, 271, 27
+anyhow, anyhow::backtrace::capture::output_filename, std::path::Path::new, std::path, data/packages/anyhow/src, backtrace.rs, 371, 22
+anyhow, anyhow::backtrace::capture::output_filename, std::path::Path::new, std::path, data/packages/anyhow/src, backtrace.rs, 375, 22
+anyhow, anyhow::backtrace::capture::output_filename, std::path::Path::new, std::path, data/packages/anyhow/src, backtrace.rs, 383, 52
+anyhow, anyhow::backtrace::capture::core::fmt::Debug::fmt, std::env::current_dir, std::env, data/packages/anyhow/src, backtrace.rs, 177, 21
+anyhow, anyhow::backtrace::capture::self::capture::Backtrace::enabled, std::env::var_os, std::env, data/packages/anyhow/src, backtrace.rs, 190, 37
+anyhow, anyhow::backtrace::capture::self::capture::Backtrace::enabled, std::env::var_os, std::env, data/packages/anyhow/src, backtrace.rs, 192, 35
+anyhow, anyhow::backtrace::capture::core::fmt::Display::fmt, std::env::current_dir, std::env, data/packages/anyhow/src, backtrace.rs, 271, 27
+anyhow, anyhow::backtrace::capture::output_filename, std::path::Path::new, std::path, data/packages/anyhow/src, backtrace.rs, 371, 22
+anyhow, anyhow::backtrace::capture::output_filename, std::path::Path::new, std::path, data/packages/anyhow/src, backtrace.rs, 375, 22
+anyhow, anyhow::backtrace::capture::output_filename, std::path::Path::new, std::path, data/packages/anyhow/src, backtrace.rs, 383, 52
+anyhow, anyhow::backtrace::capture::core::fmt::Debug::fmt, std::env::current_dir, std::env, data/packages/anyhow/src, backtrace.rs, 177, 21
+anyhow, anyhow::backtrace::capture::self::capture::Backtrace::enabled, std::env::var_os, std::env, data/packages/anyhow/src, backtrace.rs, 190, 37
+anyhow, anyhow::backtrace::capture::self::capture::Backtrace::enabled, std::env::var_os, std::env, data/packages/anyhow/src, backtrace.rs, 192, 35
+anyhow, anyhow::backtrace::capture::core::fmt::Display::fmt, std::env::current_dir, std::env, data/packages/anyhow/src, backtrace.rs, 271, 27
+anyhow, anyhow::backtrace::capture::output_filename, std::path::Path::new, std::path, data/packages/anyhow/src, backtrace.rs, 371, 22
+anyhow, anyhow::backtrace::capture::output_filename, std::path::Path::new, std::path, data/packages/anyhow/src, backtrace.rs, 375, 22
+anyhow, anyhow::backtrace::capture::output_filename, std::path::Path::new, std::path, data/packages/anyhow/src, backtrace.rs, 383, 52
+arbitrary, arbitrary::Arbitrary::arbitrary, std::net::Ipv4Addr::from, std::net, data/packages/arbitrary/src, lib.rs, 1121, 21
+arbitrary, arbitrary::Arbitrary::arbitrary, std::net::Ipv6Addr::from, std::net, data/packages/arbitrary/src, lib.rs, 1132, 21
+arbitrary, arbitrary::Arbitrary::arbitrary, std::net::Ipv4Addr::from, std::net, data/packages/arbitrary/src, lib.rs, 1121, 21
+arbitrary, arbitrary::Arbitrary::arbitrary, std::net::Ipv6Addr::from, std::net, data/packages/arbitrary/src, lib.rs, 1132, 21
+ashmem, ashmem::maybe_init, libc::dlopen, libc, data/packages/ashmem/src, lib.rs, 40, 27
+ashmem, ashmem::maybe_init, libc::dlsym, libc, data/packages/ashmem/src, lib.rs, 46, 38
+ashmem, ashmem::maybe_init, libc::dlsym, libc, data/packages/ashmem/src, lib.rs, 48, 38
+ashmem, ashmem::maybe_init, libc::dlsym, libc, data/packages/ashmem/src, lib.rs, 50, 38
+ashmem, ashmem::ASharedMemory_create, libc::open, libc, data/packages/ashmem/src, lib.rs, 76, 19
+ashmem, ashmem::ASharedMemory_create, libc::ioctl, libc, data/packages/ashmem/src, lib.rs, 83, 22
+ashmem, ashmem::ASharedMemory_create, libc::close, libc, data/packages/ashmem/src, lib.rs, 85, 18
+ashmem, ashmem::ASharedMemory_create, libc::ioctl, libc, data/packages/ashmem/src, lib.rs, 90, 18
+ashmem, ashmem::ASharedMemory_create, libc::close, libc, data/packages/ashmem/src, lib.rs, 92, 14
+ashmem, ashmem::ASharedMemory_getSize, libc::ioctl, libc, data/packages/ashmem/src, lib.rs, 113, 10
+ashmem, ashmem::ASharedMemory_setProt, libc::ioctl, libc, data/packages/ashmem/src, lib.rs, 131, 18
+ashmem, ashmem::tests::basic, libc::close, libc, data/packages/ashmem/src, lib.rs, 148, 18
+ashmem, ashmem::tests::anonymous, libc::close, libc, data/packages/ashmem/src, lib.rs, 157, 18
+autocfg, autocfg::AutoCfg::new, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 141, 19
+autocfg, autocfg::AutoCfg::with_dir, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 156, 25
+autocfg, autocfg::AutoCfg::with_dir, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 160, 26
+autocfg, autocfg::AutoCfg::probe, std::process::Command::new, std::process, data/packages/autocfg/src, lib.rs, 210, 35
+autocfg, autocfg::AutoCfg::probe, std::process::Stdio::piped, std::process, data/packages/autocfg/src, lib.rs, 225, 38
+autocfg, autocfg::dir_contains_target, std::path::PathBuf::from, std::path, data/packages/autocfg/src, lib.rs, 403, 48
+autocfg, autocfg::rustflags, std::env::var, std::env, data/packages/autocfg/src, lib.rs, 420, 24
+autocfg, autocfg::rustflags, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 437, 23
+autocfg, autocfg::rustflags, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 438, 49
+autocfg, autocfg::rustflags, std::env::var, std::env, data/packages/autocfg/src, lib.rs, 440, 36
+autocfg, autocfg::tests::super::AutoCfg::for_test, std::env::var_os, std::env, data/packages/autocfg/src, tests.rs, 20, 19
+bindgen, bindgen::deps::DepfileSpec::write, std::fs::write, std::fs, data/packages/bindgen/src, deps.rs, 18, 17
+bindgen, bindgen::Builder::header_contents, std::env::current_dir, std::env, data/packages/bindgen/src, lib.rs, 656, 33
+bindgen, bindgen::Builder::dump_preprocessed_input, std::path::PathBuf::from, std::path, data/packages/bindgen/src, lib.rs, 1546, 36
+bindgen, bindgen::Builder::dump_preprocessed_input, std::fs::File::create, std::fs, data/packages/bindgen/src, lib.rs, 1553, 41
+bindgen, bindgen::Builder::dump_preprocessed_input, std::process::Command::new, std::process, data/packages/bindgen/src, lib.rs, 1557, 31
+bindgen, bindgen::Builder::dump_preprocessed_input, std::process::Stdio::piped, std::process, data/packages/bindgen/src, lib.rs, 1563, 27
+bindgen, bindgen::Builder::dump_preprocessed_input, std::fs::File::create, std::fs, data/packages/bindgen/src, lib.rs, 1576, 29
+bindgen, bindgen::find_effective_target, std::env::var, std::env, data/packages/bindgen/src, lib.rs, 2266, 24
+bindgen, bindgen::Bindings::generate, ensure_libclang_is_loaded, libc, data/packages/bindgen/src, lib.rs, 2278, 8
+bindgen, bindgen::Bindings::generate, std::path::Path::new, std::path, data/packages/bindgen/src, lib.rs, 2395, 29
+bindgen, bindgen::Bindings::generate, std::fs::metadata, std::fs, data/packages/bindgen/src, lib.rs, 2396, 37
+bindgen, bindgen::Bindings::write_to_file, std::fs::OpenOptions::new, std::fs, data/packages/bindgen/src, lib.rs, 2450, 32
+bindgen, bindgen::Bindings::rustfmt_path, std::env::var, std::env, data/packages/bindgen/src, lib.rs, 2502, 34
+bindgen, bindgen::Bindings::rustfmt_generated_string, std::process::Command::new, std::process, data/packages/bindgen/src, lib.rs, 2531, 31
+bindgen, bindgen::Bindings::rustfmt_generated_string, std::process::Stdio::piped, std::process, data/packages/bindgen/src, lib.rs, 2533, 25
+bindgen, bindgen::Bindings::rustfmt_generated_string, std::process::Stdio::piped, std::process, data/packages/bindgen/src, lib.rs, 2533, 48
+bindgen, bindgen::clang_version, ensure_libclang_is_loaded, libc, data/packages/bindgen/src, lib.rs, 2684, 4
+bindgen, bindgen::get_target_dependent_env_var, std::env::var, std::env, data/packages/bindgen/src, lib.rs, 2712, 29
+bindgen, bindgen::get_target_dependent_env_var, std::env::var, std::env, data/packages/bindgen/src, lib.rs, 2713, 28
+bindgen, bindgen::get_target_dependent_env_var, std::env::var, std::env, data/packages/bindgen/src, lib.rs, 2717, 17
+bindgen, bindgen::get_target_dependent_env_var, std::env::var, std::env, data/packages/bindgen/src, lib.rs, 2722, 9
+bindgen, bindgen::main, std::env::args, std::env, data/packages/bindgen/src, main.rs, 44, 34
+bindgen, bindgen::main, std::process::exit, std::process, data/packages/bindgen/src, main.rs, 55, 30
+bindgen, bindgen::main, std::process::exit, std::process, data/packages/bindgen/src, main.rs, 63, 26
+bindgen, bindgen::options::builder_from_flags, std::process::exit, std::process, data/packages/bindgen/src, options.rs, 563, 22
+bindgen, bindgen::options::builder_from_flags, std::fs::File::create, std::fs, data/packages/bindgen/src, options.rs, 913, 25
+bindgen, bindgen::options::builder_from_flags, std::path::PathBuf::from, std::path, data/packages/bindgen/src, options.rs, 943, 28
+bindgen, bindgen::ir::dot::write_dot_file, std::fs::File::create, std::fs, data/packages/bindgen/src/ir, dot.rs, 28, 21
+build-parallel, build-parallel::default_jobserver, std::env::var, std::env, data/packages/build-parallel/src, lib.rs, 156, 30
+bytes, bytes::abort, std::process::abort, std::process, data/packages/bytes/src, lib.rs, 102, 22
+clap_lex, clap_lex::RawArgs::from_args, std::env::args_os, std::env, data/packages/clap_lex/src, lib.rs, 141, 28
+clap_lex, clap_lex::RawArgs::from_args, std::env::args_os, std::env, data/packages/clap_lex/src, lib.rs, 141, 28
+comedy, comedy::com::Drop::drop, winapi::um::combaseapi::CoUninitialize, winapi, data/packages/comedy/src, com.rs, 24, 66
+comedy, comedy::com::create_instance, winapi::um::combaseapi::CoCreateInstance, winapi, data/packages/comedy/src, com.rs, 24, 17
+comedy, comedy::com::Drop::drop, winapi::um::combaseapi::CoTaskMemFree, winapi, data/packages/comedy/src, com.rs, 24, 51
+comedy, comedy::error::Win32Error::get_last_error, winapi::um::errhandlingapi::GetLastError, winapi, data/packages/comedy/src, error.rs, 16, 32
+comedy, comedy::error::From::from, winapi::shared::winerror::HRESULT_FROM_WIN32, winapi, data/packages/comedy/src, error.rs, 14, 44
+comedy, comedy::error::succeeded_or_err, winapi::shared::winerror::SUCCEEDED, winapi, data/packages/comedy/src, error.rs, 14, 64
+comedy, comedy::handle::Handle::new, winapi::um::errhandlingapi::GetLastError, winapi, data/packages/comedy/src, handle.rs, 11, 32
+comedy, comedy::handle::Drop::drop, winapi::um::handleapi::CloseHandle, winapi, data/packages/comedy/src, handle.rs, 12, 28
+cpufeatures, cpufeatures::aarch64::getauxval_hwcap, libc::getauxval, libc, data/packages/cpufeatures/src, aarch64.rs, 37, 19
+cpufeatures, cpufeatures::aarch64::sysctlbyname, libc::sysctlbyname, libc, data/packages/cpufeatures/src, aarch64.rs, 133, 19
+crossbeam-channel, crossbeam-channel::counter::Sender::acquire, std::process::abort, std::process, data/packages/crossbeam-channel/src, counter.rs, 55, 21
+crossbeam-channel, crossbeam-channel::counter::Receiver::acquire, std::process::abort, std::process, data/packages/crossbeam-channel/src, counter.rs, 110, 21
+cubeb-backend, cubeb-backend::log::cubeb_log_internal_buf_fmt, std::path::Path::new, std::path, data/packages/cubeb-backend/src, log.rs, 15, 36
+cubeb-backend, cubeb-backend::log::cubeb_log_internal_buf_fmt, std::path::Path::new, std::path, data/packages/cubeb-backend/src, log.rs, 15, 36
+cubeb-backend, cubeb-backend::log::cubeb_log_internal_buf_fmt, std::path::Path::new, std::path, data/packages/cubeb-backend/src, log.rs, 15, 36
+d3d12, d3d12::debug::crate::D3D12Lib::get_debug_interface, winapi::um::d3d12sdklayers::ID3D12Debug::uuidof, winapi, data/packages/d3d12/src, debug.rs, 19, 47
+d3d12, d3d12::debug::Debug::get_interface, winapi::um::d3d12sdklayers::ID3D12Debug::uuidof, winapi, data/packages/d3d12/src, debug.rs, 32, 46
+d3d12, d3d12::debug::Debug::get_interface, winapi::um::d3d12::D3D12GetDebugInterface, winapi, data/packages/d3d12/src, debug.rs, 31, 31
+d3d12, d3d12::descriptor::RootSignature::serialize, winapi::um::d3d12::D3D12SerializeRootSignature, winapi, data/packages/d3d12/src, descriptor.rs, 330, 19
+d3d12, d3d12::device::crate::D3D12Lib::create_device, winapi::um::d3d12::ID3D12Device::uuidof, winapi, data/packages/d3d12/src, device.rs, 37, 38
+d3d12, d3d12::device::Device::create, winapi::um::d3d12::ID3D12Device::uuidof, winapi, data/packages/d3d12/src, device.rs, 57, 38
+d3d12, d3d12::device::Device::create, winapi::um::d3d12::D3D12CreateDevice, winapi, data/packages/d3d12/src, device.rs, 54, 19
+d3d12, d3d12::device::Device::create_heap, winapi::um::d3d12::ID3D12Heap::uuidof, winapi, data/packages/d3d12/src, device.rs, 81, 69
+d3d12, d3d12::device::Device::create_command_allocator, winapi::um::d3d12::ID3D12CommandAllocator::uuidof, winapi, data/packages/d3d12/src, device.rs, 91, 48
+d3d12, d3d12::device::Device::create_command_queue, winapi::um::d3d12::ID3D12CommandQueue::uuidof, winapi, data/packages/d3d12/src, device.rs, 117, 44
+d3d12, d3d12::device::Device::create_descriptor_heap, winapi::um::d3d12::ID3D12DescriptorHeap::uuidof, winapi, data/packages/d3d12/src, device.rs, 143, 46
+d3d12, d3d12::device::Device::create_graphics_command_list, winapi::um::d3d12::ID3D12GraphicsCommandList::uuidof, winapi, data/packages/d3d12/src, device.rs, 169, 51
+d3d12, d3d12::device::Device::create_query_heap, winapi::um::d3d12::ID3D12QueryHeap::uuidof, winapi, data/packages/d3d12/src, device.rs, 193, 41
+d3d12, d3d12::device::Device::create_compute_pipeline_state, winapi::um::d3d12::ID3D12PipelineState::uuidof, winapi, data/packages/d3d12/src, device.rs, 236, 45
+d3d12, d3d12::device::Device::create_root_signature, winapi::um::d3d12::ID3D12RootSignature::uuidof, winapi, data/packages/d3d12/src, device.rs, 284, 45
+d3d12, d3d12::device::Device::create_command_signature, winapi::um::d3d12::ID3D12CommandSignature::uuidof, winapi, data/packages/d3d12/src, device.rs, 311, 48
+d3d12, d3d12::device::Device::create_fence, winapi::um::d3d12::ID3D12Fence::uuidof, winapi, data/packages/d3d12/src, device.rs, 337, 37
+d3d12, d3d12::dxgi::DxgiLib::create_factory2, winapi::shared::dxgi1_4::IDXGIFactory4::uuidof, winapi, data/packages/d3d12/src, dxgi.rs, 120, 41
+d3d12, d3d12::dxgi::DxgiLib::create_factory1, winapi::shared::dxgi::IDXGIFactory1::uuidof, winapi, data/packages/d3d12/src, dxgi.rs, 137, 39
+d3d12, d3d12::dxgi::DxgiLib::get_debug_interface1, winapi::um::dxgidebug::IDXGIInfoQueue::uuidof, winapi, data/packages/d3d12/src, dxgi.rs, 153, 48
+d3d12, d3d12::dxgi::Factory4::create, winapi::shared::dxgi1_4::IDXGIFactory4::uuidof, winapi, data/packages/d3d12/src, dxgi.rs, 282, 41
+d3d12, d3d12::dxgi::Factory4::create, winapi::shared::dxgi1_3::CreateDXGIFactory2, winapi, data/packages/d3d12/src, dxgi.rs, 280, 21
+d3d12, d3d12::dxgi::SwapChain::get_buffer, winapi::um::d3d12::ID3D12Resource::uuidof, winapi, data/packages/d3d12/src, dxgi.rs, 316, 64
+d3d12, d3d12::pso::Shader::compile, winapi::um::d3dcompiler::D3DCompile, winapi, data/packages/d3d12/src, pso.rs, 63, 25
+d3d12, d3d12::sync::Event::create, winapi::um::synchapi::CreateEventA, winapi, data/packages/d3d12/src, sync.rs, 11, 22
+d3d12, d3d12::sync::Event::wait, winapi::um::synchapi::WaitForSingleObject, winapi, data/packages/d3d12/src, sync.rs, 22, 27
+devd-rs, devd-rs::Context::new, libc::socket, libc, data/packages/devd-rs/src, lib.rs, 6, 62
+devd-rs, devd-rs::Context::new, libc::connect, libc, data/packages/devd-rs/src, lib.rs, 6, 18
+devd-rs, devd-rs::Context::new, std::os::unix::net::UnixStream::from_raw_fd, std::os, data/packages/devd-rs/src, lib.rs, 49, 49
+devd-rs, devd-rs::Context::wait_for_event_raw_internal, libc::poll, libc, data/packages/devd-rs/src, lib.rs, 6, 35
+filetime_win, filetime_win::SystemTimeUTC::now, winapi::um::sysinfoapi::GetSystemTime, winapi, data/packages/filetime_win/src, lib.rs, 62, 28
+fluent-syntax, fluent-syntax::bin::parser::read_file, std::fs::File::open, std::fs, data/packages/fluent-syntax/src/bin, parser.rs, 8, 22
+fluent-syntax, fluent-syntax::bin::parser::main, std::env::args, std::env, data/packages/fluent-syntax/src/bin, parser.rs, 15, 33
+fluent-syntax, fluent-syntax::bin::update_fixtures::read_file, std::fs::read_to_string, std::fs, data/packages/fluent-syntax/src/bin, update_fixtures.rs, 7, 8
+fluent-syntax, fluent-syntax::bin::update_fixtures::write_file, std::fs::write, std::fs, data/packages/fluent-syntax/src/bin, update_fixtures.rs, 11, 8
+fluent-syntax, fluent-syntax::bin::update_fixtures::main, std::fs::read_dir, std::fs, data/packages/fluent-syntax/src/bin, update_fixtures.rs, 28, 24
+fluent-testing, fluent-testing::fs::MockFileSystem::get_test_file_path, std::path::PathBuf::from, std::path, data/packages/fluent-testing/src, fs.rs, 16, 17
+fluent-testing, fluent-testing::fs::MockFileSystem::get_file, std::fs::read_to_string, std::fs, data/packages/fluent-testing/src, fs.rs, 24, 21
+fs-err, fs-err::dir::read_dir, std::fs::read_dir, std::fs, data/packages/fs-err/src, dir.rs, 12, 14
+fs-err, fs-err::file::open, std::fs::File::open, std::fs, data/packages/fs-err/src, file.rs, 20, 14
+fs-err, fs-err::file::create, std::fs::File::create, std::fs, data/packages/fs-err/src, file.rs, 25, 14
+fs-err, fs-err::copy, std::fs::copy, std::fs, data/packages/fs-err/src, lib.rs, 128, 8
+fs-err, fs-err::create_dir, std::fs::create_dir, std::fs, data/packages/fs-err/src, lib.rs, 138, 8
+fs-err, fs-err::create_dir_all, std::fs::create_dir_all, std::fs, data/packages/fs-err/src, lib.rs, 147, 8
+fs-err, fs-err::remove_dir, std::fs::remove_dir, std::fs, data/packages/fs-err/src, lib.rs, 156, 8
+fs-err, fs-err::remove_dir_all, std::fs::remove_dir_all, std::fs, data/packages/fs-err/src, lib.rs, 165, 8
+fs-err, fs-err::remove_file, std::fs::remove_file, std::fs, data/packages/fs-err/src, lib.rs, 174, 8
+fs-err, fs-err::metadata, std::fs::metadata, std::fs, data/packages/fs-err/src, lib.rs, 180, 8
+fs-err, fs-err::canonicalize, std::fs::canonicalize, std::fs, data/packages/fs-err/src, lib.rs, 186, 8
+fs-err, fs-err::hard_link, std::fs::hard_link, std::fs, data/packages/fs-err/src, lib.rs, 193, 8
+fs-err, fs-err::read_link, std::fs::read_link, std::fs, data/packages/fs-err/src, lib.rs, 200, 8
+fs-err, fs-err::rename, std::fs::rename, std::fs, data/packages/fs-err/src, lib.rs, 207, 8
+fs-err, fs-err::soft_link, std::fs::soft_link, std::fs, data/packages/fs-err/src, lib.rs, 218, 8
+fs-err, fs-err::symlink_metadata, std::fs::symlink_metadata, std::fs, data/packages/fs-err/src, lib.rs, 225, 8
+fs-err, fs-err::set_permissions, std::fs::set_permissions, std::fs, data/packages/fs-err/src, lib.rs, 232, 8
+fs-err, fs-err::open_options::OpenOptions::new, std::fs::OpenOptions::new, std::fs, data/packages/fs-err/src, open_options.rs, 10, 37
+fs-err, fs-err::os::unix::fs::symlink, std::os::unix::fs::symlink, std::os, data/packages/fs-err/src/os, unix.rs, 13, 27
+fs-err, fs-err::os::windows::fs::symlink_dir, std::os::windows::fs::symlink_dir, std::os, data/packages/fs-err/src/os, windows.rs, 10, 30
+fs-err, fs-err::os::windows::fs::symlink_file, std::os::windows::fs::symlink_file, std::os, data/packages/fs-err/src/os, windows.rs, 18, 30
+getrandom, getrandom::3ds::getrandom_inner, libc::getrandom, libc, data/packages/getrandom/src, 3ds.rs, 15, 14
+getrandom, getrandom::3ds::getrandom_inner, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, 3ds.rs, 10, 22
+getrandom, getrandom::bsd_arandom::kern_arnd, libc::sysctl, libc, data/packages/getrandom/src, bsd_arandom.rs, 17, 14
+getrandom, getrandom::bsd_arandom::getrandom_inner, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, bsd_arandom.rs, 10, 23
+getrandom, getrandom::bsd_arandom::getrandom_inner, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, bsd_arandom.rs, 10, 23
+getrandom, getrandom::dragonfly::getrandom_inner, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, dragonfly.rs, 12, 16
+getrandom, getrandom::linux_android::getrandom_inner, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, linux_android.rs, 12, 31
+getrandom, getrandom::linux_android::is_getrandom_available, crate::util_libc::last_os_error, libc, data/packages/getrandom/src, linux_android.rs, 12, 16
+getrandom, getrandom::linux_android::getrandom, libc::syscall, libc, data/packages/getrandom/src, linux_android.rs, 46, 10
+getrandom, getrandom::macos::getrandom_inner, crate::util_libc::last_os_error, libc, data/packages/getrandom/src, macos.rs, 12, 16
+getrandom, getrandom::openbsd::getrandom_inner, libc::getentropy, libc, data/packages/getrandom/src, openbsd.rs, 15, 33
+getrandom, getrandom::openbsd::getrandom_inner, crate::util_libc::last_os_error, libc, data/packages/getrandom/src, openbsd.rs, 10, 23
+getrandom, getrandom::solaris_illumos::getrandom_inner, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, solaris_illumos.rs, 22, 16
+getrandom, getrandom::use_file::getrandom_inner, libc::read, libc, data/packages/getrandom/src, use_file.rs, 34, 47
+getrandom, getrandom::use_file::getrandom_inner, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, use_file.rs, 12, 31
+getrandom, getrandom::use_file::getrandom_inner, crate::util_libc::sys_fill_exact, libc, data/packages/getrandom/src, use_file.rs, 12, 31
+getrandom, getrandom::use_file::get_rng_fd, crate::util_libc::open_readonly, libc, data/packages/getrandom/src, use_file.rs, 12, 16
+getrandom, getrandom::use_file::wait_until_rng_ready, crate::util_libc::open_readonly, libc, data/packages/getrandom/src, use_file.rs, 12, 16
+getrandom, getrandom::use_file::wait_until_rng_ready, libc::close, libc, data/packages/getrandom/src, use_file.rs, 97, 14
+getrandom, getrandom::use_file::wait_until_rng_ready, libc::poll, libc, data/packages/getrandom/src, use_file.rs, 102, 33
+getrandom, getrandom::use_file::wait_until_rng_ready, crate::util_libc::last_os_error, libc, data/packages/getrandom/src, use_file.rs, 107, 36
+getrandom, getrandom::use_file::Mutex::lock, libc::pthread_mutex_lock, libc, data/packages/getrandom/src, use_file.rs, 122, 22
+getrandom, getrandom::use_file::Mutex::unlock, libc::pthread_mutex_unlock, libc, data/packages/getrandom/src, use_file.rs, 126, 22
+getrandom, getrandom::util_libc::Weak::ptr, libc::dlsym, libc, data/packages/getrandom/src, util_libc.rs, 124, 42
+getrandom, getrandom::vxworks::getrandom_inner, libc::randSecure, libc, data/packages/getrandom/src, vxworks.rs, 16, 33
+getrandom, getrandom::vxworks::getrandom_inner, libc::usleep, libc, data/packages/getrandom/src, vxworks.rs, 23, 23
+getrandom, getrandom::vxworks::getrandom_inner, libc::randABytes, libc, data/packages/getrandom/src, vxworks.rs, 28, 33
+getrandom, getrandom::vxworks::getrandom_inner, crate::util_libc::last_os_error, libc, data/packages/getrandom/src, vxworks.rs, 10, 23
+glean, glean::test::initialize_must_not_crash_if_data_dir_is_messed_up, std::fs::write, std::fs, data/packages/glean/src, test.rs, 356, 13
+glean, glean::test::initialize_must_not_crash_if_data_dir_is_messed_up, std::fs::write, std::fs, data/packages/glean/src, test.rs, 356, 13
+glean, glean::test::initialize_must_not_crash_if_data_dir_is_messed_up, std::fs::write, std::fs, data/packages/glean/src, test.rs, 356, 13
+glean, glean::test::initialize_must_not_crash_if_data_dir_is_messed_up, std::fs::write, std::fs, data/packages/glean/src, test.rs, 356, 13
+glean, glean::test::initialize_must_not_crash_if_data_dir_is_messed_up, std::fs::write, std::fs, data/packages/glean/src, test.rs, 356, 13
+glean, glean::test::initialize_must_not_crash_if_data_dir_is_messed_up, std::fs::write, std::fs, data/packages/glean/src, test.rs, 356, 13
+glean, glean::test::initialize_must_not_crash_if_data_dir_is_messed_up, std::fs::write, std::fs, data/packages/glean/src, test.rs, 356, 13
+glean, glean::test::initialize_must_not_crash_if_data_dir_is_messed_up, std::fs::write, std::fs, data/packages/glean/src, test.rs, 356, 13
+glean-core, glean-core::debug::DebugOption::set_from_env, std::env::var, std::env, data/packages/glean-core/src, debug.rs, 117, 19
+glean-core, glean-core::debug::test::debug_option_is_correctly_loaded_from_env, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 247, 13
+glean-core, glean-core::debug::test::debug_option_is_correctly_validated_when_necessary, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 260, 13
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_handle, std::fs, data/packages/glean-core/src, fd_logger.rs, 41, 10
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_fd, std::fs, data/packages/glean-core/src, fd_logger.rs, 46, 10
+glean-core, glean-core::lib_unit_tests::backwards_compatible_deserialization, std::env::var, std::env, data/packages/glean-core/src, lib_unit_tests.rs, 572, 16
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::create_dir_all, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 899, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::metadata, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 900, 19
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 906, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 921, 8
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 166, 30
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::PathBuf::from, std::path, data/packages/glean-core/src/core, mod.rs, 193, 32
+glean-core, glean-core::core::mod::Glean::new, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 225, 30
+glean-core, glean-core::database::mod::rkv_new, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 48, 16
+glean-core, glean-core::database::mod::delete_and_log, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 57, 26
+glean-core, glean-core::database::mod::database_size, std::fs::read_dir, std::fs, data/packages/glean-core/src/database, mod.rs, 197, 29
+glean-core, glean-core::database::mod::database_size, std::fs::metadata, std::fs, data/packages/glean-core/src/database, mod.rs, 202, 46
+glean-core, glean-core::database::mod::Database::open_rkv, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 268, 12
+glean-core, glean-core::database::mod::test::test_panicks_if_fails_dir_creation, std::path::Path::new, std::path, data/packages/glean-core/src/database, mod.rs, 777, 25
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1449, 16
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::File::create, std::fs, data/packages/glean-core/src/database, mod.rs, 1453, 26
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1467, 16
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1471, 16
+glean-core, glean-core::database::mod::test::safe_mode::migration_works_on_startup, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1497, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1576, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1596, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1655, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1656, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1663, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_empty_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1716, 20
+glean-core, glean-core::event_database::mod::EventDatabase::new, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::read_dir, std::fs, data/packages/glean-core/src/event_database, mod.rs, 138, 25
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::File::open, std::fs, data/packages/glean-core/src/event_database, mod.rs, 142, 48
+glean-core, glean-core::event_database::mod::EventDatabase::write_event_to_disk, std::fs::OpenOptions::new, std::fs, data/packages/glean-core/src/event_database, mod.rs, 231, 39
+glean-core, glean-core::event_database::mod::EventDatabase::snapshot_as_json, std::fs::remove_file, std::fs, data/packages/glean-core/src/event_database, mod.rs, 283, 34
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 303, 17
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_pings_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_tmp_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::File::create, std::fs, data/packages/glean-core/src/ping, mod.rs, 331, 33
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::rename, std::fs, data/packages/glean-core/src/ping, mod.rs, 342, 33
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 358, 17
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::upload::directory::PingDirectoryManager::process_file, std::fs::File::open, std::fs, data/packages/glean-core/src/upload, directory.rs, 156, 31
+glean-core, glean-core::upload::directory::test::non_uuid_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 344, 14
+glean-core, glean-core::upload::directory::test::wrongly_formatted_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 379, 14
+glean-core, glean-core::debug::DebugOption::set_from_env, std::env::var, std::env, data/packages/glean-core/src, debug.rs, 117, 19
+glean-core, glean-core::debug::test::debug_option_is_correctly_loaded_from_env, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 247, 13
+glean-core, glean-core::debug::test::debug_option_is_correctly_validated_when_necessary, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 260, 13
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_handle, std::fs, data/packages/glean-core/src, fd_logger.rs, 41, 10
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_fd, std::fs, data/packages/glean-core/src, fd_logger.rs, 46, 10
+glean-core, glean-core::lib_unit_tests::backwards_compatible_deserialization, std::env::var, std::env, data/packages/glean-core/src, lib_unit_tests.rs, 572, 16
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::create_dir_all, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 899, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::metadata, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 900, 19
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 906, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 921, 8
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 166, 30
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::PathBuf::from, std::path, data/packages/glean-core/src/core, mod.rs, 193, 32
+glean-core, glean-core::core::mod::Glean::new, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 225, 30
+glean-core, glean-core::database::mod::rkv_new, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 48, 16
+glean-core, glean-core::database::mod::delete_and_log, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 57, 26
+glean-core, glean-core::database::mod::database_size, std::fs::read_dir, std::fs, data/packages/glean-core/src/database, mod.rs, 197, 29
+glean-core, glean-core::database::mod::database_size, std::fs::metadata, std::fs, data/packages/glean-core/src/database, mod.rs, 202, 46
+glean-core, glean-core::database::mod::Database::open_rkv, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 268, 12
+glean-core, glean-core::database::mod::test::test_panicks_if_fails_dir_creation, std::path::Path::new, std::path, data/packages/glean-core/src/database, mod.rs, 777, 25
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1449, 16
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::File::create, std::fs, data/packages/glean-core/src/database, mod.rs, 1453, 26
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1467, 16
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1471, 16
+glean-core, glean-core::database::mod::test::safe_mode::migration_works_on_startup, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1497, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1576, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1596, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1655, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1656, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1663, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_empty_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1716, 20
+glean-core, glean-core::event_database::mod::EventDatabase::new, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::read_dir, std::fs, data/packages/glean-core/src/event_database, mod.rs, 138, 25
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::File::open, std::fs, data/packages/glean-core/src/event_database, mod.rs, 142, 48
+glean-core, glean-core::event_database::mod::EventDatabase::write_event_to_disk, std::fs::OpenOptions::new, std::fs, data/packages/glean-core/src/event_database, mod.rs, 231, 39
+glean-core, glean-core::event_database::mod::EventDatabase::snapshot_as_json, std::fs::remove_file, std::fs, data/packages/glean-core/src/event_database, mod.rs, 283, 34
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 303, 17
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_pings_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_tmp_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::File::create, std::fs, data/packages/glean-core/src/ping, mod.rs, 331, 33
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::rename, std::fs, data/packages/glean-core/src/ping, mod.rs, 342, 33
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 358, 17
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::upload::directory::PingDirectoryManager::process_file, std::fs::File::open, std::fs, data/packages/glean-core/src/upload, directory.rs, 156, 31
+glean-core, glean-core::upload::directory::test::non_uuid_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 344, 14
+glean-core, glean-core::upload::directory::test::wrongly_formatted_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 379, 14
+glean-core, glean-core::debug::DebugOption::set_from_env, std::env::var, std::env, data/packages/glean-core/src, debug.rs, 117, 19
+glean-core, glean-core::debug::test::debug_option_is_correctly_loaded_from_env, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 247, 13
+glean-core, glean-core::debug::test::debug_option_is_correctly_validated_when_necessary, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 260, 13
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_handle, std::fs, data/packages/glean-core/src, fd_logger.rs, 41, 10
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_fd, std::fs, data/packages/glean-core/src, fd_logger.rs, 46, 10
+glean-core, glean-core::lib_unit_tests::backwards_compatible_deserialization, std::env::var, std::env, data/packages/glean-core/src, lib_unit_tests.rs, 572, 16
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::create_dir_all, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 899, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::metadata, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 900, 19
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 906, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 921, 8
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 166, 30
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::PathBuf::from, std::path, data/packages/glean-core/src/core, mod.rs, 193, 32
+glean-core, glean-core::core::mod::Glean::new, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 225, 30
+glean-core, glean-core::database::mod::rkv_new, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 48, 16
+glean-core, glean-core::database::mod::delete_and_log, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 57, 26
+glean-core, glean-core::database::mod::database_size, std::fs::read_dir, std::fs, data/packages/glean-core/src/database, mod.rs, 197, 29
+glean-core, glean-core::database::mod::database_size, std::fs::metadata, std::fs, data/packages/glean-core/src/database, mod.rs, 202, 46
+glean-core, glean-core::database::mod::Database::open_rkv, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 268, 12
+glean-core, glean-core::database::mod::test::test_panicks_if_fails_dir_creation, std::path::Path::new, std::path, data/packages/glean-core/src/database, mod.rs, 777, 25
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1449, 16
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::File::create, std::fs, data/packages/glean-core/src/database, mod.rs, 1453, 26
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1467, 16
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1471, 16
+glean-core, glean-core::database::mod::test::safe_mode::migration_works_on_startup, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1497, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1576, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1596, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1655, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1656, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1663, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_empty_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1716, 20
+glean-core, glean-core::event_database::mod::EventDatabase::new, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::read_dir, std::fs, data/packages/glean-core/src/event_database, mod.rs, 138, 25
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::File::open, std::fs, data/packages/glean-core/src/event_database, mod.rs, 142, 48
+glean-core, glean-core::event_database::mod::EventDatabase::write_event_to_disk, std::fs::OpenOptions::new, std::fs, data/packages/glean-core/src/event_database, mod.rs, 231, 39
+glean-core, glean-core::event_database::mod::EventDatabase::snapshot_as_json, std::fs::remove_file, std::fs, data/packages/glean-core/src/event_database, mod.rs, 283, 34
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 303, 17
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_pings_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_tmp_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::File::create, std::fs, data/packages/glean-core/src/ping, mod.rs, 331, 33
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::rename, std::fs, data/packages/glean-core/src/ping, mod.rs, 342, 33
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 358, 17
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::upload::directory::PingDirectoryManager::process_file, std::fs::File::open, std::fs, data/packages/glean-core/src/upload, directory.rs, 156, 31
+glean-core, glean-core::upload::directory::test::non_uuid_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 344, 14
+glean-core, glean-core::upload::directory::test::wrongly_formatted_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 379, 14
+glean-core, glean-core::debug::DebugOption::set_from_env, std::env::var, std::env, data/packages/glean-core/src, debug.rs, 117, 19
+glean-core, glean-core::debug::test::debug_option_is_correctly_loaded_from_env, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 247, 13
+glean-core, glean-core::debug::test::debug_option_is_correctly_validated_when_necessary, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 260, 13
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_handle, std::fs, data/packages/glean-core/src, fd_logger.rs, 41, 10
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_fd, std::fs, data/packages/glean-core/src, fd_logger.rs, 46, 10
+glean-core, glean-core::lib_unit_tests::backwards_compatible_deserialization, std::env::var, std::env, data/packages/glean-core/src, lib_unit_tests.rs, 572, 16
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::create_dir_all, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 899, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::metadata, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 900, 19
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 906, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 921, 8
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 166, 30
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::PathBuf::from, std::path, data/packages/glean-core/src/core, mod.rs, 193, 32
+glean-core, glean-core::core::mod::Glean::new, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 225, 30
+glean-core, glean-core::database::mod::rkv_new, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 48, 16
+glean-core, glean-core::database::mod::delete_and_log, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 57, 26
+glean-core, glean-core::database::mod::database_size, std::fs::read_dir, std::fs, data/packages/glean-core/src/database, mod.rs, 197, 29
+glean-core, glean-core::database::mod::database_size, std::fs::metadata, std::fs, data/packages/glean-core/src/database, mod.rs, 202, 46
+glean-core, glean-core::database::mod::Database::open_rkv, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 268, 12
+glean-core, glean-core::database::mod::test::test_panicks_if_fails_dir_creation, std::path::Path::new, std::path, data/packages/glean-core/src/database, mod.rs, 777, 25
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1449, 16
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::File::create, std::fs, data/packages/glean-core/src/database, mod.rs, 1453, 26
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1467, 16
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1471, 16
+glean-core, glean-core::database::mod::test::safe_mode::migration_works_on_startup, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1497, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1576, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1596, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1655, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1656, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1663, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_empty_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1716, 20
+glean-core, glean-core::event_database::mod::EventDatabase::new, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::read_dir, std::fs, data/packages/glean-core/src/event_database, mod.rs, 138, 25
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::File::open, std::fs, data/packages/glean-core/src/event_database, mod.rs, 142, 48
+glean-core, glean-core::event_database::mod::EventDatabase::write_event_to_disk, std::fs::OpenOptions::new, std::fs, data/packages/glean-core/src/event_database, mod.rs, 231, 39
+glean-core, glean-core::event_database::mod::EventDatabase::snapshot_as_json, std::fs::remove_file, std::fs, data/packages/glean-core/src/event_database, mod.rs, 283, 34
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 303, 17
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_pings_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_tmp_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::File::create, std::fs, data/packages/glean-core/src/ping, mod.rs, 331, 33
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::rename, std::fs, data/packages/glean-core/src/ping, mod.rs, 342, 33
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 358, 17
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::upload::directory::PingDirectoryManager::process_file, std::fs::File::open, std::fs, data/packages/glean-core/src/upload, directory.rs, 156, 31
+glean-core, glean-core::upload::directory::test::non_uuid_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 344, 14
+glean-core, glean-core::upload::directory::test::wrongly_formatted_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 379, 14
+glean-core, glean-core::debug::DebugOption::set_from_env, std::env::var, std::env, data/packages/glean-core/src, debug.rs, 117, 19
+glean-core, glean-core::debug::test::debug_option_is_correctly_loaded_from_env, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 247, 13
+glean-core, glean-core::debug::test::debug_option_is_correctly_validated_when_necessary, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 260, 13
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_handle, std::fs, data/packages/glean-core/src, fd_logger.rs, 41, 10
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_fd, std::fs, data/packages/glean-core/src, fd_logger.rs, 46, 10
+glean-core, glean-core::lib_unit_tests::backwards_compatible_deserialization, std::env::var, std::env, data/packages/glean-core/src, lib_unit_tests.rs, 572, 16
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::create_dir_all, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 899, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::metadata, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 900, 19
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 906, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 921, 8
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 166, 30
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::PathBuf::from, std::path, data/packages/glean-core/src/core, mod.rs, 193, 32
+glean-core, glean-core::core::mod::Glean::new, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 225, 30
+glean-core, glean-core::database::mod::rkv_new, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 48, 16
+glean-core, glean-core::database::mod::delete_and_log, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 57, 26
+glean-core, glean-core::database::mod::database_size, std::fs::read_dir, std::fs, data/packages/glean-core/src/database, mod.rs, 197, 29
+glean-core, glean-core::database::mod::database_size, std::fs::metadata, std::fs, data/packages/glean-core/src/database, mod.rs, 202, 46
+glean-core, glean-core::database::mod::Database::open_rkv, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 268, 12
+glean-core, glean-core::database::mod::test::test_panicks_if_fails_dir_creation, std::path::Path::new, std::path, data/packages/glean-core/src/database, mod.rs, 777, 25
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1449, 16
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::File::create, std::fs, data/packages/glean-core/src/database, mod.rs, 1453, 26
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1467, 16
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1471, 16
+glean-core, glean-core::database::mod::test::safe_mode::migration_works_on_startup, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1497, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1576, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1596, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1655, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1656, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1663, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_empty_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1716, 20
+glean-core, glean-core::event_database::mod::EventDatabase::new, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::read_dir, std::fs, data/packages/glean-core/src/event_database, mod.rs, 138, 25
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::File::open, std::fs, data/packages/glean-core/src/event_database, mod.rs, 142, 48
+glean-core, glean-core::event_database::mod::EventDatabase::write_event_to_disk, std::fs::OpenOptions::new, std::fs, data/packages/glean-core/src/event_database, mod.rs, 231, 39
+glean-core, glean-core::event_database::mod::EventDatabase::snapshot_as_json, std::fs::remove_file, std::fs, data/packages/glean-core/src/event_database, mod.rs, 283, 34
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 303, 17
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_pings_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_tmp_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::File::create, std::fs, data/packages/glean-core/src/ping, mod.rs, 331, 33
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::rename, std::fs, data/packages/glean-core/src/ping, mod.rs, 342, 33
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 358, 17
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::upload::directory::PingDirectoryManager::process_file, std::fs::File::open, std::fs, data/packages/glean-core/src/upload, directory.rs, 156, 31
+glean-core, glean-core::upload::directory::test::non_uuid_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 344, 14
+glean-core, glean-core::upload::directory::test::wrongly_formatted_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 379, 14
+glean-core, glean-core::debug::DebugOption::set_from_env, std::env::var, std::env, data/packages/glean-core/src, debug.rs, 117, 19
+glean-core, glean-core::debug::test::debug_option_is_correctly_loaded_from_env, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 247, 13
+glean-core, glean-core::debug::test::debug_option_is_correctly_validated_when_necessary, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 260, 13
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_handle, std::fs, data/packages/glean-core/src, fd_logger.rs, 41, 10
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_fd, std::fs, data/packages/glean-core/src, fd_logger.rs, 46, 10
+glean-core, glean-core::lib_unit_tests::backwards_compatible_deserialization, std::env::var, std::env, data/packages/glean-core/src, lib_unit_tests.rs, 572, 16
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::create_dir_all, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 899, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::metadata, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 900, 19
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 906, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 921, 8
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 166, 30
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::PathBuf::from, std::path, data/packages/glean-core/src/core, mod.rs, 193, 32
+glean-core, glean-core::core::mod::Glean::new, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 225, 30
+glean-core, glean-core::database::mod::rkv_new, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 48, 16
+glean-core, glean-core::database::mod::delete_and_log, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 57, 26
+glean-core, glean-core::database::mod::database_size, std::fs::read_dir, std::fs, data/packages/glean-core/src/database, mod.rs, 197, 29
+glean-core, glean-core::database::mod::database_size, std::fs::metadata, std::fs, data/packages/glean-core/src/database, mod.rs, 202, 46
+glean-core, glean-core::database::mod::Database::open_rkv, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 268, 12
+glean-core, glean-core::database::mod::test::test_panicks_if_fails_dir_creation, std::path::Path::new, std::path, data/packages/glean-core/src/database, mod.rs, 777, 25
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1449, 16
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::File::create, std::fs, data/packages/glean-core/src/database, mod.rs, 1453, 26
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1467, 16
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1471, 16
+glean-core, glean-core::database::mod::test::safe_mode::migration_works_on_startup, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1497, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1576, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1596, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1655, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1656, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1663, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_empty_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1716, 20
+glean-core, glean-core::event_database::mod::EventDatabase::new, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::read_dir, std::fs, data/packages/glean-core/src/event_database, mod.rs, 138, 25
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::File::open, std::fs, data/packages/glean-core/src/event_database, mod.rs, 142, 48
+glean-core, glean-core::event_database::mod::EventDatabase::write_event_to_disk, std::fs::OpenOptions::new, std::fs, data/packages/glean-core/src/event_database, mod.rs, 231, 39
+glean-core, glean-core::event_database::mod::EventDatabase::snapshot_as_json, std::fs::remove_file, std::fs, data/packages/glean-core/src/event_database, mod.rs, 283, 34
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 303, 17
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_pings_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_tmp_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::File::create, std::fs, data/packages/glean-core/src/ping, mod.rs, 331, 33
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::rename, std::fs, data/packages/glean-core/src/ping, mod.rs, 342, 33
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 358, 17
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::upload::directory::PingDirectoryManager::process_file, std::fs::File::open, std::fs, data/packages/glean-core/src/upload, directory.rs, 156, 31
+glean-core, glean-core::upload::directory::test::non_uuid_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 344, 14
+glean-core, glean-core::upload::directory::test::wrongly_formatted_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 379, 14
+glean-core, glean-core::debug::DebugOption::set_from_env, std::env::var, std::env, data/packages/glean-core/src, debug.rs, 117, 19
+glean-core, glean-core::debug::test::debug_option_is_correctly_loaded_from_env, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 247, 13
+glean-core, glean-core::debug::test::debug_option_is_correctly_validated_when_necessary, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 260, 13
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_handle, std::fs, data/packages/glean-core/src, fd_logger.rs, 41, 10
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_fd, std::fs, data/packages/glean-core/src, fd_logger.rs, 46, 10
+glean-core, glean-core::lib_unit_tests::backwards_compatible_deserialization, std::env::var, std::env, data/packages/glean-core/src, lib_unit_tests.rs, 572, 16
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::create_dir_all, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 899, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::metadata, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 900, 19
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 906, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 921, 8
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 166, 30
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::PathBuf::from, std::path, data/packages/glean-core/src/core, mod.rs, 193, 32
+glean-core, glean-core::core::mod::Glean::new, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 225, 30
+glean-core, glean-core::database::mod::rkv_new, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 48, 16
+glean-core, glean-core::database::mod::delete_and_log, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 57, 26
+glean-core, glean-core::database::mod::database_size, std::fs::read_dir, std::fs, data/packages/glean-core/src/database, mod.rs, 197, 29
+glean-core, glean-core::database::mod::database_size, std::fs::metadata, std::fs, data/packages/glean-core/src/database, mod.rs, 202, 46
+glean-core, glean-core::database::mod::Database::open_rkv, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 268, 12
+glean-core, glean-core::database::mod::test::test_panicks_if_fails_dir_creation, std::path::Path::new, std::path, data/packages/glean-core/src/database, mod.rs, 777, 25
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1449, 16
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::File::create, std::fs, data/packages/glean-core/src/database, mod.rs, 1453, 26
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1467, 16
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1471, 16
+glean-core, glean-core::database::mod::test::safe_mode::migration_works_on_startup, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1497, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1576, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1596, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1655, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1656, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1663, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_empty_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1716, 20
+glean-core, glean-core::event_database::mod::EventDatabase::new, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::read_dir, std::fs, data/packages/glean-core/src/event_database, mod.rs, 138, 25
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::File::open, std::fs, data/packages/glean-core/src/event_database, mod.rs, 142, 48
+glean-core, glean-core::event_database::mod::EventDatabase::write_event_to_disk, std::fs::OpenOptions::new, std::fs, data/packages/glean-core/src/event_database, mod.rs, 231, 39
+glean-core, glean-core::event_database::mod::EventDatabase::snapshot_as_json, std::fs::remove_file, std::fs, data/packages/glean-core/src/event_database, mod.rs, 283, 34
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 303, 17
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_pings_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_tmp_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::File::create, std::fs, data/packages/glean-core/src/ping, mod.rs, 331, 33
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::rename, std::fs, data/packages/glean-core/src/ping, mod.rs, 342, 33
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 358, 17
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::upload::directory::PingDirectoryManager::process_file, std::fs::File::open, std::fs, data/packages/glean-core/src/upload, directory.rs, 156, 31
+glean-core, glean-core::upload::directory::test::non_uuid_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 344, 14
+glean-core, glean-core::upload::directory::test::wrongly_formatted_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 379, 14
+glean-core, glean-core::debug::DebugOption::set_from_env, std::env::var, std::env, data/packages/glean-core/src, debug.rs, 117, 19
+glean-core, glean-core::debug::test::debug_option_is_correctly_loaded_from_env, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 247, 13
+glean-core, glean-core::debug::test::debug_option_is_correctly_validated_when_necessary, std::env::set_var, std::env, data/packages/glean-core/src, debug.rs, 260, 13
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_handle, std::fs, data/packages/glean-core/src, fd_logger.rs, 41, 10
+glean-core, glean-core::fd_logger::get_file_from_fd, std::fs::File::from_raw_fd, std::fs, data/packages/glean-core/src, fd_logger.rs, 46, 10
+glean-core, glean-core::lib_unit_tests::backwards_compatible_deserialization, std::env::var, std::env, data/packages/glean-core/src, lib_unit_tests.rs, 572, 16
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::create_dir_all, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 899, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::metadata, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 900, 19
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 906, 8
+glean-core, glean-core::lib_unit_tests::records_io_errors, std::fs::set_permissions, std::fs, data/packages/glean-core/src, lib_unit_tests.rs, 921, 8
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 166, 30
+glean-core, glean-core::core::mod::Glean::new_for_subprocess, std::path::PathBuf::from, std::path, data/packages/glean-core/src/core, mod.rs, 193, 32
+glean-core, glean-core::core::mod::Glean::new, std::path::Path::new, std::path, data/packages/glean-core/src/core, mod.rs, 225, 30
+glean-core, glean-core::database::mod::rkv_new, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 48, 16
+glean-core, glean-core::database::mod::delete_and_log, std::fs::remove_file, std::fs, data/packages/glean-core/src/database, mod.rs, 57, 26
+glean-core, glean-core::database::mod::database_size, std::fs::read_dir, std::fs, data/packages/glean-core/src/database, mod.rs, 197, 29
+glean-core, glean-core::database::mod::database_size, std::fs::metadata, std::fs, data/packages/glean-core/src/database, mod.rs, 202, 46
+glean-core, glean-core::database::mod::Database::open_rkv, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 268, 12
+glean-core, glean-core::database::mod::test::test_panicks_if_fails_dir_creation, std::path::Path::new, std::path, data/packages/glean-core/src/database, mod.rs, 777, 25
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1449, 16
+glean-core, glean-core::database::mod::test::safe_mode::empty_data_file, std::fs::File::create, std::fs, data/packages/glean-core/src/database, mod.rs, 1453, 26
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1467, 16
+glean-core, glean-core::database::mod::test::safe_mode::corrupted_data_file, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1471, 16
+glean-core, glean-core::database::mod::test::safe_mode::migration_works_on_startup, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1497, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1576, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_doesnt_overwrite, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1596, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1655, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::write, std::fs, data/packages/glean-core/src/database, mod.rs, 1656, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_broken_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1663, 20
+glean-core, glean-core::database::mod::test::safe_mode::migration_ignores_empty_database, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/database, mod.rs, 1716, 20
+glean-core, glean-core::event_database::mod::EventDatabase::new, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::read_dir, std::fs, data/packages/glean-core/src/event_database, mod.rs, 138, 25
+glean-core, glean-core::event_database::mod::EventDatabase::load_events_from_disk, std::fs::File::open, std::fs, data/packages/glean-core/src/event_database, mod.rs, 142, 48
+glean-core, glean-core::event_database::mod::EventDatabase::write_event_to_disk, std::fs::OpenOptions::new, std::fs, data/packages/glean-core/src/event_database, mod.rs, 231, 39
+glean-core, glean-core::event_database::mod::EventDatabase::snapshot_as_json, std::fs::remove_file, std::fs, data/packages/glean-core/src/event_database, mod.rs, 283, 34
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 303, 17
+glean-core, glean-core::event_database::mod::EventDatabase::clear_all, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/event_database, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_pings_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::get_tmp_dir, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::File::create, std::fs, data/packages/glean-core/src/ping, mod.rs, 331, 33
+glean-core, glean-core::ping::mod::PingMaker::store_ping, std::fs::rename, std::fs, data/packages/glean-core/src/ping, mod.rs, 342, 33
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::remove_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 358, 17
+glean-core, glean-core::ping::mod::PingMaker::clear_pending_pings, std::fs::create_dir_all, std::fs, data/packages/glean-core/src/ping, mod.rs, 7, 14
+glean-core, glean-core::upload::directory::PingDirectoryManager::process_file, std::fs::File::open, std::fs, data/packages/glean-core/src/upload, directory.rs, 156, 31
+glean-core, glean-core::upload::directory::test::non_uuid_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 344, 14
+glean-core, glean-core::upload::directory::test::wrongly_formatted_files_are_deleted_and_ignored, std::fs::File::create, std::fs, data/packages/glean-core/src/upload, directory.rs, 379, 14
+guid_win, guid_win::std::fmt::Display::fmt, winapi::um::combaseapi::StringFromGUID2, winapi, data/packages/guid_win/src, lib.rs, 61, 46
+h2, h2::server::std::future::Future::poll, tokio::io::ReadBuf::new, tokio::io, data/packages/h2/src, server.rs, 1235, 35
+h2, h2::hpack::test::fixture::test_fixture, std::fs::File::open, std::fs, data/packages/h2/src/hpack/test, fixture.rs, 14, 25
+hyper, hyper::client::connect::dns::SocketAddrs::try_parse, std::net::SocketAddrV4::new, std::net, data/packages/hyper/src/client/connect, dns.rs, 195, 37
+hyper, hyper::client::connect::dns::SocketAddrs::try_parse, std::net::SocketAddrV6::new, std::net, data/packages/hyper/src/client/connect, dns.rs, 201, 37
+hyper, hyper::client::connect::dns::tests::test_ip_addrs_split_by_preference, std::net::Ipv4Addr::new, std::net, data/packages/hyper/src/client/connect, dns.rs, 370, 30
+hyper, hyper::client::connect::dns::tests::test_ip_addrs_split_by_preference, std::net::Ipv6Addr::new, std::net, data/packages/hyper/src/client/connect, dns.rs, 371, 30
+hyper, hyper::client::connect::http::bind_local_address, std::net::SocketAddr::new, std::net, data/packages/hyper/src/client/connect, http.rs, 568, 37
+hyper, hyper::client::connect::http::bind_local_address, std::net::SocketAddr::new, std::net, data/packages/hyper/src/client/connect, http.rs, 571, 37
+hyper, hyper::client::connect::http::connect, socket2::Domain::for_address, socket2, data/packages/hyper/src/client/connect, http.rs, 599, 25
+hyper, hyper::client::connect::http::connect, socket2::Socket::new, socket2, data/packages/hyper/src/client/connect, http.rs, 600, 25
+hyper, hyper::client::connect::http::connect, socket2::TcpKeepalive::new, socket2, data/packages/hyper/src/client/connect, http.rs, 610, 33
+hyper, hyper::client::connect::http::connect, tokio::net::TcpSocket::from_raw_fd, tokio::net, data/packages/hyper/src/client/connect, http.rs, 631, 19
+hyper, hyper::client::connect::http::connect, tokio::net::TcpSocket::from_raw_socket, tokio::net, data/packages/hyper/src/client/connect, http.rs, 640, 19
+hyper, hyper::client::connect::http::tests::get_local_ips, std::net::TcpListener::bind, std::net, data/packages/hyper/src/client/connect, http.rs, 755, 47
+hyper, hyper::client::connect::http::tests::get_local_ips, std::net::TcpListener::bind, std::net, data/packages/hyper/src/client/connect, http.rs, 756, 47
+hyper, hyper::client::connect::http::tests::local_address, std::net::TcpListener::bind, std::net, data/packages/hyper/src/client/connect, http.rs, 786, 35
+hyper, hyper::client::connect::http::tests::local_address, std::net::TcpListener::bind, std::net, data/packages/hyper/src/client/connect, http.rs, 788, 35
+hyper, hyper::client::connect::http::tests::client_happy_eyeballs, std::net::TcpListener::bind, std::net, data/packages/hyper/src/client/connect, http.rs, 826, 35
+hyper, hyper::client::connect::http::tests::client_happy_eyeballs, std::net::TcpListener::bind, std::net, data/packages/hyper/src/client/connect, http.rs, 828, 36
+hyper, hyper::client::connect::http::tests::local_ipv4_addr, std::net::Ipv4Addr::new, std::net, data/packages/hyper/src/client/connect, http.rs, 972, 22
+hyper, hyper::client::connect::http::tests::local_ipv6_addr, std::net::Ipv6Addr::new, std::net, data/packages/hyper/src/client/connect, http.rs, 976, 22
+hyper, hyper::client::connect::http::tests::unreachable_ipv4_addr, std::net::Ipv4Addr::new, std::net, data/packages/hyper/src/client/connect, http.rs, 980, 22
+hyper, hyper::client::connect::http::tests::unreachable_ipv6_addr, std::net::Ipv6Addr::new, std::net, data/packages/hyper/src/client/connect, http.rs, 984, 22
+hyper, hyper::client::connect::http::tests::slow_ipv4_addr, std::net::Ipv4Addr::new, std::net, data/packages/hyper/src/client/connect, http.rs, 989, 22
+hyper, hyper::client::connect::http::tests::slow_ipv6_addr, std::net::Ipv6Addr::new, std::net, data/packages/hyper/src/client/connect, http.rs, 994, 22
+hyper, hyper::client::connect::http::tests::measure_connect, std::net::TcpStream::connect_timeout, std::net, data/packages/hyper/src/client/connect, http.rs, 1000, 37
+hyper, hyper::proto::h1::decode::tests::super::io::MemRead::read_mem, tokio::io::ReadBuf::new, tokio::io, data/packages/hyper/src/proto/h1, decode.rs, 449, 35
+hyper, hyper::proto::h1::io::Buffered::poll_read_from_io, tokio::io::ReadBuf::uninit, tokio::io, data/packages/hyper/src/proto/h1, io.rs, 265, 31
+hyper, hyper::server::tcp::AddrIncoming::new, std::net::TcpListener::bind, std::net, data/packages/hyper/src/server, tcp.rs, 29, 43
+hyper, hyper::server::tcp::AddrIncoming::from_std, tokio::net::TcpListener::from_std, tokio::net, data/packages/hyper/src/server, tcp.rs, 39, 36
+hyper, hyper::server::tcp::AddrIncoming::poll_next_, socket2::SockRef::from, socket2, data/packages/hyper/src/server, tcp.rs, 112, 55
+hyper, hyper::server::tcp::AddrIncoming::poll_next_, socket2::TcpKeepalive::new, socket2, data/packages/hyper/src/server, tcp.rs, 113, 58
+memmap2, memmap2::test::map_file, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1109, 32
+memmap2, memmap2::test::map_fd, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1142, 32
+memmap2, memmap2::test::map_empty_file, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1174, 32
+memmap2, memmap2::test::file_write, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1227, 36
+memmap2, memmap2::test::flush_range, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1251, 32
+memmap2, memmap2::test::map_copy, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1277, 36
+memmap2, memmap2::test::map_copy_read_only, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1313, 32
+memmap2, memmap2::test::map_offset, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1338, 32
+memmap2, memmap2::test::jit_x86_file, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1421, 39
+memmap2, memmap2::test::mprotect_file, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1441, 39
+memmap2, memmap2::test::mprotect_copy, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1487, 39
+memmap2, memmap2::test::raw, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1544, 39
+memmap2, memmap2::test::advise, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1583, 32
+memmap2, memmap2::test::lock, std::fs::OpenOptions::new, std::fs, data/packages/memmap2/src, lib.rs, 1642, 32
+memmap2, memmap2::unix::MmapInner::new, libc::mmap, libc, data/packages/memmap2/src, unix.rs, 84, 28
+memmap2, memmap2::unix::MmapInner::flush, libc::msync, libc, data/packages/memmap2/src, unix.rs, 181, 27
+memmap2, memmap2::unix::MmapInner::flush_async, libc::msync, libc, data/packages/memmap2/src, unix.rs, 194, 27
+memmap2, memmap2::unix::MmapInner::mprotect, libc::mprotect, libc, data/packages/memmap2/src, unix.rs, 208, 21
+memmap2, memmap2::unix::MmapInner::advise, libc::madvise, libc, data/packages/memmap2/src, unix.rs, 245, 21
+memmap2, memmap2::unix::MmapInner::lock, libc::mlock, libc, data/packages/memmap2/src, unix.rs, 255, 21
+memmap2, memmap2::unix::MmapInner::unlock, libc::munlock, libc, data/packages/memmap2/src, unix.rs, 265, 21
+memmap2, memmap2::unix::Drop::drop, libc::munmap, libc, data/packages/memmap2/src, unix.rs, 284, 18
+memmap2, memmap2::unix::page_size, libc::sysconf, libc, data/packages/memmap2/src, unix.rs, 297, 43
+memmap2, memmap2::unix::file_len, std::fs::File::from_raw_fd, std::fs, data/packages/memmap2/src, unix.rs, 311, 43
+memmap2, memmap2::windows::file_len, std::fs::File::from_raw_handle, std::fs, data/packages/memmap2/src, windows.rs, 513, 43
+metal, metal::capturedescriptor::CaptureDescriptorRef::output_url, std::path::Path::new, std::path, data/packages/metal/src, capturedescriptor.rs, 60, 14
+mozprofile, mozprofile::profile::Profile::prefs, std::path::PathBuf::from, std::path, data/packages/mozprofile/src, profile.rs, 54, 41
+mozprofile, mozprofile::profile::Profile::user_prefs, std::path::PathBuf::from, std::path, data/packages/mozprofile/src, profile.rs, 64, 41
+mozprofile, mozprofile::profile::PrefFile::new, std::fs::File::open, std::fs, data/packages/mozprofile/src, profile.rs, 84, 30
+mozprofile, mozprofile::profile::PrefFile::write, std::fs::File::create, std::fs, data/packages/mozprofile/src, profile.rs, 94, 26
+mozrunner, mozrunner::path::is_executable, std::fs::metadata, std::fs, data/packages/mozrunner/src, path.rs, 19, 14
+mozrunner, mozrunner::path::find_binary, std::env::var_os, std::env, data/packages/mozrunner/src, path.rs, 39, 9
+mozrunner, mozrunner::path::find_binary, std::env::split_paths, std::env, data/packages/mozrunner/src, path.rs, 40, 29
+mozrunner, mozrunner::runner::Runner::start, std::process::Command::new, std::process, data/packages/mozrunner/src, runner.rs, 279, 31
+mozrunner, mozrunner::runner::platform::firefox_default_path, std::path::PathBuf::from, std::path, data/packages/mozrunner/src, runner.rs, 401, 39
+mozrunner, mozrunner::runner::platform::firefox_registry_path, std::path::PathBuf::from, std::path, data/packages/mozrunner/src, runner.rs, 462, 52
+mozrunner, mozrunner::bin::firefox-default-path::main, std::process::exit, std::process, data/packages/mozrunner/src/bin, firefox-default-path.rs, 20, 18
+mozversion, mozversion::firefox_version, std::path::Path::exists, std::path, data/packages/mozversion/src, lib.rs, 207, 17
+mozversion, mozversion::firefox_version, std::path::Path::exists, std::path, data/packages/mozversion/src, lib.rs, 218, 17
+mozversion, mozversion::firefox_binary_version, std::process::Command::new, std::process, data/packages/mozversion/src, lib.rs, 242, 26
+mozversion, mozversion::firefox_binary_version, std::process::Stdio::piped, std::process, data/packages/mozversion/src, lib.rs, 244, 23
+naga, naga::front::spv::function::super::Parser::parse_function, std::fs::write, std::fs, data/packages/naga/src/front/spv, function.rs, 174, 37
+naga, naga::front::spv::function::super::Parser::parse_function, std::fs::write, std::fs, data/packages/naga/src/front/spv, function.rs, 174, 37
+os_str_bytes, os_str_bytes::cow_os_str_into_path, std::path::Path::new, std::path, data/packages/os_str_bytes/src, lib.rs, 325, 53
+os_str_bytes, os_str_bytes::windows::mod::from_bytes, std::os::windows::ffi::OsStringExt::from_wide, std::os, data/packages/os_str_bytes/src/windows, mod.rs, 70, 20
+os_str_bytes, os_str_bytes::windows::mod::to_bytes, std::os::windows::ffi::OsStrExt::encode_wide, std::os, data/packages/os_str_bytes/src/windows, mod.rs, 74, 28
+paste, paste::segment::paste, std::env::var, std::env, data/packages/paste/src, segment.rs, 157, 47
+proc-macro2, proc-macro2::fallback::Span::source_file, std::path::Path::new, std::path, data/packages/proc-macro2/src, fallback.rs, 492, 28
+proc-macro2, proc-macro2::fallback::Span::source_file, std::path::Path::new, std::path, data/packages/proc-macro2/src, fallback.rs, 492, 28
+qcms, qcms::c_bindings::qcms_data_from_file, libc::fread, libc, data/packages/qcms/src, c_bindings.rs, 3, 26
+qcms, qcms::c_bindings::qcms_data_from_file, libc::malloc, libc, data/packages/qcms/src, c_bindings.rs, 3, 39
+qcms, qcms::c_bindings::qcms_data_from_file, libc::fread, libc, data/packages/qcms/src, c_bindings.rs, 3, 26
+qcms, qcms::c_bindings::qcms_data_from_file, libc::free, libc, data/packages/qcms/src, c_bindings.rs, 3, 33
+qcms, qcms::c_bindings::qcms_profile_from_file, libc::free, libc, data/packages/qcms/src, c_bindings.rs, 3, 33
+qcms, qcms::c_bindings::qcms_profile_from_path, libc::fopen, libc, data/packages/qcms/src, c_bindings.rs, 3, 19
+qcms, qcms::c_bindings::qcms_profile_from_path, libc::fclose, libc, data/packages/qcms/src, c_bindings.rs, 3, 11
+qcms, qcms::c_bindings::qcms_data_from_path, libc::fopen, libc, data/packages/qcms/src, c_bindings.rs, 3, 19
+qcms, qcms::c_bindings::qcms_data_from_path, libc::fclose, libc, data/packages/qcms/src, c_bindings.rs, 3, 11
+qcms, qcms::c_bindings::qcms_profile_from_unicode_path, libc::fclose, libc, data/packages/qcms/src, c_bindings.rs, 3, 11
+qcms, qcms::c_bindings::qcms_data_from_unicode_path, libc::fclose, libc, data/packages/qcms/src, c_bindings.rs, 3, 11
+qcms, qcms::c_bindings::qcms_data_create_rgb_with_gamma, libc::malloc, libc, data/packages/qcms/src, c_bindings.rs, 3, 39
+qcms, qcms::c_bindings::qcms_data_create_rgb_with_gamma, libc::memset, libc, data/packages/qcms/src, c_bindings.rs, 3, 47
+qcms, qcms::c_bindings::qcms_data_create_rgb_with_gamma, libc::free, libc, data/packages/qcms/src, c_bindings.rs, 3, 33
+qcms, qcms::gtest::gtest::samples, std::path::PathBuf::from, std::path, data/packages/qcms/src, gtest.rs, 246, 40
+qcms, qcms::gtest::gtest::samples, std::fs::File::open, std::fs, data/packages/qcms/src, gtest.rs, 261, 42
+qcms, qcms::gtest::gtest::v4, std::path::PathBuf::from, std::path, data/packages/qcms/src, gtest.rs, 276, 40
+qcms, qcms::gtest::gtest::v4, std::fs::File::open, std::fs, data/packages/qcms/src, gtest.rs, 284, 38
+qcms, qcms::gtest::gtest::profile_from_path, std::path::PathBuf::from, std::path, data/packages/qcms/src, gtest.rs, 779, 43
+qcms, qcms::gtest::gtest::profile_from_path, std::fs::File::open, std::fs, data/packages/qcms/src, gtest.rs, 782, 38
+rayon-core, rayon-core::ThreadPoolBuilder::get_num_threads, std::env::var, std::env, data/packages/rayon-core/src, lib.rs, 415, 23
+rayon-core, rayon-core::ThreadPoolBuilder::get_num_threads, std::env::var, std::env, data/packages/rayon-core/src, lib.rs, 425, 23
+rayon-core, rayon-core::log::Logger::new, std::env::var, std::env, data/packages/rayon-core/src, log.rs, 120, 33
+rayon-core, rayon-core::log::Logger::profile_logger_thread, std::fs::File::create, std::fs, data/packages/rayon-core/src, log.rs, 169, 25
+rayon-core, rayon-core::log::Logger::tail_logger_thread, std::fs::File::create, std::fs, data/packages/rayon-core/src, log.rs, 212, 25
+rayon-core, rayon-core::unwind::Drop::drop, std::process::abort, std::process, data/packages/rayon-core/src, unwind.rs, 29, 24
+rust_decimal, rust_decimal::mysql::tests::get_mysql_url, std::env::var, std::env, data/packages/rust_decimal/src, mysql.rs, 92, 35
+rust_decimal, rust_decimal::postgres::driver::test::get_postgres_url, std::env::var, std::env, data/packages/rust_decimal/src/postgres, driver.rs, 140, 35
+rust_decimal, rust_decimal::mysql::tests::get_mysql_url, std::env::var, std::env, data/packages/rust_decimal/src, mysql.rs, 92, 35
+rust_decimal, rust_decimal::postgres::driver::test::get_postgres_url, std::env::var, std::env, data/packages/rust_decimal/src/postgres, driver.rs, 140, 35
+rustc_version, rustc_version::version_meta, std::env::var_os, std::env, data/packages/rustc_version/src, lib.rs, 201, 19
+rustc_version, rustc_version::version_meta, std::process::Command::new, std::process, data/packages/rustc_version/src, lib.rs, 203, 38
+rustversion, rustversion::time::try_today, std::env::var_os, std::env, data/packages/rustversion/src, time.rs, 25, 33
+semver, semver::backport::alloc::alloc::handle_alloc_error, std::process::abort, std::process, data/packages/semver/src, backport.rs, 57, 21
+semver, semver::backport::alloc::alloc::handle_alloc_error, std::process::abort, std::process, data/packages/semver/src, backport.rs, 57, 21
+unic-langid-impl, unic-langid-impl::bin::generate_layout::langid_to_direction_map, std::fs::read_dir, std::fs, data/packages/unic-langid-impl/src/bin, generate_layout.rs, 11, 21
+unic-langid-impl, unic-langid-impl::bin::generate_layout::langid_to_direction_map, std::fs::read_to_string, std::fs, data/packages/unic-langid-impl/src/bin, generate_layout.rs, 15, 27
+unic-langid-impl, unic-langid-impl::bin::generate_likelysubtags::main, std::fs::read_to_string, std::fs, data/packages/unic-langid-impl/src/bin, generate_likelysubtags.rs, 43, 23
+uniffi, uniffi::panichook::ensure_setup, std::env::set_var, std::env, data/packages/uniffi/src, panichook.rs, 9, 22
+uniffi, uniffi::testing::ensure_compiled_cdylib, std::process::Command::new, std::process, data/packages/uniffi/src, testing.rs, 65, 27
+uniffi, uniffi::testing::ensure_compiled_cdylib, std::process::Stdio::piped, std::process, data/packages/uniffi/src, testing.rs, 68, 22
+uniffi, uniffi::testing::run_uniffi_bindgen_test, std::process::Command::new, std::process, data/packages/uniffi/src, testing.rs, 137, 26
+uniffi, uniffi::panichook::ensure_setup, std::env::set_var, std::env, data/packages/uniffi/src, panichook.rs, 9, 22
+uniffi, uniffi::testing::ensure_compiled_cdylib, std::process::Command::new, std::process, data/packages/uniffi/src, testing.rs, 65, 27
+uniffi, uniffi::testing::ensure_compiled_cdylib, std::process::Stdio::piped, std::process, data/packages/uniffi/src, testing.rs, 68, 22
+uniffi, uniffi::testing::run_uniffi_bindgen_test, std::process::Command::new, std::process, data/packages/uniffi/src, testing.rs, 137, 26
+uniffi, uniffi::panichook::ensure_setup, std::env::set_var, std::env, data/packages/uniffi/src, panichook.rs, 9, 22
+uniffi, uniffi::testing::ensure_compiled_cdylib, std::process::Command::new, std::process, data/packages/uniffi/src, testing.rs, 65, 27
+uniffi, uniffi::testing::ensure_compiled_cdylib, std::process::Stdio::piped, std::process, data/packages/uniffi/src, testing.rs, 68, 22
+uniffi, uniffi::testing::run_uniffi_bindgen_test, std::process::Command::new, std::process, data/packages/uniffi/src, testing.rs, 137, 26
+uniffi, uniffi::panichook::ensure_setup, std::env::set_var, std::env, data/packages/uniffi/src, panichook.rs, 9, 22
+uniffi, uniffi::testing::ensure_compiled_cdylib, std::process::Command::new, std::process, data/packages/uniffi/src, testing.rs, 65, 27
+uniffi, uniffi::testing::ensure_compiled_cdylib, std::process::Stdio::piped, std::process, data/packages/uniffi/src, testing.rs, 68, 22
+uniffi, uniffi::testing::run_uniffi_bindgen_test, std::process::Command::new, std::process, data/packages/uniffi/src, testing.rs, 137, 26
+uniffi_bindgen, uniffi_bindgen::format_code_with_rustfmt, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src, lib.rs, 448, 26
+uniffi_bindgen, uniffi_bindgen::test::test_guessing_of_crate_root_directory_from_udl_file, std::env::var, std::env, data/packages/uniffi_bindgen/src, lib.rs, 647, 58
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 27, 33
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::compile_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 53, 26
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 74, 27
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::classpath_for_testing, std::env::var_os, std::env, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 95, 29
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 28, 33
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 43, 27
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::env::var_os, std::env, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 45, 26
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::env::split_paths, std::env, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 47, 13
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::env::join_paths, std::env, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 46, 26
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 29, 33
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 53, 27
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::env::var_os, std::env, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 55, 24
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::env::split_paths, std::env, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 57, 29
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::env::join_paths, std::env, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 57, 13
+uniffi_bindgen, uniffi_bindgen::bindings::swift::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/swift, mod.rs, 84, 33
+uniffi_bindgen, uniffi_bindgen::bindings::swift::mod::compile_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/swift, mod.rs, 128, 26
+uniffi_bindgen, uniffi_bindgen::bindings::swift::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/swift, mod.rs, 161, 27
+uniffi_bindgen, uniffi_bindgen::format_code_with_rustfmt, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src, lib.rs, 448, 26
+uniffi_bindgen, uniffi_bindgen::test::test_guessing_of_crate_root_directory_from_udl_file, std::env::var, std::env, data/packages/uniffi_bindgen/src, lib.rs, 647, 58
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 27, 33
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::compile_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 53, 26
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 74, 27
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::classpath_for_testing, std::env::var_os, std::env, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 95, 29
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 28, 33
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 43, 27
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::env::var_os, std::env, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 45, 26
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::env::split_paths, std::env, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 47, 13
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::env::join_paths, std::env, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 46, 26
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 29, 33
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 53, 27
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::env::var_os, std::env, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 55, 24
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::env::split_paths, std::env, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 57, 29
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::env::join_paths, std::env, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 57, 13
+uniffi_bindgen, uniffi_bindgen::bindings::swift::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/swift, mod.rs, 84, 33
+uniffi_bindgen, uniffi_bindgen::bindings::swift::mod::compile_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/swift, mod.rs, 128, 26
+uniffi_bindgen, uniffi_bindgen::bindings::swift::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/swift, mod.rs, 161, 27
+uniffi_bindgen, uniffi_bindgen::format_code_with_rustfmt, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src, lib.rs, 448, 26
+uniffi_bindgen, uniffi_bindgen::test::test_guessing_of_crate_root_directory_from_udl_file, std::env::var, std::env, data/packages/uniffi_bindgen/src, lib.rs, 647, 58
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 27, 33
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::compile_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 53, 26
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 74, 27
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::classpath_for_testing, std::env::var_os, std::env, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 95, 29
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 28, 33
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 43, 27
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::env::var_os, std::env, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 45, 26
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::env::split_paths, std::env, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 47, 13
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::env::join_paths, std::env, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 46, 26
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 29, 33
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 53, 27
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::env::var_os, std::env, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 55, 24
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::env::split_paths, std::env, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 57, 29
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::env::join_paths, std::env, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 57, 13
+uniffi_bindgen, uniffi_bindgen::bindings::swift::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/swift, mod.rs, 84, 33
+uniffi_bindgen, uniffi_bindgen::bindings::swift::mod::compile_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/swift, mod.rs, 128, 26
+uniffi_bindgen, uniffi_bindgen::bindings::swift::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/swift, mod.rs, 161, 27
+uniffi_bindgen, uniffi_bindgen::format_code_with_rustfmt, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src, lib.rs, 448, 26
+uniffi_bindgen, uniffi_bindgen::test::test_guessing_of_crate_root_directory_from_udl_file, std::env::var, std::env, data/packages/uniffi_bindgen/src, lib.rs, 647, 58
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 27, 33
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::compile_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 53, 26
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 74, 27
+uniffi_bindgen, uniffi_bindgen::bindings::kotlin::mod::classpath_for_testing, std::env::var_os, std::env, data/packages/uniffi_bindgen/src/bindings/kotlin, mod.rs, 95, 29
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 28, 33
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 43, 27
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::env::var_os, std::env, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 45, 26
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::env::split_paths, std::env, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 47, 13
+uniffi_bindgen, uniffi_bindgen::bindings::python::mod::run_script, std::env::join_paths, std::env, data/packages/uniffi_bindgen/src/bindings/python, mod.rs, 46, 26
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 29, 33
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 53, 27
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::env::var_os, std::env, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 55, 24
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::env::split_paths, std::env, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 57, 29
+uniffi_bindgen, uniffi_bindgen::bindings::ruby::mod::run_script, std::env::join_paths, std::env, data/packages/uniffi_bindgen/src/bindings/ruby, mod.rs, 57, 13
+uniffi_bindgen, uniffi_bindgen::bindings::swift::mod::write_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/swift, mod.rs, 84, 33
+uniffi_bindgen, uniffi_bindgen::bindings::swift::mod::compile_bindings, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/swift, mod.rs, 128, 26
+uniffi_bindgen, uniffi_bindgen::bindings::swift::mod::run_script, std::process::Command::new, std::process, data/packages/uniffi_bindgen/src/bindings/swift, mod.rs, 161, 27
+uniffi_build, uniffi_build::generate_scaffolding, std::env::var, std::env, data/packages/uniffi_build/src, lib.rs, 34, 23
+uniffi_build, uniffi_build::run_uniffi_bindgen_scaffolding, std::process::Command::new, std::process, data/packages/uniffi_build/src, lib.rs, 43, 26
+uniffi_build, uniffi_build::generate_scaffolding, std::env::var, std::env, data/packages/uniffi_build/src, lib.rs, 34, 23
+uniffi_build, uniffi_build::run_uniffi_bindgen_scaffolding, std::process::Command::new, std::process, data/packages/uniffi_build/src, lib.rs, 43, 26
+uniffi_build, uniffi_build::generate_scaffolding, std::env::var, std::env, data/packages/uniffi_build/src, lib.rs, 34, 23
+uniffi_build, uniffi_build::run_uniffi_bindgen_scaffolding, std::process::Command::new, std::process, data/packages/uniffi_build/src, lib.rs, 43, 26
+uniffi_build, uniffi_build::generate_scaffolding, std::env::var, std::env, data/packages/uniffi_build/src, lib.rs, 34, 23
+uniffi_build, uniffi_build::run_uniffi_bindgen_scaffolding, std::process::Command::new, std::process, data/packages/uniffi_build/src, lib.rs, 43, 26
+uniffi_macros, uniffi_macros::build_foreign_language_testcases, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 61, 23
+uniffi_macros, uniffi_macros::should_skip_path, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 111, 9
+uniffi_macros, uniffi_macros::include_scaffolding, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 165, 17
+uniffi_macros, uniffi_macros::generate_and_include_scaffolding, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 194, 17
+uniffi_macros, uniffi_macros::build_foreign_language_testcases, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 61, 23
+uniffi_macros, uniffi_macros::should_skip_path, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 111, 9
+uniffi_macros, uniffi_macros::include_scaffolding, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 165, 17
+uniffi_macros, uniffi_macros::generate_and_include_scaffolding, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 194, 17
+uniffi_macros, uniffi_macros::build_foreign_language_testcases, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 61, 23
+uniffi_macros, uniffi_macros::should_skip_path, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 111, 9
+uniffi_macros, uniffi_macros::include_scaffolding, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 165, 17
+uniffi_macros, uniffi_macros::generate_and_include_scaffolding, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 194, 17
+uniffi_macros, uniffi_macros::build_foreign_language_testcases, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 61, 23
+uniffi_macros, uniffi_macros::should_skip_path, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 111, 9
+uniffi_macros, uniffi_macros::include_scaffolding, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 165, 17
+uniffi_macros, uniffi_macros::generate_and_include_scaffolding, std::env::var, std::env, data/packages/uniffi_macros/src, lib.rs, 194, 17
+webdriver, webdriver::server::start, std::net::TcpListener::bind, std::net, data/packages/webdriver/src, server.rs, 216, 35
+webdriver, webdriver::server::start, tokio::net::TcpListener::from_std, tokio::net, data/packages/webdriver/src, server.rs, 227, 56
+webdriver, webdriver::server::tests::test_host_allowed, std::net::IpAddr::from_str, std::net, data/packages/webdriver/src, server.rs, 572, 46
+webdriver, webdriver::server::tests::test_host_allowed, std::net::SocketAddr::new, std::net, data/packages/webdriver/src, server.rs, 572, 34
+webdriver, webdriver::server::tests::test_host_allowed, std::net::IpAddr::from_str, std::net, data/packages/webdriver/src, server.rs, 573, 48
+webdriver, webdriver::server::tests::test_host_allowed, std::net::SocketAddr::new, std::net, data/packages/webdriver/src, server.rs, 573, 36
+webdriver, webdriver::server::tests::test_host_allowed, std::net::IpAddr::from_str, std::net, data/packages/webdriver/src, server.rs, 574, 49
+webdriver, webdriver::server::tests::test_host_allowed, std::net::SocketAddr::new, std::net, data/packages/webdriver/src, server.rs, 574, 37
+webdriver, webdriver::server::tests::test_host_allowed, std::net::IpAddr::from_str, std::net, data/packages/webdriver/src, server.rs, 575, 51
+webdriver, webdriver::server::tests::test_host_allowed, std::net::SocketAddr::new, std::net, data/packages/webdriver/src, server.rs, 575, 39
+wgpu-core, wgpu-core::device::trace::Trace::new, std::fs::File::create, std::fs, data/packages/wgpu-core/src/device, trace.rs, 197, 38
+wgpu-core, wgpu-core::device::trace::Trace::make_binary, std::fs::write, std::fs, data/packages/wgpu-core/src/device, trace.rs, 210, 25
+wgpu-core, wgpu-core::device::trace::Trace::new, std::fs::File::create, std::fs, data/packages/wgpu-core/src/device, trace.rs, 197, 38
+wgpu-core, wgpu-core::device::trace::Trace::make_binary, std::fs::write, std::fs, data/packages/wgpu-core/src/device, trace.rs, 210, 25
+wgpu-hal, wgpu-hal::auxil::dxgi::exception::register_exception_handler, winapi::um::errhandlingapi::AddVectoredExceptionHandler, winapi, data/packages/wgpu-hal/src/auxil/dxgi, exception.rs, 21, 28
+wgpu-hal, wgpu-hal::auxil::dxgi::exception::unregister_exception_handler, winapi::um::errhandlingapi::RemoveVectoredExceptionHandler, winapi, data/packages/wgpu-hal/src/auxil/dxgi, exception.rs, 31, 28
+wgpu-hal, wgpu-hal::auxil::dxgi::factory::enumerate_adapters, winapi::shared::dxgi1_6::IDXGIAdapter4::uuidof, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, 28, 45
+wgpu-hal, wgpu-hal::dx11::instance::crate::Instance::init, std::env::var, std::env, data/packages/wgpu-hal/src/dx11, instance.rs, 5, 42
+wgpu-hal, wgpu-hal::dx12::adapter::crate::Adapter::surface_capabilities, winapi::um::winuser::GetClientRect, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, 445, 32
+wgpu-hal, wgpu-hal::dx12::device::super::Device::new, winapi::um::d3d12::ID3D12Fence::uuidof, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 33, 37
+wgpu-hal, wgpu-hal::dx12::device::super::Device::new, winapi::um::d3d12::ID3D12Resource::uuidof, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 75, 40
+wgpu-hal, wgpu-hal::dx12::device::super::Device::wait_idle, winapi::um::synchapi::WaitForSingleObject, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 185, 18
+wgpu-hal, wgpu-hal::dx12::device::super::Device::load_shader, winapi::um::d3dcompiler::D3DCompile, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 243, 25
+wgpu-hal, wgpu-hal::dx12::device::crate::Device::create_buffer, winapi::um::d3d12::ID3D12Resource::uuidof, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 390, 36
+wgpu-hal, wgpu-hal::dx12::device::crate::Device::create_texture, winapi::um::d3d12::ID3D12Resource::uuidof, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 483, 36
+wgpu-hal, wgpu-hal::dx12::device::crate::Device::create_render_pipeline, winapi::um::d3d12::ID3D12PipelineState::uuidof, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 1410, 45
+wgpu-hal, wgpu-hal::dx12::device::crate::Device::create_fence, winapi::um::d3d12::ID3D12Fence::uuidof, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 1516, 33
+wgpu-hal, wgpu-hal::dx12::device::crate::Device::wait, winapi::um::synchapi::WaitForSingleObject, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 1543, 24
+wgpu-hal, wgpu-hal::dx12::mod::SwapChain::wait, winapi::um::synchapi::WaitForSingleObject, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, 543, 24
+wgpu-hal, wgpu-hal::dx12::mod::crate::Surface::configure, winapi::um::d3d12::ID3D12Resource::uuidof, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, 687, 65
+wgpu-hal, wgpu-hal::vulkan::instance::crate::Instance::create_surface, winapi::um::libloaderapi::GetModuleHandleW, winapi, data/packages/wgpu-hal/src/vulkan, instance.rs, 660, 46
+wgpu-hal, wgpu-hal::auxil::dxgi::exception::register_exception_handler, winapi::um::errhandlingapi::AddVectoredExceptionHandler, winapi, data/packages/wgpu-hal/src/auxil/dxgi, exception.rs, 21, 28
+wgpu-hal, wgpu-hal::auxil::dxgi::exception::unregister_exception_handler, winapi::um::errhandlingapi::RemoveVectoredExceptionHandler, winapi, data/packages/wgpu-hal/src/auxil/dxgi, exception.rs, 31, 28
+wgpu-hal, wgpu-hal::auxil::dxgi::factory::enumerate_adapters, winapi::shared::dxgi1_6::IDXGIAdapter4::uuidof, winapi, data/packages/wgpu-hal/src/auxil/dxgi, factory.rs, 28, 45
+wgpu-hal, wgpu-hal::dx11::instance::crate::Instance::init, std::env::var, std::env, data/packages/wgpu-hal/src/dx11, instance.rs, 5, 42
+wgpu-hal, wgpu-hal::dx12::adapter::crate::Adapter::surface_capabilities, winapi::um::winuser::GetClientRect, winapi, data/packages/wgpu-hal/src/dx12, adapter.rs, 445, 32
+wgpu-hal, wgpu-hal::dx12::device::super::Device::new, winapi::um::d3d12::ID3D12Fence::uuidof, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 33, 37
+wgpu-hal, wgpu-hal::dx12::device::super::Device::new, winapi::um::d3d12::ID3D12Resource::uuidof, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 75, 40
+wgpu-hal, wgpu-hal::dx12::device::super::Device::wait_idle, winapi::um::synchapi::WaitForSingleObject, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 185, 18
+wgpu-hal, wgpu-hal::dx12::device::super::Device::load_shader, winapi::um::d3dcompiler::D3DCompile, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 243, 25
+wgpu-hal, wgpu-hal::dx12::device::crate::Device::create_buffer, winapi::um::d3d12::ID3D12Resource::uuidof, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 390, 36
+wgpu-hal, wgpu-hal::dx12::device::crate::Device::create_texture, winapi::um::d3d12::ID3D12Resource::uuidof, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 483, 36
+wgpu-hal, wgpu-hal::dx12::device::crate::Device::create_render_pipeline, winapi::um::d3d12::ID3D12PipelineState::uuidof, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 1410, 45
+wgpu-hal, wgpu-hal::dx12::device::crate::Device::create_fence, winapi::um::d3d12::ID3D12Fence::uuidof, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 1516, 33
+wgpu-hal, wgpu-hal::dx12::device::crate::Device::wait, winapi::um::synchapi::WaitForSingleObject, winapi, data/packages/wgpu-hal/src/dx12, device.rs, 1543, 24
+wgpu-hal, wgpu-hal::dx12::mod::SwapChain::wait, winapi::um::synchapi::WaitForSingleObject, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, 543, 24
+wgpu-hal, wgpu-hal::dx12::mod::crate::Surface::configure, winapi::um::d3d12::ID3D12Resource::uuidof, winapi, data/packages/wgpu-hal/src/dx12, mod.rs, 687, 65
+wgpu-hal, wgpu-hal::vulkan::instance::crate::Instance::create_surface, winapi::um::libloaderapi::GetModuleHandleW, winapi, data/packages/wgpu-hal/src/vulkan, instance.rs, 660, 46
+whatsys, whatsys::apple::get_system_info, libc::sysctl, libc, data/packages/whatsys/src, apple.rs, 15, 14
+whatsys, whatsys::apple::get_system_info, libc::sysctl, libc, data/packages/whatsys/src, apple.rs, 34, 14
+whatsys, whatsys::linux::kernel_version, libc::uname, libc, data/packages/whatsys/src, linux.rs, 17, 17
