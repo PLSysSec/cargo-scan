@@ -64,7 +64,7 @@ impl EffectPathLoc {
         full_scope.extend_from_slice(mod_scope);
         full_scope.push(caller);
 
-        let caller = post_src.join("::");
+        let caller = full_scope.join("::");
         Self { crt, caller }
     }
     pub fn csv_header() -> &'static str {
