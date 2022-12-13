@@ -2766,7 +2766,6 @@ wasm-instrument,385590,Instrument and transform wasm modules.,2022-01-11 17:33:4
 rusoto_kinesis,384335,AWS SDK for Rust - Amazon Kinesis @ 2013-12-02,2017-05-20 01:48:58.119647,2022-04-25 04:29:46.53946,https://docs.rs/rusoto_kinesis,https://www.rusoto.org/,https://github.com/rusoto/rusoto,15267
 bat,384266,A cat(1) clone with wings.,2018-04-22 14:08:25.118286,2022-09-10 18:33:08.634878,,https://github.com/sharkdp/bat,https://github.com/sharkdp/bat,61835
 cidr,384219,IP network and IP host within network types,2017-03-06 15:41:04.873693,2021-10-08 18:50:28.042889,https://docs.rs/cidr,https://github.com/stbuehler/rust-cidr,https://github.com/stbuehler/rust-cidr,8852
-peek,384155,A query language for serializable data structures.,2019-07-13 16:52:17.786718,2019-08-30 12:09:14.793592,,,https://gitlab.com/glue-for-rust/peek-rs,148815
 rustc-ap-rustc_ast_passes,384045,Automatically published version of the package `rustc_ast_passes` in the rust-lang/rust repositor...,2020-03-25 14:12:28.093262,2021-07-06 08:25:33.382379,,,https://github.com/rust-lang/rust,222674
 aws_lambda_events,383928,AWS Lambda event definitions,2018-10-30 05:46:37.559336,2022-09-12 01:44:53.322705,,https://github.com/LegNeato/aws-lambda-events,https://github.com/LegNeato/aws-lambda-events,93531
 solana_rbpf,383917,Virtual machine and JIT compiler for eBPF programs,2018-10-30 08:25:09.324139,2022-08-15 07:55:53.789863,,https://solana.com/,https://github.com/solana-labs/rbpf,93545
