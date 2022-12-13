@@ -3525,7 +3525,6 @@ cassandra-cpp-sys,232444,A bindgen-generated Rust wrapper around the DataStax Ca
 sp-trie,232309,Patricia trie stuff using a parity-scale-codec node format,2020-02-27 00:54:16.825855,2022-03-01 15:16:34.257582,https://docs.rs/sp-trie,https://substrate.io,https://github.com/paritytech/substrate/,212899
 pwhash,232146,A collection of password hashing routines in pure Rust.,2016-02-09 22:39:09.598445,2021-01-03 18:20:47.082322,https://inejge.github.io/pwhash,https://github.com/inejge/pwhash,https://github.com/inejge/pwhash,4140
 pratt,231771,A Pratt parser for Rust,2020-04-06 13:57:55.455105,2020-10-24 17:24:15.503741,,,https://github.com/segeljakt/pratt/,226927
-pose,231604,An XSLT like templating system for Rust ,2019-07-12 10:26:00.395186,2019-08-30 12:15:39.901915,,,https://github.com/measlytwerp/pose-rs,148461
 tract-core,231266,"Tiny, no-nonsense, self contained, TensorFlow and ONNX inference",2018-11-02 11:18:38.222837,2022-09-23 12:35:28.695162,,,https://github.com/snipsco/tract,94302
 ufmt-write,231232,`μfmt`'s `uWrite` trait,2019-05-08 08:23:41.593528,2019-11-17 21:45:14.680074,,,https://github.com/japaric/ufmt,132774
 bevy_sprite,231093,Provides sprite functionality for Bevy Engine,2020-08-10 04:33:29.120371,2022-08-19 00:39:11.339069,,https://bevyengine.org,https://github.com/bevyengine/bevy,274920

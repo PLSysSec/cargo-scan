@@ -18,7 +18,7 @@ top1000:
 	./scan.py -i data/crate-lists/top1000.csv -o top1000
 
 top10000:
-	# Note: this actually contains only 9999 crates at the moment.
+	# Note: this actually contains only 9998 crates at the moment.
 	./scan.py -i data/crate-lists/top10000.csv -o top10000
 
 test:
