@@ -22,12 +22,14 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let of_interest: Vec<String> = util::file_lines(&args.of_interest).collect();
+    let of_interest: Vec<IdentPath> = util::file_lines(&args.of_interest).map(|s| IdentPath::new(&s)).collect();
     // println!("Of interest: {:?}", of_interest);
 
     let policy = Policy::from_file(&args.policy).unwrap();
-    // TODO: add patterns
-    let lookup = PolicyLookup::from_policy(&policy);
+    let mut lookup = PolicyLookup::from_policy(&policy);
+    for pat in &of_interest {
+        lookup.mark_of_interest(pat);
+    }
 
     let mut errors = Vec::new();
     let results = scanner::load_and_scan(&args.source);
@@ -41,5 +43,11 @@ fn main() {
 
     for err in &errors {
         println!("policy error: {}", err);
+    }
+
+    if errors.is_empty() {
+        println!("policy passed");
+    } else {
+        println!("policy failed with {} errors", errors.len());
     }
 }
