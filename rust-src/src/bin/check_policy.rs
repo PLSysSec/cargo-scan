@@ -22,7 +22,8 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let of_interest: Vec<IdentPath> = util::file_lines(&args.of_interest).map(|s| IdentPath::new(&s)).collect();
+    let of_interest: Vec<IdentPath> =
+        util::file_lines(&args.of_interest).map(|s| IdentPath::new(&s)).collect();
     // println!("Of interest: {:?}", of_interest);
 
     let policy = Policy::from_file(&args.policy).unwrap();

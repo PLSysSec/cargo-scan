@@ -1,5 +1,5 @@
-use std::io::{BufRead, BufReader};
 use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 
 pub fn file_lines(p: &PathBuf) -> impl Iterator<Item = String> {
