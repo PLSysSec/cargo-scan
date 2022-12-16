@@ -2,9 +2,11 @@
     Parse a Rust source file and check it against a policy file.
 */
 
-use cargo_scan::policy::{IdentPath, Policy, PolicyLookup};
+use cargo_scan::ident::Path as IdentPath;
+use cargo_scan::policy::{Policy, PolicyLookup};
 use cargo_scan::scanner;
 use cargo_scan::util;
+
 use clap::Parser;
 use std::path::PathBuf;
 

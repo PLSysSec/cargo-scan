@@ -5,172 +5,21 @@
     See example .policy files in policies/
 */
 
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fmt::{self, Display};
 use std::path::Path;
-use std::str::FromStr;
 
-/// An Rust name identifier, without colons
-/// E.g.: env
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Ident(String);
-
-/// A Rust path identifier, with colons
-/// E.g.: std::env::var_os
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct IdentPath(String);
-impl Display for IdentPath {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
-impl IdentPath {
-    pub fn new(s: &str) -> Self {
-        // TBD: check stuff
-        Self(s.to_string())
-    }
-}
-
-/// A Rust Arguments pattern
-/// TBD
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Args(String);
-
-/// Simplified effect model
-/// Serialized syntax: [fn name]([args]) or [fn name](*)
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Effect {
-    /// libc, std::env, std::env::var_os
-    fn_path: IdentPath,
-    /// arguments constraint (or * for all matches)
-    arg_pattern: Args,
-}
-impl Display for Effect {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}({})", self.fn_path.0, self.arg_pattern.0)
-    }
-}
-impl Serialize for Effect {
-    fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        ser.collect_str(self)
-    }
-}
-impl FromStr for Effect {
-    type Err = &'static str;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (s1, s23) = s.split_once('(').ok_or("expected ( in Effect")?;
-        let (s2, s3) = s23.split_once(')').ok_or("expected ) in Effect")?;
-        if !s3.is_empty() {
-            Err("expected empty string after )")
-        } else if s1.is_empty() {
-            Err("expected nonempty fn name")
-        } else {
-            Ok(Self::new(s1, s2))
-        }
-    }
-}
-impl<'de> Deserialize<'de> for Effect {
-    fn deserialize<D>(des: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        String::deserialize(des)?.parse().map_err(de::Error::custom)
-    }
-}
-impl Effect {
-    pub fn new(fn_path: &str, arg_pattern: &str) -> Self {
-        let fn_path = IdentPath(fn_path.to_string());
-        let arg_pattern = Args(arg_pattern.to_string());
-        Self { fn_path, arg_pattern }
-    }
-    pub fn all(s1: &str) -> Self {
-        Self::new(s1, "*")
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Region {
-    /// crate, crate::mod, or crate::mod::fun (all matches)
-    fn_path: IdentPath,
-    /// arguments constraint (or * for all matches)
-    arg_pattern: Args,
-}
-impl Display for Region {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}({})", self.fn_path.0, self.arg_pattern.0)
-    }
-}
-impl Serialize for Region {
-    fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        ser.collect_str(self)
-    }
-}
-impl FromStr for Region {
-    type Err = &'static str;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (s1, s23) = s.split_once('(').ok_or("expected ( in Region")?;
-        let (s2, s3) = s23.split_once(')').ok_or("expected ) in Region")?;
-        if !s3.is_empty() {
-            Err("expected empty string after )")
-        } else if s1.is_empty() {
-            Err("expected nonempty fn name")
-        } else {
-            Ok(Self::new(s1, s2))
-        }
-    }
-}
-impl<'de> Deserialize<'de> for Region {
-    fn deserialize<D>(des: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        String::deserialize(des)?.parse().map_err(de::Error::custom)
-    }
-}
-impl Region {
-    pub fn new(fn_path: &str, arg_pattern: &str) -> Self {
-        let fn_path = IdentPath(fn_path.to_string());
-        let arg_pattern = Args(arg_pattern.to_string());
-        Self { fn_path, arg_pattern }
-    }
-    pub fn new_all(fn_path: &str) -> Self {
-        Self::new(fn_path, "*")
-    }
-    pub fn whole_crate(cr: &str) -> Self {
-        let path = format!("{}::*", cr);
-        Self::new_all(&path)
-    }
-    pub fn module(cr: &str, md: &str) -> Self {
-        let path = format!("{}::{}::*", cr, md);
-        Self::new_all(&path)
-    }
-    pub fn function(cr: &str, md: &str, fun: &str) -> Self {
-        let path = format!("{}::{}::{}", cr, md, fun);
-        Self::new_all(&path)
-    }
-    pub fn function_call(cr: &str, md: &str, fun: &str, args: &str) -> Self {
-        let path = format!("{}::{}::{}", cr, md, fun);
-        Self::new(&path, args)
-    }
-}
+use super::ident::{FnCall, Path as IdentPath};
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Statement {
-    Allow { region: Region, effect: Effect },
-    Require { region: Region, effect: Effect },
-    Trust { region: Region },
+    Allow { region: FnCall, effect: FnCall },
+    Require { region: FnCall, effect: FnCall },
+    Trust { region: FnCall },
 }
 impl Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -189,25 +38,25 @@ impl Display for Statement {
 }
 impl Statement {
     pub fn allow_simple(path: &str, effect: &str) -> Self {
-        let region = Region::new_all(path);
-        let effect = Effect::all(effect);
+        let region = FnCall::new_all(path);
+        let effect = FnCall::new_all(effect);
         Self::Allow { region, effect }
     }
     pub fn require_simple(path: &str, effect: &str) -> Self {
-        let region = Region::new_all(path);
-        let effect = Effect::all(effect);
+        let region = FnCall::new_all(path);
+        let effect = FnCall::new_all(effect);
         Self::Require { region, effect }
     }
-    pub fn allow(path: &str, args: &str, effect: Effect) -> Self {
-        let region = Region::new(path, args);
+    pub fn allow(path: &str, args: &str, effect: FnCall) -> Self {
+        let region = FnCall::new(path, args);
         Self::Allow { region, effect }
     }
-    pub fn require(path: &str, args: &str, effect: Effect) -> Self {
-        let region = Region::new(path, args);
+    pub fn require(path: &str, args: &str, effect: FnCall) -> Self {
+        let region = FnCall::new(path, args);
         Self::Require { region, effect }
     }
     pub fn trust(path: &str) -> Self {
-        let region = Region::new_all(path);
+        let region = FnCall::new_all(path);
         Self::Trust { region }
     }
 }
@@ -243,10 +92,10 @@ impl Policy {
     pub fn require_simple(&mut self, path: &str, effect: &str) {
         self.add_statement(Statement::require_simple(path, effect));
     }
-    pub fn allow(&mut self, path: &str, args: &str, eff: Effect) {
+    pub fn allow(&mut self, path: &str, args: &str, eff: FnCall) {
         self.add_statement(Statement::allow(path, args, eff))
     }
-    pub fn require(&mut self, path: &str, args: &str, eff: Effect) {
+    pub fn require(&mut self, path: &str, args: &str, eff: FnCall) {
         self.add_statement(Statement::require(path, args, eff))
     }
     pub fn trust(&mut self, path: &str) {
@@ -278,17 +127,17 @@ impl PolicyLookup {
     pub fn add_statement(&mut self, stmt: &Statement) {
         match stmt {
             Statement::Allow { region: r, effect: e } => {
-                let caller = r.fn_path.clone();
-                let eff = e.fn_path.clone();
+                let caller = r.fn_path().clone();
+                let eff = e.fn_path().clone();
                 self.allow_sets.entry(caller).or_default().insert(eff);
             }
             Statement::Require { region: r, effect: e } => {
-                let caller = r.fn_path.clone();
-                let eff = e.fn_path.clone();
+                let caller = r.fn_path().clone();
+                let eff = e.fn_path().clone();
                 self.require_sets.entry(caller).or_default().insert(eff);
                 // require encompasses allow
-                let caller = r.fn_path.clone();
-                let eff = e.fn_path.clone();
+                let caller = r.fn_path().clone();
+                let eff = e.fn_path().clone();
                 self.allow_sets.entry(caller).or_default().insert(eff);
             }
             Statement::Trust { region: _ } => {
@@ -371,17 +220,17 @@ mod tests {
         // to real effects
         let cr = "permissions-ex";
         let mut policy = Policy::new(cr, "0.1", "0.1");
-        let eff1 = Effect::new("fs::delete", "path");
+        let eff1 = FnCall::new("fs::delete", "path");
         policy.require("permissions-ex::lib::remove", "path", eff1);
-        let eff2 = Effect::new("fs::create", "path");
+        let eff2 = FnCall::new("fs::create", "path");
         policy.require("permissions-ex::lib::save_data", "path", eff2);
-        let eff3 = Effect::new("fs::write", "path");
+        let eff3 = FnCall::new("fs::write", "path");
         policy.require("permissions-ex::lib::save_data", "path", eff3);
-        let eff4 = Effect::new("process::exec", "rm -f path");
+        let eff4 = FnCall::new("process::exec", "rm -f path");
         policy.allow("permissions-ex::lib::remove", "path", eff4);
-        let eff5 = Effect::new("fs::delete", "path");
+        let eff5 = FnCall::new("fs::delete", "path");
         policy.allow("permissions-ex::lib::save_data", "path", eff5);
-        let eff6 = Effect::new("fs::append", "my_app.log");
+        let eff6 = FnCall::new("fs::append", "my_app.log");
         policy.allow("permissions-ex::lib::prepare_data", "", eff6);
 
         println!("Policy example: {:?}", policy);
@@ -506,14 +355,14 @@ mod tests {
         policy.allow_simple("foo::g2", "libc::effect");
         let lookup = ex_lookup(&policy);
 
-        let bar = IdentPath("foo::bar".to_string());
-        let f1 = IdentPath("foo::f1".to_string());
-        let f2 = IdentPath("foo::f2".to_string());
-        let g1 = IdentPath("foo::g1".to_string());
-        let g2 = IdentPath("foo::g2".to_string());
-        let g3 = IdentPath("foo::g3".to_string());
-        let eff1 = IdentPath("libc::effect".to_string());
-        let eff2 = IdentPath("std::effect".to_string());
+        let bar = IdentPath::new("foo::bar");
+        let f1 = IdentPath::new("foo::f1");
+        let f2 = IdentPath::new("foo::f2");
+        let g1 = IdentPath::new("foo::g1");
+        let g2 = IdentPath::new("foo::g2");
+        let g3 = IdentPath::new("foo::g3");
+        let eff1 = IdentPath::new("libc::effect");
+        let eff2 = IdentPath::new("std::effect");
 
         assert!(lookup.check_edge_bool(&bar, &eff1));
         assert!(lookup.check_edge_bool(&bar, &eff2));
@@ -553,17 +402,17 @@ mod tests {
         let policy1 = Policy::from_file(policy_file).unwrap();
 
         let mut policy2 = Policy::new("permissions-ex", "0.1", "0.1");
-        let eff1 = Effect::new("fs::delete", "path");
+        let eff1 = FnCall::new("fs::delete", "path");
         policy2.require("permissions-ex::remove", "path", eff1);
-        let eff2 = Effect::new("fs::create", "path");
+        let eff2 = FnCall::new("fs::create", "path");
         policy2.require("permissions-ex::save_data", "path", eff2);
-        let eff3 = Effect::new("fs::write", "path");
+        let eff3 = FnCall::new("fs::write", "path");
         policy2.require("permissions-ex::save_data", "path", eff3);
-        let eff4 = Effect::new("process::exec", "rm -f path");
+        let eff4 = FnCall::new("process::exec", "rm -f path");
         policy2.allow("permissions-ex::remove", "path", eff4);
-        let eff5 = Effect::new("fs::delete", "path");
+        let eff5 = FnCall::new("fs::delete", "path");
         policy2.allow("permissions-ex::save_data", "path", eff5);
-        let eff6 = Effect::new("fs::append", "my_app.log");
+        let eff6 = FnCall::new("fs::append", "my_app.log");
         policy2.allow("permissions-ex::prepare_data", "", eff6);
 
         let policy1_toml = toml::to_string(&policy1).unwrap();
