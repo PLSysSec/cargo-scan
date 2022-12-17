@@ -154,11 +154,7 @@ impl PolicyLookup {
     }
 
     // internal function for check_edge
-    fn allow_list_contains(
-        &self,
-        caller: &Path,
-        effect: &Path,
-    ) -> Result<(), String> {
+    fn allow_list_contains(&self, caller: &Path, effect: &Path) -> Result<(), String> {
         if let Some(allow) = self.allow_sets.get(caller) {
             if allow.contains(effect) {
                 Ok(())
@@ -174,10 +170,7 @@ impl PolicyLookup {
     }
 
     /// Iterate over effects required at a particular path
-    pub fn iter_requirements(
-        &self,
-        callee: &Path,
-    ) -> impl Iterator<Item = &Path> {
+    pub fn iter_requirements(&self, callee: &Path) -> impl Iterator<Item = &Path> {
         self.require_sets.get(callee).into_iter().flat_map(|require| require.iter())
     }
 
