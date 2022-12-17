@@ -44,6 +44,12 @@ fn main() {
         let caller = IdentPath::new(effect.caller_path());
         let callee = IdentPath::new(effect.callee_path());
         // println!("{} -> {}", caller, callee);
+
+        // Placeholder impl
+        println!("{}", effect.to_csv());
+        lookup.check_edge(&caller, &callee, &mut errors);
+
+        // TODO: fix policy lookup so this works
         if !lookup.check_edge(&caller, &callee, &mut errors) {
             println!("{}", effect.to_csv());
         }
