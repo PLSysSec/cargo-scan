@@ -10,6 +10,8 @@ use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{self, Display};
 use std::str::FromStr;
 
+use super::util::FreshIter;
+
 fn replace_hyphens(s: &mut String) {
     // TODO: replace with more efficient in-place implementation
     let s_new = s.replace('-', "_");
@@ -81,52 +83,61 @@ impl Path {
         result
     }
 
+    /// Iterator over identifiers in the path
     pub fn idents(&self) -> impl Iterator<Item = Ident> + '_ {
         self.0.split("::").map(Ident::new)
     }
+    /// Iterator over patterns *which match* the path
+    /// Current implementation using FreshIter
+    pub fn patterns(&self) -> impl Iterator<Item = Pattern> {
+        let mut result = String::new();
+        let mut results = Vec::new();
+        let mut first = true;
+        for id in self.idents() {
+            if first {
+                first = false;
+            } else {
+                result.push_str("::");
+            }
+            result.push_str(&id.0);
+            results.push(Pattern::new(&result));
+        }
+        results.drain(..).fresh_iter()
+    }
+
     pub fn as_str(&self) -> &str {
         &self.0
     }
 }
 
 /// Type representing a pattern over Paths
+///
+/// Currently supported: only patterns of the form
+/// <path>::* (includes <path> itself)
+/// The ::* is left implicit and should not be provided
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Pattern(String);
+pub struct Pattern(Path);
 impl Display for Pattern {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 impl Pattern {
-    fn char_ok(c: char) -> bool {
-        c.is_ascii_alphanumeric()
-            || c == '_'
-            || c == '['
-            || c == ']'
-            || c == ':'
-            || c == '*'
-    }
     pub fn invariant(&self) -> bool {
-        self.0.chars().all(Self::char_ok)
-        // TBD check :: are adjacent
+        self.0.invariant()
     }
 
     pub fn new(s: &str) -> Self {
         Self::new_owned(s.to_string())
     }
     pub fn new_owned(s: String) -> Self {
-        let mut result = Self(s);
-        replace_hyphens(&mut result.0);
-        debug_assert!(result.invariant());
-        result
+        Self::from_path(Path::new_owned(s))
     }
     pub fn from_ident(i: Ident) -> Self {
-        let result = Self(i.0);
-        debug_assert!(result.invariant());
-        result
+        Self::from_path(Path::from_ident(i))
     }
     pub fn from_path(p: Path) -> Self {
-        let result = Self(p.0);
+        let result = Self(p);
         debug_assert!(result.invariant());
         result
     }
@@ -136,7 +147,7 @@ impl Pattern {
         Path::new(&self.0.replace("::*", ""))
     }
     pub fn as_str(&self) -> &str {
-        &self.0
+        self.0.as_str()
     }
 }
 
