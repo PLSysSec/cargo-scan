@@ -341,7 +341,9 @@ def scan_crate_mirai(crate, crate_dir, of_interest, add_args):
     # Run our MIRAI fork; yield effects
     os.environ[MIRAI_FLAGS_KEY] = MIRAI_FLAGS_VAL
     subprocess.run(CARGO + ["clean"], cwd=crate_dir, check=True)
-    proc = subprocess.Popen(CARGO_MIRAI + add_args, cwd=crate_dir, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
+    command = CARGO_MIRAI + add_args
+    logging.debug(f"Calling MIRAI: {command} in {crate_dir}")
+    proc = subprocess.Popen(command, cwd=crate_dir, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
     call_path = []
     for line in iter(proc.stdout.readline, b""):
         line = line.strip().decode("utf-8")
