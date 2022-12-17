@@ -26,10 +26,18 @@ impl Ident {
     pub fn invariant(&self) -> bool {
         self.0.chars().all(Self::char_ok)
     }
+
     pub fn new(s: &str) -> Self {
-        let result = Self(s.to_string());
+        Self::new_owned(s.to_string())
+    }
+    pub fn new_owned(s: String) -> Self {
+        let result = Self(s);
         debug_assert!(result.invariant());
         result
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
@@ -50,8 +58,12 @@ impl Path {
         self.0.chars().all(Self::char_ok)
         // TBD check :: are adjacent
     }
+
     pub fn new(s: &str) -> Self {
-        let result = Self(s.to_string());
+        Self::new_owned(s.to_string())
+    }
+    pub fn new_owned(s: String) -> Self {
+        let result = Self(s);
         debug_assert!(result.invariant());
         result
     }
@@ -60,8 +72,12 @@ impl Path {
         debug_assert!(result.invariant());
         result
     }
+
     pub fn idents(&self) -> impl Iterator<Item = Ident> + '_ {
         self.0.split("::").map(Ident::new)
+    }
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
@@ -86,8 +102,12 @@ impl Pattern {
         self.0.chars().all(Self::char_ok)
         // TBD check :: are adjacent
     }
+
     pub fn new(s: &str) -> Self {
-        let result = Self(s.to_string());
+        Self::new_owned(s.to_string())
+    }
+    pub fn new_owned(s: String) -> Self {
+        let result = Self(s);
         debug_assert!(result.invariant());
         result
     }
@@ -101,9 +121,13 @@ impl Pattern {
         debug_assert!(result.invariant());
         result
     }
+
     pub fn into_path(&self) -> Path {
         // TBD: generalize this
         Path::new(&self.0.replace("::*", ""))
+    }
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
@@ -117,7 +141,13 @@ impl Display for Args {
 }
 impl Args {
     pub fn new(s: &str) -> Self {
-        Self(s.to_string())
+        Self::new_owned(s.to_string())
+    }
+    pub fn new_owned(s: String) -> Self {
+        Self(s)
+    }
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
@@ -166,8 +196,11 @@ impl<'de> Deserialize<'de> for FnCall {
 }
 impl FnCall {
     pub fn new(fn_pattern: &str, arg_pattern: &str) -> Self {
-        let fn_pattern = Pattern(fn_pattern.to_string());
-        let arg_pattern = Args(arg_pattern.to_string());
+        Self::new_owned(fn_pattern.to_string(), arg_pattern.to_string())
+    }
+    pub fn new_owned(fn_pattern: String, arg_pattern: String) -> Self {
+        let fn_pattern = Pattern::new_owned(fn_pattern);
+        let arg_pattern = Args::new_owned(arg_pattern);
         Self { fn_pattern, arg_pattern }
     }
     pub fn new_all(s1: &str) -> Self {
