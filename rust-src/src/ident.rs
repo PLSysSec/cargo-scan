@@ -4,15 +4,17 @@
     Ident: std, fs, File
     Path: std::fs::File
     Pattern: std::fs, std::fs::*
-
-    TBD:
-    - This file doesn't allow - in identifiers. Consider allowing and
-      converting to _
 */
 
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{self, Display};
 use std::str::FromStr;
+
+fn replace_hyphens(s: &mut String) {
+    // TODO: replace with more efficient in-place implementation
+    let s_new = s.replace('-', "_");
+    *s = s_new;
+}
 
 /// An Rust name identifier, without colons
 /// E.g.: env
@@ -35,7 +37,8 @@ impl Ident {
         Self::new_owned(s.to_string())
     }
     pub fn new_owned(s: String) -> Self {
-        let result = Self(s);
+        let mut result = Self(s);
+        replace_hyphens(&mut result.0);
         debug_assert!(result.invariant());
         result
     }
@@ -67,7 +70,8 @@ impl Path {
         Self::new_owned(s.to_string())
     }
     pub fn new_owned(s: String) -> Self {
-        let result = Self(s);
+        let mut result = Self(s);
+        replace_hyphens(&mut result.0);
         debug_assert!(result.invariant());
         result
     }
@@ -111,7 +115,8 @@ impl Pattern {
         Self::new_owned(s.to_string())
     }
     pub fn new_owned(s: String) -> Self {
-        let result = Self(s);
+        let mut result = Self(s);
+        replace_hyphens(&mut result.0);
         debug_assert!(result.invariant());
         result
     }
