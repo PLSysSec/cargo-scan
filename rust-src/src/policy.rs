@@ -127,17 +127,17 @@ impl PolicyLookup {
     pub fn add_statement(&mut self, stmt: &Statement) {
         match stmt {
             Statement::Allow { region: r, effect: e } => {
-                let caller = r.fn_path().clone();
-                let eff = e.fn_path().clone();
+                let caller = r.fn_path();
+                let eff = e.fn_path();
                 self.allow_sets.entry(caller).or_default().insert(eff);
             }
             Statement::Require { region: r, effect: e } => {
-                let caller = r.fn_path().clone();
-                let eff = e.fn_path().clone();
+                let caller = r.fn_path();
+                let eff = e.fn_path();
                 self.require_sets.entry(caller).or_default().insert(eff);
                 // require encompasses allow
-                let caller = r.fn_path().clone();
-                let eff = e.fn_path().clone();
+                let caller = r.fn_path();
+                let eff = e.fn_path();
                 self.allow_sets.entry(caller).or_default().insert(eff);
             }
             Statement::Trust { region: _ } => {
