@@ -5,7 +5,7 @@
     the policy passes at the end.
 */
 
-use cargo_scan::ident::Path as IdentPath;
+use cargo_scan::ident::Path;
 use cargo_scan::policy::{Policy, PolicyLookup};
 use cargo_scan::scanner;
 use cargo_scan::util;
@@ -27,8 +27,8 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let of_interest: Vec<IdentPath> =
-        util::file_lines(&args.of_interest).map(|s| IdentPath::new(&s)).collect();
+    let of_interest: Vec<Path> =
+        util::file_lines(&args.of_interest).map(|s| Path::new(&s)).collect();
     // println!("Of interest: {:?}", of_interest);
 
     let policy = Policy::from_file(&args.policy).unwrap();
@@ -41,8 +41,8 @@ fn main() {
     let results = scanner::load_and_scan(&args.source);
     for effect in results.effects {
         // println!("{}", effect.to_csv());
-        let caller = IdentPath::new(effect.caller_path());
-        let callee = IdentPath::new(effect.callee_path());
+        let caller = Path::new(effect.caller_path());
+        let callee = Path::new(effect.callee_path());
         // println!("{} -> {}", caller, callee);
 
         // Placeholder impl

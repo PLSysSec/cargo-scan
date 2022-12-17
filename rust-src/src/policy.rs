@@ -10,9 +10,9 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fmt::{self, Display};
-use std::path::Path;
+use std::path::Path as FilePath;
 
-use super::ident::{FnCall, Path as IdentPath};
+use super::ident::{FnCall, Path, Pattern};
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -77,7 +77,7 @@ impl Policy {
         let statements = Vec::new();
         Policy { crate_name, crate_version, policy_version, statements }
     }
-    pub fn from_file(file: &Path) -> Result<Self, Box<dyn Error>> {
+    pub fn from_file(file: &FilePath) -> Result<Self, Box<dyn Error>> {
         debug_assert_eq!(file.extension(), Some(OsStr::new("toml")));
         let toml_str = std::fs::read_to_string(file)?;
         let policy: Policy = toml::from_str(&toml_str)?;
@@ -109,8 +109,8 @@ impl Policy {
 #[allow(dead_code, unused_variables)]
 #[derive(Debug)]
 pub struct PolicyLookup {
-    allow_sets: HashMap<IdentPath, HashSet<IdentPath>>,
-    require_sets: HashMap<IdentPath, HashSet<IdentPath>>,
+    allow_sets: HashMap<Path, HashSet<Path>>,
+    require_sets: HashMap<Path, HashSet<Path>>,
 }
 #[allow(dead_code, unused_variables)]
 impl PolicyLookup {
@@ -149,15 +149,15 @@ impl PolicyLookup {
     /// This must be done before any check_edge invocations.
     ///
     /// We re-use the require list for this, since it serves the same purpose!
-    pub fn mark_of_interest(&mut self, callee: &IdentPath) {
+    pub fn mark_of_interest(&mut self, callee: &Path) {
         self.require_sets.entry(callee.clone()).or_default().insert(callee.clone());
     }
 
     // internal function for check_edge
     fn allow_list_contains(
         &self,
-        caller: &IdentPath,
-        effect: &IdentPath,
+        caller: &Path,
+        effect: &Path,
     ) -> Result<(), String> {
         if let Some(allow) = self.allow_sets.get(caller) {
             if allow.contains(effect) {
@@ -176,8 +176,8 @@ impl PolicyLookup {
     /// Iterate over effects required at a particular path
     pub fn iter_requirements(
         &self,
-        callee: &IdentPath,
-    ) -> impl Iterator<Item = &IdentPath> {
+        callee: &Path,
+    ) -> impl Iterator<Item = &Path> {
         self.require_sets.get(callee).into_iter().flat_map(|require| require.iter())
     }
 
@@ -186,8 +186,8 @@ impl PolicyLookup {
     /// not need any particular order. This may change later.
     pub fn check_edge(
         &self,
-        caller: &IdentPath,
-        callee: &IdentPath,
+        caller: &Path,
+        callee: &Path,
         error_list: &mut Vec<String>,
     ) -> bool {
         let mut no_errors = true;
@@ -203,7 +203,7 @@ impl PolicyLookup {
     /// Check a call graph edge against the policy.
     /// Rather than returning a list of errors, just return a Boolean
     /// of whether it passes or not.
-    pub fn check_edge_bool(&self, caller: &IdentPath, callee: &IdentPath) -> bool {
+    pub fn check_edge_bool(&self, caller: &Path, callee: &Path) -> bool {
         for req in self.iter_requirements(callee) {
             if self.allow_list_contains(caller, req).is_err() {
                 return false;
@@ -253,8 +253,8 @@ mod tests {
     }
 
     fn ex_lookup(policy: &Policy) -> PolicyLookup {
-        let eff1 = IdentPath("libc::effect".to_string());
-        let eff2 = IdentPath("std::effect".to_string());
+        let eff1 = Path("libc::effect".to_string());
+        let eff2 = Path("std::effect".to_string());
         let mut lookup = PolicyLookup::from_policy(policy);
         lookup.mark_of_interest(&eff1);
         lookup.mark_of_interest(&eff2);
@@ -266,9 +266,9 @@ mod tests {
         let policy = ex_policy();
         let lookup = ex_lookup(&policy);
 
-        let foo = IdentPath("foo".to_string());
-        let bar = IdentPath("bar".to_string());
-        let eff = IdentPath("std::effect".to_string());
+        let foo = Path("foo".to_string());
+        let bar = Path("bar".to_string());
+        let eff = Path("std::effect".to_string());
 
         println!("{:?}", policy);
         println!("{:?}", lookup);
@@ -287,11 +287,11 @@ mod tests {
         policy.allow_simple("foo", "std::effect");
         let lookup = ex_lookup(&policy);
 
-        let foo = IdentPath("foo".to_string());
-        let bar = IdentPath("bar".to_string());
-        let eff1 = IdentPath("std::effect".to_string());
-        let eff2 = IdentPath("libc::effect".to_string());
-        let eff3 = IdentPath("std::non_effect".to_string());
+        let foo = Path("foo".to_string());
+        let bar = Path("bar".to_string());
+        let eff1 = Path("std::effect".to_string());
+        let eff2 = Path("libc::effect".to_string());
+        let eff3 = Path("std::non_effect".to_string());
 
         println!("{:?}", policy);
         println!("{:?}", lookup);
@@ -309,10 +309,10 @@ mod tests {
         policy.require_simple("foo", "std::effect");
         let lookup = ex_lookup(&policy);
 
-        let foo = IdentPath("foo".to_string());
-        let bar = IdentPath("bar".to_string());
-        let eff1 = IdentPath("std::effect".to_string());
-        let eff2 = IdentPath("libc::effect".to_string());
+        let foo = Path("foo".to_string());
+        let bar = Path("bar".to_string());
+        let eff1 = Path("std::effect".to_string());
+        let eff2 = Path("libc::effect".to_string());
 
         println!("{:?}", policy);
         println!("{:?}", lookup);
@@ -335,11 +335,11 @@ mod tests {
         policy.allow_simple("foo::bar", "libc::non_effect");
         let lookup = ex_lookup(&policy);
 
-        let bar = IdentPath("foo::bar".to_string());
-        let eff1 = IdentPath("libc::effect".to_string());
-        let eff2 = IdentPath("std::effect".to_string());
-        let eff3 = IdentPath("libc::non_effect".to_string());
-        let eff4 = IdentPath("std::non_effect".to_string());
+        let bar = Path("foo::bar".to_string());
+        let eff1 = Path("libc::effect".to_string());
+        let eff2 = Path("std::effect".to_string());
+        let eff3 = Path("libc::non_effect".to_string());
+        let eff4 = Path("std::non_effect".to_string());
 
         assert!(lookup.check_edge_bool(&bar, &eff1));
         assert!(!lookup.check_edge_bool(&bar, &eff2));
@@ -358,14 +358,14 @@ mod tests {
         policy.allow_simple("foo::g2", "libc::effect");
         let lookup = ex_lookup(&policy);
 
-        let bar = IdentPath::new("foo::bar");
-        let f1 = IdentPath::new("foo::f1");
-        let f2 = IdentPath::new("foo::f2");
-        let g1 = IdentPath::new("foo::g1");
-        let g2 = IdentPath::new("foo::g2");
-        let g3 = IdentPath::new("foo::g3");
-        let eff1 = IdentPath::new("libc::effect");
-        let eff2 = IdentPath::new("std::effect");
+        let bar = Path::new("foo::bar");
+        let f1 = Path::new("foo::f1");
+        let f2 = Path::new("foo::f2");
+        let g1 = Path::new("foo::g1");
+        let g2 = Path::new("foo::g2");
+        let g3 = Path::new("foo::g3");
+        let eff1 = Path::new("libc::effect");
+        let eff2 = Path::new("std::effect");
 
         assert!(lookup.check_edge_bool(&bar, &eff1));
         assert!(lookup.check_edge_bool(&bar, &eff2));
@@ -392,8 +392,8 @@ mod tests {
         policy.require_simple("bar", "libc::effect");
         let lookup = ex_lookup(&policy);
 
-        let foo = IdentPath("foo".to_string());
-        let bar = IdentPath("bar".to_string());
+        let foo = Path("foo".to_string());
+        let bar = Path("bar".to_string());
 
         assert!(lookup.check_edge_bool(&foo, &bar));
         assert!(lookup.check_edge_bool(&bar, &foo));
