@@ -1,5 +1,8 @@
 /*
     Parse a Rust source file and check it against a policy file.
+
+    Print out effects found that fail the policy, + whether or not
+    the policy passes at the end.
 */
 
 use cargo_scan::ident::Path as IdentPath;
@@ -41,16 +44,18 @@ fn main() {
         let caller = IdentPath::new(effect.caller_path());
         let callee = IdentPath::new(effect.callee_path());
         // println!("{} -> {}", caller, callee);
-        lookup.check_edge(&caller, &callee, &mut errors);
+        if !lookup.check_edge(&caller, &callee, &mut errors) {
+            println!("{}", effect.to_csv());
+        }
     }
 
     for err in &errors {
-        println!("policy error: {}", err);
+        eprintln!("policy error: {}", err);
     }
 
     if errors.is_empty() {
-        println!("policy passed");
+        eprintln!("policy passed");
     } else {
-        println!("policy failed with {} errors", errors.len());
+        eprintln!("policy failed with {} errors", errors.len());
     }
 }

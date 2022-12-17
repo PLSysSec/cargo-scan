@@ -189,12 +189,15 @@ impl PolicyLookup {
         caller: &IdentPath,
         callee: &IdentPath,
         error_list: &mut Vec<String>,
-    ) {
+    ) -> bool {
+        let mut no_errors = true;
         for req in self.iter_requirements(callee) {
             self.allow_list_contains(caller, req).unwrap_or_else(|err| {
                 error_list.push(err);
+                no_errors = false;
             });
         }
+        no_errors
     }
 
     /// Check a call graph edge against the policy.
