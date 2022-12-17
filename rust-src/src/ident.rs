@@ -4,6 +4,10 @@
     Ident: std, fs, File
     Path: std::fs::File
     Pattern: std::fs, std::fs::*
+
+    TBD:
+    - This file doesn't allow - in identifiers. Consider allowing and
+      converting to _
 */
 
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};

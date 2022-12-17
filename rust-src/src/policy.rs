@@ -218,20 +218,20 @@ mod tests {
     fn test_policy_serialize_deserialize() {
         // Note: this example uses dummy strings that don't correspond
         // to real effects
-        let cr = "permissions-ex";
+        let cr = "permissions_ex";
         let mut policy = Policy::new(cr, "0.1", "0.1");
         let eff1 = FnCall::new("fs::delete", "path");
-        policy.require("permissions-ex::lib::remove", "path", eff1);
+        policy.require("permissions_ex::lib::remove", "path", eff1);
         let eff2 = FnCall::new("fs::create", "path");
-        policy.require("permissions-ex::lib::save_data", "path", eff2);
+        policy.require("permissions_ex::lib::save_data", "path", eff2);
         let eff3 = FnCall::new("fs::write", "path");
-        policy.require("permissions-ex::lib::save_data", "path", eff3);
+        policy.require("permissions_ex::lib::save_data", "path", eff3);
         let eff4 = FnCall::new("process::exec", "rm -f path");
-        policy.allow("permissions-ex::lib::remove", "path", eff4);
+        policy.allow("permissions_ex::lib::remove", "path", eff4);
         let eff5 = FnCall::new("fs::delete", "path");
-        policy.allow("permissions-ex::lib::save_data", "path", eff5);
+        policy.allow("permissions_ex::lib::save_data", "path", eff5);
         let eff6 = FnCall::new("fs::append", "my_app.log");
-        policy.allow("permissions-ex::lib::prepare_data", "", eff6);
+        policy.allow("permissions_ex::lib::prepare_data", "", eff6);
 
         println!("Policy example: {:?}", policy);
 
@@ -401,19 +401,19 @@ mod tests {
         let policy_file = Path::new("../policies/permissions-ex.toml");
         let policy1 = Policy::from_file(policy_file).unwrap();
 
-        let mut policy2 = Policy::new("permissions-ex", "0.1", "0.1");
+        let mut policy2 = Policy::new("permissions_ex", "0.1", "0.1");
         let eff1 = FnCall::new("fs::delete", "path");
-        policy2.require("permissions-ex::remove", "path", eff1);
+        policy2.require("permissions_ex::remove", "path", eff1);
         let eff2 = FnCall::new("fs::create", "path");
-        policy2.require("permissions-ex::save_data", "path", eff2);
+        policy2.require("permissions_ex::save_data", "path", eff2);
         let eff3 = FnCall::new("fs::write", "path");
-        policy2.require("permissions-ex::save_data", "path", eff3);
+        policy2.require("permissions_ex::save_data", "path", eff3);
         let eff4 = FnCall::new("process::exec", "rm -f path");
-        policy2.allow("permissions-ex::remove", "path", eff4);
+        policy2.allow("permissions_ex::remove", "path", eff4);
         let eff5 = FnCall::new("fs::delete", "path");
-        policy2.allow("permissions-ex::save_data", "path", eff5);
+        policy2.allow("permissions_ex::save_data", "path", eff5);
         let eff6 = FnCall::new("fs::append", "my_app.log");
-        policy2.allow("permissions-ex::prepare_data", "", eff6);
+        policy2.allow("permissions_ex::prepare_data", "", eff6);
 
         let policy1_toml = toml::to_string(&policy1).unwrap();
         let policy2_toml = toml::to_string(&policy2).unwrap();

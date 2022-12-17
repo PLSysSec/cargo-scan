@@ -1,33 +1,33 @@
-crate_name = "permissions-ex"
+crate_name = "permissions_ex"
 crate_version = "0.1"
 policy_version = "0.1"
 
 [[statements]]
 type = "Require"
-region = "permissions-ex::remove(path)"
+region = "permissions_ex::remove(path)"
 effect = "fs::delete(path)"
 
 [[statements]]
 type = "Require"
-region = "permissions-ex::save_data(path)"
+region = "permissions_ex::save_data(path)"
 effect = "fs::create(path)"
 
 [[statements]]
 type = "Require"
-region = "permissions-ex::save_data(path)"
+region = "permissions_ex::save_data(path)"
 effect = "fs::write(path)"
 
 [[statements]]
 type = "Allow"
-region = "permissions-ex::remove(path)"
+region = "permissions_ex::remove(path)"
 effect = "process::exec(rm -f path)"
 
 [[statements]]
 type = "Allow"
-region = "permissions-ex::save_data(path)"
+region = "permissions_ex::save_data(path)"
 effect = "fs::delete(path)"
 
 [[statements]]
 type = "Allow"
-region = "permissions-ex::prepare_data()"
+region = "permissions_ex::prepare_data()"
 effect = "fs::append(my_app.log)"
