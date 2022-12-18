@@ -20,14 +20,14 @@ effect = "fs::write(path)"
 [[statements]]
 type = "Allow"
 region = "permissions_ex::remove(path)"
-effect = "process::exec(rm -f path)"
+effect = "std::process(rm -f path)"
 
 [[statements]]
 type = "Allow"
 region = "permissions_ex::save_data(path)"
-effect = "fs::delete(path)"
+effect = "std::fs(path)"
 
 [[statements]]
 type = "Allow"
 region = "permissions_ex::prepare_data()"
-effect = "fs::append(my_app.log)"
+effect = "std::fs(my_app.log)"
