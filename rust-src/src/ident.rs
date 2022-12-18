@@ -105,6 +105,10 @@ impl Path {
         results.drain(..).fresh_iter()
     }
 
+    pub fn matches(&self, pattern: &Pattern) -> bool {
+        self.0.starts_with(pattern.as_str())
+    }
+
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -149,12 +153,12 @@ impl Pattern {
     /// Return true if the set of paths denoted by self is
     /// a subset of those denoted by other
     pub fn subset(&self, other: &Self) -> bool {
-        other.superset(self)
+        self.0.matches(other)
     }
     /// Return true if the set of paths denoted by self is
     /// a superset of those denoted by other
     pub fn superset(&self, other: &Self) -> bool {
-        self.0.0.starts_with(&other.0.0)
+        other.subset(self)
     }
 }
 
@@ -235,5 +239,56 @@ impl FnCall {
     }
     pub fn fn_pattern(&self) -> &Pattern {
         &self.fn_pattern
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_path_patterns() {
+        let p = Path::new("std::fs");
+        let pats: Vec<Pattern> = p.patterns().collect();
+        let pat1 = Pattern::new("std");
+        let pat2 = Pattern::new("std::fs");
+        assert_eq!(pats, vec![pat1, pat2])
+    }
+
+    #[test]
+    fn test_path_matches() {
+        let p = Path::new("std::fs");
+        let pat1 = Pattern::new("std");
+        let pat2 = Pattern::new("std::fs");
+        let pat3 = Pattern::new("std::fs::File");
+        let pat4 = Pattern::new("std::os");
+        assert!(p.matches(&pat1));
+        assert!(p.matches(&pat2));
+        assert!(!p.matches(&pat3));
+        assert!(!p.matches(&pat4));
+    }
+
+    #[test]
+    fn test_pattern_subset_superset() {
+        let pat1 = Pattern::new("std");
+        let pat2 = Pattern::new("std::fs");
+        let pat3 = Pattern::new("std::fs::File");
+        let pat4 = Pattern::new("std::os");
+
+        assert!(pat1.superset(&pat2));
+        assert!(pat1.superset(&pat3));
+        assert!(pat2.superset(&pat3));
+
+        assert!(pat2.subset(&pat1));
+        assert!(pat3.subset(&pat1));
+        assert!(pat3.subset(&pat2));
+
+        assert!(pat1.subset(&pat1));
+        assert!(pat2.subset(&pat2));
+        assert!(pat4.subset(&pat4));
+
+        assert!(!pat1.subset(&pat2));
+        assert!(!pat2.subset(&pat4));
+        assert!(!pat4.subset(&pat2));
     }
 }
