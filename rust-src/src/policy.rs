@@ -268,9 +268,9 @@ mod tests {
         let policy = ex_policy();
         let lookup = ex_lookup(&policy);
 
-        let foo = Path("foo".to_string());
-        let bar = Path("bar".to_string());
-        let eff = Path("std::effect".to_string());
+        let foo = Path::new("foo");
+        let bar = Path::new("bar");
+        let eff = Path::new("std::effect");
 
         println!("{:?}", policy);
         println!("{:?}", lookup);
@@ -289,11 +289,11 @@ mod tests {
         policy.allow_simple("foo", "std::effect");
         let lookup = ex_lookup(&policy);
 
-        let foo = Path("foo".to_string());
-        let bar = Path("bar".to_string());
-        let eff1 = Path("std::effect".to_string());
-        let eff2 = Path("libc::effect".to_string());
-        let eff3 = Path("std::non_effect".to_string());
+        let foo = Path::new("foo");
+        let bar = Path::new("bar");
+        let eff1 = Path::new("std::effect");
+        let eff2 = Path::new("libc::effect");
+        let eff3 = Path::new("std::non_effect");
 
         println!("{:?}", policy);
         println!("{:?}", lookup);
@@ -311,10 +311,10 @@ mod tests {
         policy.require_simple("foo", "std::effect");
         let lookup = ex_lookup(&policy);
 
-        let foo = Path("foo".to_string());
-        let bar = Path("bar".to_string());
-        let eff1 = Path("std::effect".to_string());
-        let eff2 = Path("libc::effect".to_string());
+        let foo = Path::new("foo");
+        let bar = Path::new("bar");
+        let eff1 = Path::new("std::effect");
+        let eff2 = Path::new("libc::effect");
 
         println!("{:?}", policy);
         println!("{:?}", lookup);
@@ -337,11 +337,11 @@ mod tests {
         policy.allow_simple("foo::bar", "libc::non_effect");
         let lookup = ex_lookup(&policy);
 
-        let bar = Path("foo::bar".to_string());
-        let eff1 = Path("libc::effect".to_string());
-        let eff2 = Path("std::effect".to_string());
-        let eff3 = Path("libc::non_effect".to_string());
-        let eff4 = Path("std::non_effect".to_string());
+        let bar = Path::new("foo::bar");
+        let eff1 = Path::new("libc::effect");
+        let eff2 = Path::new("std::effect");
+        let eff3 = Path::new("libc::non_effect");
+        let eff4 = Path::new("std::non_effect");
 
         assert!(lookup.check_edge_bool(&bar, &eff1));
         assert!(!lookup.check_edge_bool(&bar, &eff2));
@@ -394,8 +394,8 @@ mod tests {
         policy.require_simple("bar", "libc::effect");
         let lookup = ex_lookup(&policy);
 
-        let foo = Path("foo".to_string());
-        let bar = Path("bar".to_string());
+        let foo = Path::new("foo");
+        let bar = Path::new("bar");
 
         assert!(lookup.check_edge_bool(&foo, &bar));
         assert!(lookup.check_edge_bool(&bar, &foo));

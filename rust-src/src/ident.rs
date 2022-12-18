@@ -53,7 +53,7 @@ impl Ident {
 /// A Rust path identifier, with colons
 /// E.g.: std::env::var_os
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Path(pub String);
+pub struct Path(String);
 impl Display for Path {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
@@ -164,7 +164,7 @@ impl Pattern {
 
 /// Type representing an Argument pattern like (x: String, y: usize)
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Args(pub String);
+pub struct Args(String);
 impl Display for Args {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
@@ -186,8 +186,8 @@ impl Args {
 /// Used for Regions and Effects
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FnCall {
-    pub fn_pattern: Pattern,
-    pub arg_pattern: Args,
+    fn_pattern: Pattern,
+    arg_pattern: Args,
 }
 impl Display for FnCall {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
