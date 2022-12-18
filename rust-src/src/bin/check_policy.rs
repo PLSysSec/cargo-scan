@@ -37,26 +37,37 @@ fn main() {
         lookup.mark_of_interest(pat);
     }
 
-    let mut errors = Vec::new();
     let results = scanner::load_and_scan(&args.source);
+    let mut num_errors = 0;
     for effect in results.effects {
         // println!("{}", effect.to_csv());
         let caller = Path::new(effect.caller_path());
         let callee = Path::new(effect.callee_path());
         // println!("{} -> {}", caller, callee);
 
+        let mut errors = Vec::new();
         if !lookup.check_edge(&caller, &callee, &mut errors) {
-            println!("{}", effect.to_csv());
+            debug_assert!(!errors.is_empty());
+            num_errors += errors.len();
+            for effect_pattern in errors.drain(..) {
+                eprintln!(
+                    "policy error: allow list for function \
+                    {} missing effect {} for call {}",
+                    caller, effect_pattern, callee
+                );
+
+                let mut effect_with_pat = effect.clone();
+                effect_with_pat.set_pattern(effect_pattern);
+
+                println!("{}", effect_with_pat.to_csv());
+            }
         }
+        debug_assert!(errors.is_empty());
     }
 
-    for err in &errors {
-        eprintln!("policy error: {}", err);
-    }
-
-    if errors.is_empty() {
+    if num_errors == 0 {
         eprintln!("policy passed");
     } else {
-        eprintln!("policy failed with {} errors", errors.len());
+        eprintln!("policy failed with {} errors", num_errors);
     }
 }

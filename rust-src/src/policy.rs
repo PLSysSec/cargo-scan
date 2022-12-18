@@ -191,15 +191,12 @@ impl PolicyLookup {
         &self,
         caller: &Path,
         callee: &Path,
-        error_list: &mut Vec<String>,
+        error_list: &mut Vec<Pattern>,
     ) -> bool {
         let mut no_errors = true;
         for req in self.require_patterns(callee) {
             if !self.allow_list_contains(caller, req) {
-                error_list.push(format!(
-                    "Allow list for function {} missing effect {} for call {}",
-                    caller, req, callee
-                ));
+                error_list.push(req.clone());
                 no_errors = false;
             }
         }

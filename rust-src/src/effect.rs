@@ -145,20 +145,21 @@ impl Effect {
     pub fn caller_path(&self) -> &str {
         self.caller_loc.caller.as_str()
     }
-
     pub fn callee_path(&self) -> &str {
         self.callee.as_str()
     }
-
     /// Get the caller and callee as full paths
     pub fn caller_callee(&self) -> (&str, &str) {
         (self.caller_path(), self.callee_path())
     }
 
+    pub fn set_pattern(&mut self, pat: Pattern) {
+        self.pattern = Some(pat)
+    }
+
     pub fn csv_header() -> &'static str {
         "crate, caller, callee, pattern, dir, file, line, col"
     }
-
     pub fn to_csv(&self) -> String {
         let caller_loc_csv = self.caller_loc.to_csv();
         let callee = sanitize_comma(self.callee.as_str());
