@@ -5,7 +5,7 @@
     the policy passes at the end.
 */
 
-use cargo_scan::ident::Path;
+use cargo_scan::ident::{Path, Pattern};
 use cargo_scan::policy::{Policy, PolicyLookup};
 use cargo_scan::scanner;
 use cargo_scan::util;
@@ -27,8 +27,8 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let of_interest: Vec<Path> =
-        util::file_lines(&args.of_interest).map(|s| Path::new(&s)).collect();
+    let of_interest: Vec<Pattern> =
+        util::file_lines(&args.of_interest).map(Pattern::new_owned).collect();
     // println!("Of interest: {:?}", of_interest);
 
     let policy = Policy::from_file(&args.policy).unwrap();
@@ -45,11 +45,6 @@ fn main() {
         let callee = Path::new(effect.callee_path());
         // println!("{} -> {}", caller, callee);
 
-        // Placeholder impl
-        println!("{}", effect.to_csv());
-        lookup.check_edge(&caller, &callee, &mut errors);
-
-        // TODO: fix policy lookup so this works
         if !lookup.check_edge(&caller, &callee, &mut errors) {
             println!("{}", effect.to_csv());
         }

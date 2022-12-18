@@ -142,12 +142,19 @@ impl Pattern {
         result
     }
 
-    pub fn into_path(&self) -> Path {
-        // TBD: generalize this
-        Path::new(&self.0.replace("::*", ""))
-    }
     pub fn as_str(&self) -> &str {
         self.0.as_str()
+    }
+
+    /// Return true if the set of paths denoted by self is
+    /// a subset of those denoted by other
+    pub fn subset(&self, other: &Self) -> bool {
+        other.superset(self)
+    }
+    /// Return true if the set of paths denoted by self is
+    /// a superset of those denoted by other
+    pub fn superset(&self, other: &Self) -> bool {
+        self.0.0.starts_with(&other.0.0)
     }
 }
 
@@ -228,8 +235,5 @@ impl FnCall {
     }
     pub fn fn_pattern(&self) -> &Pattern {
         &self.fn_pattern
-    }
-    pub fn fn_path(&self) -> Path {
-        self.fn_pattern.into_path()
     }
 }

@@ -104,13 +104,14 @@ impl Policy {
 }
 
 /// Quick-lookup summary of the policy.
+///
 /// Note: may make more sense to merge these fields into Policy eventually; current separate
 /// because would require custom serialization/deserialization logic.
 #[allow(dead_code, unused_variables)]
 #[derive(Debug)]
 pub struct PolicyLookup {
-    allow_sets: HashMap<Path, HashSet<Path>>,
-    require_sets: HashMap<Path, HashSet<Path>>,
+    allow_sets: HashMap<Pattern, HashSet<Pattern>>,
+    require_sets: HashMap<Pattern, HashSet<Pattern>>,
 }
 #[allow(dead_code, unused_variables)]
 impl PolicyLookup {
@@ -127,51 +128,60 @@ impl PolicyLookup {
     pub fn add_statement(&mut self, stmt: &Statement) {
         match stmt {
             Statement::Allow { region: r, effect: e } => {
-                let caller = r.fn_path();
-                let eff = e.fn_path();
-                self.allow_sets.entry(caller).or_default().insert(eff);
+                self.add_allow(r, e);
             }
             Statement::Require { region: r, effect: e } => {
-                let caller = r.fn_path();
-                let eff = e.fn_path();
-                self.require_sets.entry(caller).or_default().insert(eff);
                 // require encompasses allow
-                let caller = r.fn_path();
-                let eff = e.fn_path();
-                self.allow_sets.entry(caller).or_default().insert(eff);
+                self.add_allow(r, e);
+                self.add_require(r, e);
             }
             Statement::Trust { region: _ } => {
                 unimplemented!()
             }
         }
     }
+
+    // Internal use only
+    fn add_allow(&mut self, region: &FnCall, effect: &FnCall) {
+        let callers = region.fn_pattern().clone();
+        let effects = effect.fn_pattern().clone();
+        self.allow_sets.entry(callers).or_default().insert(effects);
+    }
+    fn add_require(&mut self, region: &FnCall, effect: &FnCall) {
+        let callers = region.fn_pattern().clone();
+        let effects = effect.fn_pattern().clone();
+        self.allow_sets.entry(callers).or_default().insert(effects);
+    }
+
     /// Mark a fn call is an interesting/dangerous call.
     /// This must be done before any check_edge invocations.
     ///
+    /// callee: a pattern of possible callee paths
+    ///
     /// We re-use the require list for this, since it serves the same purpose!
-    pub fn mark_of_interest(&mut self, callee: &Path) {
+    pub fn mark_of_interest(&mut self, callee: &Pattern) {
         self.require_sets.entry(callee.clone()).or_default().insert(callee.clone());
     }
 
-    // internal function for check_edge
-    fn allow_list_contains(&self, caller: &Path, effect: &Path) -> Result<(), String> {
-        if let Some(allow) = self.allow_sets.get(caller) {
-            if allow.contains(effect) {
-                Ok(())
-            } else {
-                Err(format!(
-                    "Allow list for function {} missing effect {}",
-                    caller, effect
-                ))
-            }
-        } else {
-            Err(format!("No allow list for function {} with effect {}", caller, effect))
-        }
+    // internal functions for check_edge
+    fn allow_patterns(&self, caller: &Path) -> impl Iterator<Item = &Pattern> {
+        caller.patterns().flat_map(|pat| {
+            self.allow_sets.get(&pat).into_iter().flat_map(|eff_set| eff_set.iter())
+        })
+    }
+    fn require_patterns(&self, callee: &Path) -> impl Iterator<Item = &Pattern> {
+        callee.patterns().flat_map(|pat| {
+            self.require_sets.get(&pat).into_iter().flat_map(|req_set| req_set.iter())
+        })
     }
 
-    /// Iterate over effects required at a particular path
-    pub fn iter_requirements(&self, callee: &Path) -> impl Iterator<Item = &Path> {
-        self.require_sets.get(callee).into_iter().flat_map(|require| require.iter())
+    fn allow_list_contains(&self, caller: &Path, effect: &Pattern) -> bool {
+        for allow in self.allow_patterns(caller) {
+            if effect.subset(allow) {
+                return true;
+            }
+        }
+        false
     }
 
     /// Check a call graph edge against the policy.
@@ -184,11 +194,14 @@ impl PolicyLookup {
         error_list: &mut Vec<String>,
     ) -> bool {
         let mut no_errors = true;
-        for req in self.iter_requirements(callee) {
-            self.allow_list_contains(caller, req).unwrap_or_else(|err| {
-                error_list.push(err);
+        for req in self.require_patterns(callee) {
+            if !self.allow_list_contains(caller, req) {
+                error_list.push(format!(
+                    "Allow list for function {} missing effect {} for call {}",
+                    caller, req, callee
+                ));
                 no_errors = false;
-            });
+            }
         }
         no_errors
     }
@@ -197,12 +210,8 @@ impl PolicyLookup {
     /// Rather than returning a list of errors, just return a Boolean
     /// of whether it passes or not.
     pub fn check_edge_bool(&self, caller: &Path, callee: &Path) -> bool {
-        for req in self.iter_requirements(callee) {
-            if self.allow_list_contains(caller, req).is_err() {
-                return false;
-            }
-        }
-        true
+        let mut dummy = Vec::new();
+        self.check_edge(caller, callee, &mut dummy)
     }
 }
 
