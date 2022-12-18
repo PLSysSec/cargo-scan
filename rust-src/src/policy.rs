@@ -150,7 +150,7 @@ impl PolicyLookup {
     fn add_require(&mut self, region: &FnCall, effect: &FnCall) {
         let callers = region.fn_pattern().clone();
         let effects = effect.fn_pattern().clone();
-        self.allow_sets.entry(callers).or_default().insert(effects);
+        self.require_sets.entry(callers).or_default().insert(effects);
     }
 
     /// Mark a fn call is an interesting/dangerous call.
