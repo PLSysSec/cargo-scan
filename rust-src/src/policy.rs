@@ -255,8 +255,8 @@ mod tests {
     }
 
     fn ex_lookup(policy: &Policy) -> PolicyLookup {
-        let eff1 = Path("libc::effect".to_string());
-        let eff2 = Path("std::effect".to_string());
+        let eff1 = Pattern::new("libc::effect");
+        let eff2 = Pattern::new("std::effect");
         let mut lookup = PolicyLookup::from_policy(policy);
         lookup.mark_of_interest(&eff1);
         lookup.mark_of_interest(&eff2);
@@ -403,7 +403,7 @@ mod tests {
 
     #[test]
     fn test_policy_from_file() {
-        let policy_file = Path::new("../policies/permissions-ex.toml");
+        let policy_file = FilePath::new("../policies/permissions-ex.toml");
         let policy1 = Policy::from_file(policy_file).unwrap();
 
         let mut policy2 = Policy::new("permissions_ex", "0.1", "0.1");
