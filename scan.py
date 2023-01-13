@@ -324,12 +324,13 @@ def parse_mirai_call_line(line):
     if len(parts) != 6:
         logging.warning(f"MIRAI output: expected 6 parts: {parts}")
         return None
+    logging.debug(f"MIRAI call line, parsed into parts: {parts}")
     # Examples:
     # ['DefId', '0:6', 'num_cpus[1818]::get_num_physical_cpus', 'src/lib.rs:324:20', '324:34', '#0']
     # ['DefId', '0:5', 'num_cpus[1818]::get_physical', 'src/lib.rs:109:5', '109:28', '#0']
     fun = re.sub(r"\[[0-9a-f]*\]", "", parts[2])
     # module = fun.rsplit("::", 1)[0]
-    src_dir, path = tuple(parts[3].split("/"))
+    src_dir, path = tuple(parts[3].split("/", 1))
     file, line, col = tuple(path.split(':', 2))
     return fun, src_dir, file, line, col
 

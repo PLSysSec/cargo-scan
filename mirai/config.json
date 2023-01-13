@@ -7,5 +7,26 @@
         "ddlog_output_path": "graph.dat",
         "type_map_output_path": "types.json",
         "datalog_backend": "DifferentialDatalog"
-    }
+    },
+    "fn_of_interest": [
+        "std::env",
+        "std::fs",
+        "std::net",
+        "std::os",
+        "std::path",
+        "std::process",
+        "libc",
+        "winapi",
+        "mio::net",
+        "mio::unix",
+        "tokio::fs",
+        "tokio::io",
+        "tokio::net",
+        "tokio::process",
+        "hyper::client",
+        "hyper::server",
+        "tokio_util::udp",
+        "tokio_util::net",
+        "socket2"
+    ]
 }
