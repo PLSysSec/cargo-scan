@@ -1,7 +1,5 @@
 /*
     Representation of an Effect location in source code
-
-    TODO: refactor to use Ident, Path, and Pattern structs in ident.rs
 */
 
 use std::path::{Path as FilePath, PathBuf as FilePathBuf};
