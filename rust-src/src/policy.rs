@@ -404,17 +404,17 @@ mod tests {
         let policy1 = Policy::from_file(policy_file).unwrap();
 
         let mut policy2 = Policy::new("permissions_ex", "0.1", "0.1");
-        let eff1 = FnCall::new("fs::delete", "path");
+        let eff1 = FnCall::new("std::fs", "path"); // fs delete
         policy2.require("permissions_ex::remove", "path", eff1);
-        let eff2 = FnCall::new("fs::create", "path");
+        let eff2 = FnCall::new("std::fs", "path"); // fs create
         policy2.require("permissions_ex::save_data", "path", eff2);
-        let eff3 = FnCall::new("fs::write", "path");
+        let eff3 = FnCall::new("std::fs", "path"); // fs write
         policy2.require("permissions_ex::save_data", "path", eff3);
-        let eff4 = FnCall::new("process::exec", "rm -f path");
+        let eff4 = FnCall::new("std::process", "rm -f path"); // exec
         policy2.allow("permissions_ex::remove", "path", eff4);
-        let eff5 = FnCall::new("fs::delete", "path");
+        let eff5 = FnCall::new("std::fs", "path"); // fs delete
         policy2.allow("permissions_ex::save_data", "path", eff5);
-        let eff6 = FnCall::new("fs::append", "my_app.log");
+        let eff6 = FnCall::new("std::fs", "my_app.log"); // fs append
         policy2.allow("permissions_ex::prepare_data", "", eff6);
 
         let policy1_toml = toml::to_string(&policy1).unwrap();
