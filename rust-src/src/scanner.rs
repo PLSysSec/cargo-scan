@@ -2,7 +2,8 @@
     Scanner to parse a Rust source file and find all function call locations.
 */
 
-use super::effect::Effect;
+use super::effect::{Effect, FnDec};
+
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
@@ -17,6 +18,7 @@ pub struct Scanner<'a> {
     filepath: &'a Path,
     // output
     effects: Vec<Effect>,
+    unsafe_decls: Vec<FnDec>,
     // stack-based scopes for parsing (always empty at top-level)
     // TBD: can probably combine all types of scope into one
     scope_mods: Vec<&'a syn::Ident>,
@@ -33,6 +35,7 @@ pub struct Scanner<'a> {
 /// Results of a scan
 pub struct ScanResults {
     pub effects: Vec<Effect>,
+    pub unsafe_decls: Vec<FnDec>,
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
 }
@@ -46,6 +49,7 @@ impl<'a> Scanner<'a> {
         Self {
             filepath,
             effects: Vec::new(),
+            unsafe_decls: Vec::new(),
             scope_mods: Vec::new(),
             scope_use: Vec::new(),
             scope_fun: Vec::new(),
@@ -59,6 +63,7 @@ impl<'a> Scanner<'a> {
     pub fn get_results(self) -> ScanResults {
         ScanResults {
             effects: self.effects,
+            unsafe_decls: self.unsafe_decls,
             skipped_macros: self.skipped_macros,
             skipped_fn_calls: self.skipped_fn_calls,
         }
@@ -308,6 +313,11 @@ impl<'a> Scanner<'a> {
     */
     fn scan_fn(&mut self, f: &'a syn::ItemFn) {
         let f_name = &f.sig.ident;
+        let f_unsafety: &Option<syn::token::Unsafe> = &f.sig.unsafety;
+        if f_unsafety.is_some() {
+            // we found an `unsafe fn` declaration
+            self.unsafe_decls.push(FnDec::new(f, self.filepath, f_name.to_string()));
+        }
         self.scope_fun.push(f_name);
         for s in &f.block.stmts {
             self.scan_fn_statement(s);

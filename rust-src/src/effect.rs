@@ -6,6 +6,8 @@ use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 
 use super::ident::{Ident, Path, Pattern};
 
+use syn::spanned::Spanned;
+
 fn sanitize_comma(s: &str) -> String {
     if s.contains(',') {
         eprintln!("Warning: ignoring unexpected comma when generating CSV: {s}");
@@ -86,7 +88,7 @@ impl EffectPathLoc {
 }
 
 #[derive(Debug, Clone)]
-pub struct EffectSrcLoc {
+pub struct SrcLoc {
     // Directory in which the call occurs
     dir: FilePathBuf,
     // File in which the call occurs -- in the above directory
@@ -95,7 +97,7 @@ pub struct EffectSrcLoc {
     line: usize,
     col: usize,
 }
-impl EffectSrcLoc {
+impl SrcLoc {
     pub fn new(filepath: &FilePath, line: usize, col: usize) -> Self {
         // TBD: use unwrap_or_else
         let dir = filepath.parent().unwrap().to_owned();
@@ -121,7 +123,7 @@ pub struct Effect {
     // Effect pattern -- prefix of callee (effect), e.g. libc
     pattern: Option<Pattern>,
     // Location of call (Directory, file, line)
-    call_loc: EffectSrcLoc,
+    call_loc: SrcLoc,
 }
 
 impl Effect {
@@ -136,7 +138,7 @@ impl Effect {
         let caller_loc = EffectPathLoc::new(filepath, mod_scope, caller);
         let callee = Path::new_owned(callee);
         let pattern = None;
-        let call_loc = EffectSrcLoc::new(filepath, line, col);
+        let call_loc = SrcLoc::new(filepath, line, col);
         Self { caller_loc, callee, pattern, call_loc }
     }
 
@@ -169,8 +171,27 @@ impl Effect {
     }
 }
 
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub struct FnDec {
+    src_loc: SrcLoc,
+    fn_name: Ident,
+}
+impl FnDec {
+    pub fn new<S>(decl_span: &S, filepath: &FilePath, fn_name: String) -> Self
+    where
+        S: Spanned,
+    {
+        let line = decl_span.span().start().line;
+        let col = decl_span.span().start().column;
+        let src_loc = SrcLoc::new(filepath, line, col);
+        let fn_name = Ident::new_owned(fn_name);
+        Self { src_loc, fn_name }
+    }
+}
+
 #[test]
 fn test_csv_header() {
     assert!(Effect::csv_header().starts_with(EffectPathLoc::csv_header()));
-    assert!(Effect::csv_header().ends_with(EffectSrcLoc::csv_header()));
+    assert!(Effect::csv_header().ends_with(SrcLoc::csv_header()));
 }
