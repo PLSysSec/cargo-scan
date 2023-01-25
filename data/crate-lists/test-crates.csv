@@ -6,3 +6,4 @@ num_cpus_minimal
 libc-ex
 inline-ex
 parsing-ex
+unsafe-test
