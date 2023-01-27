@@ -6,4 +6,4 @@ num_cpus_minimal: 2
 libc-ex: 2
 ===== Crate Totals =====
 4 crates with 1 or more dangerous imports
-3 crates with 0 dangerous imports
+4 crates with 0 dangerous imports
