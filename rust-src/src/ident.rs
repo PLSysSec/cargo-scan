@@ -187,6 +187,7 @@ impl Args {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FnCall {
     fn_pattern: Pattern,
+    // Note: not used
     arg_pattern: Args,
 }
 impl Display for FnCall {
