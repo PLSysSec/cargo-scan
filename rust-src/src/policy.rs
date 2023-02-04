@@ -19,6 +19,7 @@ use super::ident::{FnCall, Path, Pattern};
 pub enum Statement {
     Allow { region: FnCall, effect: FnCall },
     Require { region: FnCall, effect: FnCall },
+    // not used
     Trust { region: FnCall },
 }
 impl Display for Statement {
