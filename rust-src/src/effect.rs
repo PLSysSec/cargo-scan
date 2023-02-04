@@ -190,6 +190,63 @@ impl FnDec {
     }
 }
 
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub struct BlockDec {
+    src_loc: SrcLoc,
+}
+impl BlockDec {
+    pub fn new<S>(block_span: &S, filepath: &FilePath) -> Self
+    where
+        S: Spanned,
+    {
+        let line = block_span.span().start().line;
+        let col = block_span.span().start().column;
+        let src_loc = SrcLoc::new(filepath, line, col);
+        Self { src_loc }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub struct ImplDec {
+    src_loc: SrcLoc,
+    tr_name: Ident,
+    // for_name: Ident
+    // tr_loc: SrcLoc
+}
+impl ImplDec {
+    pub fn new<S>(impl_span: &S, filepath: &FilePath, tr_name: String) -> Self
+    where
+        S: Spanned,
+    {
+        let line = impl_span.span().start().line;
+        let col = impl_span.span().start().column;
+        let src_loc = SrcLoc::new(filepath, line, col);
+        let tr_name = Ident::new_owned(tr_name);
+        Self { src_loc, tr_name }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub struct TraitDec {
+    src_loc: SrcLoc,
+    tr_name: Ident,
+}
+impl TraitDec {
+    pub fn new<S>(trait_span: &S, filepath: &FilePath, tr_name: String) -> Self
+    where
+        S: Spanned,
+    {
+        let line = trait_span.span().start().line;
+        let col = trait_span.span().start().column;
+        let src_loc = SrcLoc::new(filepath, line, col);
+        let tr_name = Ident::new_owned(tr_name);
+        Self { src_loc, tr_name }
+    }
+}
+
 #[test]
 fn test_csv_header() {
     assert!(Effect::csv_header().starts_with(EffectPathLoc::csv_header()));

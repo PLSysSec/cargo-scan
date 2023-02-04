@@ -2,7 +2,7 @@
     Scanner to parse a Rust source file and find all function call locations.
 */
 
-use super::effect::{Effect, FnDec};
+use super::effect::{BlockDec, Effect, FnDec, ImplDec, TraitDec};
 
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -19,6 +19,9 @@ pub struct Scanner<'a> {
     // output
     effects: Vec<Effect>,
     unsafe_decls: Vec<FnDec>,
+    unsafe_impls: Vec<ImplDec>,
+    unsafe_traits: Vec<TraitDec>,
+    unsafe_blocks: Vec<BlockDec>,
     // stack-based scopes for parsing (always empty at top-level)
     // TBD: can probably combine all types of scope into one
     scope_mods: Vec<&'a syn::Ident>,
@@ -36,6 +39,9 @@ pub struct Scanner<'a> {
 pub struct ScanResults {
     pub effects: Vec<Effect>,
     pub unsafe_decls: Vec<FnDec>,
+    pub unsafe_impls: Vec<ImplDec>,
+    pub unsafe_traits: Vec<TraitDec>,
+    pub unsafe_blocks: Vec<BlockDec>,
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
 }
@@ -50,6 +56,9 @@ impl<'a> Scanner<'a> {
             filepath,
             effects: Vec::new(),
             unsafe_decls: Vec::new(),
+            unsafe_impls: Vec::new(),
+            unsafe_traits: Vec::new(),
+            unsafe_blocks: Vec::new(),
             scope_mods: Vec::new(),
             scope_use: Vec::new(),
             scope_fun: Vec::new(),
@@ -64,6 +73,9 @@ impl<'a> Scanner<'a> {
         ScanResults {
             effects: self.effects,
             unsafe_decls: self.unsafe_decls,
+            unsafe_impls: self.unsafe_impls,
+            unsafe_traits: self.unsafe_traits,
+            unsafe_blocks: self.unsafe_blocks,
             skipped_macros: self.skipped_macros,
             skipped_fn_calls: self.skipped_fn_calls,
         }
@@ -87,6 +99,7 @@ impl<'a> Scanner<'a> {
             syn::Item::Use(u) => self.scan_use(u),
             syn::Item::Impl(imp) => self.scan_impl(imp),
             syn::Item::Fn(fun) => self.scan_fn(fun),
+            syn::Item::Trait(t) => self.scan_trait(t),
             syn::Item::Macro(_) => {
                 self.skipped_macros += 1;
             }
@@ -220,6 +233,18 @@ impl<'a> Scanner<'a> {
     }
 
     /*
+        Trait declarations
+    */
+    fn scan_trait(&mut self, t: &'a syn::ItemTrait) {
+        let t_name = &t.ident;
+        let t_unsafety = t.unsafety;
+        if t_unsafety.is_some() {
+            // we found an `unsafe trait` declaration
+            self.unsafe_traits.push(TraitDec::new(t, self.filepath, t_name.to_string()));
+        }
+    }
+
+    /*
         Impl blocks
     */
     fn scan_impl(&mut self, imp: &'a syn::ItemImpl) {
@@ -231,6 +256,14 @@ impl<'a> Scanner<'a> {
             // scope type impls under type name
             self.scan_impl_type(&imp.self_ty)
         };
+
+        if imp.unsafety.is_some() {
+            // we found an `unsafe impl` declaration
+            if let Some((_, tr, _)) = &imp.trait_ {
+                let tr_name = tr.segments[0].ident.to_string();
+                self.unsafe_impls.push(ImplDec::new(imp, self.filepath, tr_name));
+            }
+        }
 
         // scan the impl block
         for item in &imp.items {
@@ -523,6 +556,9 @@ impl<'a> Scanner<'a> {
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Unsafe(x) => {
+                // Add code here to gather unsafe blocks.
+                let unsafe_block = &x.block;
+                self.unsafe_blocks.push(BlockDec::new(unsafe_block, self.filepath));
                 for s in &x.block.stmts {
                     self.scan_fn_statement(s);
                 }
