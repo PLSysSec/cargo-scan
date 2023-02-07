@@ -14,6 +14,7 @@ anyhow = "1.0.69"
 clap = { version = "4.0.29", features = ["derive"] }
 codespan-reporting = "0.11.1"
 colored = "2.0.0"
+inquire = "0.5.3"
 proc-macro2 = { version = "1.0.47", features = ["span-locations"] }
 serde = { version = "1.0.147", features = ["derive"] }
 serde_json = "1.0.92"
