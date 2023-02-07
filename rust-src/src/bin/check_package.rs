@@ -60,6 +60,12 @@ struct AnnotatedEffect {
     check: CheckStatus,
 }
 
+impl AnnotatedEffect {
+    fn new(effect: Effect, check: CheckStatus) -> Self {
+        AnnotatedEffect { effect, check }
+    }
+}
+
 // TODO: Include information about crate/version
 #[derive(Serialize, Deserialize)]
 struct CheckFile {
@@ -110,7 +116,7 @@ fn get_effects(p: &PathBuf) -> Result<Vec<Effect>> {
     Ok(scanner_res.effects)
 }
 
-fn print_effect_info(effect: Effect, config: &Config) -> Result<()> {
+fn print_effect_info(effect: &Effect, config: &Config) -> Result<()> {
     let mut full_path = effect.call_loc().dir().clone();
     full_path.push(effect.call_loc().file());
 
@@ -202,11 +208,19 @@ fn main() {
     //       partially checked file
     // Iterate through the effects and prompt the user for if they're safe
     for e in effects {
-        if print_effect_info(e, &args.config).is_err() {
+        if print_effect_info(&e, &args.config).is_err() {
             println!("Error printing effect information. Trying to continue...");
         }
-        let status = get_user_check();
+        let status = match get_user_check() {
+            Ok(s) => s,
+            Err(_) => {
+                println!("Error accepting user input. Attempting to continue...");
+                check_file.effects.push(AnnotatedEffect::new(e, CheckStatus::Skipped));
+                continue;
+            }
+        };
         // Add the annotated effect to the new effect file
+        check_file.effects.push(AnnotatedEffect::new(e, status));
     }
 
     // save the new check file
