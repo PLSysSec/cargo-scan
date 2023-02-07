@@ -11,6 +11,9 @@ use std::io::Read;
 use std::path::Path;
 use syn::spanned::Spanned;
 
+// TODO: Make this a trait so we have a uniform interface between cargo-scan
+//       the mirai tool
+
 /// Stateful object to scan Rust source code for effects (fn calls of interest)
 #[derive(Debug)]
 pub struct Scanner<'a> {
