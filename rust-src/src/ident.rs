@@ -20,7 +20,7 @@ fn replace_hyphens(s: &mut String) {
 
 /// An Rust name identifier, without colons
 /// E.g.: env
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Ident(String);
 impl Display for Ident {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -52,7 +52,7 @@ impl Ident {
 
 /// A Rust path identifier, with colons
 /// E.g.: std::env::var_os
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Path(String);
 impl Display for Path {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -119,7 +119,7 @@ impl Path {
 /// Currently supported: only patterns of the form
 /// <path>::* (includes <path> itself)
 /// The ::* is left implicit and should not be provided
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Pattern(Path);
 impl Display for Pattern {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -62,6 +62,7 @@ impl Statement {
     }
 }
 
+// TODO: include a hash of the crate
 // TODO: make crate_version and policy_version semver objects
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Policy {

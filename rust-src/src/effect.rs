@@ -6,6 +6,7 @@ use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 
 use super::ident::{Ident, Path, Pattern};
 
+use serde::{Deserialize, Serialize};
 use syn::spanned::Spanned;
 
 fn sanitize_comma(s: &str) -> String {
@@ -24,7 +25,7 @@ fn sanitize_path(p: &FilePath) -> String {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EffectPathLoc {
     // Name of crate, e.g. num_cpus
     crt: Ident,
@@ -87,7 +88,7 @@ impl EffectPathLoc {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SrcLoc {
     // Directory in which the call occurs
     dir: FilePathBuf,
@@ -97,6 +98,7 @@ pub struct SrcLoc {
     line: usize,
     col: usize,
 }
+
 impl SrcLoc {
     pub fn new(filepath: &FilePath, line: usize, col: usize) -> Self {
         // TBD: use unwrap_or_else
@@ -112,9 +114,25 @@ impl SrcLoc {
         let file = sanitize_path(&self.file);
         format!("{}, {}, {}, {}", dir, file, self.line, self.col)
     }
+
+    pub fn dir(&self) -> &FilePathBuf {
+        &self.dir
+    }
+
+    pub fn file(&self) -> &FilePathBuf {
+        &self.file
+    }
+
+    pub fn line(&self) -> usize {
+        self.line
+    }
+
+    pub fn col(&self) -> usize {
+        self.col
+    }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Effect {
     // Location of caller (Rust path::to::fun)
     caller_loc: EffectPathLoc,
@@ -168,6 +186,14 @@ impl Effect {
         let call_loc_csv = self.call_loc.to_csv();
 
         format!("{}, {}, {}, {}", caller_loc_csv, callee, pattern, call_loc_csv)
+    }
+
+    pub fn pattern(&self) -> &Option<Pattern> {
+        &self.pattern
+    }
+
+    pub fn call_loc(&self) -> &SrcLoc {
+        &self.call_loc
     }
 }
 
