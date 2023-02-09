@@ -16,8 +16,6 @@ use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use inquire::{validator::Validation, Text};
 use serde::{Deserialize, Serialize};
 
-// TODO: Consider switching to tui-rs (might be more heavyweight than we need)
-
 #[derive(Parser, Debug)]
 struct Config {
     #[clap(long = "lines-before", default_value_t = 4)]
@@ -35,8 +33,8 @@ struct Config {
 struct Args {
     /// path to crate
     crate_path: PathBuf,
-    /// path to the check file (will create a new one if it doesn't exist)
-    check_path: PathBuf,
+    /// path to the policy file (will create a new one if it doesn't exist)
+    policy_path: PathBuf,
 
     #[clap(flatten)]
     /// Optional config args
@@ -48,7 +46,7 @@ struct Args {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-enum CheckStatus {
+enum SafetyAnnotation {
     Skipped,
     Safe,
     Unsafe,
@@ -58,28 +56,28 @@ enum CheckStatus {
 #[derive(Serialize, Deserialize, Clone)]
 struct AnnotatedEffect {
     effect: Effect,
-    check: CheckStatus,
+    annotation: SafetyAnnotation,
 }
 
 impl AnnotatedEffect {
-    fn new(effect: Effect, check: CheckStatus) -> Self {
-        AnnotatedEffect { effect, check }
+    fn new(effect: Effect, annotation: SafetyAnnotation) -> Self {
+        AnnotatedEffect { effect, annotation }
     }
 }
 
 // TODO: Include information about crate/version
 #[derive(Serialize, Deserialize)]
-struct CheckFile {
+struct PolicyFile {
     effects: Vec<AnnotatedEffect>,
     // TODO: The base_dir should be the crate name or something
     base_dir: PathBuf,
     hash: u128,
 }
 
-impl CheckFile {
+impl PolicyFile {
     fn new(p: PathBuf) -> Self {
         // TODO: hash the file
-        CheckFile { effects: Vec::new(), base_dir: p, hash: 0 }
+        PolicyFile { effects: Vec::new(), base_dir: p, hash: 0 }
     }
 
     fn save_to_file(&self, p: PathBuf) -> Result<()> {
@@ -90,23 +88,23 @@ impl CheckFile {
     }
 }
 
-fn get_check_file(check_filepath: PathBuf, crate_filepath: PathBuf) -> Result<CheckFile> {
-    if check_filepath.is_dir() {
-        return Err(anyhow!("Check file filepath is a directory"));
-    } else if !check_filepath.is_file() {
-        File::create(check_filepath)?;
+fn get_policy_file(policy_filepath: PathBuf, crate_filepath: PathBuf) -> Result<PolicyFile> {
+    if policy_filepath.is_dir() {
+        return Err(anyhow!("Policy file filepath is a directory"));
+    } else if !policy_filepath.is_file() {
+        File::create(policy_filepath)?;
 
-        // Return an empty CheckFile, we'll add effects to it later
-        return Ok(CheckFile::new(crate_filepath));
+        // Return an empty PolicyFile, we'll add effects to it later
+        return Ok(PolicyFile::new(crate_filepath));
     }
 
     // We found a policy file
     // TODO: Check the hash to see if we've updated versions? (Might have
     //       to happen later)
     // TODO: make this display a message if the file isn't the proper format
-    let json = std::fs::read_to_string(check_filepath)?;
-    let check_file = serde_json::from_str(&json)?;
-    Ok(check_file)
+    let json = std::fs::read_to_string(policy_filepath)?;
+    let policy_file = serde_json::from_str(&json)?;
+    Ok(policy_file)
 }
 
 fn get_effects(p: &Path) -> Result<Vec<Effect>> {
@@ -180,7 +178,7 @@ fn print_effect_info(effect: &Effect, config: &Config) -> Result<()> {
     Ok(())
 }
 
-fn get_user_check() -> Result<CheckStatus> {
+fn get_user_annotation() -> Result<SafetyAnnotation> {
     let ans = Text::new(
         r#"Select how to mark this effect:
   (s)afe, (u)nsafe, (c)aller checked, ask me (l)ater
@@ -194,10 +192,10 @@ fn get_user_check() -> Result<CheckStatus> {
     .unwrap();
 
     match ans.as_str() {
-        "s" => Ok(CheckStatus::Safe),
-        "u" => Ok(CheckStatus::Unsafe),
-        "c" => Ok(CheckStatus::CallerChecked),
-        "l" => Ok(CheckStatus::Skipped),
+        "s" => Ok(SafetyAnnotation::Safe),
+        "u" => Ok(SafetyAnnotation::Unsafe),
+        "c" => Ok(SafetyAnnotation::CallerChecked),
+        "l" => Ok(SafetyAnnotation::Skipped),
         _ => Err(anyhow!("Invalid user input somehow")),
     }
 }
@@ -207,19 +205,19 @@ fn main() {
 
     // TODO: If the hash of the policy file is different (or on different version
     //       of crate), invalidate the policy file and start a new one.
-    let mut check_file =
-        match get_check_file(args.check_path.clone(), args.crate_path.clone()) {
+    let mut policy_file =
+        match get_policy_file(args.policy_path.clone(), args.crate_path.clone()) {
             Ok(c) => c,
             Err(e) => {
                 println!("err: {:?}", e);
                 return;
             }
         };
-    let policy_effects_map = check_file
+    let policy_effects_map = policy_file
         .effects
         .clone()
         .into_iter()
-        .map(|AnnotatedEffect { effect, check }| (effect, check))
+        .map(|AnnotatedEffect { effect, annotation }| (effect, annotation))
         .collect::<HashMap<_, _>>();
 
     let effects = get_effects(&args.crate_path).unwrap();
@@ -227,30 +225,30 @@ fn main() {
     // Iterate through the effects and prompt the user for if they're safe
     for e in effects {
         let existing_annotation = policy_effects_map.get(&e);
-        if existing_annotation == Some(&CheckStatus::Skipped)
+        if existing_annotation == Some(&SafetyAnnotation::Skipped)
             || existing_annotation.is_none()
         {
             // only present effects we haven't audited yet
             if print_effect_info(&e, &args.config).is_err() {
                 println!("Error printing effect information. Trying to continue...");
             }
-            let status = match get_user_check() {
+            let status = match get_user_annotation() {
                 Ok(s) => s,
                 Err(_) => {
                     println!("Error accepting user input. Attempting to continue...");
-                    check_file
+                    policy_file
                         .effects
-                        .push(AnnotatedEffect::new(e, CheckStatus::Skipped));
+                        .push(AnnotatedEffect::new(e, SafetyAnnotation::Skipped));
                     continue;
                 }
             };
             // Add the annotated effect to the new effect file
-            check_file.effects.push(AnnotatedEffect::new(e, status));
+            policy_file.effects.push(AnnotatedEffect::new(e, status));
         }
     }
 
-    // save the new check file
-    if check_file.save_to_file(args.check_path).is_err() {
+    // save the new policy file
+    if policy_file.save_to_file(args.policy_path).is_err() {
         println!("Error saving policy file.");
     }
 }
