@@ -25,7 +25,7 @@ fn sanitize_path(p: &FilePath) -> String {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EffectPathLoc {
     // Name of crate, e.g. num_cpus
     crt: Ident,
@@ -88,7 +88,7 @@ impl EffectPathLoc {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct SrcLoc {
     // Directory in which the call occurs
     dir: FilePathBuf,
@@ -132,7 +132,7 @@ impl SrcLoc {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Effect {
     // Location of caller (Rust path::to::fun)
     caller_loc: EffectPathLoc,
