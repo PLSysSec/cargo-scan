@@ -2,3 +2,4 @@ data/packages/
 .DS_Store
 target
 *.~undo-tree~
+*.swp
