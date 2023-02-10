@@ -15,6 +15,7 @@ use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 //use colored::Colorize;
 use inquire::{validator::Validation, Text};
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 
 #[derive(Parser, Debug)]
 struct Config {
@@ -53,22 +54,13 @@ enum SafetyAnnotation {
     CallerChecked,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-struct AnnotatedEffect {
-    effect: Effect,
-    annotation: SafetyAnnotation,
-}
-
-impl AnnotatedEffect {
-    fn new(effect: Effect, annotation: SafetyAnnotation) -> Self {
-        AnnotatedEffect { effect, annotation }
-    }
-}
-
 // TODO: Include information about crate/version
+#[serde_as]
 #[derive(Serialize, Deserialize)]
 struct PolicyFile {
-    effects: Vec<AnnotatedEffect>,
+    // TODO: Serde doesn't like this hashmap for some reason (?)
+    #[serde_as(as = "Vec<(_, _)>")]
+    effects: HashMap<Effect, SafetyAnnotation>,
     // TODO: The base_dir should be the crate name or something
     base_dir: PathBuf,
     hash: u128,
@@ -77,7 +69,7 @@ struct PolicyFile {
 impl PolicyFile {
     fn new(p: PathBuf) -> Self {
         // TODO: hash the file
-        PolicyFile { effects: Vec::new(), base_dir: p, hash: 0 }
+        PolicyFile { effects: HashMap::new(), base_dir: p, hash: 0 }
     }
 
     fn save_to_file(&self, p: PathBuf) -> Result<()> {
@@ -88,7 +80,10 @@ impl PolicyFile {
     }
 }
 
-fn get_policy_file(policy_filepath: PathBuf, crate_filepath: PathBuf) -> Result<PolicyFile> {
+fn get_policy_file(
+    policy_filepath: PathBuf,
+    crate_filepath: PathBuf,
+) -> Result<PolicyFile> {
     if policy_filepath.is_dir() {
         return Err(anyhow!("Policy file filepath is a directory"));
     } else if !policy_filepath.is_file() {
@@ -178,14 +173,16 @@ fn print_effect_info(effect: &Effect, config: &Config) -> Result<()> {
     Ok(())
 }
 
-fn get_user_annotation() -> Result<SafetyAnnotation> {
+// Returns the SafetyAnnotation if the user selects one, or returns
+// an error indicating if we should exit early
+fn get_user_annotation() -> Result<SafetyAnnotation, bool> {
     let ans = Text::new(
         r#"Select how to mark this effect:
   (s)afe, (u)nsafe, (c)aller checked, ask me (l)ater
 "#,
     )
     .with_validator(|x: &str| match x {
-        "s" | "u" | "c" | "l" => Ok(Validation::Valid),
+        "s" | "u" | "c" | "l" | "x" => Ok(Validation::Valid),
         _ => Ok(Validation::Invalid("Invalid input".into())),
     })
     .prompt()
@@ -196,7 +193,8 @@ fn get_user_annotation() -> Result<SafetyAnnotation> {
         "u" => Ok(SafetyAnnotation::Unsafe),
         "c" => Ok(SafetyAnnotation::CallerChecked),
         "l" => Ok(SafetyAnnotation::Skipped),
-        _ => Err(anyhow!("Invalid user input somehow")),
+        "x" => Err(true),
+        _ => Err(false),
     }
 }
 
@@ -213,37 +211,30 @@ fn main() {
                 return;
             }
         };
-    let policy_effects_map = policy_file
-        .effects
-        .clone()
-        .into_iter()
-        .map(|AnnotatedEffect { effect, annotation }| (effect, annotation))
-        .collect::<HashMap<_, _>>();
 
     let effects = get_effects(&args.crate_path).unwrap();
 
+    let mut continue_vet = true;
     // Iterate through the effects and prompt the user for if they're safe
     for e in effects {
-        let existing_annotation = policy_effects_map.get(&e);
-        if existing_annotation == Some(&SafetyAnnotation::Skipped)
-            || existing_annotation.is_none()
-        {
+        let a = policy_file.effects.entry(e.clone()).or_insert(SafetyAnnotation::Skipped);
+        if continue_vet && *a == SafetyAnnotation::Skipped {
             // only present effects we haven't audited yet
             if print_effect_info(&e, &args.config).is_err() {
                 println!("Error printing effect information. Trying to continue...");
             }
             let status = match get_user_annotation() {
                 Ok(s) => s,
-                Err(_) => {
+                Err(false) => {
                     println!("Error accepting user input. Attempting to continue...");
-                    policy_file
-                        .effects
-                        .push(AnnotatedEffect::new(e, SafetyAnnotation::Skipped));
-                    continue;
+                    SafetyAnnotation::Skipped
+                }
+                Err(true) => {
+                    continue_vet = false;
+                    SafetyAnnotation::Skipped
                 }
             };
-            // Add the annotated effect to the new effect file
-            policy_file.effects.push(AnnotatedEffect::new(e, status));
+            *a = status;
         }
     }
 
