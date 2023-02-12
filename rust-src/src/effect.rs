@@ -272,6 +272,28 @@ impl TraitDec {
         Self { src_loc, tr_name }
     }
 }
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub struct FFICall {
+    fn_name: Ident,
+    callsite: SrcLoc,
+    dec_loc: SrcLoc,
+}
+impl FFICall {
+    pub fn new<S>(callsite: &S, dec_loc: &S, filepath: &FilePath, fn_name: String) -> Self
+    where
+        S: Spanned,
+    {
+        let mut line = callsite.span().start().line;
+        let mut col = callsite.span().start().column;
+        let callsite = SrcLoc::new(filepath, line, col);
+        line = dec_loc.span().start().line;
+        col = dec_loc.span().start().column;
+        let dec_loc = SrcLoc::new(filepath, line, col);
+        let fn_name = Ident::new_owned(fn_name);
+        Self { fn_name, callsite, dec_loc }
+    }
+}
 
 #[test]
 fn test_csv_header() {

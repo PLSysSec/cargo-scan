@@ -2,7 +2,7 @@
     Scanner to parse a Rust source file and find all function call locations.
 */
 
-use super::effect::{BlockDec, Effect, FnDec, ImplDec, TraitDec};
+use super::effect::{BlockDec, Effect, FFICall, FnDec, ImplDec, TraitDec};
 
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -25,6 +25,8 @@ pub struct Scanner<'a> {
     unsafe_impls: Vec<ImplDec>,
     unsafe_traits: Vec<TraitDec>,
     unsafe_blocks: Vec<BlockDec>,
+    ffi_decls: HashMap<String, &'a syn::Ident>,
+    ffi_calls: Vec<FFICall>,
     // stack-based scopes for parsing (always empty at top-level)
     // TBD: can probably combine all types of scope into one
     scope_mods: Vec<&'a syn::Ident>,
@@ -45,6 +47,7 @@ pub struct ScanResults {
     pub unsafe_impls: Vec<ImplDec>,
     pub unsafe_traits: Vec<TraitDec>,
     pub unsafe_blocks: Vec<BlockDec>,
+    pub ffi_calls: Vec<FFICall>,
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
 }
@@ -58,6 +61,8 @@ impl<'a> Scanner<'a> {
         Self {
             filepath,
             effects: Vec::new(),
+            ffi_calls: Vec::new(),
+            ffi_decls: HashMap::new(),
             unsafe_decls: Vec::new(),
             unsafe_impls: Vec::new(),
             unsafe_traits: Vec::new(),
@@ -75,6 +80,7 @@ impl<'a> Scanner<'a> {
     pub fn get_results(self) -> ScanResults {
         ScanResults {
             effects: self.effects,
+            ffi_calls: self.ffi_calls,
             unsafe_decls: self.unsafe_decls,
             unsafe_impls: self.unsafe_impls,
             unsafe_traits: self.unsafe_traits,
@@ -103,6 +109,7 @@ impl<'a> Scanner<'a> {
             syn::Item::Impl(imp) => self.scan_impl(imp),
             syn::Item::Fn(fun) => self.scan_fn(fun),
             syn::Item::Trait(t) => self.scan_trait(t),
+            syn::Item::ForeignMod(fm) => self.scan_foreign_mod(fm),
             syn::Item::Macro(_) => {
                 self.skipped_macros += 1;
             }
@@ -135,6 +142,24 @@ impl<'a> Scanner<'a> {
                 self.scope_fun.push(self.scope_mods.pop().unwrap());
             }
         }
+    }
+
+    fn scan_foreign_mod(&mut self, fm: &'a syn::ItemForeignMod) {
+        let items = &fm.items;
+        for i in items {
+            self.scan_foreign_item(i);
+        }
+    }
+
+    fn scan_foreign_item(&mut self, i: &'a syn::ForeignItem) {
+        if let syn::ForeignItem::Fn(f) = i {
+            self.scan_foreign_fn(f)
+        }
+    }
+
+    fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn) {
+        let fn_name = &f.sig.ident;
+        self.ffi_decls.insert(fn_name.to_string(), fn_name);
     }
 
     /*
@@ -632,6 +657,15 @@ impl<'a> Scanner<'a> {
             syn::Expr::Path(p) => {
                 let callee_path = self.lookup_path(&p.path);
                 let callee_ident = callee_path.last().unwrap();
+                let fn_name = callee_ident.to_string();
+                if let Some(&dec_loc) = self.ffi_decls.get(&fn_name) {
+                    self.ffi_calls.push(FFICall::new(
+                        callee_ident,
+                        &dec_loc,
+                        self.filepath,
+                        fn_name,
+                    ));
+                }
                 let callee_path_str = Self::path_to_string(&callee_path);
                 self.push_callsite(callee_ident, callee_path_str);
             }
