@@ -35,10 +35,10 @@ def check_installed(cmd, test_arg="--version", check_exit_code=True):
 # Dependencies
 RUSTC = ["rustc"]
 CARGO = ["cargo"]
-SYN_FIND = ["./rust-src/target/release/find_calls"]
+SYN_FIND = ["./rust-src/target/release/find_sinks"]
 SYN_CHECK = ["./rust-src/target/release/check_policy"]
 # Uncomment for additional debugging (slower)
-# SYN_FIND = ["./rust-src/target/debug/find_calls"]
+# SYN_FIND = ["./rust-src/target/debug/find_sinks"]
 # SYN_CHECK = ["./rust-src/target/debug/check_policy"]
 
 CARGO_MIRAI = CARGO + ["mirai"]
@@ -260,15 +260,7 @@ def scan_file(crate, root, file, of_interest, add_args):
     for line in iter(proc.stdout.readline, b""):
         line = line.strip().decode("utf-8")
         eff = Effect(*line.split(", "))
-
-        # syn backend returns raw call sites, without a matched pattern
-        assert eff.pattern == "[none]"
-        eff.pattern = is_of_interest(eff.callee, of_interest)
-        if eff.pattern is None:
-            logging.trace(f"Skipping: {eff}")
-        else:
-            logging.trace(f"Of interest: {eff}")
-            yield eff
+        yield eff
 
 def scan_crate(crate, crate_dir, of_interest, add_args):
     logging.debug(f"Scanning crate: {crate}")
