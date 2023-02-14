@@ -1,14 +1,14 @@
 ===== Crate Summary =====
 Number of dangerous imports by crate:
-tokio: 113
-cc: 73
+tokio: 110
+cc: 69
 mio: 44
 hyper: 30
-getrandom: 28
 parking_lot_core: 27
 socket2: 25
 termcolor: 15
 pkg-config: 14
+getrandom: 13
 tokio-util: 13
 num_cpus: 12
 autocfg: 11
