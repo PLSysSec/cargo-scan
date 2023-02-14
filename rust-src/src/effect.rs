@@ -160,8 +160,14 @@ impl Effect {
         Self { caller_loc, callee, pattern, call_loc }
     }
 
+    pub fn caller(&self) -> &Path {
+        &self.caller_loc.caller
+    }
     pub fn caller_path(&self) -> &str {
         self.caller_loc.caller.as_str()
+    }
+    pub fn callee(&self) -> &Path {
+        &self.callee
     }
     pub fn callee_path(&self) -> &str {
         self.callee.as_str()

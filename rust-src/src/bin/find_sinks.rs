@@ -1,11 +1,13 @@
 /*
-    Parse a Rust source file and find all function calls, printing them to stdout
-    (one per line).
+    Parse a Rust source file and find all function calls
+    which are of interest according to sinks.rs,
+    printing them to stdout (one per line).
 */
 
 use cargo_scan::scanner;
-use clap::Parser;
+use cargo_scan::sink;
 
+use clap::Parser;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -22,13 +24,15 @@ fn main() {
 
     let results = scanner::load_and_scan(&args.filepath);
 
-    for effect in results.effects {
-        println!("{}", effect.to_csv());
-    }
+    for mut effect in results.effects {
+        sink::set_pattern(&mut effect);
 
-    // for fn_decl in results.unsafe_decls {
-    //     println!("{:?}", fn_decl);
-    // }
+        if effect.pattern().is_some() {
+            println!("{}", effect.to_csv());
+        } else {
+            // println!("Skipping: {}", effect.to_csv());
+        }
+    }
 
     if args.verbose {
         if results.skipped_fn_calls > 0 {
