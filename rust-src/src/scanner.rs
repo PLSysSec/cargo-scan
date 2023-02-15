@@ -2,7 +2,7 @@
     Scanner to parse a Rust source file and find all function call locations.
 */
 
-use super::effect::{BlockDec, Effect, FFICall, FnDec, ImplDec, TraitDec};
+use super::effect::{BlockDec, Effect, FFICall, FnDec, ImplDec, TraitDec, SrcLoc};
 
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -32,6 +32,7 @@ pub struct Scanner<'a> {
     scope_mods: Vec<&'a syn::Ident>,
     scope_use: Vec<&'a syn::Ident>,
     scope_fun: Vec<&'a syn::Ident>,
+    scope_blocks: Vec<&'a syn::Block>,
     // collecting use statements that are in scope
     use_names: HashMap<String, Vec<&'a syn::Ident>>,
     use_globs: Vec<Vec<&'a syn::Ident>>,
@@ -70,6 +71,7 @@ impl<'a> Scanner<'a> {
             scope_mods: Vec::new(),
             scope_use: Vec::new(),
             scope_fun: Vec::new(),
+            scope_blocks: Vec::new(),
             use_names: HashMap::new(),
             use_globs: Vec::new(),
             skipped_macros: 0,
@@ -586,10 +588,12 @@ impl<'a> Scanner<'a> {
             syn::Expr::Unsafe(x) => {
                 // Add code here to gather unsafe blocks.
                 let unsafe_block = &x.block;
+                self.scope_blocks.push(unsafe_block);
                 self.unsafe_blocks.push(BlockDec::new(unsafe_block, self.filepath));
                 for s in &x.block.stmts {
                     self.scan_fn_statement(s);
                 }
+                self.scope_blocks.pop();
             }
             syn::Expr::Verbatim(v) => {
                 self.syn_warning("skipping Verbatim expression", v);
@@ -652,6 +656,25 @@ impl<'a> Scanner<'a> {
             call_col,
         ));
     }
+    fn get_block_loc(filepath: &Path, b: &syn::Block) -> SrcLoc {
+        let line= b.span().start().line;
+        let col = b.span().start().column;
+
+        SrcLoc::new(filepath, line, col)
+    }
+    fn push_ffi_call_to_unsafe_block(&mut self, ffi_call: &FFICall) {
+        let index = self.scope_blocks.len() - 1;
+        let b = self.scope_blocks.get_mut(index).unwrap();
+        let cur_block_loc = Scanner::<'a>::get_block_loc(self.filepath, b);
+
+        for b in &mut self.unsafe_blocks {
+            let src_loc = b.get_src_loc();
+            if cur_block_loc == *src_loc {
+                b.add_ffi_call(FFICall::clone(ffi_call));
+                break;
+            }
+        }
+    }
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
         match f {
             syn::Expr::Path(p) => {
@@ -659,12 +682,10 @@ impl<'a> Scanner<'a> {
                 let callee_ident = callee_path.last().unwrap();
                 let fn_name = callee_ident.to_string();
                 if let Some(&dec_loc) = self.ffi_decls.get(&fn_name) {
-                    self.ffi_calls.push(FFICall::new(
-                        callee_ident,
-                        &dec_loc,
-                        self.filepath,
-                        fn_name,
-                    ));
+                    let ffi_call =
+                        FFICall::new(callee_ident, &dec_loc, self.filepath, fn_name);
+                    self.push_ffi_call_to_unsafe_block(&ffi_call);
+                    self.ffi_calls.push(ffi_call);
                 }
                 let callee_path_str = Self::path_to_string(&callee_path);
                 self.push_callsite(callee_ident, callee_path_str);

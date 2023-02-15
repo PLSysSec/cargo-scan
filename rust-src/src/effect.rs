@@ -223,9 +223,10 @@ impl FnDec {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct BlockDec {
     src_loc: SrcLoc,
+    ffi_calls: Vec<FFICall>,
 }
 impl BlockDec {
     pub fn new<S>(block_span: &S, filepath: &FilePath) -> Self
@@ -235,7 +236,13 @@ impl BlockDec {
         let line = block_span.span().start().line;
         let col = block_span.span().start().column;
         let src_loc = SrcLoc::new(filepath, line, col);
-        Self { src_loc }
+        Self { src_loc, ffi_calls: Vec::new() }
+    }
+    pub fn get_src_loc(&self) -> &SrcLoc {
+        &self.src_loc
+    }
+    pub fn add_ffi_call(&mut self, ffi_call: FFICall) {
+        self.ffi_calls.push(ffi_call);
     }
 }
 
@@ -279,7 +286,7 @@ impl TraitDec {
     }
 }
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FFICall {
     fn_name: Ident,
     callsite: SrcLoc,
