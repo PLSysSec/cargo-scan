@@ -26,10 +26,6 @@ fn main() {
         println!("{}", effect.to_csv());
     }
 
-    // for fn_decl in results.unsafe_decls {
-    //     println!("{:?}", fn_decl);
-    // }
-
     if args.verbose {
         if results.skipped_fn_calls > 0 {
             eprintln!(

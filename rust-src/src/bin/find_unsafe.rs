@@ -21,12 +21,19 @@ fn main() {
         }
     }
 
-    // if !results.unsafe_traits.is_empty() {
-    //     println!("=== Unsafe trait declarations ===");
-    //     for tr_decl in results.unsafe_traits {
-    //         println!("{:?}", tr_decl);
-    //     }
-    // }
+    if !results.unsafe_decls.is_empty() {
+        println!("=== Unsafe fn declarations ===");
+        for fn_decl in results.unsafe_decls {
+            println!("{:?}", fn_decl);
+        }
+    }
+
+    if !results.unsafe_traits.is_empty() {
+        println!("=== Unsafe trait declarations ===");
+        for tr_decl in results.unsafe_traits {
+            println!("{:?}", tr_decl);
+        }
+    }
 
     if !results.unsafe_impls.is_empty() {
         println!("=== Unsafe trait impls ===");

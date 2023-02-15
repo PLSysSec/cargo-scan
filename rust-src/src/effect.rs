@@ -222,7 +222,6 @@ impl FnDec {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct BlockDec {
     src_loc: SrcLoc,
@@ -285,7 +284,6 @@ impl TraitDec {
         Self { src_loc, tr_name }
     }
 }
-#[allow(dead_code)]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FFICall {
     fn_name: Ident,
