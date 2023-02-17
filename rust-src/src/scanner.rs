@@ -4,12 +4,64 @@
 
 use super::effect::{BlockDec, Effect, FFICall, FnDec, ImplDec, TraitDec, SrcLoc};
 
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use syn::spanned::Spanned;
+use walkdir::WalkDir;
+
+/// Results of a scan
+pub struct ScanResults {
+    pub effects: Vec<Effect>,
+    pub unsafe_decls: Vec<FnDec>,
+    pub unsafe_impls: Vec<ImplDec>,
+    pub unsafe_traits: Vec<TraitDec>,
+    pub unsafe_blocks: Vec<BlockDec>,
+    pub ffi_calls: Vec<FFICall>,
+    pub skipped_macros: usize,
+    pub skipped_fn_calls: usize,
+}
+
+
+impl ScanResults {
+    fn new() -> Self {
+        ScanResults {
+            effects: Vec::new(),
+            unsafe_decls: Vec::new(),
+            unsafe_impls: Vec::new(),
+            unsafe_traits: Vec::new(),
+            unsafe_blocks: Vec::new(),
+            ffi_calls: Vec::new(),
+            skipped_macros: 0,
+            skipped_fn_calls: 0,
+        }
+    }
+
+    fn combine_results(&mut self, other: &mut Self) {
+        let ScanResults {
+            effects: o_effects,
+            unsafe_decls: o_unsafe_decls,
+            unsafe_impls: o_unsafe_impls,
+            unsafe_traits: o_unsafe_traits,
+            unsafe_blocks: o_unsafe_blocks,
+            ffi_calls: o_ffi_calls,
+            skipped_macros: o_skipped_macros,
+            skipped_fn_calls: o_skipped_fn_calls,
+        } = other;
+
+        self.effects.append(o_effects);
+        self.unsafe_decls.append(o_unsafe_decls);
+        self.unsafe_impls.append(o_unsafe_impls);
+        self.unsafe_traits.append(o_unsafe_traits);
+        self.unsafe_blocks.append(o_unsafe_blocks);
+        self.ffi_calls.append(o_ffi_calls);
+        self.skipped_macros += *o_skipped_macros;
+        self.skipped_fn_calls += *o_skipped_fn_calls;
+    }
+}
 
 // TODO: Make this a trait so we have a uniform interface between cargo-scan
 //       the mirai tool
@@ -39,18 +91,6 @@ pub struct Scanner<'a> {
     // info about skipped nodes
     skipped_macros: usize,
     skipped_fn_calls: usize,
-}
-
-/// Results of a scan
-pub struct ScanResults {
-    pub effects: Vec<Effect>,
-    pub unsafe_decls: Vec<FnDec>,
-    pub unsafe_impls: Vec<ImplDec>,
-    pub unsafe_traits: Vec<TraitDec>,
-    pub unsafe_blocks: Vec<BlockDec>,
-    pub ffi_calls: Vec<FFICall>,
-    pub skipped_macros: usize,
-    pub skipped_fn_calls: usize,
 }
 
 impl<'a> Scanner<'a> {
@@ -750,4 +790,35 @@ pub fn load_and_scan(filepath: &Path) -> ScanResults {
     // println!("Final scanner state: {:?}", scanner);
 
     scanner.get_results()
+}
+
+/// Scan the supplied crate
+pub fn scan_crate(crate_path: &Path) -> Result<ScanResults> {
+    // Make sure the path is a crate
+    if !crate_path.is_dir() {
+        return Err(anyhow!("Path is not a crate; not a directory"));
+    }
+
+    let mut cargo_toml_path = crate_path.to_path_buf();
+    cargo_toml_path.push("Cargo.toml");
+    if !cargo_toml_path.try_exists()? || !cargo_toml_path.is_file() {
+        return Err(anyhow!("Path is not a crate; missing Cargo.toml"));
+    }
+
+    let mut final_result = ScanResults::new();
+
+    // TODO: Might want to exclude e.g. test directories?
+    // We have a valid crate, so iterate through all the rust src
+    for entry in WalkDir::new(crate_path).into_iter().filter(|e| match e {
+        Ok(ne) => {
+            let fname = Path::new(ne.file_name());
+            fname.is_file() && fname.to_str().map_or(false, |x| x.ends_with(".rs"))
+        }
+        Err(_) => false,
+    }) {
+        let mut next_scan = load_and_scan(Path::new(entry?.file_name()));
+        final_result.combine_results(&mut next_scan);
+    }
+
+    Ok(final_result)
 }

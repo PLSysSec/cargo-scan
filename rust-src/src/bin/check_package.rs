@@ -213,6 +213,8 @@ fn main() {
         };
 
     let effects = get_effects(&args.crate_path).unwrap();
+    // TODO: If the policy file diverges from the effects at all, we should
+    //       enter incremental mode and detect what's changed
 
     let mut continue_vet = true;
     // Iterate through the effects and prompt the user for if they're safe
