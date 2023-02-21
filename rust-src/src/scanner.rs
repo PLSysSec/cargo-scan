@@ -2,7 +2,7 @@
     Scanner to parse a Rust source file and find all function call locations.
 */
 
-use super::effect::{BlockDec, Effect, FFICall, FnDec, ImplDec, TraitDec, SrcLoc};
+use super::effect::{BlockDec, Effect, FFICall, FnDec, ImplDec, SrcLoc, TraitDec};
 
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
@@ -24,7 +24,6 @@ pub struct ScanResults {
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
 }
-
 
 impl ScanResults {
     fn new() -> Self {
@@ -697,7 +696,7 @@ impl<'a> Scanner<'a> {
         ));
     }
     fn get_block_loc(filepath: &Path, b: &syn::Block) -> SrcLoc {
-        let line= b.span().start().line;
+        let line = b.span().start().line;
         let col = b.span().start().column;
 
         SrcLoc::new(filepath, line, col)
