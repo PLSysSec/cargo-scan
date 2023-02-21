@@ -3,3 +3,4 @@ data/packages/
 target
 *.~undo-tree~
 *.swp
+*.policy
