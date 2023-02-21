@@ -1,6 +1,5 @@
 use cargo_scan::effect::Effect;
 use cargo_scan::scanner;
-use cargo_scan::scanner::ScanResults;
 
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
@@ -84,9 +83,7 @@ impl PolicyFile {
 // Returns Some policy file if it exists, or None if we should create a new one.
 // Errors if the policy filepath is invalid or if we can't read an existing
 // policy file
-fn get_policy_file(
-    policy_filepath: PathBuf,
-) -> Result<Option<PolicyFile>> {
+fn get_policy_file(policy_filepath: PathBuf) -> Result<Option<PolicyFile>> {
     if policy_filepath.is_dir() {
         return Err(anyhow!("Policy file filepath is a directory"));
     } else if !policy_filepath.is_file() {
@@ -201,7 +198,7 @@ enum ContinueStatus {
 fn handle_invalid_policy(
     policy: &mut PolicyFile,
     policy_path: &mut PathBuf,
-    scan_res: &ScanResults,
+    scan_effects: &HashSet<&Effect>,
 ) -> Result<ContinueStatus> {
     println!("Crate has changed from last policy audit");
 
@@ -221,11 +218,10 @@ fn handle_invalid_policy(
         "c" => {
             println!("Generating new policy file");
             // TODO: Update the new crate hash
-            policy.effects = scan_res
-                .effects
+            policy.effects = scan_effects
                 .clone()
                 .into_iter()
-                .map(|x| (x, SafetyAnnotation::Skipped))
+                .map(|x| (x.clone(), SafetyAnnotation::Skipped))
                 .collect::<HashMap<_, _>>();
 
             let mut policy_string = policy_path
@@ -258,6 +254,13 @@ fn runner(args: Args) -> Result<()> {
     //       in the effects. We should make sure we're reporting everything we
     //       care about.
     let scan_res = scanner::scan_crate(&args.crate_path)?;
+    let scan_effects = scan_res
+        .effects
+        .iter()
+        .filter(|x| x.pattern().is_some())
+        .collect::<HashSet<_>>();
+
+    //println!("scan_res: {:?}", &scan_res.effects);
 
     // TODO: If the policy file diverges from the effects at all, we should
     //       enter incremental mode and detect what's changed
@@ -266,10 +269,9 @@ fn runner(args: Args) -> Result<()> {
         Some(mut pf) => {
             // Check if we should invalidate the current policy file
             let policy_effects = pf.effects.keys().collect::<HashSet<_>>();
-            let scan_effects = scan_res.effects.iter().collect::<HashSet<_>>();
             // TODO: Check the hash as well
             if policy_effects != scan_effects {
-                match handle_invalid_policy(&mut pf, &mut policy_path, &scan_res) {
+                match handle_invalid_policy(&mut pf, &mut policy_path, &scan_effects) {
                     Ok(ContinueStatus::Continue) => (),
                     Ok(ContinueStatus::ExitNow) => return Ok(()),
                     Err(e) => return Err(e),
@@ -285,11 +287,10 @@ fn runner(args: Args) -> Result<()> {
             // Return an empty PolicyFile, we'll add effects to it later
             let mut pf = PolicyFile::new(args.crate_path.clone());
             // TODO: Set the hash of the new policy file
-            pf.effects = scan_res
-                .effects
+            pf.effects = scan_effects
                 .clone()
                 .into_iter()
-                .map(|x| (x, SafetyAnnotation::Skipped))
+                .map(|x| (x.clone(), SafetyAnnotation::Skipped))
                 .collect::<HashMap<_, _>>();
             pf
         }
@@ -297,7 +298,7 @@ fn runner(args: Args) -> Result<()> {
 
     let mut continue_vet = true;
     // Iterate through the effects and prompt the user for if they're safe
-    for e in scan_res.effects {
+    for e in scan_effects {
         let a = policy_file.effects.get_mut(&e).unwrap();
         if continue_vet && *a == SafetyAnnotation::Skipped {
             // only present effects we haven't audited yet
