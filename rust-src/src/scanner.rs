@@ -3,6 +3,7 @@
 */
 
 use super::effect::{BlockDec, Effect, FFICall, FnDec, ImplDec, SrcLoc, TraitDec};
+use super::sink;
 
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
@@ -14,6 +15,7 @@ use syn::spanned::Spanned;
 use walkdir::WalkDir;
 
 /// Results of a scan
+#[derive(Debug)]
 pub struct ScanResults {
     pub effects: Vec<Effect>,
     pub unsafe_decls: Vec<FnDec>,
@@ -806,16 +808,28 @@ pub fn scan_crate(crate_path: &Path) -> Result<ScanResults> {
 
     let mut final_result = ScanResults::new();
 
-    // TODO: Might want to exclude e.g. test directories?
+    // TODO: For now, only walking through the src dir, but might want to
+    //       include others (e.g. might codegen in other dirs)
     // We have a valid crate, so iterate through all the rust src
-    for entry in WalkDir::new(crate_path).into_iter().filter(|e| match e {
-        Ok(ne) => {
-            let fname = Path::new(ne.file_name());
-            fname.is_file() && fname.to_str().map_or(false, |x| x.ends_with(".rs"))
+    for entry in
+        WalkDir::new(crate_path.join(Path::new("src".into()))).into_iter().filter(|e| {
+            match e {
+                Ok(ne) if ne.path().is_file() => {
+                    let fname = Path::new(ne.file_name());
+                    fname.to_str().map_or(false, |x| x.ends_with(".rs"))
+                }
+                _ => false,
+            }
+        })
+    {
+        let mut next_scan = load_and_scan(Path::new(entry?.path()));
+
+        // TODO: Remove this once pattern setting makes sense. It's this ugly
+        //       optional initialization function right now.
+        for e in &mut next_scan.effects {
+            sink::set_pattern(e)
         }
-        Err(_) => false,
-    }) {
-        let mut next_scan = load_and_scan(Path::new(entry?.file_name()));
+
         final_result.combine_results(&mut next_scan);
     }
 

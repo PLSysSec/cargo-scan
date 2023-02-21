@@ -28,6 +28,8 @@ const SINK_PATTERNS: &[&str] = &[
     "socket2",
 ];
 
+// TODO: This should be moved into the scanner: setting a pattern for an effect
+//       shouldn't be an optional initialization function
 /// Given an Effect, set its sink pattern.
 // Note: this compiles regex so is inefficient and
 // could be optimized
