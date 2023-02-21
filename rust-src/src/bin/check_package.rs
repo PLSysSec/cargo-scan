@@ -1,10 +1,11 @@
 use cargo_scan::effect::Effect;
 use cargo_scan::scanner;
+use cargo_scan::scanner::ScanResults;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
@@ -68,7 +69,7 @@ struct PolicyFile {
 
 impl PolicyFile {
     fn new(p: PathBuf) -> Self {
-        // TODO: hash the file
+        // TODO: hash the crate
         PolicyFile { effects: HashMap::new(), base_dir: p, hash: 0 }
     }
 
@@ -80,17 +81,16 @@ impl PolicyFile {
     }
 }
 
+// Returns Some policy file if it exists, or None if we should create a new one.
+// Errors if the policy filepath is invalid or if we can't read an existing
+// policy file
 fn get_policy_file(
     policy_filepath: PathBuf,
-    crate_filepath: PathBuf,
-) -> Result<PolicyFile> {
+) -> Result<Option<PolicyFile>> {
     if policy_filepath.is_dir() {
         return Err(anyhow!("Policy file filepath is a directory"));
     } else if !policy_filepath.is_file() {
-        File::create(policy_filepath)?;
-
-        // Return an empty PolicyFile, we'll add effects to it later
-        return Ok(PolicyFile::new(crate_filepath));
+        return Ok(None);
     }
 
     // We found a policy file
@@ -99,15 +99,7 @@ fn get_policy_file(
     // TODO: make this display a message if the file isn't the proper format
     let json = std::fs::read_to_string(policy_filepath)?;
     let policy_file = serde_json::from_str(&json)?;
-    Ok(policy_file)
-}
-
-fn get_effects(p: &Path) -> Result<Vec<Effect>> {
-    let scanner_res = scanner::load_and_scan(p);
-    // TODO: There's a lot of stuff in the scan right now that isn't included
-    //       in the effects. We should make sure we're reporting everything we
-    //       care about.
-    Ok(scanner_res.effects)
+    Ok(Some(policy_file))
 }
 
 fn print_effect_src(effect: &Effect, config: &Config) -> Result<()> {
@@ -173,12 +165,12 @@ fn print_effect_info(effect: &Effect, config: &Config) -> Result<()> {
     Ok(())
 }
 
-// Returns the SafetyAnnotation if the user selects one, or returns
-// an error indicating if we should exit early
-fn get_user_annotation() -> Result<SafetyAnnotation, bool> {
+// Returns Some SafetyAnnotation if the user selects one, None if the user
+// chooses to exit early, or an Error
+fn get_user_annotation() -> Result<Option<SafetyAnnotation>> {
     let ans = Text::new(
         r#"Select how to mark this effect:
-  (s)afe, (u)nsafe, (c)aller checked, ask me (l)ater
+  (s)afe, (u)nsafe, (c)aller checked, ask me (l)ater, e(x)it tool
 "#,
     )
     .with_validator(|x: &str| match x {
@@ -189,50 +181,137 @@ fn get_user_annotation() -> Result<SafetyAnnotation, bool> {
     .unwrap();
 
     match ans.as_str() {
-        "s" => Ok(SafetyAnnotation::Safe),
-        "u" => Ok(SafetyAnnotation::Unsafe),
-        "c" => Ok(SafetyAnnotation::CallerChecked),
-        "l" => Ok(SafetyAnnotation::Skipped),
-        "x" => Err(true),
-        _ => Err(false),
+        "s" => Ok(Some(SafetyAnnotation::Safe)),
+        "u" => Ok(Some(SafetyAnnotation::Unsafe)),
+        "c" => Ok(Some(SafetyAnnotation::CallerChecked)),
+        "l" => Ok(Some(SafetyAnnotation::Skipped)),
+        "x" => Ok(None),
+        _ => Err(anyhow!("Invalid annotation selection")),
     }
 }
 
-fn main() {
-    let args = Args::parse();
+enum ContinueStatus {
+    Continue,
+    ExitNow,
+}
 
-    // TODO: If the hash of the policy file is different (or on different version
-    //       of crate), invalidate the policy file and start a new one.
-    let mut policy_file =
-        match get_policy_file(args.policy_path.clone(), args.crate_path.clone()) {
-            Ok(c) => c,
-            Err(e) => {
-                println!("err: {:?}", e);
-                return;
-            }
-        };
+// Asks the user how to handle the invalid policy file. If they continue with a
+// new file, will update the policy and policy_path and return Continue;
+// otherwise will return ExitNow.
+fn handle_invalid_policy(
+    policy: &mut PolicyFile,
+    policy_path: &mut PathBuf,
+    scan_res: &ScanResults,
+) -> Result<ContinueStatus> {
+    println!("Crate has changed from last policy audit");
 
-    let effects = get_effects(&args.crate_path).unwrap();
+    let ans = Text::new(
+        r#"Would you like to:
+  (c)ontinue with a new policy file, e(x)it tool w/o changes
+"#,
+    )
+    .with_validator(|x: &str| match x {
+        "c" | "x" => Ok(Validation::Valid),
+        _ => Ok(Validation::Invalid("Invalid input".into())),
+    })
+    .prompt()
+    .unwrap();
+
+    match ans.as_str() {
+        "c" => {
+            println!("Generating new policy file");
+            // TODO: Update the new crate hash
+            policy.effects = scan_res
+                .effects
+                .clone()
+                .into_iter()
+                .map(|x| (x, SafetyAnnotation::Skipped))
+                .collect::<HashMap<_, _>>();
+
+            let mut policy_string = policy_path
+                .as_path()
+                .to_str()
+                .ok_or(anyhow!("Couldn't convert OS Path to str"))?
+                .to_string();
+            policy_string.push_str(".new");
+            println!("New policy file name: {}", &policy_string);
+            *policy_path = PathBuf::from(policy_string);
+
+            Ok(ContinueStatus::Continue)
+        }
+        "x" => {
+            println!("Exiting policy tool");
+            Ok(ContinueStatus::ExitNow)
+        }
+        _ => Err(anyhow!("Invalid policy handle selection")),
+    }
+}
+
+fn runner(args: Args) -> Result<()> {
+    let mut policy_path = args.policy_path;
+    let policy_file = get_policy_file(policy_path.clone())?;
+
+    // TODO: Might want to fold the ScanResults into the policy file/policy
+    //       file creation
+
+    // TODO: There's a lot of stuff in the scan right now that isn't included
+    //       in the effects. We should make sure we're reporting everything we
+    //       care about.
+    let scan_res = scanner::scan_crate(&args.crate_path)?;
+
     // TODO: If the policy file diverges from the effects at all, we should
     //       enter incremental mode and detect what's changed
 
+    let mut policy_file = match policy_file {
+        Some(mut pf) => {
+            // Check if we should invalidate the current policy file
+            let policy_effects = pf.effects.keys().collect::<HashSet<_>>();
+            let scan_effects = scan_res.effects.iter().collect::<HashSet<_>>();
+            // TODO: Check the hash as well
+            if policy_effects != scan_effects {
+                match handle_invalid_policy(&mut pf, &mut policy_path, &scan_res) {
+                    Ok(ContinueStatus::Continue) => (),
+                    Ok(ContinueStatus::ExitNow) => return Ok(()),
+                    Err(e) => return Err(e),
+                };
+            }
+            pf
+        }
+        None => {
+            // No policy file yet, so make a new one
+            println!("Creating new policy file");
+            File::create(policy_path.clone())?;
+
+            // Return an empty PolicyFile, we'll add effects to it later
+            let mut pf = PolicyFile::new(args.crate_path.clone());
+            // TODO: Set the hash of the new policy file
+            pf.effects = scan_res
+                .effects
+                .clone()
+                .into_iter()
+                .map(|x| (x, SafetyAnnotation::Skipped))
+                .collect::<HashMap<_, _>>();
+            pf
+        }
+    };
+
     let mut continue_vet = true;
     // Iterate through the effects and prompt the user for if they're safe
-    for e in effects {
-        let a = policy_file.effects.entry(e.clone()).or_insert(SafetyAnnotation::Skipped);
+    for e in scan_res.effects {
+        let a = policy_file.effects.get_mut(&e).unwrap();
         if continue_vet && *a == SafetyAnnotation::Skipped {
             // only present effects we haven't audited yet
             if print_effect_info(&e, &args.config).is_err() {
                 println!("Error printing effect information. Trying to continue...");
             }
             let status = match get_user_annotation() {
-                Ok(s) => s,
-                Err(false) => {
-                    println!("Error accepting user input. Attempting to continue...");
+                Ok(Some(s)) => s,
+                Ok(None) => {
+                    continue_vet = false;
                     SafetyAnnotation::Skipped
                 }
-                Err(true) => {
-                    continue_vet = false;
+                Err(_) => {
+                    println!("Error accepting user input. Attempting to continue...");
                     SafetyAnnotation::Skipped
                 }
             };
@@ -241,7 +320,16 @@ fn main() {
     }
 
     // save the new policy file
-    if policy_file.save_to_file(args.policy_path).is_err() {
-        println!("Error saving policy file.");
-    }
+    policy_file.save_to_file(policy_path)?;
+
+    Ok(())
+}
+
+fn main() {
+    let args = Args::parse();
+
+    match runner(args) {
+        Ok(_) => println!("Finished checking policy"),
+        Err(e) => println!("Error: {:?}", e),
+    };
 }
