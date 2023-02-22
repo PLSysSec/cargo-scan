@@ -56,6 +56,7 @@ enum SafetyAnnotation {
 }
 
 // TODO: Include information about crate/version
+// TODO: We should include more information from the ScanResult
 #[serde_as]
 #[derive(Serialize, Deserialize)]
 struct PolicyFile {
@@ -229,6 +230,7 @@ fn handle_invalid_policy(
 
     match ans.as_str() {
         "c" => {
+            // TODO: Prompt user for new policy path
             println!("Generating new policy file");
 
             policy.effects = scan_effects
@@ -271,8 +273,6 @@ fn runner(args: Args) -> Result<()> {
     let scan_effects =
         scan_res.effects.iter().filter(|x| x.pattern().is_some()).collect::<HashSet<_>>();
 
-    //println!("scan_res: {:?}", &scan_res.effects);
-
     let mut policy_file = match policy_file {
         Some(mut pf) => {
             // Check if we should invalidate the current policy file
@@ -296,7 +296,6 @@ fn runner(args: Args) -> Result<()> {
 
             // Return an empty PolicyFile, we'll add effects to it later
             let mut pf = PolicyFile::new(args.crate_path.clone())?;
-            // TODO: Set the hash of the new policy file
             pf.effects = scan_effects
                 .clone()
                 .into_iter()
@@ -315,6 +314,9 @@ fn runner(args: Args) -> Result<()> {
             if print_effect_info(e, &args.config).is_err() {
                 println!("Error printing effect information. Trying to continue...");
             }
+
+            // TODO: If the user annotates with caller-checked, we should add
+            //       each callsite as a new effect location to audit
             let status = match get_user_annotation() {
                 Ok(Some(s)) => s,
                 Ok(None) => {
@@ -330,7 +332,6 @@ fn runner(args: Args) -> Result<()> {
         }
     }
 
-    // save the new policy file
     policy_file.save_to_file(policy_path)?;
 
     Ok(())
