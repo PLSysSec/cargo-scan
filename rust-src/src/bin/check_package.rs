@@ -66,20 +66,23 @@ struct PolicyFile {
     hash: [u8; 32],
 }
 
+fn hash_dir(p: PathBuf) -> Result<[u8; 32]> {
+    let mut hasher = Sha256::new();
+    for entry in WalkDir::new(p) {
+        let entry = entry?;
+        let mut file = File::open(entry.path())?;
+        let mut buf = Vec::new();
+        file.read_to_end(&mut buf)?;
+        hasher.update(buf);
+    }
+
+    Ok(hasher.finalize().into())
+}
+
 impl PolicyFile {
     fn new(p: PathBuf) -> Result<Self> {
-        let mut hasher = Sha256::new();
-        for entry in WalkDir::new(p.clone()) {
-            let entry = entry?;
-            let mut file = File::open(entry.path())?;
-            let mut buf = Vec::new();
-            file.read_to_end(&mut buf)?;
-            hasher.update(buf);
-        }
-
-        let hash = hasher.finalize();
-
-        Ok(PolicyFile { effects: HashMap::new(), base_dir: p, hash: hash.into() })
+        let hash = hash_dir(p.clone())?;
+        Ok(PolicyFile { effects: HashMap::new(), base_dir: p, hash })
     }
 
     fn save_to_file(&self, p: PathBuf) -> Result<()> {
@@ -227,12 +230,13 @@ fn handle_invalid_policy(
     match ans.as_str() {
         "c" => {
             println!("Generating new policy file");
-            // TODO: Update the new crate hash
+
             policy.effects = scan_effects
                 .clone()
                 .into_iter()
                 .map(|x| (x.clone(), SafetyAnnotation::Skipped))
                 .collect::<HashMap<_, _>>();
+            policy.hash = hash_dir(policy.base_dir.clone())?;
 
             let mut policy_string = policy_path
                 .as_path()
@@ -269,15 +273,14 @@ fn runner(args: Args) -> Result<()> {
 
     //println!("scan_res: {:?}", &scan_res.effects);
 
-    // TODO: If the policy file diverges from the effects at all, we should
-    //       enter incremental mode and detect what's changed
-
     let mut policy_file = match policy_file {
         Some(mut pf) => {
             // Check if we should invalidate the current policy file
             let policy_effects = pf.effects.keys().collect::<HashSet<_>>();
-            // TODO: Check the hash as well
-            if policy_effects != scan_effects {
+            let hash = hash_dir(args.crate_path.clone())?;
+            if policy_effects != scan_effects || hash != pf.hash {
+                // TODO: If the policy file diverges from the effects at all, we
+                //       should enter incremental mode and detect what's changed
                 match handle_invalid_policy(&mut pf, &mut policy_path, &scan_effects) {
                     Ok(ContinueStatus::Continue) => (),
                     Ok(ContinueStatus::ExitNow) => return Ok(()),
