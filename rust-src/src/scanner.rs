@@ -812,7 +812,7 @@ pub fn scan_crate(crate_path: &Path) -> Result<ScanResults> {
     //       include others (e.g. might codegen in other dirs)
     // We have a valid crate, so iterate through all the rust src
     for entry in
-        WalkDir::new(crate_path.join(Path::new("src".into()))).into_iter().filter(|e| {
+        WalkDir::new(crate_path.join(Path::new("src"))).into_iter().filter(|e| {
             match e {
                 Ok(ne) if ne.path().is_file() => {
                     let fname = Path::new(ne.file_name());

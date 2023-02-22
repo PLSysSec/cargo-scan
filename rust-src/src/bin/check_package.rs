@@ -3,7 +3,7 @@ use cargo_scan::scanner;
 
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
@@ -12,10 +12,11 @@ use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
-//use colored::Colorize;
 use inquire::{validator::Validation, Text};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+use sha2::{Digest, Sha256};
+use walkdir::WalkDir;
 
 #[derive(Parser, Debug)]
 struct Config {
@@ -61,15 +62,24 @@ struct PolicyFile {
     // TODO: Serde doesn't like this hashmap for some reason (?)
     #[serde_as(as = "Vec<(_, _)>")]
     effects: HashMap<Effect, SafetyAnnotation>,
-    // TODO: The base_dir should be the crate name or something
     base_dir: PathBuf,
-    hash: u128,
+    hash: [u8; 32],
 }
 
 impl PolicyFile {
-    fn new(p: PathBuf) -> Self {
-        // TODO: hash the crate
-        PolicyFile { effects: HashMap::new(), base_dir: p, hash: 0 }
+    fn new(p: PathBuf) -> Result<Self> {
+        let mut hasher = Sha256::new();
+        for entry in WalkDir::new(p.clone()) {
+            let entry = entry?;
+            let mut file = File::open(entry.path())?;
+            let mut buf = Vec::new();
+            file.read_to_end(&mut buf)?;
+            hasher.update(buf);
+        }
+
+        let hash = hasher.finalize();
+
+        Ok(PolicyFile { effects: HashMap::new(), base_dir: p, hash: hash.into() })
     }
 
     fn save_to_file(&self, p: PathBuf) -> Result<()> {
@@ -227,7 +237,7 @@ fn handle_invalid_policy(
             let mut policy_string = policy_path
                 .as_path()
                 .to_str()
-                .ok_or(anyhow!("Couldn't convert OS Path to str"))?
+                .ok_or_else(|| anyhow!("Couldn't convert OS Path to str"))?
                 .to_string();
             policy_string.push_str(".new");
             println!("New policy file name: {}", &policy_string);
@@ -254,11 +264,8 @@ fn runner(args: Args) -> Result<()> {
     //       in the effects. We should make sure we're reporting everything we
     //       care about.
     let scan_res = scanner::scan_crate(&args.crate_path)?;
-    let scan_effects = scan_res
-        .effects
-        .iter()
-        .filter(|x| x.pattern().is_some())
-        .collect::<HashSet<_>>();
+    let scan_effects =
+        scan_res.effects.iter().filter(|x| x.pattern().is_some()).collect::<HashSet<_>>();
 
     //println!("scan_res: {:?}", &scan_res.effects);
 
@@ -285,7 +292,7 @@ fn runner(args: Args) -> Result<()> {
             File::create(policy_path.clone())?;
 
             // Return an empty PolicyFile, we'll add effects to it later
-            let mut pf = PolicyFile::new(args.crate_path.clone());
+            let mut pf = PolicyFile::new(args.crate_path.clone())?;
             // TODO: Set the hash of the new policy file
             pf.effects = scan_effects
                 .clone()
@@ -299,10 +306,10 @@ fn runner(args: Args) -> Result<()> {
     let mut continue_vet = true;
     // Iterate through the effects and prompt the user for if they're safe
     for e in scan_effects {
-        let a = policy_file.effects.get_mut(&e).unwrap();
+        let a = policy_file.effects.get_mut(e).unwrap();
         if continue_vet && *a == SafetyAnnotation::Skipped {
             // only present effects we haven't audited yet
-            if print_effect_info(&e, &args.config).is_err() {
+            if print_effect_info(e, &args.config).is_err() {
                 println!("Error printing effect information. Trying to continue...");
             }
             let status = match get_user_annotation() {
