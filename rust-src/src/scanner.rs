@@ -7,6 +7,7 @@ use super::sink;
 
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::Read;
@@ -61,6 +62,10 @@ impl ScanResults {
         self.ffi_calls.append(o_ffi_calls);
         self.skipped_macros += *o_skipped_macros;
         self.skipped_fn_calls += *o_skipped_fn_calls;
+    }
+
+    pub fn get_dangerous_effects(&self) -> HashSet<&Effect> {
+        self.effects.iter().filter(|x| x.pattern().is_some()).collect::<HashSet<_>>()
     }
 }
 
