@@ -2,6 +2,7 @@ use cargo_scan::effect::Effect;
 use cargo_scan::scanner;
 
 use std::collections::{HashMap, HashSet};
+use std::fmt;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::PathBuf;
@@ -55,6 +56,35 @@ enum SafetyAnnotation {
     CallerChecked,
 }
 
+impl fmt::Display for SafetyAnnotation {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            SafetyAnnotation::Skipped => write!(f, "Skipped"),
+            SafetyAnnotation::Safe => write!(f, "Safe"),
+            SafetyAnnotation::Unsafe => write!(f, "Unsafe"),
+            SafetyAnnotation::CallerChecked => write!(f, "Caller-checked"),
+        }
+    }
+}
+
+fn hash_dir(p: PathBuf) -> Result<[u8; 32]> {
+    let mut hasher = Sha256::new();
+    for entry in WalkDir::new(p) {
+        match entry {
+            Ok(ne) if ne.path().is_file() => {
+                let mut file = File::open(ne.path())?;
+                let mut buf = Vec::new();
+                file.read_to_end(&mut buf)?;
+                hasher.update(buf);
+            }
+            _ => (),
+        }
+    }
+
+    Ok(hasher.finalize().into())
+}
+
 // TODO: Include information about crate/version
 // TODO: We should include more information from the ScanResult
 #[serde_as]
@@ -63,21 +93,9 @@ struct PolicyFile {
     // TODO: Serde doesn't like this hashmap for some reason (?)
     #[serde_as(as = "Vec<(_, _)>")]
     effects: HashMap<Effect, SafetyAnnotation>,
+    // TODO: Make the base_dir a crate instead
     base_dir: PathBuf,
     hash: [u8; 32],
-}
-
-fn hash_dir(p: PathBuf) -> Result<[u8; 32]> {
-    let mut hasher = Sha256::new();
-    for entry in WalkDir::new(p) {
-        let entry = entry?;
-        let mut file = File::open(entry.path())?;
-        let mut buf = Vec::new();
-        file.read_to_end(&mut buf)?;
-        hasher.update(buf);
-    }
-
-    Ok(hasher.finalize().into())
 }
 
 impl PolicyFile {
