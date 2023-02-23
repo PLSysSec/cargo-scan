@@ -150,7 +150,10 @@ fn print_effect_src(effect: &Effect, config: &Config) -> Result<()> {
     });
 
     // calculate the byte ranges for the effect
-    let effect_line = effect.call_loc().line();
+    // TODO: Off by 1? Might have to change in the effect calculation.
+    // TODO: Highlight the entire expression as the main error if it's multi-line
+    //       and update the surrounding lines correspondingly
+    let effect_line = effect.call_loc().line() - 1;
     let bounded_start_line =
         std::cmp::max(effect_line - config.lines_before_effect as usize, 0);
     let bounded_end_line = std::cmp::min(
