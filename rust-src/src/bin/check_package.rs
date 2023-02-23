@@ -46,6 +46,10 @@ struct Args {
     /// Ovewrite the policy file if a new version of the crate is detected
     #[clap(long = "overwrite-policy", default_value_t = false)]
     overwrite_policy: bool,
+
+    /// Review the policy file without performing an audit
+    #[clap(long, short, default_value_t = false)]
+    review: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -277,10 +281,44 @@ fn handle_invalid_policy(
     }
 }
 
-fn runner(args: Args) -> Result<()> {
-    let mut policy_path = args.policy_path;
-    let policy_file = get_policy_file(policy_path.clone())?;
+fn is_policy_scan_valid(
+    policy: &PolicyFile,
+    scan_effects: &HashSet<&Effect>,
+    crate_path: PathBuf,
+) -> Result<bool> {
+    let policy_effects = policy.effects.keys().collect::<HashSet<_>>();
+    let hash = hash_dir(crate_path)?;
+    // NOTE: We're checking the hash in addition to the effects for now
+    //       because we might have changed how we scan packages for
+    //       effects.
+    Ok(policy_effects == *scan_effects && policy.hash == hash)
+}
 
+fn is_policy_valid(policy: &PolicyFile, crate_path: PathBuf) -> Result<bool> {
+    let scan_res = scanner::scan_crate(&crate_path)?;
+    let scan_effects = scan_res.get_dangerous_effects();
+    is_policy_scan_valid(policy, &scan_effects, crate_path)
+}
+
+fn review_policy(args: Args, policy: PolicyFile) -> Result<()> {
+    if !is_policy_valid(&policy, args.crate_path.clone())? {
+        println!("Error: crate has changed since last policy scan.");
+        return Err(anyhow!("Invalid policy during reivew"));
+    }
+
+    for (e, a) in policy.effects.iter() {
+        if print_effect_info(e, &args.config).is_err() {
+            println!("Error printing effect information. Trying to continue...");
+        } else {
+            // TODO: Color annotations
+            println!("Policy annotation: {}", a);
+        }
+    }
+
+    Ok(())
+}
+
+fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     // TODO: Might want to fold the ScanResults into the policy file/policy
     //       file creation
 
@@ -288,15 +326,12 @@ fn runner(args: Args) -> Result<()> {
     //       in the effects. We should make sure we're reporting everything we
     //       care about.
     let scan_res = scanner::scan_crate(&args.crate_path)?;
-    let scan_effects =
-        scan_res.effects.iter().filter(|x| x.pattern().is_some()).collect::<HashSet<_>>();
+    let scan_effects = scan_res.get_dangerous_effects();
 
+    let mut policy_path = args.policy_path.clone();
     let mut policy_file = match policy_file {
         Some(mut pf) => {
-            // Check if we should invalidate the current policy file
-            let policy_effects = pf.effects.keys().collect::<HashSet<_>>();
-            let hash = hash_dir(args.crate_path.clone())?;
-            if policy_effects != scan_effects || hash != pf.hash {
+            if is_policy_scan_valid(&pf, &scan_effects, args.crate_path.clone())? {
                 // TODO: If the policy file diverges from the effects at all, we
                 //       should enter incremental mode and detect what's changed
                 match handle_invalid_policy(&mut pf, &mut policy_path, &scan_effects) {
@@ -325,8 +360,7 @@ fn runner(args: Args) -> Result<()> {
 
     let mut continue_vet = true;
     // Iterate through the effects and prompt the user for if they're safe
-    for e in scan_effects {
-        let a = policy_file.effects.get_mut(e).unwrap();
+    for (e, a) in policy_file.effects.iter_mut() {
         if continue_vet && *a == SafetyAnnotation::Skipped {
             // only present effects we haven't audited yet
             if print_effect_info(e, &args.config).is_err() {
@@ -353,6 +387,23 @@ fn runner(args: Args) -> Result<()> {
     policy_file.save_to_file(policy_path)?;
 
     Ok(())
+}
+
+fn runner(args: Args) -> Result<()> {
+    let policy_file = get_policy_file(args.policy_path.clone())?;
+
+    if args.review {
+        match policy_file {
+            None => {
+                Err(anyhow!("Policy file to review doesn't exist"))
+            }
+            Some(pf) => {
+                review_policy(args, pf)
+            }
+        }
+    } else {
+        audit_crate(args, policy_file)
+    }
 }
 
 fn main() {
