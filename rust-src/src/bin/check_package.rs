@@ -239,6 +239,7 @@ fn handle_invalid_policy(
     policy_path: &mut PathBuf,
     scan_effects: &HashSet<&Effect>,
 ) -> Result<ContinueStatus> {
+    // TODO: Colorize
     println!("Crate has changed from last policy audit");
 
     let ans = Text::new(
@@ -314,7 +315,7 @@ fn review_policy(args: Args, policy: PolicyFile) -> Result<()> {
             println!("Error printing effect information. Trying to continue...");
         } else {
             // TODO: Color annotations
-            println!("Policy annotation: {}", a);
+            println!("Policy annotation: {}\n", a);
         }
     }
 
@@ -334,7 +335,7 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     let mut policy_path = args.policy_path.clone();
     let mut policy_file = match policy_file {
         Some(mut pf) => {
-            if is_policy_scan_valid(&pf, &scan_effects, args.crate_path.clone())? {
+            if !is_policy_scan_valid(&pf, &scan_effects, args.crate_path.clone())? {
                 // TODO: If the policy file diverges from the effects at all, we
                 //       should enter incremental mode and detect what's changed
                 match handle_invalid_policy(&mut pf, &mut policy_path, &scan_effects) {
