@@ -78,13 +78,19 @@ impl EffectPathLoc {
         let caller = Path::new_owned(full_scope.join("::"));
         Self { crt, caller }
     }
+
     pub fn csv_header() -> &'static str {
         "crate, caller"
     }
+
     pub fn to_csv(&self) -> String {
         let crt = sanitize_comma(self.crt.as_str());
         let caller = sanitize_comma(self.caller.as_str());
         format!("{}, {}", crt, caller)
+    }
+
+    pub fn caller(&self) -> &Path {
+        &self.caller
     }
 }
 

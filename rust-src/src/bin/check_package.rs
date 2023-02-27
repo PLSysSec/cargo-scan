@@ -50,6 +50,10 @@ struct Args {
     /// Review the policy file without performing an audit
     #[clap(long, short, default_value_t = false)]
     review: bool,
+
+    /// For debugging stuff
+    #[clap(long, default_value_t = false)]
+    debug: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -332,6 +336,11 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     let scan_res = scanner::scan_crate(&args.crate_path)?;
     let scan_effects = scan_res.get_dangerous_effects();
 
+    if args.debug {
+        println!("{:?}", scan_res);
+        return Ok(());
+    }
+
     let mut policy_path = args.policy_path.clone();
     let mut policy_file = match policy_file {
         Some(mut pf) => {
@@ -362,10 +371,9 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
         }
     };
 
-    let mut continue_vet = true;
     // Iterate through the effects and prompt the user for if they're safe
     for (e, a) in policy_file.effects.iter_mut() {
-        if continue_vet && *a == SafetyAnnotation::Skipped {
+        if *a == SafetyAnnotation::Skipped {
             // only present effects we haven't audited yet
             if print_effect_info(e, &args.config).is_err() {
                 println!("Error printing effect information. Trying to continue...");
@@ -376,14 +384,23 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
             let status = match get_user_annotation() {
                 Ok(Some(s)) => s,
                 Ok(None) => {
-                    continue_vet = false;
-                    SafetyAnnotation::Skipped
+                    return Ok(());
                 }
                 Err(_) => {
                     println!("Error accepting user input. Attempting to continue...");
                     SafetyAnnotation::Skipped
                 }
             };
+
+            if status == SafetyAnnotation::CallerChecked {
+                // Add all call locations as parents of this effect
+                for _e in scan_res.get_callers(e.caller()) {
+                    // TODO: Add the effects to the effect tree once we update
+                    //       the policy definition
+                    ()
+                }
+            }
+
             *a = status;
         }
     }

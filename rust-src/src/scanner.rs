@@ -2,7 +2,10 @@
     Scanner to parse a Rust source file and find all function call locations.
 */
 
-use super::effect::{BlockDec, Effect, FFICall, FnDec, ImplDec, SrcLoc, TraitDec};
+use super::effect::{
+    BlockDec, Effect, FFICall, FnDec, ImplDec, SrcLoc, TraitDec,
+};
+use super::ident;
 use super::sink;
 
 use anyhow::{anyhow, Result};
@@ -66,6 +69,18 @@ impl ScanResults {
 
     pub fn get_dangerous_effects(&self) -> HashSet<&Effect> {
         self.effects.iter().filter(|x| x.pattern().is_some()).collect::<HashSet<_>>()
+    }
+
+    pub fn get_callers<'a, 'b>(&'a self, callee: &'b ident::Path) -> HashSet<&'a Effect> {
+        let mut callers = HashSet::new();
+        for e in &self.effects {
+            // TODO: Update this when we get more intelligent name resolution
+            if e.callee() == callee {
+                callers.insert(e);
+            }
+        }
+
+        callers
     }
 }
 
@@ -817,14 +832,12 @@ pub fn scan_crate(crate_path: &Path) -> Result<ScanResults> {
     //       include others (e.g. might codegen in other dirs)
     // We have a valid crate, so iterate through all the rust src
     for entry in
-        WalkDir::new(crate_path.join(Path::new("src"))).into_iter().filter(|e| {
-            match e {
-                Ok(ne) if ne.path().is_file() => {
-                    let fname = Path::new(ne.file_name());
-                    fname.to_str().map_or(false, |x| x.ends_with(".rs"))
-                }
-                _ => false,
+        WalkDir::new(crate_path.join(Path::new("src"))).into_iter().filter(|e| match e {
+            Ok(ne) if ne.path().is_file() => {
+                let fname = Path::new(ne.file_name());
+                fname.to_str().map_or(false, |x| x.ends_with(".rs"))
             }
+            _ => false,
         })
     {
         let mut next_scan = load_and_scan(Path::new(entry?.path()));
