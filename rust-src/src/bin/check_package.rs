@@ -223,13 +223,53 @@ fn print_effect_src(effect: &Effect, config: &Config) -> Result<()> {
     Ok(())
 }
 
-fn print_call_stack(_effect: &Effect) -> Result<()> {
-    // TODO: Get the call stack from the effect (might need more info)
+fn print_call_stack(effect: &Effect, effect_history: &[&Effect]) -> Result<()> {
+    // TODO: Better formatting
+    let call_config = Config { lines_before_effect: 0, lines_after_effect: 0 };
+    if effect_history.is_empty() {
+        for e in effect_history {
+            // TODO: print the function this effect happens in
+            print_effect_src(e, &call_config)?;
+        }
+        print_effect_src(effect, &call_config)?;
+    }
+
     Ok(())
 }
 
-fn print_effect_info(effect: &Effect, config: &Config) -> Result<()> {
-    print_call_stack(effect)?;
+fn print_effect_tree_info_helper(
+    effect: &Effect,
+    effect_tree: &EffectTree,
+    effect_history: &[&Effect],
+    config: &Config,
+) -> Result<()> {
+    match effect_tree {
+        EffectTree::Leaf(_, _) => print_effect_info(effect, effect_history, config),
+        EffectTree::Branch(new_e, es) => {
+            let mut new_history = effect_history.to_owned();
+            new_history.push(new_e);
+            for new_tree in es {
+                print_effect_tree_info_helper(new_e, new_tree, effect_history, config)?
+            }
+            Ok(())
+        }
+    }
+}
+
+fn print_effect_tree_info(
+    effect: &Effect,
+    effect_tree: &EffectTree,
+    config: &Config,
+) -> Result<()> {
+    print_effect_tree_info_helper(effect, effect_tree, &Vec::new(), config)
+}
+
+fn print_effect_info(
+    effect: &Effect,
+    effect_history: &[&Effect],
+    config: &Config,
+) -> Result<()> {
+    print_call_stack(effect, effect_history)?;
     print_effect_src(effect, config)?;
     Ok(())
 }
@@ -346,7 +386,7 @@ fn review_policy(args: Args, policy: PolicyFile) -> Result<()> {
     }
 
     for (e, a) in policy.effects.iter() {
-        if print_effect_info(e, &args.config).is_err() {
+        if print_effect_tree_info(e, a, &args.config).is_err() {
             println!("Error printing effect information. Trying to continue...");
         } else {
             // TODO: Color annotations
@@ -369,15 +409,20 @@ enum AuditStatus {
 }
 
 fn audit_leaf<'a>(
-    effect: &'a Effect,
+    orig_effect: &'a Effect,
     effect_tree: &mut EffectTree,
     effect_history: &[&'a Effect],
     scan_res: &ScanResults,
     config: &Config,
 ) -> Result<AuditStatus> {
-    // only present effects we haven't audited yet
-    // TODO: Print call path if it exists
-    if print_effect_info(effect, config).is_err() {
+    let curr_effect = match effect_tree {
+        EffectTree::Leaf(e, _) => e.clone(),
+        _ => {
+            return Err(anyhow!("Tried to leaf audit a branch"));
+        }
+    };
+
+    if print_effect_info(&curr_effect, effect_history, config).is_err() {
         println!("Error printing effect information. Trying to continue...");
     }
 
@@ -396,13 +441,12 @@ fn audit_leaf<'a>(
     if status == SafetyAnnotation::CallerChecked {
         // Add all call locations as parents of this effect
         let new_check_locs = scan_res
-            .get_callers(effect.caller())
+            .get_callers(curr_effect.caller())
             .into_iter()
             .map(|x| EffectTree::Leaf(x.clone(), SafetyAnnotation::Skipped))
             .collect::<Vec<_>>();
-        println!("{:?}", new_check_locs);
-        *effect_tree = EffectTree::Branch(effect.clone(), new_check_locs);
-        audit_branch(effect, effect_tree, effect_history, scan_res, config)
+        *effect_tree = EffectTree::Branch(curr_effect, new_check_locs);
+        audit_branch(orig_effect, effect_tree, effect_history, scan_res, config)
     } else {
         effect_tree.set_annotation(status).ok_or_else(|| {
             anyhow!("Tried to set the EffectTree annotation, but was a branch node")
