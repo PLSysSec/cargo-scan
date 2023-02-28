@@ -10,6 +10,9 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 use syn::spanned::Spanned;
 
+/*
+    CSV utility functions
+*/
 fn sanitize_comma(s: &str) -> String {
     if s.contains(',') {
         eprintln!("Warning: ignoring unexpected comma when generating CSV: {s}");
@@ -26,58 +29,64 @@ fn sanitize_path(p: &FilePath) -> String {
     }
 }
 
+/*
+    Abstractions for identifying a location in the source code --
+    either by a module/fn path, or by a file/line/column
+*/
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct EffectPathLoc {
+pub struct ModPathLoc {
     // Name of crate, e.g. num_cpus
     crt: Ident,
-    // Full path to caller function, e.g. num_cpus::linux::logical_cpus
-    caller: Path,
+    // Full path to module or function, e.g. num_cpus::linux::logical_cpus
+    path: Path,
 }
-impl EffectPathLoc {
-    pub fn new(filepath: &FilePath, mod_scope: &[String], caller: String) -> Self {
+impl ModPathLoc {
+    pub fn new_fn(filepath: &FilePath, mod_scope: &[String], fn_decl: String) -> Self {
         // note: tries to infer the crate name and modules from the filepath
         // TBD: use Cargo.toml to get crate name & other info
 
         // TODO: Find the fully qualified name before we create the Effect/EffectPath
-        let crate_string = infer_crate(filepath);
-        let crt = Ident::new_owned(crate_string.clone());
+        let crt_string = infer_crate(filepath);
+        let crt = Ident::new_owned(crt_string.clone());
 
         // Infer module
         let mut post_src = infer_module(filepath);
 
         // combine crate, module scope, and file-level modules (mod_scope)
-        // to form full scope to caller
-        let mut full_scope: Vec<String> = vec![crate_string];
+        // to form full module path
+        let mut full_scope: Vec<String> = vec![crt_string];
         full_scope.append(&mut post_src);
         full_scope.extend_from_slice(mod_scope);
-        full_scope.push(caller);
+        full_scope.push(fn_decl);
 
-        let caller = Path::new_owned(full_scope.join("::"));
-        Self { crt, caller }
+        let path = Path::new_owned(full_scope.join("::"));
+        Self { crt, path }
     }
 
     pub fn csv_header() -> &'static str {
-        "crate, caller"
+        "crate, fn_decl"
     }
 
     pub fn to_csv(&self) -> String {
         let crt = sanitize_comma(self.crt.as_str());
-        let caller = sanitize_comma(self.caller.as_str());
-        format!("{}, {}", crt, caller)
+        let path = sanitize_comma(self.path.as_str());
+        format!("{}, {}", crt, path)
     }
 
-    pub fn caller(&self) -> &Path {
-        &self.caller
+    pub fn path(&self) -> &Path {
+        &self.path
     }
 }
 
+/// Data representing a source code location for some identifier, block, or expression
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct SrcLoc {
-    // Directory in which the call occurs
+    /// Directory in which the expression occurs
     dir: FilePathBuf,
-    // File in which the call occurs -- in the above directory
+    /// File in which the expression occurs -- in the above directory
     file: FilePathBuf,
-    // Location in which the call occurs -- in the above file
+    /// Location in which the expression occurs -- in the above file
     line: usize,
     col: usize,
 }
@@ -89,9 +98,11 @@ impl SrcLoc {
         let file = FilePathBuf::from(filepath.file_name().unwrap());
         Self { dir, file, line, col }
     }
+
     pub fn csv_header() -> &'static str {
         "dir, file, line, col"
     }
+
     pub fn to_csv(&self) -> String {
         let dir = sanitize_path(&self.dir);
         let file = sanitize_path(&self.file);
@@ -115,10 +126,14 @@ impl SrcLoc {
     }
 }
 
+/*
+    Data model for effects
+*/
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Effect {
     // Location of caller (Rust path::to::fun)
-    caller_loc: EffectPathLoc,
+    caller_loc: ModPathLoc,
     // Callee (effect) function, e.g. libc::sched_getaffinity
     callee: Path,
     // Effect pattern -- prefix of callee (effect), e.g. libc
@@ -137,7 +152,7 @@ impl Effect {
         line: usize,
         col: usize,
     ) -> Self {
-        let caller_loc = EffectPathLoc::new(filepath, mod_scope, caller);
+        let caller_loc = ModPathLoc::new_fn(filepath, mod_scope, caller);
         // TODO: This is super jank, it should be infered properly during scanning
         let callee = if callee.contains("::") {
             // The callee is (probably) already fully qualified
@@ -152,10 +167,10 @@ impl Effect {
     }
 
     pub fn caller(&self) -> &Path {
-        &self.caller_loc.caller
+        &self.caller_loc.path()
     }
     pub fn caller_path(&self) -> &str {
-        self.caller_loc.caller.as_str()
+        self.caller_loc.path().as_str()
     }
     pub fn callee(&self) -> &Path {
         &self.callee
@@ -169,7 +184,7 @@ impl Effect {
     }
 
     pub fn csv_header() -> &'static str {
-        "crate, caller, callee, pattern, dir, file, line, col"
+        "crate, fn_decl, callee, pattern, dir, file, line, col"
     }
     pub fn to_csv(&self) -> String {
         let caller_loc_csv = self.caller_loc.to_csv();
@@ -271,6 +286,7 @@ impl TraitDec {
         Self { src_loc, tr_name }
     }
 }
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FFICall {
     fn_name: Ident,
@@ -295,6 +311,6 @@ impl FFICall {
 
 #[test]
 fn test_csv_header() {
-    assert!(Effect::csv_header().starts_with(EffectPathLoc::csv_header()));
+    assert!(Effect::csv_header().starts_with(ModPathLoc::csv_header()));
     assert!(Effect::csv_header().ends_with(SrcLoc::csv_header()));
 }
