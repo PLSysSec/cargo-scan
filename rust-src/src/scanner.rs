@@ -2,11 +2,8 @@
     Scanner to parse a Rust source file and find all function call locations.
 */
 
-use super::effect::{
-    BlockDec, Effect, FFICall, FnDec, ImplDec, SrcLoc, TraitDec,
-};
+use super::effect::{BlockDec, Effect, FFICall, FnDec, ImplDec, SrcLoc, TraitDec};
 use super::ident;
-use super::sink;
 
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
@@ -824,13 +821,13 @@ pub fn load_and_scan(filepath: &Path) -> ScanResults {
 pub fn scan_crate(crate_path: &Path) -> Result<ScanResults> {
     // Make sure the path is a crate
     if !crate_path.is_dir() {
-        return Err(anyhow!("Path is not a crate; not a directory"));
+        return Err(anyhow!("Path is not a crate; not a directory: {:?}", crate_path));
     }
 
     let mut cargo_toml_path = crate_path.to_path_buf();
     cargo_toml_path.push("Cargo.toml");
     if !cargo_toml_path.try_exists()? || !cargo_toml_path.is_file() {
-        return Err(anyhow!("Path is not a crate; missing Cargo.toml"));
+        return Err(anyhow!("Path is not a crate; missing Cargo.toml: {:?}", crate_path));
     }
 
     let mut final_result = ScanResults::new();
@@ -838,6 +835,8 @@ pub fn scan_crate(crate_path: &Path) -> Result<ScanResults> {
     // TODO: For now, only walking through the src dir, but might want to
     //       include others (e.g. might codegen in other dirs)
     // We have a valid crate, so iterate through all the rust src
+    // TODO: Does this work in alphabetical orer?
+    // scan.py script currently needs the order to be deterministic across calls
     for entry in
         WalkDir::new(crate_path.join(Path::new("src"))).into_iter().filter(|e| match e {
             Ok(ne) if ne.path().is_file() => {
@@ -848,12 +847,6 @@ pub fn scan_crate(crate_path: &Path) -> Result<ScanResults> {
         })
     {
         let mut next_scan = load_and_scan(Path::new(entry?.path()));
-
-        // TODO: Remove this once pattern setting makes sense. It's this ugly
-        //       optional initialization function right now.
-        for e in &mut next_scan.effects {
-            sink::set_pattern(e)
-        }
 
         final_result.combine_results(&mut next_scan);
     }

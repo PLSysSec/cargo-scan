@@ -2,12 +2,12 @@
     Representation of an Effect location in source code
 */
 
-use std::path::{Path as FilePath, PathBuf as FilePathBuf};
-
-use super::ident::{Ident, Path, Pattern};
+use super::ident::{Ident, Path};
+use super::sink::Sink;
 use super::util::{fully_qualified_prefix, infer_crate, infer_module};
 
 use serde::{Deserialize, Serialize};
+use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 use syn::spanned::Spanned;
 
 fn sanitize_comma(s: &str) -> String {
@@ -122,7 +122,8 @@ pub struct Effect {
     // Callee (effect) function, e.g. libc::sched_getaffinity
     callee: Path,
     // Effect pattern -- prefix of callee (effect), e.g. libc
-    pattern: Option<Pattern>,
+    // Set to 'None' if the callee is not found to match any pattern.
+    pattern: Option<Sink>,
     // Location of call (Directory, file, line)
     call_loc: SrcLoc,
 }
@@ -145,7 +146,7 @@ impl Effect {
             let prefix = fully_qualified_prefix(filepath);
             Path::new_owned(format!("{}::{}", prefix, callee))
         };
-        let pattern = None;
+        let pattern = Sink::new_match(&callee);
         let call_loc = SrcLoc::new(filepath, line, col);
         Self { caller_loc, callee, pattern, call_loc }
     }
@@ -167,10 +168,6 @@ impl Effect {
         (self.caller_path(), self.callee_path())
     }
 
-    pub fn set_pattern(&mut self, pat: Pattern) {
-        self.pattern = Some(pat)
-    }
-
     pub fn csv_header() -> &'static str {
         "crate, caller, callee, pattern, dir, file, line, col"
     }
@@ -184,7 +181,7 @@ impl Effect {
         format!("{}, {}, {}, {}", caller_loc_csv, callee, pattern, call_loc_csv)
     }
 
-    pub fn pattern(&self) -> &Option<Pattern> {
+    pub fn pattern(&self) -> &Option<Sink> {
         &self.pattern
     }
 
