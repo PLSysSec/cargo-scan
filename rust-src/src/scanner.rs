@@ -75,7 +75,8 @@ impl ScanResults {
         let mut callers = HashSet::new();
         for e in &self.effects {
             // TODO: Update this when we get more intelligent name resolution
-            if e.callee() == callee {
+            let effect_callee = e.callee();
+            if effect_callee == callee {
                 callers.insert(e);
             }
         }
@@ -275,9 +276,11 @@ impl<'a> Scanner<'a> {
         self.save_scope_use_under(&r.rename);
         self.scope_use.pop();
     }
+
     fn scan_use_glob(&mut self, _g: &'a syn::UseGlob) {
         self.use_globs.push(self.scope_use_snapshot());
     }
+
     fn scan_use_group(&mut self, g: &'a syn::UseGroup) {
         for t in g.items.iter() {
             self.scan_use_tree(t);
@@ -297,6 +300,7 @@ impl<'a> Scanner<'a> {
             .map(|v| v.as_slice())
             .unwrap_or_else(|| std::slice::from_ref(i))
     }
+
     // this one creates a new path, so it has to return a Vec anyway
     // precond: input path must be nonempty
     // return: nonempty Vec of identifiers in the full path
@@ -312,6 +316,7 @@ impl<'a> Scanner<'a> {
 
         result
     }
+
     fn path_to_string(p: &[&'a syn::Ident]) -> String {
         let mut result: String = "".to_string();
         for i in p {
@@ -686,9 +691,11 @@ impl<'a> Scanner<'a> {
             self.scan_expr(y);
         }
     }
+
     fn get_mod_scope(&self) -> Vec<String> {
         self.scope_mods.iter().map(|i| i.to_string()).collect()
     }
+
     fn push_callsite<S>(&mut self, callee_span: S, callee_path: String)
     where
         S: Spanned,
@@ -736,6 +743,7 @@ impl<'a> Scanner<'a> {
             }
         }
     }
+
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
         match f {
             syn::Expr::Path(p) => {
@@ -770,6 +778,7 @@ impl<'a> Scanner<'a> {
             }
         }
     }
+
     fn scan_expr_call_field(&mut self, m: &'a syn::Member) {
         match m {
             syn::Member::Named(i) => {
@@ -782,6 +791,7 @@ impl<'a> Scanner<'a> {
             }
         }
     }
+
     fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
         let callee_path = format!("[METHOD]::{}", i);
         self.push_callsite(i, callee_path);
@@ -806,9 +816,6 @@ pub fn load_and_scan(filepath: &Path) -> ScanResults {
 
     let mut scanner = Scanner::new(filepath);
     scanner.scan_file(&syntax_tree);
-
-    // for debugging
-    // println!("Final scanner state: {:?}", scanner);
 
     scanner.get_results()
 }
