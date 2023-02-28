@@ -1,5 +1,6 @@
 use cargo_scan::effect::Effect;
 use cargo_scan::scanner;
+use cargo_scan::scanner::ScanResults;
 
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -56,7 +57,7 @@ struct Args {
     debug: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 enum SafetyAnnotation {
     Skipped,
     Safe,
@@ -93,6 +94,34 @@ fn hash_dir(p: PathBuf) -> Result<[u8; 32]> {
     Ok(hasher.finalize().into())
 }
 
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
+enum EffectTree {
+    Leaf(Effect, SafetyAnnotation),
+    Branch(Effect, Vec<EffectTree>),
+}
+
+impl EffectTree {
+    fn get_leaf_annotation(&self) -> Option<SafetyAnnotation> {
+        match self {
+            EffectTree::Leaf(_, a) => Some(*a),
+            EffectTree::Branch(_, _) => None,
+        }
+    }
+
+    /// Sets the annotation for a leaf node and returns Some previous annotation,
+    /// or None if it was a branch node
+    fn set_annotation(&mut self, new_a: SafetyAnnotation) -> Option<SafetyAnnotation> {
+        match self {
+            EffectTree::Leaf(_, a) => {
+                let ret = *a;
+                *a = new_a;
+                Some(ret)
+            }
+            _ => None,
+        }
+    }
+}
+
 // TODO: Include information about crate/version
 // TODO: We should include more information from the ScanResult
 #[serde_as]
@@ -100,7 +129,7 @@ fn hash_dir(p: PathBuf) -> Result<[u8; 32]> {
 struct PolicyFile {
     // TODO: Serde doesn't like this hashmap for some reason (?)
     #[serde_as(as = "Vec<(_, _)>")]
-    effects: HashMap<Effect, SafetyAnnotation>,
+    effects: HashMap<Effect, EffectTree>,
     // TODO: Make the base_dir a crate instead
     base_dir: PathBuf,
     hash: [u8; 32],
@@ -266,7 +295,9 @@ fn handle_invalid_policy(
             policy.effects = scan_effects
                 .clone()
                 .into_iter()
-                .map(|x| (x.clone(), SafetyAnnotation::Skipped))
+                .map(|x| {
+                    (x.clone(), EffectTree::Leaf(x.clone(), SafetyAnnotation::Skipped))
+                })
                 .collect::<HashMap<_, _>>();
             policy.hash = hash_dir(policy.base_dir.clone())?;
 
@@ -319,11 +350,104 @@ fn review_policy(args: Args, policy: PolicyFile) -> Result<()> {
             println!("Error printing effect information. Trying to continue...");
         } else {
             // TODO: Color annotations
-            println!("Policy annotation: {}\n", a);
+            match a {
+                EffectTree::Leaf(_, a) => println!("Policy annotation: {}\n", a),
+                EffectTree::Branch(_, _) => {
+                    println!("Policy annotation: {}\n", SafetyAnnotation::CallerChecked)
+                }
+            }
         }
     }
 
     Ok(())
+}
+
+fn audit_leaf<'a>(
+    effect: &'a Effect,
+    effect_tree: &mut EffectTree,
+    effect_history: &[&'a Effect],
+    scan_res: &ScanResults,
+    config: &Config,
+) -> Result<()> {
+    // only present effects we haven't audited yet
+    // TODO: Print call path if it exists
+    if print_effect_info(effect, config).is_err() {
+        println!("Error printing effect information. Trying to continue...");
+    }
+
+    // TODO: If the user annotates with caller-checked, we should add
+    //       each callsite as a new effect location to audit
+    let status = match get_user_annotation() {
+        Ok(Some(s)) => s,
+        Ok(None) => {
+            return Ok(());
+        }
+        Err(_) => {
+            println!("Error accepting user input. Attempting to continue...");
+            SafetyAnnotation::Skipped
+        }
+    };
+
+    // TODO: Handle no call sites
+    if status == SafetyAnnotation::CallerChecked {
+        // Add all call locations as parents of this effect
+        let new_check_locs = scan_res
+            .get_callers(effect.caller())
+            .into_iter()
+            .map(|x| EffectTree::Leaf(x.clone(), SafetyAnnotation::Skipped))
+            .collect::<Vec<_>>();
+        println!("{:?}", new_check_locs);
+        *effect_tree = EffectTree::Branch(effect.clone(), new_check_locs);
+        audit_branch(effect, effect_tree, effect_history, scan_res, config)
+    } else {
+        effect_tree.set_annotation(status).ok_or_else(|| anyhow!(
+            "Tried to set the EffectTree annotation, but was a branch node"
+        ))?;
+        Ok(())
+    }
+}
+
+fn audit_branch<'a>(
+    orig_effect: &'a Effect,
+    effect_tree: &mut EffectTree,
+    effect_history: &[&'a Effect],
+    scan_res: &ScanResults,
+    config: &Config,
+) -> Result<()> {
+    if let EffectTree::Branch(curr_effect, effects) = effect_tree {
+        let mut next_history = effect_history.to_owned();
+        next_history.push(curr_effect);
+        for e in effects {
+            // TODO: Early exit
+            match e {
+                next_e @ EffectTree::Branch(..) => {
+                    audit_branch(orig_effect, next_e, &next_history, scan_res, config)?
+                }
+                next_e @ EffectTree::Leaf(..) => {
+                    audit_leaf(orig_effect, next_e, &next_history, scan_res, config)?
+                }
+            };
+        }
+        Ok(())
+    } else {
+        Err(anyhow!("Tried to audit an EffectTree branch, but was actually a leaf"))
+    }
+}
+
+fn audit_effect_tree(
+    orig_effect: &Effect,
+    effect_tree: &mut EffectTree,
+    scan_res: &ScanResults,
+    config: &Config,
+) -> Result<()> {
+    match effect_tree {
+        e @ EffectTree::Leaf(..) => {
+            audit_leaf(orig_effect, e, &Vec::new(), scan_res, config)
+        }
+        e @ EffectTree::Branch(..) => {
+            audit_branch(orig_effect, e, &Vec::new(), scan_res, config)
+        }
+    }
 }
 
 fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
@@ -365,43 +489,23 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
             pf.effects = scan_effects
                 .clone()
                 .into_iter()
-                .map(|x| (x.clone(), SafetyAnnotation::Skipped))
+                .map(|x| {
+                    (x.clone(), EffectTree::Leaf(x.clone(), SafetyAnnotation::Skipped))
+                })
                 .collect::<HashMap<_, _>>();
             pf
         }
     };
 
     // Iterate through the effects and prompt the user for if they're safe
-    for (e, a) in policy_file.effects.iter_mut() {
-        if *a == SafetyAnnotation::Skipped {
-            // only present effects we haven't audited yet
-            if print_effect_info(e, &args.config).is_err() {
-                println!("Error printing effect information. Trying to continue...");
+    for (e, t) in policy_file.effects.iter_mut() {
+        match t.get_leaf_annotation() {
+            Some(SafetyAnnotation::Skipped) => {
+                // TODO: Early exit
+                audit_effect_tree(e, t, &scan_res, &args.config)?
             }
-
-            // TODO: If the user annotates with caller-checked, we should add
-            //       each callsite as a new effect location to audit
-            let status = match get_user_annotation() {
-                Ok(Some(s)) => s,
-                Ok(None) => {
-                    return Ok(());
-                }
-                Err(_) => {
-                    println!("Error accepting user input. Attempting to continue...");
-                    SafetyAnnotation::Skipped
-                }
-            };
-
-            if status == SafetyAnnotation::CallerChecked {
-                // Add all call locations as parents of this effect
-                for _e in scan_res.get_callers(e.caller()) {
-                    // TODO: Add the effects to the effect tree once we update
-                    //       the policy definition
-                    ()
-                }
-            }
-
-            *a = status;
+            Some(_) => (),
+            None => audit_effect_tree(e, t, &scan_res, &args.config)?,
         }
     }
 
@@ -415,12 +519,8 @@ fn runner(args: Args) -> Result<()> {
 
     if args.review {
         match policy_file {
-            None => {
-                Err(anyhow!("Policy file to review doesn't exist"))
-            }
-            Some(pf) => {
-                review_policy(args, pf)
-            }
+            None => Err(anyhow!("Policy file to review doesn't exist")),
+            Some(pf) => review_policy(args, pf),
         }
     } else {
         audit_crate(args, policy_file)
