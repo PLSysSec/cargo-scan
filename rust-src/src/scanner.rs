@@ -2,7 +2,9 @@
     Scanner to parse a Rust source file and find all function call locations.
 */
 
-use super::effect::{BlockDec, Effect, FFICall, FnDec, ImplDec, SrcLoc, TraitDec};
+use super::effect::{
+    BlockDec, Effect, FFICall, FnDec, ImplDec, SrcLoc, TraitDec,
+};
 use super::ident;
 
 use anyhow::{anyhow, Result};
@@ -24,6 +26,7 @@ pub struct ScanResults {
     pub unsafe_traits: Vec<TraitDec>,
     pub unsafe_blocks: Vec<BlockDec>,
     pub ffi_calls: Vec<FFICall>,
+    pub fn_locs: HashMap<ident::Ident, SrcLoc>,
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
 }
@@ -37,6 +40,7 @@ impl ScanResults {
             unsafe_traits: Vec::new(),
             unsafe_blocks: Vec::new(),
             ffi_calls: Vec::new(),
+            fn_locs: HashMap::new(),
             skipped_macros: 0,
             skipped_fn_calls: 0,
         }
@@ -50,6 +54,7 @@ impl ScanResults {
             unsafe_traits: o_unsafe_traits,
             unsafe_blocks: o_unsafe_blocks,
             ffi_calls: o_ffi_calls,
+            fn_locs: o_fn_locs,
             skipped_macros: o_skipped_macros,
             skipped_fn_calls: o_skipped_fn_calls,
         } = other;
@@ -60,6 +65,7 @@ impl ScanResults {
         self.unsafe_traits.append(o_unsafe_traits);
         self.unsafe_blocks.append(o_unsafe_blocks);
         self.ffi_calls.append(o_ffi_calls);
+        self.fn_locs.extend(o_fn_locs.drain());
         self.skipped_macros += *o_skipped_macros;
         self.skipped_fn_calls += *o_skipped_fn_calls;
     }
@@ -98,6 +104,7 @@ pub struct Scanner<'a> {
     unsafe_blocks: Vec<BlockDec>,
     ffi_decls: HashMap<String, &'a syn::Ident>,
     ffi_calls: Vec<FFICall>,
+    fn_decls: Vec<FnDec>,
     // stack-based scopes for parsing (always empty at top-level)
     // TBD: can probably combine all types of scope into one
     scope_mods: Vec<&'a syn::Ident>,
@@ -127,6 +134,7 @@ impl<'a> Scanner<'a> {
             unsafe_impls: Vec::new(),
             unsafe_traits: Vec::new(),
             unsafe_blocks: Vec::new(),
+            fn_decls: Vec::new(),
             scope_mods: Vec::new(),
             scope_use: Vec::new(),
             scope_fun: Vec::new(),
@@ -146,6 +154,11 @@ impl<'a> Scanner<'a> {
             unsafe_impls: self.unsafe_impls,
             unsafe_traits: self.unsafe_traits,
             unsafe_blocks: self.unsafe_blocks,
+            fn_locs: self
+                .fn_decls
+                .into_iter()
+                .map(|FnDec { src_loc, fn_name }| (fn_name, src_loc))
+                .collect::<HashMap<_, _>>(),
             skipped_macros: self.skipped_macros,
             skipped_fn_calls: self.skipped_fn_calls,
         }
@@ -444,6 +457,7 @@ impl<'a> Scanner<'a> {
             // we found an `unsafe fn` declaration
             self.unsafe_decls.push(FnDec::new(f, self.filepath, f_name.to_string()));
         }
+        self.fn_decls.push(FnDec::new(f, self.filepath, f_name.to_string()));
         self.scope_fun.push(f_name);
         for s in &f.block.stmts {
             self.scan_fn_statement(s);

@@ -208,8 +208,8 @@ impl Effect {
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct FnDec {
-    src_loc: SrcLoc,
-    fn_name: Ident,
+    pub src_loc: SrcLoc,
+    pub fn_name: Ident,
 }
 impl FnDec {
     pub fn new<S>(decl_span: &S, filepath: &FilePath, fn_name: String) -> Self
