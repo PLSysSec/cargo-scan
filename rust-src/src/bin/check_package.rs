@@ -362,25 +362,29 @@ fn review_policy(args: Args, policy: PolicyFile) -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum AuditStatus {
+    EarlyExit,
+    ContinueAudit,
+}
+
 fn audit_leaf<'a>(
     effect: &'a Effect,
     effect_tree: &mut EffectTree,
     effect_history: &[&'a Effect],
     scan_res: &ScanResults,
     config: &Config,
-) -> Result<()> {
+) -> Result<AuditStatus> {
     // only present effects we haven't audited yet
     // TODO: Print call path if it exists
     if print_effect_info(effect, config).is_err() {
         println!("Error printing effect information. Trying to continue...");
     }
 
-    // TODO: If the user annotates with caller-checked, we should add
-    //       each callsite as a new effect location to audit
     let status = match get_user_annotation() {
         Ok(Some(s)) => s,
         Ok(None) => {
-            return Ok(());
+            return Ok(AuditStatus::EarlyExit);
         }
         Err(_) => {
             println!("Error accepting user input. Attempting to continue...");
@@ -400,10 +404,10 @@ fn audit_leaf<'a>(
         *effect_tree = EffectTree::Branch(effect.clone(), new_check_locs);
         audit_branch(effect, effect_tree, effect_history, scan_res, config)
     } else {
-        effect_tree.set_annotation(status).ok_or_else(|| anyhow!(
-            "Tried to set the EffectTree annotation, but was a branch node"
-        ))?;
-        Ok(())
+        effect_tree.set_annotation(status).ok_or_else(|| {
+            anyhow!("Tried to set the EffectTree annotation, but was a branch node")
+        })?;
+        Ok(AuditStatus::ContinueAudit)
     }
 }
 
@@ -413,7 +417,7 @@ fn audit_branch<'a>(
     effect_history: &[&'a Effect],
     scan_res: &ScanResults,
     config: &Config,
-) -> Result<()> {
+) -> Result<AuditStatus> {
     if let EffectTree::Branch(curr_effect, effects) = effect_tree {
         let mut next_history = effect_history.to_owned();
         next_history.push(curr_effect);
@@ -421,14 +425,22 @@ fn audit_branch<'a>(
             // TODO: Early exit
             match e {
                 next_e @ EffectTree::Branch(..) => {
-                    audit_branch(orig_effect, next_e, &next_history, scan_res, config)?
+                    if audit_branch(orig_effect, next_e, &next_history, scan_res, config)?
+                        == AuditStatus::EarlyExit
+                    {
+                        return Ok(AuditStatus::EarlyExit);
+                    }
                 }
                 next_e @ EffectTree::Leaf(..) => {
-                    audit_leaf(orig_effect, next_e, &next_history, scan_res, config)?
+                    if audit_leaf(orig_effect, next_e, &next_history, scan_res, config)?
+                        == AuditStatus::EarlyExit
+                    {
+                        return Ok(AuditStatus::EarlyExit);
+                    }
                 }
             };
         }
-        Ok(())
+        Ok(AuditStatus::ContinueAudit)
     } else {
         Err(anyhow!("Tried to audit an EffectTree branch, but was actually a leaf"))
     }
@@ -439,7 +451,7 @@ fn audit_effect_tree(
     effect_tree: &mut EffectTree,
     scan_res: &ScanResults,
     config: &Config,
-) -> Result<()> {
+) -> Result<AuditStatus> {
     match effect_tree {
         e @ EffectTree::Leaf(..) => {
             audit_leaf(orig_effect, e, &Vec::new(), scan_res, config)
@@ -502,10 +514,20 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
         match t.get_leaf_annotation() {
             Some(SafetyAnnotation::Skipped) => {
                 // TODO: Early exit
-                audit_effect_tree(e, t, &scan_res, &args.config)?
+                if audit_effect_tree(e, t, &scan_res, &args.config)?
+                    == AuditStatus::EarlyExit
+                {
+                    break;
+                }
             }
             Some(_) => (),
-            None => audit_effect_tree(e, t, &scan_res, &args.config)?,
+            None => {
+                if audit_effect_tree(e, t, &scan_res, &args.config)?
+                    == AuditStatus::EarlyExit
+                {
+                    break;
+                }
+            }
         }
     }
 
