@@ -131,6 +131,23 @@ impl SrcLoc {
 */
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum EffectType {
+    /// Function call (callee path) matching a sink pattern
+    SinkCall(Path, Sink),
+    /// Other call (callee path), not matching any sink pattern
+    OtherCall(Path),
+    /// FFI call
+    FFICall(Path),
+    /// Unsafe code block. This could be:
+    /// - an expression enclosed by `unsafe { ... }`
+    /// - an unsafe function decl `unsafe fn ...`
+    /// - an unsafe trait impl `unsafe impl <Trait> for <Type> ...`
+    /// TBD: the data model may change later to mark individual
+    /// components of the unsafe block rather than the whole block
+    UnsafeBlock(Path),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Effect {
     // Location of caller (Rust path::to::fun)
     caller_loc: ModPathLoc,
@@ -167,7 +184,7 @@ impl Effect {
     }
 
     pub fn caller(&self) -> &Path {
-        &self.caller_loc.path()
+        self.caller_loc.path()
     }
     pub fn caller_path(&self) -> &str {
         self.caller_loc.path().as_str()
