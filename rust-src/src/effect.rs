@@ -5,6 +5,7 @@
 use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 
 use super::ident::{Ident, Path, Pattern};
+use super::util::{fully_qualified_prefix, infer_crate, infer_module};
 
 use serde::{Deserialize, Serialize};
 use syn::spanned::Spanned;
@@ -37,40 +38,16 @@ impl EffectPathLoc {
         // note: tries to infer the crate name and modules from the filepath
         // TBD: use Cargo.toml to get crate name & other info
 
-        // Infer crate
-        let pre_src: Vec<String> = filepath
-            .iter()
-            .map(|x| {
-                x.to_str().unwrap_or_else(|| {
-                    panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
-                })
-            })
-            .take_while(|&x| x != "src")
-            .map(|x| x.to_string())
-            .collect();
-        let crt_str = pre_src.last().cloned().unwrap_or_else(|| {
-            eprintln!("warning: unable to infer crate from path: {:?}", filepath);
-            "".to_string()
-        });
-        let crt = Ident::new(&crt_str);
+        // TODO: Find the fully qualified name before we create the Effect/EffectPath
+        let crate_string = infer_crate(filepath);
+        let crt = Ident::new_owned(crate_string.clone());
 
         // Infer module
-        let mut post_src: Vec<String> = filepath
-            .iter()
-            .map(|x| {
-                x.to_str().unwrap_or_else(|| {
-                    panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
-                })
-            })
-            .skip_while(|&x| x != "src")
-            .skip(1)
-            .filter(|&x| x != "main.rs" && x != "lib.rs")
-            .map(|x| x.replace(".rs", ""))
-            .collect();
+        let mut post_src = infer_module(filepath);
 
         // combine crate, module scope, and file-level modules (mod_scope)
         // to form full scope to caller
-        let mut full_scope: Vec<String> = vec![crt_str];
+        let mut full_scope: Vec<String> = vec![crate_string];
         full_scope.append(&mut post_src);
         full_scope.extend_from_slice(mod_scope);
         full_scope.push(caller);
@@ -160,7 +137,14 @@ impl Effect {
         col: usize,
     ) -> Self {
         let caller_loc = EffectPathLoc::new(filepath, mod_scope, caller);
-        let callee = Path::new_owned(callee);
+        // TODO: This is super jank, it should be infered properly during scanning
+        let callee = if callee.contains("::") {
+            // The callee is (probably) already fully qualified
+            Path::new_owned(callee)
+        } else {
+            let prefix = fully_qualified_prefix(filepath);
+            Path::new_owned(format!("{}::{}", prefix, callee))
+        };
         let pattern = None;
         let call_loc = SrcLoc::new(filepath, line, col);
         Self { caller_loc, callee, pattern, call_loc }

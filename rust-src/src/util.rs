@@ -5,7 +5,7 @@
 use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::vec;
 
 use walkdir::{DirEntry, WalkDir};
@@ -13,6 +13,47 @@ use walkdir::{DirEntry, WalkDir};
 /*
     Iterators
 */
+
+pub fn infer_crate(filepath: &Path) -> String {
+    let crate_src: Vec<String> = filepath
+        .iter()
+        .map(|x| {
+            x.to_str().unwrap_or_else(|| {
+                panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
+            })
+        })
+        .take_while(|&x| x != "src")
+        .map(|x| x.to_string())
+        .collect();
+    let crate_string = crate_src.last().cloned().unwrap_or_else(|| {
+        eprintln!("warning: unable to infer crate from path: {:?}", filepath);
+        "".to_string()
+    });
+    crate_string
+}
+
+pub fn infer_module(filepath: &Path) -> Vec<String> {
+    let post_src: Vec<String> = filepath
+        .iter()
+        .map(|x| {
+            x.to_str().unwrap_or_else(|| {
+                panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
+            })
+        })
+        .skip_while(|&x| x != "src")
+        .skip(1)
+        .filter(|&x| x != "main.rs" && x != "lib.rs")
+        .map(|x| x.replace(".rs", ""))
+        .collect();
+    post_src
+}
+
+pub fn fully_qualified_prefix(filepath: &Path) -> String {
+    let mut prefix_vec = vec![infer_crate(filepath)];
+    let mut mod_vec = infer_module(filepath);
+    prefix_vec.append(&mut mod_vec);
+    prefix_vec.join("::")
+}
 
 /// Ignore errors, printing them to stderr
 /// useful with iter::filter_map: `my_iter.filter_map(warn_ok)`
