@@ -7,22 +7,24 @@
 use cargo_scan::scanner;
 use cargo_scan::sink;
 
+use anyhow::Result;
 use clap::Parser;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    // ../path/to/my_rust_crate/src/my_mod/my_file.rs
-    filepath: PathBuf,
+    /// Path to crate directory; should contain a 'src' directory and a Cargo.toml file
+    crate_path: PathBuf,
+    /// Show verbose output
     #[arg(short, long, default_value_t = false)]
     verbose: bool,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let args = Args::parse();
 
-    let results = scanner::load_and_scan(&args.filepath);
+    let results = scanner::scan_crate(&args.crate_path)?;
 
     for mut effect in results.effects {
         sink::set_pattern(&mut effect);
@@ -30,7 +32,9 @@ fn main() {
         if effect.pattern().is_some() {
             println!("{}", effect.to_csv());
         } else {
-            // println!("Skipping: {}", effect.to_csv());
+            if args.verbose {
+                eprintln!("Skipping: {}", effect.to_csv());
+            }
         }
     }
 
@@ -49,4 +53,6 @@ fn main() {
             );
         }
     }
+
+    Ok(())
 }

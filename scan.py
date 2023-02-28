@@ -264,17 +264,14 @@ def scan_file(crate, root, file, of_interest, add_args):
 
 def scan_crate(crate, crate_dir, of_interest, add_args):
     logging.debug(f"Scanning crate: {crate}")
-    src = os.path.join(crate_dir, RUST_SRC)
-    for root, dirs, files in os.walk(src):
-        # Hack to make os.walk work in alphabetical order
-        # https://stackoverflow.com/questions/6670029/can-i-force-os-walk-to-visit-directories-in-alphabetical-order
-        # This is fragile. It relies on modifying dirs.sort() in place, and
-        # doesn't work if topdown=False is set.
-        files.sort()
-        dirs.sort()
-        for file in files:
-            if os.path.splitext(file)[1] == ".rs":
-                yield from scan_file(crate, root, file, of_interest, add_args)
+
+    command = SYN_FIND + [crate_dir] + add_args
+    logging.debug(f"Running: {command}")
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+    for line in iter(proc.stdout.readline, b""):
+        line = line.strip().decode("utf-8")
+        eff = Effect(*line.split(", "))
+        yield eff
 
 def scan_file_policy(crate, root, file, of_interest, add_args):
     filepath = os.path.join(root, file)
