@@ -5,7 +5,6 @@
 */
 
 use cargo_scan::scanner;
-use cargo_scan::sink;
 
 use anyhow::Result;
 use clap::Parser;
@@ -26,15 +25,11 @@ fn main() -> Result<()> {
 
     let results = scanner::scan_crate(&args.crate_path)?;
 
-    for mut effect in results.effects {
-        sink::set_pattern(&mut effect);
-
+    for effect in results.effects {
         if effect.pattern().is_some() {
             println!("{}", effect.to_csv());
-        } else {
-            if args.verbose {
-                eprintln!("Skipping: {}", effect.to_csv());
-            }
+        } else if args.verbose {
+            eprintln!("Skipping: {}", effect.to_csv());
         }
     }
 

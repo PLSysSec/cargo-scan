@@ -4,7 +4,6 @@
 
 use super::effect::{BlockDec, Effect, FFICall, FnDec, ImplDec, SrcLoc, TraitDec};
 use super::ident;
-use super::sink;
 
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
@@ -848,12 +847,6 @@ pub fn scan_crate(crate_path: &Path) -> Result<ScanResults> {
         })
     {
         let mut next_scan = load_and_scan(Path::new(entry?.path()));
-
-        // TODO: Remove this once pattern setting makes sense. It's this ugly
-        //       optional initialization function right now.
-        for e in &mut next_scan.effects {
-            sink::set_pattern(e)
-        }
 
         final_result.combine_results(&mut next_scan);
     }

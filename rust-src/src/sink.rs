@@ -1,9 +1,11 @@
 /*
-    Patterns of interest, a.k.a. sinks
+    Hard-coded list of patterns of interest ()
+    Patterns of interest, a.k.a. sinks.
 */
 
-use super::effect::Effect;
-use super::ident::Pattern;
+use super::ident::{Path, Pattern};
+
+use serde::{Deserialize, Serialize};
 
 /// Hard-coded list of sink patterns
 const SINK_PATTERNS: &[&str] = &[
@@ -28,23 +30,34 @@ const SINK_PATTERNS: &[&str] = &[
     "socket2",
 ];
 
-// TODO: This should be moved into the scanner: setting a pattern for an effect
-//       shouldn't be an optional initialization function
-/// Given an Effect, set its sink pattern.
-// Note: this compiles regex so is inefficient and
-// could be optimized
-pub fn set_pattern(eff: &mut Effect) {
-    for &pat_raw in SINK_PATTERNS {
-        let pat = Pattern::new(pat_raw);
-        let callee = eff.callee();
-        if callee.matches(&pat) {
-            if let Some(x) = eff.pattern() {
-                eprintln!(
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Sink(Pattern);
+impl Sink {
+    /// Get the sink pattern matching a callee.
+    /// This uses the hardcoded list of sink patterns in SINK_PATTERNS.
+    //
+    // TODO: allocating new Patterns every time this is called is inefficient.
+    // Use lazy_static! to create the list of pattern strings only once.
+    // (Or even better, compile the patterns to a Trie or similar)
+    pub fn new_match(callee: &Path) -> Option<Self> {
+        let mut result = None;
+        for &pat_raw in SINK_PATTERNS {
+            let pat = Pattern::new(pat_raw);
+            if callee.matches(&pat) {
+                if let Some(x) = result {
+                    eprintln!(
                     "Found multiple patterns of interest for {} (overwriting {} with {})",
                     callee, x, pat
                 );
+                }
+                result = Some(pat)
             }
-            eff.set_pattern(pat);
         }
+        Some(Self(result?))
+    }
+
+    /// convert to str
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
     }
 }

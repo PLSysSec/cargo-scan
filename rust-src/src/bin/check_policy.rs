@@ -3,6 +3,8 @@
 
     Print out effects found that fail the policy, + whether or not
     the policy passes at the end.
+
+    TODO: update or delete this file
 */
 
 use cargo_scan::ident::{Path, Pattern};
@@ -56,10 +58,12 @@ fn main() {
                     caller, effect_pattern, callee
                 );
 
-                let mut effect_with_pat = effect.clone();
-                effect_with_pat.set_pattern(effect_pattern);
+                // TODO: fix
+                // this file might be obsolete
+                // let mut effect_with_pat = effect.clone();
+                // effect_with_pat.set_pattern(effect_pattern);
 
-                println!("{}", effect_with_pat.to_csv());
+                println!("{}", effect.to_csv());
             }
         }
         debug_assert!(errors.is_empty());
