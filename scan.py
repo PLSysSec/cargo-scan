@@ -250,18 +250,6 @@ def is_of_interest(line, of_interest):
 
 # ===== Syn backend =====
 
-def scan_file(crate, root, file, of_interest, add_args):
-    filepath = os.path.join(root, file)
-    logging.trace(f"Scanning file: {filepath}")
-
-    command = SYN_FIND + [filepath] + add_args
-    logging.debug(f"Running: {command}")
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-    for line in iter(proc.stdout.readline, b""):
-        line = line.strip().decode("utf-8")
-        eff = Effect(*line.split(", "))
-        yield eff
-
 def scan_crate(crate, crate_dir, of_interest, add_args):
     logging.debug(f"Scanning crate: {crate}")
 
