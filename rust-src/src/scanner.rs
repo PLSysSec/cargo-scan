@@ -2,9 +2,7 @@
     Scanner to parse a Rust source file and find all function call locations.
 */
 
-use super::effect::{
-    BlockDec, Effect, FFICall, FnDec, ImplDec, SrcLoc, TraitDec,
-};
+use super::effect::{BlockDec, Effect, FFICall, FnDec, ImplDec, SrcLoc, TraitDec};
 use super::ident;
 
 use anyhow::{anyhow, Result};
@@ -21,12 +19,17 @@ use walkdir::WalkDir;
 #[derive(Debug)]
 pub struct ScanResults {
     pub effects: Vec<Effect>,
+    // WIP to replace effects
+    pub effects_new: Vec<Effect>,
+
     pub unsafe_decls: Vec<FnDec>,
     pub unsafe_impls: Vec<ImplDec>,
     pub unsafe_traits: Vec<TraitDec>,
     pub unsafe_blocks: Vec<BlockDec>,
     pub ffi_calls: Vec<FFICall>,
+
     pub fn_locs: HashMap<ident::Ident, SrcLoc>,
+
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
 }
@@ -35,6 +38,7 @@ impl ScanResults {
     fn new() -> Self {
         ScanResults {
             effects: Vec::new(),
+            effects_new: Vec::new(),
             unsafe_decls: Vec::new(),
             unsafe_impls: Vec::new(),
             unsafe_traits: Vec::new(),
@@ -49,6 +53,7 @@ impl ScanResults {
     fn combine_results(&mut self, other: &mut Self) {
         let ScanResults {
             effects: o_effects,
+            effects_new: o_effects_new,
             unsafe_decls: o_unsafe_decls,
             unsafe_impls: o_unsafe_impls,
             unsafe_traits: o_unsafe_traits,
@@ -60,6 +65,7 @@ impl ScanResults {
         } = other;
 
         self.effects.append(o_effects);
+        self.effects_new.append(o_effects_new);
         self.unsafe_decls.append(o_unsafe_decls);
         self.unsafe_impls.append(o_unsafe_impls);
         self.unsafe_traits.append(o_unsafe_traits);
@@ -98,6 +104,7 @@ pub struct Scanner<'a> {
     filepath: &'a Path,
     // output
     effects: Vec<Effect>,
+    effects_new: Vec<Effect>,
     unsafe_decls: Vec<FnDec>,
     unsafe_impls: Vec<ImplDec>,
     unsafe_traits: Vec<TraitDec>,
@@ -128,6 +135,7 @@ impl<'a> Scanner<'a> {
         Self {
             filepath,
             effects: Vec::new(),
+            effects_new: Vec::new(),
             ffi_calls: Vec::new(),
             ffi_decls: HashMap::new(),
             unsafe_decls: Vec::new(),
@@ -149,6 +157,7 @@ impl<'a> Scanner<'a> {
     pub fn get_results(self) -> ScanResults {
         ScanResults {
             effects: self.effects,
+            effects_new: self.effects_new,
             ffi_calls: self.ffi_calls,
             unsafe_decls: self.unsafe_decls,
             unsafe_impls: self.unsafe_impls,

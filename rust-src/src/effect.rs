@@ -131,16 +131,145 @@ impl SrcLoc {
 */
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct BlockDec {
+    src_loc: SrcLoc,
+    ffi_calls: Vec<FFICall>,
+}
+impl BlockDec {
+    pub fn new<S>(block_span: &S, filepath: &FilePath) -> Self
+    where
+        S: Spanned,
+    {
+        let line = block_span.span().start().line;
+        let col = block_span.span().start().column;
+        let src_loc = SrcLoc::new(filepath, line, col);
+        Self { src_loc, ffi_calls: Vec::new() }
+    }
+    pub fn get_src_loc(&self) -> &SrcLoc {
+        &self.src_loc
+    }
+    pub fn add_ffi_call(&mut self, ffi_call: FFICall) {
+        self.ffi_calls.push(ffi_call);
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct FnDec {
+    pub src_loc: SrcLoc,
+    pub fn_name: Ident,
+    // TODO: should this have a list of FFI calls also?
+}
+impl FnDec {
+    pub fn new<S>(decl_span: &S, filepath: &FilePath, fn_name: String) -> Self
+    where
+        S: Spanned,
+    {
+        let line = decl_span.span().start().line;
+        let col = decl_span.span().start().column;
+        let src_loc = SrcLoc::new(filepath, line, col);
+        let fn_name = Ident::new_owned(fn_name);
+        Self { src_loc, fn_name }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct ImplDec {
+    src_loc: SrcLoc,
+    tr_name: Ident,
+    // for_name: Ident
+    // tr_loc: SrcLoc
+    // TODO: should this have a list of FFI calls also?
+}
+impl ImplDec {
+    pub fn new<S>(impl_span: &S, filepath: &FilePath, tr_name: String) -> Self
+    where
+        S: Spanned,
+    {
+        let line = impl_span.span().start().line;
+        let col = impl_span.span().start().column;
+        let src_loc = SrcLoc::new(filepath, line, col);
+        let tr_name = Ident::new_owned(tr_name);
+        Self { src_loc, tr_name }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct TraitDec {
+    src_loc: SrcLoc,
+    tr_name: Ident,
+}
+impl TraitDec {
+    pub fn new<S>(trait_span: &S, filepath: &FilePath, tr_name: String) -> Self
+    where
+        S: Spanned,
+    {
+        let line = trait_span.span().start().line;
+        let col = trait_span.span().start().column;
+        let src_loc = SrcLoc::new(filepath, line, col);
+        let tr_name = Ident::new_owned(tr_name);
+        Self { src_loc, tr_name }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct FFICall {
+    fn_name: Ident,
+    callsite: SrcLoc,
+    dec_loc: SrcLoc,
+}
+impl FFICall {
+    pub fn new<S>(callsite: &S, dec_loc: &S, filepath: &FilePath, fn_name: String) -> Self
+    where
+        S: Spanned,
+    {
+        let mut line = callsite.span().start().line;
+        let mut col = callsite.span().start().column;
+        let callsite = SrcLoc::new(filepath, line, col);
+        line = dec_loc.span().start().line;
+        col = dec_loc.span().start().column;
+        let dec_loc = SrcLoc::new(filepath, line, col);
+        let fn_name = Ident::new_owned(fn_name);
+        Self { fn_name, callsite, dec_loc }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum EffectCore {
+    /// Function call (callee path) matching a sink pattern
+    SinkCall(Path, Sink),
+    /// Other call (callee path), not matching any sink pattern
+    OtherCall(Path),
+    /// FFI call
+    FFICall(Path, FFICall),
+    /// Unsafe code blocks
+    /// These can be:
+    /// - an expression enclosed by `unsafe { ... }`
+    /// - an unsafe function decl `unsafe fn ...`
+    /// - an unsafe trait impl `unsafe impl <Trait> for <Type> ...`
+    /// TBD: the data model could change later to mark individual
+    /// components of the unsafe block rather than the whole block.
+    /// This may be cleaner.
+    UnsafeBlock(BlockDec),
+    UnsafeFn(FnDec),
+    UnsafeImpl(ImplDec),
+}
+impl EffectCore {}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Effect {
-    // Location of caller (Rust path::to::fun)
+    /// Path to the caller function or module scope (Rust path::to::fun)
     caller_loc: ModPathLoc,
-    // Callee (effect) function, e.g. libc::sched_getaffinity
-    callee: Path,
-    // Effect pattern -- prefix of callee (effect), e.g. libc
-    // Set to 'None' if the callee is not found to match any pattern.
-    pattern: Option<Sink>,
-    // Location of call (Directory, file, line)
+    /// Location of call or other effect (Directory, file, line)
     call_loc: SrcLoc,
+
+    /// Effect type
+    eff_core: EffectCore,
+
+    /// Callee (effect) function, e.g. libc::sched_getaffinity
+    callee: Path,
+    /// Effect pattern -- prefix of callee (effect), e.g. libc
+    /// Set to 'None' if the callee is not found to match any pattern.
+    pattern: Option<Sink>,
 }
 
 impl Effect {
@@ -162,8 +291,13 @@ impl Effect {
             Path::new_owned(format!("{}::{}", prefix, callee))
         };
         let pattern = Sink::new_match(&callee);
+        let eff_core = if let Some(pat) = &pattern {
+            EffectCore::SinkCall(callee.clone(), pat.clone())
+        } else {
+            EffectCore::OtherCall(callee.clone())
+        };
         let call_loc = SrcLoc::new(filepath, line, col);
-        Self { caller_loc, callee, pattern, call_loc }
+        Self { eff_core, caller_loc, call_loc, callee, pattern }
     }
 
     pub fn caller(&self) -> &Path {
@@ -202,110 +336,6 @@ impl Effect {
 
     pub fn call_loc(&self) -> &SrcLoc {
         &self.call_loc
-    }
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub struct FnDec {
-    pub src_loc: SrcLoc,
-    pub fn_name: Ident,
-}
-impl FnDec {
-    pub fn new<S>(decl_span: &S, filepath: &FilePath, fn_name: String) -> Self
-    where
-        S: Spanned,
-    {
-        let line = decl_span.span().start().line;
-        let col = decl_span.span().start().column;
-        let src_loc = SrcLoc::new(filepath, line, col);
-        let fn_name = Ident::new_owned(fn_name);
-        Self { src_loc, fn_name }
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct BlockDec {
-    src_loc: SrcLoc,
-    ffi_calls: Vec<FFICall>,
-}
-impl BlockDec {
-    pub fn new<S>(block_span: &S, filepath: &FilePath) -> Self
-    where
-        S: Spanned,
-    {
-        let line = block_span.span().start().line;
-        let col = block_span.span().start().column;
-        let src_loc = SrcLoc::new(filepath, line, col);
-        Self { src_loc, ffi_calls: Vec::new() }
-    }
-    pub fn get_src_loc(&self) -> &SrcLoc {
-        &self.src_loc
-    }
-    pub fn add_ffi_call(&mut self, ffi_call: FFICall) {
-        self.ffi_calls.push(ffi_call);
-    }
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub struct ImplDec {
-    src_loc: SrcLoc,
-    tr_name: Ident,
-    // for_name: Ident
-    // tr_loc: SrcLoc
-}
-impl ImplDec {
-    pub fn new<S>(impl_span: &S, filepath: &FilePath, tr_name: String) -> Self
-    where
-        S: Spanned,
-    {
-        let line = impl_span.span().start().line;
-        let col = impl_span.span().start().column;
-        let src_loc = SrcLoc::new(filepath, line, col);
-        let tr_name = Ident::new_owned(tr_name);
-        Self { src_loc, tr_name }
-    }
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub struct TraitDec {
-    src_loc: SrcLoc,
-    tr_name: Ident,
-}
-impl TraitDec {
-    pub fn new<S>(trait_span: &S, filepath: &FilePath, tr_name: String) -> Self
-    where
-        S: Spanned,
-    {
-        let line = trait_span.span().start().line;
-        let col = trait_span.span().start().column;
-        let src_loc = SrcLoc::new(filepath, line, col);
-        let tr_name = Ident::new_owned(tr_name);
-        Self { src_loc, tr_name }
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct FFICall {
-    fn_name: Ident,
-    callsite: SrcLoc,
-    dec_loc: SrcLoc,
-}
-impl FFICall {
-    pub fn new<S>(callsite: &S, dec_loc: &S, filepath: &FilePath, fn_name: String) -> Self
-    where
-        S: Spanned,
-    {
-        let mut line = callsite.span().start().line;
-        let mut col = callsite.span().start().column;
-        let callsite = SrcLoc::new(filepath, line, col);
-        line = dec_loc.span().start().line;
-        col = dec_loc.span().start().column;
-        let dec_loc = SrcLoc::new(filepath, line, col);
-        let fn_name = Ident::new_owned(fn_name);
-        Self { fn_name, callsite, dec_loc }
     }
 }
 
