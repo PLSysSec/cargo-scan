@@ -273,7 +273,7 @@ pub struct Effect {
 }
 
 impl Effect {
-    pub fn new(
+    pub fn new_call(
         caller: String,
         callee: String,
         filepath: &FilePath,

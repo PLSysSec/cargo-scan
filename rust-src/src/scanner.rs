@@ -377,6 +377,7 @@ impl<'a> Scanner<'a> {
             if let Some((_, tr, _)) = &imp.trait_ {
                 let tr_name = tr.segments[0].ident.to_string();
                 self.unsafe_impls.push(ImplDec::new(imp, self.filepath, tr_name));
+                // TODO: push unsafe impl to effects_new
             }
         }
 
@@ -465,6 +466,7 @@ impl<'a> Scanner<'a> {
         if f_unsafety.is_some() {
             // we found an `unsafe fn` declaration
             self.unsafe_decls.push(FnDec::new(f, self.filepath, f_name.to_string()));
+            // TODO: push unsafe decl to effects_new
         }
         self.fn_decls.push(FnDec::new(f, self.filepath, f_name.to_string()));
         self.scope_fun.push(f_name);
@@ -676,6 +678,7 @@ impl<'a> Scanner<'a> {
                 let unsafe_block = &x.block;
                 self.scope_blocks.push(unsafe_block);
                 self.unsafe_blocks.push(BlockDec::new(unsafe_block, self.filepath));
+                // TODO: push unsafe block to effects_new
                 for s in &x.block.stmts {
                     self.scan_fn_statement(s);
                 }
@@ -735,14 +738,16 @@ impl<'a> Scanner<'a> {
         let call_line = callee_span.span().start().line;
         let call_col = callee_span.span().start().column;
 
-        self.effects.push(Effect::new(
+        let eff = Effect::new_call(
             caller_name,
             callee_path,
             self.filepath,
             &mod_scope,
             call_line,
             call_col,
-        ));
+        );
+        self.effects.push(eff.clone());
+        self.effects_new.push(eff);
     }
     fn get_block_loc(filepath: &Path, b: &syn::Block) -> SrcLoc {
         let line = b.span().start().line;
@@ -775,6 +780,7 @@ impl<'a> Scanner<'a> {
                         FFICall::new(callee_ident, &dec_loc, self.filepath, fn_name);
                     self.push_ffi_call_to_unsafe_block(&ffi_call);
                     self.ffi_calls.push(ffi_call);
+                    // TODO: push FFI call to effects_new
                 }
                 let callee_path_str = Self::path_to_string(&callee_path);
                 self.push_callsite(callee_ident, callee_path_str);
