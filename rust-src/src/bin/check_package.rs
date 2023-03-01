@@ -166,13 +166,17 @@ fn get_policy_file(policy_filepath: PathBuf) -> Result<Option<PolicyFile>> {
 
     // If we try to read an empty file, just make a new one
     if json.is_empty() {
-       return Ok(None);
+        return Ok(None);
     }
     let policy_file = serde_json::from_str(&json)?;
     Ok(Some(policy_file))
 }
 
-fn print_effect_src(effect: &Effect, config: &Config) -> Result<()> {
+fn print_effect_src(
+    orig_effect: &Effect,
+    effect: &Effect,
+    config: &Config,
+) -> Result<()> {
     let mut full_path = effect.call_loc().dir().clone();
     full_path.push(effect.call_loc().file());
 
@@ -212,7 +216,7 @@ fn print_effect_src(effect: &Effect, config: &Config) -> Result<()> {
     // TODO: make this a better effect message
     // TODO: Don't display "Error" at the start of the message
     let diag = Diagnostic::error()
-        .with_message(format!("effect: {:?}", effect.pattern().as_ref()))
+        .with_message(format!("effect: {:?}", orig_effect.pattern().as_ref()))
         .with_labels(vec![
             Label::primary(file_id, effect_start..effect_end),
             Label::secondary(file_id, surrounding_start..surrounding_end),
@@ -288,20 +292,31 @@ fn print_call_stack(
 }
 
 fn print_effect_tree_info_helper(
+    orig_effect: &Effect,
     effect: &Effect,
     effect_tree: &EffectTree,
     effect_history: &[&Effect],
     config: &Config,
 ) -> Result<()> {
     match effect_tree {
-        EffectTree::Leaf(_, _) => {
-            print_effect_info(effect, effect_history, &HashMap::new(), config)
-        }
+        EffectTree::Leaf(_, _) => print_effect_info(
+            orig_effect,
+            effect,
+            effect_history,
+            &HashMap::new(),
+            config,
+        ),
         EffectTree::Branch(new_e, es) => {
             let mut new_history = effect_history.to_owned();
             new_history.push(new_e);
             for new_tree in es {
-                print_effect_tree_info_helper(new_e, new_tree, effect_history, config)?
+                print_effect_tree_info_helper(
+                    orig_effect,
+                    new_e,
+                    new_tree,
+                    effect_history,
+                    config,
+                )?
             }
             Ok(())
         }
@@ -313,10 +328,11 @@ fn print_effect_tree_info(
     effect_tree: &EffectTree,
     config: &Config,
 ) -> Result<()> {
-    print_effect_tree_info_helper(effect, effect_tree, &Vec::new(), config)
+    print_effect_tree_info_helper(effect, effect, effect_tree, &Vec::new(), config)
 }
 
 fn print_effect_info(
+    orig_effect: &Effect,
     curr_effect: &Effect,
     effect_history: &[&Effect],
     fn_locs: &HashMap<Ident, SrcLoc>,
@@ -326,7 +342,7 @@ fn print_effect_info(
     println!("=================================================");
     print_call_stack(curr_effect, effect_history, fn_locs)?;
     println!();
-    print_effect_src(curr_effect, config)?;
+    print_effect_src(orig_effect, curr_effect, config)?;
     Ok(())
 }
 
@@ -479,7 +495,14 @@ fn audit_leaf<'a>(
         }
     };
 
-    if print_effect_info(&curr_effect, effect_history, &scan_res.fn_locs, config).is_err()
+    if print_effect_info(
+        orig_effect,
+        &curr_effect,
+        effect_history,
+        &scan_res.fn_locs,
+        config,
+    )
+    .is_err()
     {
         println!("Error printing effect information. Trying to continue...");
     }
