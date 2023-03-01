@@ -160,10 +160,13 @@ fn get_policy_file(policy_filepath: PathBuf) -> Result<Option<PolicyFile>> {
     }
 
     // We found a policy file
-    // TODO: Check the hash to see if we've updated versions? (Might have
-    //       to happen later)
     // TODO: make this display a message if the file isn't the proper format
     let json = std::fs::read_to_string(policy_filepath)?;
+
+    // If we try to read an empty file, just make a new one
+    if json.is_empty() {
+       return Ok(None);
+    }
     let policy_file = serde_json::from_str(&json)?;
     Ok(Some(policy_file))
 }
