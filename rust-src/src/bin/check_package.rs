@@ -1,4 +1,5 @@
-use cargo_scan::effect::Effect;
+use cargo_scan::effect::{Effect, SrcLoc};
+use cargo_scan::ident::Ident;
 use cargo_scan::scanner;
 use cargo_scan::scanner::ScanResults;
 
@@ -226,15 +227,61 @@ fn print_effect_src(effect: &Effect, config: &Config) -> Result<()> {
     Ok(())
 }
 
-fn print_call_stack(effect: &Effect, effect_history: &[&Effect]) -> Result<()> {
-    // TODO: Better formatting
-    let call_config = Config { lines_before_effect: 0, lines_after_effect: 0 };
-    if effect_history.is_empty() {
-        for e in effect_history {
-            // TODO: print the function this effect happens in
-            print_effect_src(e, &call_config)?;
+fn print_fn_decl(fn_loc: &SrcLoc) -> Result<()> {
+    let mut full_path = fn_loc.dir().clone();
+    full_path.push(fn_loc.file());
+
+    let src_contents = std::fs::read_to_string(full_path)?;
+
+    // TODO: Print the full definition if it spans multiple lines
+    let mut src_lines = src_contents.splitn(fn_loc.line() + 1, '\n');
+    let src_fn_loc = src_lines
+        .nth(fn_loc.line() - 1)
+        .ok_or_else(|| anyhow!("Source lineno past end of file"))?;
+
+    // TODO: Colorize
+    println!("    {}", src_fn_loc.trim_start());
+    Ok(())
+}
+
+fn print_missing_fn_decl(effect: &Effect) -> Result<()> {
+    let mut path_list = effect.call_loc().dir().clone();
+    path_list.push(effect.call_loc().file());
+    let full_path = path_list.join("/");
+    let full_path_str = full_path.to_str().ok_or_else(|| {
+        anyhow!("Couldn't convert path to string printing missing function declarations")
+    })?;
+
+    // TODO: Colorize
+    println!(
+        "    Missing function declaration: {{call: {}, path: {}, line: {}}}",
+        effect.caller(),
+        full_path_str,
+        effect.call_loc().line()
+    );
+
+    Ok(())
+}
+
+fn print_call_stack(
+    curr_effect: &Effect,
+    effect_history: &[&Effect],
+    fn_locs: &HashMap<Ident, SrcLoc>,
+) -> Result<()> {
+    if !effect_history.is_empty() {
+        // TODO: Colorize
+        println!("Effect call stack:");
+        match fn_locs.get(&Ident::new(curr_effect.caller().as_str())) {
+            Some(fn_loc) => print_fn_decl(fn_loc)?,
+            None => print_missing_fn_decl(curr_effect)?,
+        };
+
+        for e in effect_history.iter().rev() {
+            match fn_locs.get(&Ident::new(e.caller().as_str())) {
+                Some(fn_loc) => print_fn_decl(fn_loc)?,
+                None => print_missing_fn_decl(e)?,
+            };
         }
-        print_effect_src(effect, &call_config)?;
     }
 
     Ok(())
@@ -247,7 +294,9 @@ fn print_effect_tree_info_helper(
     config: &Config,
 ) -> Result<()> {
     match effect_tree {
-        EffectTree::Leaf(_, _) => print_effect_info(effect, effect_history, config),
+        EffectTree::Leaf(_, _) => {
+            print_effect_info(effect, effect_history, &HashMap::new(), config)
+        }
         EffectTree::Branch(new_e, es) => {
             let mut new_history = effect_history.to_owned();
             new_history.push(new_e);
@@ -268,12 +317,16 @@ fn print_effect_tree_info(
 }
 
 fn print_effect_info(
-    effect: &Effect,
+    curr_effect: &Effect,
     effect_history: &[&Effect],
+    fn_locs: &HashMap<Ident, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
-    print_call_stack(effect, effect_history)?;
-    print_effect_src(effect, config)?;
+    println!();
+    println!("=================================================");
+    print_call_stack(curr_effect, effect_history, fn_locs)?;
+    println!();
+    print_effect_src(curr_effect, config)?;
     Ok(())
 }
 
@@ -388,6 +441,7 @@ fn review_policy(args: Args, policy: PolicyFile) -> Result<()> {
         return Err(anyhow!("Invalid policy during reivew"));
     }
 
+    // TODO: Scan here for call stack as well
     for (e, a) in policy.effects.iter() {
         if print_effect_tree_info(e, a, &args.config).is_err() {
             println!("Error printing effect information. Trying to continue...");
@@ -425,7 +479,8 @@ fn audit_leaf<'a>(
         }
     };
 
-    if print_effect_info(&curr_effect, effect_history, config).is_err() {
+    if print_effect_info(&curr_effect, effect_history, &scan_res.fn_locs, config).is_err()
+    {
         println!("Error printing effect information. Trying to continue...");
     }
 
