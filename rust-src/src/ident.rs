@@ -27,9 +27,10 @@ impl Display for Ident {
         self.0.fmt(f)
     }
 }
+
 impl Ident {
     fn char_ok(c: char) -> bool {
-        c.is_ascii_alphanumeric() || c == '_' || c == '[' || c == ']'
+        c.is_ascii_alphanumeric() || c == '_' || c == '[' || c == ']' || c == ':'
     }
     pub fn invariant(&self) -> bool {
         self.0.chars().all(Self::char_ok)
@@ -59,6 +60,7 @@ impl Display for Path {
         self.0.fmt(f)
     }
 }
+
 impl Path {
     fn char_ok(c: char) -> bool {
         c.is_ascii_alphanumeric() || c == '_' || c == '[' || c == ']' || c == ':'
