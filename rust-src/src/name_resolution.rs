@@ -1,4 +1,5 @@
-use super::ident;
+use super::ident::{Ident, Path};
+use super::effect::SrcLoc;
 
 /// Path that is fully expanded and canonical
 /// e.g. if I do `use libc::foobar as baz`
