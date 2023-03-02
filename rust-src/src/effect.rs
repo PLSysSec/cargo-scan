@@ -254,10 +254,29 @@ pub enum EffectCore {
 /// We use this model because we don't currently enumerate all the "bad"
 /// things unsafe code could do as individual effects.
 /// This is TBD and could change later.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum EffectBlock {
     UnsafeBlock(BlockDec),
     UnsafeFn(FnDec),
     UnsafeImpl(ImplDec),
+}
+impl EffectBlock {
+    pub fn get_src_loc(&self) -> &SrcLoc {
+        match self {
+            Self::UnsafeBlock(b) => b.get_src_loc(),
+            Self::UnsafeFn(_) => unimplemented!(),
+            Self::UnsafeImpl(_) => unimplemented!(),
+        }
+    }
+    pub fn add_ffi_call(&mut self, ffi_call: FFICall) {
+        match self {
+            Self::UnsafeBlock(b) => {
+                b.ffi_calls.push(ffi_call);
+            }
+            Self::UnsafeFn(_) => unimplemented!(),
+            Self::UnsafeImpl(_) => unimplemented!(),
+        }
+    }
 }
 
 /// Type representing an Effect instance, with complete context.
