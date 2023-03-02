@@ -763,15 +763,20 @@ impl<'a> Scanner<'a> {
     }
     fn push_ffi_call_to_unsafe_block(&mut self, ffi_call: &FFICall) {
         let index = self.scope_blocks.len() - 1;
-        let b = self.scope_blocks.get_mut(index).unwrap();
-        let cur_block_loc = Scanner::<'a>::get_block_loc(self.filepath, b);
+        if let Some(b) = self.scope_blocks.get_mut(index) {
+            let cur_block_loc = Scanner::<'a>::get_block_loc(self.filepath, b);
 
-        for b in &mut self.unsafe_blocks {
-            let src_loc = b.get_src_loc();
-            if cur_block_loc == *src_loc {
-                b.add_ffi_call(FFICall::clone(ffi_call));
-                break;
+            for b in &mut self.unsafe_blocks {
+                let src_loc = b.get_src_loc();
+                if cur_block_loc == *src_loc {
+                    b.add_ffi_call(FFICall::clone(ffi_call));
+                    break;
+                }
             }
+        } else {
+            // this case is occurring on some top100 crates
+            // TODO debug
+            eprintln!("Error: couldn't get last index of scope_blocks");
         }
     }
 
