@@ -729,37 +729,26 @@ impl<'a> Scanner<'a> {
         self.scope_fun.last().map(|s| s.to_string())
     }
 
+    /// push an Effect to the list of results based on this call site.
     fn push_callsite<S>(&mut self, callee_span: S, callee_path: String)
     where
         S: Spanned,
     {
-        // push an Effect to the list of results based on this call site.
-
-        // caller
+        let mod_scope = self.get_mod_scope();
         let caller_name =
             self.get_fun_scope().expect("push_callsite called outside of a function!");
 
-        let mod_scope = self.get_mod_scope();
-
-        // callee
-        let call_line = callee_span.span().start().line;
-        let call_col = callee_span.span().start().column;
-
         let eff = Effect::new_call(
-            caller_name,
-            callee_path,
             self.filepath,
             &mod_scope,
-            call_line,
-            call_col,
+            caller_name,
+            callee_path,
+            &callee_span,
         );
         self.effects.push(eff);
     }
     fn get_block_loc(filepath: &Path, b: &syn::Block) -> SrcLoc {
-        let line = b.span().start().line;
-        let col = b.span().start().column;
-
-        SrcLoc::new(filepath, line, col)
+        SrcLoc::from_span(filepath, b)
     }
     fn push_ffi_call_to_unsafe_block(&mut self, ffi_call: &FFICall) {
         let index = self.scope_blocks.len() - 1;

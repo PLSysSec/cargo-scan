@@ -80,6 +80,15 @@ impl SrcLoc {
         Self { dir, file, line, col }
     }
 
+    pub fn from_span<S>(filepath: &FilePath, span: &S) -> Self
+    where
+        S: Spanned,
+    {
+        let line = span.span().start().line;
+        let col = span.span().start().column;
+        Self::new(filepath, line, col)
+    }
+
     pub fn csv_header() -> &'static str {
         "dir, file, line, col"
     }
@@ -121,9 +130,7 @@ impl BlockDec {
     where
         S: Spanned,
     {
-        let line = block_span.span().start().line;
-        let col = block_span.span().start().column;
-        let src_loc = SrcLoc::new(filepath, line, col);
+        let src_loc = SrcLoc::from_span(filepath, block_span);
         Self { src_loc, ffi_calls: Vec::new() }
     }
     pub fn get_src_loc(&self) -> &SrcLoc {
@@ -145,9 +152,7 @@ impl FnDec {
     where
         S: Spanned,
     {
-        let line = decl_span.span().start().line;
-        let col = decl_span.span().start().column;
-        let src_loc = SrcLoc::new(filepath, line, col);
+        let src_loc = SrcLoc::from_span(filepath, decl_span);
         let fn_name = Ident::new_owned(fn_name);
         Self { src_loc, fn_name }
     }
@@ -166,9 +171,7 @@ impl ImplDec {
     where
         S: Spanned,
     {
-        let line = impl_span.span().start().line;
-        let col = impl_span.span().start().column;
-        let src_loc = SrcLoc::new(filepath, line, col);
+        let src_loc = SrcLoc::from_span(filepath, impl_span);
         let tr_name = Ident::new_owned(tr_name);
         Self { src_loc, tr_name }
     }
@@ -184,9 +187,7 @@ impl TraitDec {
     where
         S: Spanned,
     {
-        let line = trait_span.span().start().line;
-        let col = trait_span.span().start().column;
-        let src_loc = SrcLoc::new(filepath, line, col);
+        let src_loc = SrcLoc::from_span(filepath, trait_span);
         let tr_name = Ident::new_owned(tr_name);
         Self { src_loc, tr_name }
     }
@@ -203,12 +204,8 @@ impl FFICall {
     where
         S: Spanned,
     {
-        let mut line = callsite.span().start().line;
-        let mut col = callsite.span().start().column;
-        let callsite = SrcLoc::new(filepath, line, col);
-        line = dec_loc.span().start().line;
-        col = dec_loc.span().start().column;
-        let dec_loc = SrcLoc::new(filepath, line, col);
+        let callsite = SrcLoc::from_span(filepath, callsite);
+        let dec_loc = SrcLoc::from_span(filepath, dec_loc);
         let fn_name = Ident::new_owned(fn_name);
         Self { fn_name, callsite, dec_loc }
     }
@@ -298,14 +295,16 @@ pub struct Effect {
 }
 
 impl Effect {
-    pub fn new_call(
-        caller: String,
-        callee: String,
+    pub fn new_call<S>(
         filepath: &FilePath,
         mod_scope: &[String],
-        line: usize,
-        col: usize,
-    ) -> Self {
+        caller: String,
+        callee: String,
+        callsite: &S,
+    ) -> Self
+    where
+        S: Spanned,
+    {
         let caller_loc = ModPathLoc::new_fn(filepath, mod_scope, caller);
         // TODO: This is super jank, it should be infered properly during scanning
         let callee = if callee.contains("::") {
@@ -320,7 +319,7 @@ impl Effect {
         } else {
             EffectCore::OtherCall
         };
-        let call_loc = SrcLoc::new(filepath, line, col);
+        let call_loc = SrcLoc::from_span(filepath, callsite);
         Self { caller_loc, call_loc, callee, eff_type }
     }
     pub fn new_ffi_call<S>(
