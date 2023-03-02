@@ -3,7 +3,7 @@
 */
 
 use super::effect::{
-    BlockDec, Effect, EffectBlock, FFICall, FnDec, ImplDec, SrcLoc, TraitDec,
+    BlockDec, EffectBlock, EffectInstance, FFICall, FnDec, ImplDec, SrcLoc, TraitDec,
 };
 use super::ident;
 use super::util::infer;
@@ -21,7 +21,7 @@ use walkdir::WalkDir;
 /// Results of a scan
 #[derive(Debug)]
 pub struct ScanResults {
-    pub effects: Vec<Effect>,
+    pub effects: Vec<EffectInstance>,
 
     pub unsafe_blocks: Vec<EffectBlock>,
     pub unsafe_decls: Vec<EffectBlock>,
@@ -75,11 +75,14 @@ impl ScanResults {
         self.skipped_fn_calls += *o_skipped_fn_calls;
     }
 
-    pub fn get_dangerous_effects(&self) -> HashSet<&Effect> {
+    pub fn get_dangerous_effects(&self) -> HashSet<&EffectInstance> {
         self.effects.iter().filter(|x| x.pattern().is_some()).collect::<HashSet<_>>()
     }
 
-    pub fn get_callers<'a, 'b>(&'a self, callee: &'b ident::Path) -> HashSet<&'a Effect> {
+    pub fn get_callers<'a, 'b>(
+        &'a self,
+        callee: &'b ident::Path,
+    ) -> HashSet<&'a EffectInstance> {
         let mut callers = HashSet::new();
         for e in &self.effects {
             // TODO: Update this when we get more intelligent name resolution
@@ -102,7 +105,7 @@ pub struct Scanner<'a> {
     // filepath that the scanner is being run on
     filepath: &'a Path,
     // output
-    effects: Vec<Effect>,
+    effects: Vec<EffectInstance>,
     unsafe_blocks: Vec<EffectBlock>,
     unsafe_decls: Vec<EffectBlock>,
     unsafe_impls: Vec<EffectBlock>,
@@ -738,7 +741,7 @@ impl<'a> Scanner<'a> {
         let caller_name =
             self.get_fun_scope().expect("push_callsite called outside of a function!");
 
-        let eff = Effect::new_call(
+        let eff = EffectInstance::new_call(
             self.filepath,
             &mod_scope,
             caller_name,

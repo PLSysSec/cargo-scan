@@ -1,5 +1,11 @@
 /*
-    Representation of an Effect location in source code
+    This module defines the core data model for Effects.
+
+    The main types are:
+    - Effect, which represents an abstract effect
+    - EffectInstance, which represents an instance of an effect in source code
+    - EffectBlock, which represents a block of source code which may contain
+      zero or more effects (such as an unsafe block).
 */
 
 use super::ident::{Ident, Path};
@@ -27,7 +33,7 @@ impl ModPathLoc {
         // note: tries to infer the crate name and modules from the filepath
         // TBD: use Cargo.toml to get crate name & other info
 
-        // TODO: Find the fully qualified name before we create the Effect/EffectPath
+        // TODO: Find the fully qualified name before we create the EffectInstance/ModPathLoc
         let crt_string = infer::infer_crate(filepath);
         let crt = Ident::new_owned(crt_string.clone());
 
@@ -121,6 +127,162 @@ impl SrcLoc {
 */
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct FFICall {
+    fn_name: Ident,
+    callsite: SrcLoc,
+    dec_loc: SrcLoc,
+}
+impl FFICall {
+    pub fn new<S>(callsite: &S, dec_loc: &S, filepath: &FilePath, fn_name: String) -> Self
+    where
+        S: Spanned,
+    {
+        let callsite = SrcLoc::from_span(filepath, callsite);
+        let dec_loc = SrcLoc::from_span(filepath, dec_loc);
+        let fn_name = Ident::new_owned(fn_name);
+        Self { fn_name, callsite, dec_loc }
+    }
+}
+
+/// Type representing a single effect.
+/// For us, this can be any function call to some dangerous function.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum Effect {
+    /// Function call (callee path) matching a sink pattern
+    SinkCall(Sink),
+    /// FFI call
+    FFICall(FFICall),
+    /// Other call (callee path), not matching any sink pattern
+    OtherCall,
+}
+impl Effect {
+    fn sink_pattern(&self) -> Option<&Sink> {
+        match self {
+            Self::SinkCall(s) => Some(s),
+            Self::FFICall(_) => None,
+            Self::OtherCall => None,
+        }
+    }
+    fn simple_str(&self) -> &str {
+        match self {
+            Self::SinkCall(s) => s.as_str(),
+            Self::FFICall(_) => "[FFI call]",
+            Self::OtherCall => "[none]",
+        }
+    }
+    fn to_csv(&self) -> String {
+        csv::sanitize_comma(self.simple_str())
+    }
+}
+
+/// Type representing an Effect instance, with complete context.
+/// This includes a field for which Effect it is an instance of;
+/// it does not include cases for EffectBlocks, which are tracked separately.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct EffectInstance {
+    /// Path to the caller function or module scope (Rust path::to::fun)
+    caller_loc: ModPathLoc,
+    /// Location of call or other effect (Directory, file, line)
+    call_loc: SrcLoc,
+
+    /// Callee (effect) function, e.g. libc::sched_getaffinity
+    callee: Path,
+
+    /// EffectInstance type
+    /// If Sink, this includes the effect pattern -- prefix of callee (effect), e.g. libc.
+    eff_type: Effect,
+}
+
+impl EffectInstance {
+    pub fn new_call<S>(
+        filepath: &FilePath,
+        mod_scope: &[String],
+        caller: String,
+        callee: String,
+        callsite: &S,
+    ) -> Self
+    where
+        S: Spanned,
+    {
+        let caller_loc = ModPathLoc::new_fn(filepath, mod_scope, caller);
+        // TODO: This is super jank, it should be infered properly during scanning
+        let callee = if callee.contains("::") {
+            // The callee is (probably) already fully qualified
+            Path::new_owned(callee)
+        } else {
+            let prefix = infer::fully_qualified_prefix(filepath);
+            Path::new_owned(format!("{}::{}", prefix, callee))
+        };
+        let eff_type = if let Some(pat) = Sink::new_match(&callee) {
+            Effect::SinkCall(pat)
+        } else {
+            Effect::OtherCall
+        };
+        let call_loc = SrcLoc::from_span(filepath, callsite);
+        Self { caller_loc, call_loc, callee, eff_type }
+    }
+    pub fn new_ffi_call<S>(
+        callsite: &S,
+        dec_loc: &S,
+        filepath: &FilePath,
+        fn_name: String,
+        mod_scope: &[String],
+        caller: String,
+    ) -> Self
+    where
+        S: Spanned,
+    {
+        let caller_loc = ModPathLoc::new_fn(filepath, mod_scope, caller);
+        let call = FFICall::new(callsite, dec_loc, filepath, fn_name);
+        let call_loc = call.callsite.clone();
+        let callee = Path::from_ident(call.fn_name.clone());
+        let eff_type = Effect::FFICall(call);
+        EffectInstance { caller_loc, call_loc, callee, eff_type }
+    }
+
+    pub fn caller(&self) -> &Path {
+        self.caller_loc.path()
+    }
+    pub fn caller_path(&self) -> &str {
+        self.caller_loc.path().as_str()
+    }
+    pub fn callee(&self) -> &Path {
+        &self.callee
+    }
+    pub fn callee_path(&self) -> &str {
+        self.callee.as_str()
+    }
+    /// Get the caller and callee as full paths
+    pub fn caller_callee(&self) -> (&str, &str) {
+        (self.caller_path(), self.callee_path())
+    }
+
+    pub fn csv_header() -> &'static str {
+        "crate, fn_decl, callee, effect, dir, file, line, col"
+    }
+    pub fn to_csv(&self) -> String {
+        let caller_loc_csv = self.caller_loc.to_csv();
+        let callee = csv::sanitize_comma(self.callee.as_str());
+        let effect = self.eff_type.to_csv();
+        let call_loc_csv = self.call_loc.to_csv();
+
+        format!("{}, {}, {}, {}", caller_loc_csv, callee, effect, call_loc_csv)
+    }
+
+    pub fn pattern(&self) -> Option<&Sink> {
+        self.eff_type.sink_pattern()
+    }
+
+    pub fn call_loc(&self) -> &SrcLoc {
+        &self.call_loc
+    }
+}
+
+/*
+    Data model for effect blocks (unsafe blocks, functions, and impls)
+*/
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct BlockDec {
     src_loc: SrcLoc,
     ffi_calls: Vec<FFICall>,
@@ -193,55 +355,6 @@ impl TraitDec {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct FFICall {
-    fn_name: Ident,
-    callsite: SrcLoc,
-    dec_loc: SrcLoc,
-}
-impl FFICall {
-    pub fn new<S>(callsite: &S, dec_loc: &S, filepath: &FilePath, fn_name: String) -> Self
-    where
-        S: Spanned,
-    {
-        let callsite = SrcLoc::from_span(filepath, callsite);
-        let dec_loc = SrcLoc::from_span(filepath, dec_loc);
-        let fn_name = Ident::new_owned(fn_name);
-        Self { fn_name, callsite, dec_loc }
-    }
-}
-
-/// Type representing a single, "atomic" effect: a function call
-/// to some dangerous function.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum EffectCore {
-    /// Function call (callee path) matching a sink pattern
-    SinkCall(Sink),
-    /// FFI call
-    FFICall(FFICall),
-    /// Other call (callee path), not matching any sink pattern
-    OtherCall,
-}
-impl EffectCore {
-    fn sink_pattern(&self) -> Option<&Sink> {
-        match self {
-            Self::SinkCall(s) => Some(s),
-            Self::FFICall(_) => None,
-            Self::OtherCall => None,
-        }
-    }
-    fn simple_str(&self) -> &str {
-        match self {
-            Self::SinkCall(s) => s.as_str(),
-            Self::FFICall(_) => "[FFI call]",
-            Self::OtherCall => "[none]",
-        }
-    }
-    fn to_csv(&self) -> String {
-        csv::sanitize_comma(self.simple_str())
-    }
-}
-
 /// Type representing a *block* of zero or more dangerous effects.
 /// The block can be:
 /// - an expression enclosed by `unsafe { ... }`
@@ -276,111 +389,12 @@ impl EffectBlock {
     }
 }
 
-/// Type representing an Effect instance, with complete context.
-/// This includes a field for which EffectCore it is an instance of;
-/// it does not include cases for EffectBlocks, which are tracked separately.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct Effect {
-    /// Path to the caller function or module scope (Rust path::to::fun)
-    caller_loc: ModPathLoc,
-    /// Location of call or other effect (Directory, file, line)
-    call_loc: SrcLoc,
-
-    /// Callee (effect) function, e.g. libc::sched_getaffinity
-    callee: Path,
-
-    /// Effect type
-    /// If Sink, this includes the effect pattern -- prefix of callee (effect), e.g. libc.
-    eff_type: EffectCore,
-}
-
-impl Effect {
-    pub fn new_call<S>(
-        filepath: &FilePath,
-        mod_scope: &[String],
-        caller: String,
-        callee: String,
-        callsite: &S,
-    ) -> Self
-    where
-        S: Spanned,
-    {
-        let caller_loc = ModPathLoc::new_fn(filepath, mod_scope, caller);
-        // TODO: This is super jank, it should be infered properly during scanning
-        let callee = if callee.contains("::") {
-            // The callee is (probably) already fully qualified
-            Path::new_owned(callee)
-        } else {
-            let prefix = infer::fully_qualified_prefix(filepath);
-            Path::new_owned(format!("{}::{}", prefix, callee))
-        };
-        let eff_type = if let Some(pat) = Sink::new_match(&callee) {
-            EffectCore::SinkCall(pat)
-        } else {
-            EffectCore::OtherCall
-        };
-        let call_loc = SrcLoc::from_span(filepath, callsite);
-        Self { caller_loc, call_loc, callee, eff_type }
-    }
-    pub fn new_ffi_call<S>(
-        callsite: &S,
-        dec_loc: &S,
-        filepath: &FilePath,
-        fn_name: String,
-        mod_scope: &[String],
-        caller: String,
-    ) -> Self
-    where
-        S: Spanned,
-    {
-        let caller_loc = ModPathLoc::new_fn(filepath, mod_scope, caller);
-        let call = FFICall::new(callsite, dec_loc, filepath, fn_name);
-        let call_loc = call.callsite.clone();
-        let callee = Path::from_ident(call.fn_name.clone());
-        let eff_type = EffectCore::FFICall(call);
-        Effect { caller_loc, call_loc, callee, eff_type }
-    }
-
-    pub fn caller(&self) -> &Path {
-        self.caller_loc.path()
-    }
-    pub fn caller_path(&self) -> &str {
-        self.caller_loc.path().as_str()
-    }
-    pub fn callee(&self) -> &Path {
-        &self.callee
-    }
-    pub fn callee_path(&self) -> &str {
-        self.callee.as_str()
-    }
-    /// Get the caller and callee as full paths
-    pub fn caller_callee(&self) -> (&str, &str) {
-        (self.caller_path(), self.callee_path())
-    }
-
-    pub fn csv_header() -> &'static str {
-        "crate, fn_decl, callee, effect, dir, file, line, col"
-    }
-    pub fn to_csv(&self) -> String {
-        let caller_loc_csv = self.caller_loc.to_csv();
-        let callee = csv::sanitize_comma(self.callee.as_str());
-        let effect = self.eff_type.to_csv();
-        let call_loc_csv = self.call_loc.to_csv();
-
-        format!("{}, {}, {}, {}", caller_loc_csv, callee, effect, call_loc_csv)
-    }
-
-    pub fn pattern(&self) -> Option<&Sink> {
-        self.eff_type.sink_pattern()
-    }
-
-    pub fn call_loc(&self) -> &SrcLoc {
-        &self.call_loc
-    }
-}
+/*
+    Unit tests
+*/
 
 #[test]
 fn test_csv_header() {
-    assert!(Effect::csv_header().starts_with(ModPathLoc::csv_header()));
-    assert!(Effect::csv_header().ends_with(SrcLoc::csv_header()));
+    assert!(EffectInstance::csv_header().starts_with(ModPathLoc::csv_header()));
+    assert!(EffectInstance::csv_header().ends_with(SrcLoc::csv_header()));
 }

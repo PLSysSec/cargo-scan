@@ -1,4 +1,4 @@
-use cargo_scan::effect::{Effect, SrcLoc};
+use cargo_scan::effect::{EffectInstance, SrcLoc};
 use cargo_scan::ident::Ident;
 use cargo_scan::scanner;
 use cargo_scan::scanner::ScanResults;
@@ -97,8 +97,8 @@ fn hash_dir(p: PathBuf) -> Result<[u8; 32]> {
 
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
 enum EffectTree {
-    Leaf(Effect, SafetyAnnotation),
-    Branch(Effect, Vec<EffectTree>),
+    Leaf(EffectInstance, SafetyAnnotation),
+    Branch(EffectInstance, Vec<EffectTree>),
 }
 
 impl EffectTree {
@@ -130,7 +130,7 @@ impl EffectTree {
 struct PolicyFile {
     // TODO: Serde doesn't like this hashmap for some reason (?)
     #[serde_as(as = "Vec<(_, _)>")]
-    effects: HashMap<Effect, EffectTree>,
+    effects: HashMap<EffectInstance, EffectTree>,
     // TODO: Make the base_dir a crate instead
     base_dir: PathBuf,
     hash: [u8; 32],
@@ -173,8 +173,8 @@ fn get_policy_file(policy_filepath: PathBuf) -> Result<Option<PolicyFile>> {
 }
 
 fn print_effect_src(
-    orig_effect: &Effect,
-    effect: &Effect,
+    orig_effect: &EffectInstance,
+    effect: &EffectInstance,
     config: &Config,
 ) -> Result<()> {
     let mut full_path = effect.call_loc().dir().clone();
@@ -248,7 +248,7 @@ fn print_fn_decl(fn_loc: &SrcLoc) -> Result<()> {
     Ok(())
 }
 
-fn print_missing_fn_decl(effect: &Effect) -> Result<()> {
+fn print_missing_fn_decl(effect: &EffectInstance) -> Result<()> {
     let mut path_list = effect.call_loc().dir().clone();
     path_list.push(effect.call_loc().file());
     let full_path = path_list.join("/");
@@ -268,13 +268,13 @@ fn print_missing_fn_decl(effect: &Effect) -> Result<()> {
 }
 
 fn print_call_stack(
-    curr_effect: &Effect,
-    effect_history: &[&Effect],
+    curr_effect: &EffectInstance,
+    effect_history: &[&EffectInstance],
     fn_locs: &HashMap<Ident, SrcLoc>,
 ) -> Result<()> {
     if !effect_history.is_empty() {
         // TODO: Colorize
-        println!("Effect call stack:");
+        println!("EffectInstance call stack:");
         match fn_locs.get(&Ident::new(curr_effect.caller().as_str())) {
             Some(fn_loc) => print_fn_decl(fn_loc)?,
             None => print_missing_fn_decl(curr_effect)?,
@@ -292,10 +292,10 @@ fn print_call_stack(
 }
 
 fn print_effect_tree_info_helper(
-    orig_effect: &Effect,
-    effect: &Effect,
+    orig_effect: &EffectInstance,
+    effect: &EffectInstance,
     effect_tree: &EffectTree,
-    effect_history: &[&Effect],
+    effect_history: &[&EffectInstance],
     config: &Config,
 ) -> Result<()> {
     match effect_tree {
@@ -324,7 +324,7 @@ fn print_effect_tree_info_helper(
 }
 
 fn print_effect_tree_info(
-    effect: &Effect,
+    effect: &EffectInstance,
     effect_tree: &EffectTree,
     config: &Config,
 ) -> Result<()> {
@@ -332,9 +332,9 @@ fn print_effect_tree_info(
 }
 
 fn print_effect_info(
-    orig_effect: &Effect,
-    curr_effect: &Effect,
-    effect_history: &[&Effect],
+    orig_effect: &EffectInstance,
+    curr_effect: &EffectInstance,
+    effect_history: &[&EffectInstance],
     fn_locs: &HashMap<Ident, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
@@ -382,7 +382,7 @@ enum ContinueStatus {
 fn handle_invalid_policy(
     policy: &mut PolicyFile,
     policy_path: &mut PathBuf,
-    scan_effects: &HashSet<&Effect>,
+    scan_effects: &HashSet<&EffectInstance>,
 ) -> Result<ContinueStatus> {
     // TODO: Colorize
     println!("Crate has changed from last policy audit");
@@ -434,7 +434,7 @@ fn handle_invalid_policy(
 
 fn is_policy_scan_valid(
     policy: &PolicyFile,
-    scan_effects: &HashSet<&Effect>,
+    scan_effects: &HashSet<&EffectInstance>,
     crate_path: PathBuf,
 ) -> Result<bool> {
     let policy_effects = policy.effects.keys().collect::<HashSet<_>>();
@@ -482,9 +482,9 @@ enum AuditStatus {
 }
 
 fn audit_leaf<'a>(
-    orig_effect: &'a Effect,
+    orig_effect: &'a EffectInstance,
     effect_tree: &mut EffectTree,
-    effect_history: &[&'a Effect],
+    effect_history: &[&'a EffectInstance],
     scan_res: &ScanResults,
     config: &Config,
 ) -> Result<AuditStatus> {
@@ -537,9 +537,9 @@ fn audit_leaf<'a>(
 }
 
 fn audit_branch<'a>(
-    orig_effect: &'a Effect,
+    orig_effect: &'a EffectInstance,
     effect_tree: &mut EffectTree,
-    effect_history: &[&'a Effect],
+    effect_history: &[&'a EffectInstance],
     scan_res: &ScanResults,
     config: &Config,
 ) -> Result<AuditStatus> {
@@ -572,7 +572,7 @@ fn audit_branch<'a>(
 }
 
 fn audit_effect_tree(
-    orig_effect: &Effect,
+    orig_effect: &EffectInstance,
     effect_tree: &mut EffectTree,
     scan_res: &ScanResults,
     config: &Config,
