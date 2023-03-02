@@ -244,6 +244,25 @@ pub enum EffectCore {
     /// Other call (callee path), not matching any sink pattern
     OtherCall,
 }
+impl EffectCore {
+    fn sink_pattern(&self) -> Option<&Sink> {
+        match self {
+            Self::SinkCall(s) => Some(s),
+            Self::FFICall(_) => None,
+            Self::OtherCall => None,
+        }
+    }
+    fn simple_str(&self) -> &str {
+        match self {
+            Self::SinkCall(s) => s.as_str(),
+            Self::FFICall(_) => "[FFI call]",
+            Self::OtherCall => "[none]",
+        }
+    }
+    fn to_csv(&self) -> String {
+        sanitize_comma(self.simple_str())
+    }
+}
 
 /// Type representing a *block* of zero or more dangerous effects.
 /// The block can be:
@@ -289,14 +308,12 @@ pub struct Effect {
     /// Location of call or other effect (Directory, file, line)
     call_loc: SrcLoc,
 
-    /// Effect type
-    eff_core: EffectCore,
-
     /// Callee (effect) function, e.g. libc::sched_getaffinity
     callee: Path,
-    /// Effect pattern -- prefix of callee (effect), e.g. libc
-    /// Set to 'None' if the callee is not found to match any pattern.
-    pattern: Option<Sink>,
+
+    /// Effect type
+    /// If Sink, this includes the effect pattern -- prefix of callee (effect), e.g. libc.
+    eff_type: EffectCore,
 }
 
 impl Effect {
@@ -317,14 +334,13 @@ impl Effect {
             let prefix = fully_qualified_prefix(filepath);
             Path::new_owned(format!("{}::{}", prefix, callee))
         };
-        let pattern = Sink::new_match(&callee);
-        let eff_core = if let Some(pat) = &pattern {
-            EffectCore::SinkCall(pat.clone())
+        let eff_type = if let Some(pat) = Sink::new_match(&callee) {
+            EffectCore::SinkCall(pat)
         } else {
             EffectCore::OtherCall
         };
         let call_loc = SrcLoc::new(filepath, line, col);
-        Self { eff_core, caller_loc, call_loc, callee, pattern }
+        Self { caller_loc, call_loc, callee, eff_type }
     }
     pub fn new_ffi_call<S>(
         callsite: &S,
@@ -341,9 +357,8 @@ impl Effect {
         let call = FFICall::new(callsite, dec_loc, filepath, fn_name);
         let call_loc = call.callsite.clone();
         let callee = Path::from_ident(call.fn_name.clone());
-        let pattern = None;
-        let eff_core = EffectCore::FFICall(call);
-        Effect { caller_loc, call_loc, eff_core, callee, pattern }
+        let eff_type = EffectCore::FFICall(call);
+        Effect { caller_loc, call_loc, callee, eff_type }
     }
 
     pub fn caller(&self) -> &Path {
@@ -364,20 +379,19 @@ impl Effect {
     }
 
     pub fn csv_header() -> &'static str {
-        "crate, fn_decl, callee, pattern, dir, file, line, col"
+        "crate, fn_decl, callee, effect, dir, file, line, col"
     }
     pub fn to_csv(&self) -> String {
         let caller_loc_csv = self.caller_loc.to_csv();
         let callee = sanitize_comma(self.callee.as_str());
-        let pattern = self.pattern.as_ref().map(|p| p.as_str()).unwrap_or("[none]");
-        let pattern = sanitize_comma(pattern);
+        let effect = self.eff_type.to_csv();
         let call_loc_csv = self.call_loc.to_csv();
 
-        format!("{}, {}, {}, {}", caller_loc_csv, callee, pattern, call_loc_csv)
+        format!("{}, {}, {}, {}", caller_loc_csv, callee, effect, call_loc_csv)
     }
 
-    pub fn pattern(&self) -> &Option<Sink> {
-        &self.pattern
+    pub fn pattern(&self) -> Option<&Sink> {
+        self.eff_type.sink_pattern()
     }
 
     pub fn call_loc(&self) -> &SrcLoc {
