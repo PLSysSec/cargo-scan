@@ -1,6 +1,6 @@
 ===== Crate Summary =====
 Number of dangerous imports by crate:
-libc: 55
+libc: 37
 autocfg: 11
 rand: 1
 proc-macro2: 1

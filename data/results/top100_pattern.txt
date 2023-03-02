@@ -3,10 +3,10 @@ Total instances of each import pattern:
 hyper::client: 279
 tokio::io: 184
 socket2: 158
-winapi: 153
-libc: 139
+winapi: 144
 tokio::fs: 130
 tokio::net: 122
+libc: 121
 tokio::process: 75
 std::env: 73
 std::net: 65
