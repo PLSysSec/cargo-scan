@@ -233,28 +233,36 @@ impl FFICall {
     }
 }
 
+/// Type representing a single, "atomic" effect: a function call
+/// to some dangerous function.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum EffectCore {
     /// Function call (callee path) matching a sink pattern
-    SinkCall(Path, Sink),
-    /// Other call (callee path), not matching any sink pattern
-    OtherCall(Path),
+    SinkCall(Sink),
     /// FFI call
-    FFICall(Path, FFICall),
-    /// Unsafe code blocks
-    /// These can be:
-    /// - an expression enclosed by `unsafe { ... }`
-    /// - an unsafe function decl `unsafe fn ...`
-    /// - an unsafe trait impl `unsafe impl <Trait> for <Type> ...`
-    /// TBD: the data model could change later to mark individual
-    /// components of the unsafe block rather than the whole block.
-    /// This may be cleaner.
+    FFICall(FFICall),
+    /// Other call (callee path), not matching any sink pattern
+    OtherCall,
+}
+
+/// Type representing a *block* of zero or more dangerous effects.
+/// The block can be:
+/// - an expression enclosed by `unsafe { ... }`
+/// - an unsafe function decl `unsafe fn ...`
+/// - an unsafe trait impl `unsafe impl <Trait> for <Type> ...`
+///
+/// We use this model because we don't currently enumerate all the "bad"
+/// things unsafe code could do as individual effects.
+/// This is TBD and could change later.
+pub enum EffectBlock {
     UnsafeBlock(BlockDec),
     UnsafeFn(FnDec),
     UnsafeImpl(ImplDec),
 }
-impl EffectCore {}
 
+/// Type representing an Effect instance, with complete context.
+/// This includes a field for which EffectCore it is an instance of;
+/// it does not include cases for EffectBlocks, which are tracked separately.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Effect {
     /// Path to the caller function or module scope (Rust path::to::fun)
@@ -292,12 +300,31 @@ impl Effect {
         };
         let pattern = Sink::new_match(&callee);
         let eff_core = if let Some(pat) = &pattern {
-            EffectCore::SinkCall(callee.clone(), pat.clone())
+            EffectCore::SinkCall(pat.clone())
         } else {
-            EffectCore::OtherCall(callee.clone())
+            EffectCore::OtherCall
         };
         let call_loc = SrcLoc::new(filepath, line, col);
         Self { eff_core, caller_loc, call_loc, callee, pattern }
+    }
+    pub fn new_ffi_call<S>(
+        callsite: &S,
+        dec_loc: &S,
+        filepath: &FilePath,
+        fn_name: String,
+        mod_scope: &[String],
+        caller: String,
+    ) -> Self
+    where
+        S: Spanned,
+    {
+        let caller_loc = ModPathLoc::new_fn(filepath, mod_scope, caller);
+        let call = FFICall::new(callsite, dec_loc, filepath, fn_name);
+        let call_loc = call.callsite.clone();
+        let callee = Path::from_ident(call.fn_name.clone());
+        let pattern = None;
+        let eff_core = EffectCore::FFICall(call);
+        Effect { caller_loc, call_loc, eff_core, callee, pattern }
     }
 
     pub fn caller(&self) -> &Path {
