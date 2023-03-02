@@ -17,9 +17,6 @@ checks:
 	cd rust-src && cargo clippy
 	cd rust-src && cargo fmt
 
-fmt:
-	cd rust-src && cargo fmt
-
 test: install
 	./scan.py -t -i data/crate-lists/test-crates.csv -o test -vvv
 
