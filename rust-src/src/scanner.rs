@@ -2,9 +2,7 @@
     Scanner to parse a Rust source file and find all function call locations.
 */
 
-use super::effect::{
-    BlockDec, EffectBlock, EffectInstance, FFICall, FnDec, ImplDec, SrcLoc, TraitDec,
-};
+use super::effect::{EffectBlock, EffectInstance, FFICall, FnDec, SrcLoc, TraitDec};
 use super::ident;
 use super::util::infer;
 
@@ -375,11 +373,11 @@ impl<'a> Scanner<'a> {
             // we found an `unsafe impl` declaration
             if let Some((_, tr, _)) = &imp.trait_ {
                 let tr_name = tr.segments[0].ident.to_string();
-                self.unsafe_impls.push(EffectBlock::UnsafeImpl(ImplDec::new(
-                    imp,
+                self.unsafe_impls.push(EffectBlock::new_unsafe_impl(
                     self.filepath,
+                    imp,
                     tr_name,
-                )));
+                ));
             }
         }
 
@@ -467,15 +465,15 @@ impl<'a> Scanner<'a> {
         let f_unsafety: &Option<syn::token::Unsafe> = &f.sig.unsafety;
         if f_unsafety.is_some() {
             // we found an `unsafe fn` declaration
-            self.unsafe_decls.push(EffectBlock::UnsafeFn(FnDec::new(
-                f,
+            self.unsafe_decls.push(EffectBlock::new_unsafe_fn(
                 self.filepath,
+                f,
                 f_name.to_string(),
-            )));
+            ));
         }
         let prefix = infer::fully_qualified_prefix(self.filepath);
         let full_fn_name = format!("{}::{}", prefix, f_name);
-        self.fn_decls.push(FnDec::new(f, self.filepath, full_fn_name));
+        self.fn_decls.push(FnDec::new(self.filepath, f, full_fn_name));
         self.scope_fun.push(f_name);
         for s in &f.block.stmts {
             self.scan_fn_statement(s);
@@ -684,10 +682,8 @@ impl<'a> Scanner<'a> {
                 // Add code here to gather unsafe blocks.
                 let unsafe_block = &x.block;
                 self.scope_blocks.push(unsafe_block);
-                self.unsafe_blocks.push(EffectBlock::UnsafeBlock(BlockDec::new(
-                    unsafe_block,
-                    self.filepath,
-                )));
+                self.unsafe_blocks
+                    .push(EffectBlock::new_unsafe_block(self.filepath, unsafe_block));
                 for s in &x.block.stmts {
                     self.scan_fn_statement(s);
                 }

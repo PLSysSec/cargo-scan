@@ -283,34 +283,12 @@ impl EffectInstance {
 */
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct BlockDec {
-    src_loc: SrcLoc,
-    ffi_calls: Vec<FFICall>,
-}
-impl BlockDec {
-    pub fn new<S>(block_span: &S, filepath: &FilePath) -> Self
-    where
-        S: Spanned,
-    {
-        let src_loc = SrcLoc::from_span(filepath, block_span);
-        Self { src_loc, ffi_calls: Vec::new() }
-    }
-    pub fn get_src_loc(&self) -> &SrcLoc {
-        &self.src_loc
-    }
-    pub fn add_ffi_call(&mut self, ffi_call: FFICall) {
-        self.ffi_calls.push(ffi_call);
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FnDec {
     pub src_loc: SrcLoc,
     pub fn_name: Ident,
-    // TODO: should this have a list of FFI calls also?
 }
 impl FnDec {
-    pub fn new<S>(decl_span: &S, filepath: &FilePath, fn_name: String) -> Self
+    pub fn new<S>(filepath: &FilePath, decl_span: &S, fn_name: String) -> Self
     where
         S: Spanned,
     {
@@ -321,24 +299,67 @@ impl FnDec {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct ImplDec {
-    src_loc: SrcLoc,
-    tr_name: Ident,
-    // for_name: Ident
-    // tr_loc: SrcLoc
-    // TODO: should this have a list of FFI calls also?
+pub enum BlockType {
+    UnsafeBlock,
+    UnsafeFn(Ident),
+    UnsafeImpl(Ident),
 }
-impl ImplDec {
-    pub fn new<S>(impl_span: &S, filepath: &FilePath, tr_name: String) -> Self
+
+/// Type representing a *block* of zero or more dangerous effects.
+/// The block can be:
+/// - an expression enclosed by `unsafe { ... }`
+/// - an unsafe function decl `unsafe fn ...`
+/// - an unsafe trait impl `unsafe impl <Trait> for <Type> ...`
+///
+/// We use this model because we don't currently enumerate all the "bad"
+/// things unsafe code could do as individual effects.
+/// This is TBD and could change later.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct EffectBlock {
+    src_loc: SrcLoc,
+    ffi_calls: Vec<FFICall>,
+    block_type: BlockType,
+}
+impl EffectBlock {
+    pub fn new_unsafe_block<S>(filepath: &FilePath, block_span: &S) -> Self
+    where
+        S: Spanned,
+    {
+        let src_loc = SrcLoc::from_span(filepath, block_span);
+        let ffi_calls = Vec::new();
+        let block_type = BlockType::UnsafeBlock;
+        Self { src_loc, ffi_calls, block_type }
+    }
+    pub fn new_unsafe_fn<S>(filepath: &FilePath, decl_span: &S, fn_name: String) -> Self
+    where
+        S: Spanned,
+    {
+        let src_loc = SrcLoc::from_span(filepath, decl_span);
+        let ffi_calls = Vec::new();
+        let block_type = BlockType::UnsafeFn(Ident::new_owned(fn_name));
+        Self { src_loc, ffi_calls, block_type }
+    }
+    pub fn new_unsafe_impl<S>(filepath: &FilePath, impl_span: &S, tr_name: String) -> Self
     where
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, impl_span);
-        let tr_name = Ident::new_owned(tr_name);
-        Self { src_loc, tr_name }
+        let ffi_calls = Vec::new();
+        let block_type = BlockType::UnsafeImpl(Ident::new_owned(tr_name));
+        Self { src_loc, ffi_calls, block_type }
+    }
+
+    pub fn get_src_loc(&self) -> &SrcLoc {
+        &self.src_loc
+    }
+    pub fn add_ffi_call(&mut self, ffi_call: FFICall) {
+        self.ffi_calls.push(ffi_call);
     }
 }
 
+/// Unsafe trait declarations
+/// Since a trait declaration cannot itself have any unsafe code,
+/// we do not consider it to be an effect block.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct TraitDec {
     src_loc: SrcLoc,
@@ -352,40 +373,6 @@ impl TraitDec {
         let src_loc = SrcLoc::from_span(filepath, trait_span);
         let tr_name = Ident::new_owned(tr_name);
         Self { src_loc, tr_name }
-    }
-}
-
-/// Type representing a *block* of zero or more dangerous effects.
-/// The block can be:
-/// - an expression enclosed by `unsafe { ... }`
-/// - an unsafe function decl `unsafe fn ...`
-/// - an unsafe trait impl `unsafe impl <Trait> for <Type> ...`
-///
-/// We use this model because we don't currently enumerate all the "bad"
-/// things unsafe code could do as individual effects.
-/// This is TBD and could change later.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum EffectBlock {
-    UnsafeBlock(BlockDec),
-    UnsafeFn(FnDec),
-    UnsafeImpl(ImplDec),
-}
-impl EffectBlock {
-    pub fn get_src_loc(&self) -> &SrcLoc {
-        match self {
-            Self::UnsafeBlock(b) => b.get_src_loc(),
-            Self::UnsafeFn(_) => unimplemented!(),
-            Self::UnsafeImpl(_) => unimplemented!(),
-        }
-    }
-    pub fn add_ffi_call(&mut self, ffi_call: FFICall) {
-        match self {
-            Self::UnsafeBlock(b) => {
-                b.ffi_calls.push(ffi_call);
-            }
-            Self::UnsafeFn(_) => unimplemented!(),
-            Self::UnsafeImpl(_) => unimplemented!(),
-        }
     }
 }
 
