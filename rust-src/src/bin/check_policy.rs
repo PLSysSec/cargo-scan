@@ -30,7 +30,7 @@ fn main() {
     let args = Args::parse();
 
     let of_interest: Vec<Pattern> =
-        util::file_lines(&args.of_interest).map(Pattern::new_owned).collect();
+        util::fs::file_lines(&args.of_interest).map(Pattern::new_owned).collect();
     // println!("Of interest: {:?}", of_interest);
 
     let policy = Policy::from_file(&args.policy).unwrap();

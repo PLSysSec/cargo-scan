@@ -6,7 +6,7 @@ use super::effect::{
     BlockDec, Effect, EffectBlock, FFICall, FnDec, ImplDec, SrcLoc, TraitDec,
 };
 use super::ident;
-use super::util::fully_qualified_prefix;
+use super::util::infer;
 
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
@@ -470,7 +470,7 @@ impl<'a> Scanner<'a> {
                 f_name.to_string(),
             )));
         }
-        let prefix = fully_qualified_prefix(self.filepath);
+        let prefix = infer::fully_qualified_prefix(self.filepath);
         let full_fn_name = format!("{}::{}", prefix, f_name);
         self.fn_decls.push(FnDec::new(f, self.filepath, full_fn_name));
         self.scope_fun.push(f_name);

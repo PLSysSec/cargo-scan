@@ -4,30 +4,11 @@
 
 use super::ident::{Ident, Path};
 use super::sink::Sink;
-use super::util::{fully_qualified_prefix, infer_crate, infer_module};
+use super::util::{csv, infer};
 
 use serde::{Deserialize, Serialize};
 use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 use syn::spanned::Spanned;
-
-/*
-    CSV utility functions
-*/
-fn sanitize_comma(s: &str) -> String {
-    if s.contains(',') {
-        eprintln!("Warning: ignoring unexpected comma when generating CSV: {s}");
-    }
-    s.replace(',', "")
-}
-fn sanitize_path(p: &FilePath) -> String {
-    match p.to_str() {
-        Some(s) => sanitize_comma(s),
-        None => {
-            eprintln!("Warning: path is invalid unicode: {:?}", p);
-            sanitize_comma(&p.to_string_lossy())
-        }
-    }
-}
 
 /*
     Abstractions for identifying a location in the source code --
@@ -47,11 +28,11 @@ impl ModPathLoc {
         // TBD: use Cargo.toml to get crate name & other info
 
         // TODO: Find the fully qualified name before we create the Effect/EffectPath
-        let crt_string = infer_crate(filepath);
+        let crt_string = infer::infer_crate(filepath);
         let crt = Ident::new_owned(crt_string.clone());
 
         // Infer module
-        let mut post_src = infer_module(filepath);
+        let mut post_src = infer::infer_module(filepath);
 
         // combine crate, module scope, and file-level modules (mod_scope)
         // to form full module path
@@ -69,8 +50,8 @@ impl ModPathLoc {
     }
 
     pub fn to_csv(&self) -> String {
-        let crt = sanitize_comma(self.crt.as_str());
-        let path = sanitize_comma(self.path.as_str());
+        let crt = csv::sanitize_comma(self.crt.as_str());
+        let path = csv::sanitize_comma(self.path.as_str());
         format!("{}, {}", crt, path)
     }
 
@@ -104,8 +85,8 @@ impl SrcLoc {
     }
 
     pub fn to_csv(&self) -> String {
-        let dir = sanitize_path(&self.dir);
-        let file = sanitize_path(&self.file);
+        let dir = csv::sanitize_path(&self.dir);
+        let file = csv::sanitize_path(&self.file);
         format!("{}, {}, {}, {}", dir, file, self.line, self.col)
     }
 
@@ -260,7 +241,7 @@ impl EffectCore {
         }
     }
     fn to_csv(&self) -> String {
-        sanitize_comma(self.simple_str())
+        csv::sanitize_comma(self.simple_str())
     }
 }
 
@@ -331,7 +312,7 @@ impl Effect {
             // The callee is (probably) already fully qualified
             Path::new_owned(callee)
         } else {
-            let prefix = fully_qualified_prefix(filepath);
+            let prefix = infer::fully_qualified_prefix(filepath);
             Path::new_owned(format!("{}::{}", prefix, callee))
         };
         let eff_type = if let Some(pat) = Sink::new_match(&callee) {
@@ -383,7 +364,7 @@ impl Effect {
     }
     pub fn to_csv(&self) -> String {
         let caller_loc_csv = self.caller_loc.to_csv();
-        let callee = sanitize_comma(self.callee.as_str());
+        let callee = csv::sanitize_comma(self.callee.as_str());
         let effect = self.eff_type.to_csv();
         let call_loc_csv = self.call_loc.to_csv();
 

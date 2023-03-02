@@ -10,7 +10,7 @@ use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{self, Display};
 use std::str::FromStr;
 
-use super::util::FreshIter;
+use super::util::iter::FreshIter;
 
 fn replace_hyphens(s: &mut String) {
     // TODO: replace with more efficient in-place implementation
