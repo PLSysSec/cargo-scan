@@ -7,3 +7,4 @@ libc-ex
 inline-ex
 parsing-ex
 unsafe-test
+caller-checked

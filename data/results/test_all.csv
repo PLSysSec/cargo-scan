@@ -11,3 +11,6 @@ num_cpus_minimal, num_cpus_minimal::get_num_cpus, libc::sysconf, libc, data/test
 num_cpus_minimal, num_cpus_minimal::get_num_physical_cpus, libc::sysctlbyname, libc, data/test-packages/num_cpus_minimal/src, main.rs, 28, 32
 libc_ex, libc_ex::main, libc::sysconf, libc, data/test-packages/libc-ex/src, main.rs, 6, 14
 libc_ex, libc_ex::main, libc::sysctlbyname, libc, data/test-packages/libc-ex/src, main.rs, 8, 14
+caller_checked, caller_checked::local_effect, libc::sysctl, libc, data/test-packages/caller-checked/src, main.rs, 9, 14
+caller_checked, caller_checked::sub::effect, libc::sysconf, libc, data/test-packages/caller-checked/src, sub.rs, 6, 14
+caller_checked, caller_checked::sub::effect, libc::sysctl, libc, data/test-packages/caller-checked/src, sub.rs, 8, 14

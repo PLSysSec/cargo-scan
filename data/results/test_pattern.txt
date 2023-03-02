@@ -1,6 +1,6 @@
 ===== Patterns =====
 Total instances of each import pattern:
-libc: 6
+libc: 9
 std::fs: 2
 std::process: 2
 std::env: 1
