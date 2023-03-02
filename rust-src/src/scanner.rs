@@ -729,13 +729,30 @@ impl<'a> Scanner<'a> {
     }
 
     /// push an Effect to the list of results based on this call site.
-    fn push_callsite<S>(&mut self, callee_span: S, callee_path: String)
-    where
+    fn push_callsite<S>(
+        &mut self,
+        callee_span: S,
+        callee_path: String,
+        callee_ident: Option<&syn::Ident>,
+    ) where
         S: Spanned,
     {
         let mod_scope = self.get_mod_scope();
         let caller_name =
             self.get_fun_scope().expect("push_callsite called outside of a function!");
+
+        // check for FFI call
+        let mut ffi = None;
+        if let Some(callee_ident) = callee_ident {
+            let callee_name = callee_ident.to_string();
+            if let Some(&dec_loc) = self.ffi_decls.get(&callee_name) {
+                let ffi_call =
+                    FFICall::new(&callee_span, &dec_loc, self.filepath, callee_name);
+                self.push_ffi_call_to_unsafe_block(&ffi_call);
+                self.ffi_calls.push(ffi_call.clone());
+                ffi = Some(ffi_call)
+            }
+        }
 
         let eff = EffectInstance::new_call(
             self.filepath,
@@ -743,6 +760,7 @@ impl<'a> Scanner<'a> {
             caller_name,
             callee_path,
             &callee_span,
+            ffi,
         );
         self.effects.push(eff);
     }
@@ -772,16 +790,9 @@ impl<'a> Scanner<'a> {
         match f {
             syn::Expr::Path(p) => {
                 let callee_path = self.lookup_path(&p.path);
-                let callee_ident = callee_path.last().unwrap();
-                let fn_name = callee_ident.to_string();
-                if let Some(&dec_loc) = self.ffi_decls.get(&fn_name) {
-                    let ffi_call =
-                        FFICall::new(callee_ident, &dec_loc, self.filepath, fn_name);
-                    self.push_ffi_call_to_unsafe_block(&ffi_call);
-                    self.ffi_calls.push(ffi_call);
-                }
+                let callee_ident = *callee_path.last().unwrap();
                 let callee_path_str = Self::path_to_string(&callee_path);
-                self.push_callsite(callee_ident, callee_path_str);
+                self.push_callsite(callee_ident, callee_path_str, Some(callee_ident));
             }
             syn::Expr::Paren(x) => {
                 // e.g. (my_struct.f)(x)
@@ -807,18 +818,18 @@ impl<'a> Scanner<'a> {
         match m {
             syn::Member::Named(i) => {
                 let callee_path = format!("[FIELD]::{}", i);
-                self.push_callsite(i, callee_path);
+                self.push_callsite(i, callee_path, None);
             }
             syn::Member::Unnamed(idx) => {
                 let callee_path = format!("[FIELD]::{}", idx.index);
-                self.push_callsite(idx, callee_path);
+                self.push_callsite(idx, callee_path, None);
             }
         }
     }
 
     fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
         let callee_path = format!("[METHOD]::{}", i);
-        self.push_callsite(i, callee_path);
+        self.push_callsite(i, callee_path, None);
     }
 }
 

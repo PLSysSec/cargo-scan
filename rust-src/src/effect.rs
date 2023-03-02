@@ -133,13 +133,19 @@ pub struct FFICall {
     dec_loc: SrcLoc,
 }
 impl FFICall {
-    pub fn new<S>(callsite: &S, dec_loc: &S, filepath: &FilePath, fn_name: String) -> Self
+    pub fn new<S1, S2>(
+        callsite: &S1,
+        dec_loc: &S2,
+        filepath: &FilePath,
+        fn_name: String,
+    ) -> Self
     where
-        S: Spanned,
+        S1: Spanned,
+        S2: Spanned,
     {
+        let fn_name = Ident::new_owned(fn_name);
         let callsite = SrcLoc::from_span(filepath, callsite);
         let dec_loc = SrcLoc::from_span(filepath, dec_loc);
-        let fn_name = Ident::new_owned(fn_name);
         Self { fn_name, callsite, dec_loc }
     }
 }
@@ -200,6 +206,7 @@ impl EffectInstance {
         caller: String,
         callee: String,
         callsite: &S,
+        ffi: Option<FFICall>,
     ) -> Self
     where
         S: Spanned,
@@ -213,31 +220,15 @@ impl EffectInstance {
             let prefix = infer::fully_qualified_prefix(filepath);
             Path::new_owned(format!("{}::{}", prefix, callee))
         };
-        let eff_type = if let Some(pat) = Sink::new_match(&callee) {
+        let eff_type = if let Some(ffi) = ffi {
+            Effect::FFICall(ffi)
+        } else if let Some(pat) = Sink::new_match(&callee) {
             Effect::SinkCall(pat)
         } else {
             Effect::OtherCall
         };
         let call_loc = SrcLoc::from_span(filepath, callsite);
         Self { caller_loc, call_loc, callee, eff_type }
-    }
-    pub fn new_ffi_call<S>(
-        callsite: &S,
-        dec_loc: &S,
-        filepath: &FilePath,
-        fn_name: String,
-        mod_scope: &[String],
-        caller: String,
-    ) -> Self
-    where
-        S: Spanned,
-    {
-        let caller_loc = ModPathLoc::new_fn(filepath, mod_scope, caller);
-        let call = FFICall::new(callsite, dec_loc, filepath, fn_name);
-        let call_loc = call.callsite.clone();
-        let callee = Path::from_ident(call.fn_name.clone());
-        let eff_type = Effect::FFICall(call);
-        EffectInstance { caller_loc, call_loc, callee, eff_type }
     }
 
     pub fn caller(&self) -> &Path {
