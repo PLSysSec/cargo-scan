@@ -1,15 +1,17 @@
 ===== Crate Summary =====
 Number of dangerous imports by crate:
-tokio: 110
+tokio: 605
+hyper: 341
+socket2: 174
+winapi: 125
 cc: 69
-mio: 44
-hyper: 30
+libc: 55
+mio: 50
 parking_lot_core: 27
-socket2: 25
+tokio-util: 26
 termcolor: 15
 pkg-config: 14
 getrandom: 13
-tokio-util: 13
 num_cpus: 12
 autocfg: 11
 chrono: 11
@@ -31,5 +33,5 @@ time: 1
 semver: 1
 bytes: 1
 ===== Crate Totals =====
-30 crates with 1 or more dangerous imports
-70 crates with 0 dangerous imports
+32 crates with 1 or more dangerous imports
+68 crates with 0 dangerous imports
