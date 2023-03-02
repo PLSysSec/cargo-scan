@@ -871,8 +871,10 @@ pub fn scan_crate(crate_path: &Path) -> Result<ScanResults> {
     // We have a valid crate, so iterate through all the rust src
     // TODO: Does this work in alphabetical orer?
     // scan.py script currently needs the order to be deterministic across calls
-    for entry in
-        WalkDir::new(crate_path.join(Path::new("src"))).into_iter().filter(|e| match e {
+    for entry in WalkDir::new(crate_path.join(Path::new("src")))
+        .sort_by_file_name()
+        .into_iter()
+        .filter(|e| match e {
             Ok(ne) if ne.path().is_file() => {
                 let fname = Path::new(ne.file_name());
                 fname.to_str().map_or(false, |x| x.ends_with(".rs"))
