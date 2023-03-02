@@ -1,4 +1,4 @@
-.PHONY: install install-mirai top10 top100 top1000 top10000 test mozilla small medium large clean
+.PHONY: install install-mirai checks test top10 top100 top1000 top10000 mozilla small medium large clean
 .DEFAULT_GOAL := install
 
 install:
@@ -10,6 +10,18 @@ install-mirai: install
 	git submodule init
 	git submodule update
 	cd mirai/MIRAI && cargo install --locked --path ./checker
+
+checks:
+	cd rust-src && cargo build
+	cd rust-src && cargo test
+	cd rust-src && cargo clippy
+	cd rust-src && cargo fmt
+
+fmt:
+	cd rust-src && cargo fmt
+
+test: install
+	./scan.py -t -i data/crate-lists/test-crates.csv -o test -vvv
 
 top10: install
 	./scan.py -i data/crate-lists/top10.csv -o top10
@@ -23,9 +35,6 @@ top1000: install
 top10000: install
 	# Note: this actually contains only 9998 crates at the moment.
 	./scan.py -i data/crate-lists/top10000.csv -o top10000
-
-test: install
-	./scan.py -t -i data/crate-lists/test-crates.csv -o test -vvv
 
 mozilla: install
 	./scan.py -i data/crate-lists/mozilla-exempt.csv -o mozilla-exempt
