@@ -764,13 +764,10 @@ impl<'a> Scanner<'a> {
         );
         self.effects.push(eff);
     }
-    fn get_block_loc(filepath: &Path, b: &syn::Block) -> SrcLoc {
-        SrcLoc::from_span(filepath, b)
-    }
     fn push_ffi_call_to_unsafe_block(&mut self, ffi_call: &FFICall) {
         let index = self.scope_blocks.len() - 1;
         if let Some(b) = self.scope_blocks.get_mut(index) {
-            let cur_block_loc = Scanner::<'a>::get_block_loc(self.filepath, b);
+            let cur_block_loc = SrcLoc::from_span(self.filepath, b);
 
             for b in &mut self.unsafe_blocks {
                 let src_loc = b.get_src_loc();
