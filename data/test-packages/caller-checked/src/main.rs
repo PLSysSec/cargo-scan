@@ -17,6 +17,14 @@ fn local_effect() {
     }
 }
 
+fn unsafe_effect() {
+    let mut a = 3u32;
+    unsafe {
+        let x: *mut u32 = &mut a;
+        *x = 4;
+    }
+}
+
 fn local_call1() {
     local_effect();
 }
@@ -42,5 +50,6 @@ fn main() {
     call1();
     let a = call2();
     local_call1();
+    unsafe_effect();
     println!("{}", a);
 }
