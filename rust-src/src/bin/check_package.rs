@@ -244,7 +244,9 @@ fn print_fn_decl(fn_loc: &SrcLoc) -> Result<()> {
         .ok_or_else(|| anyhow!("Source lineno past end of file"))?;
 
     // TODO: Colorize
-    println!("    {}", src_fn_loc.trim_start());
+    // TODO: Print these on a grid
+    // TODO: Print just the function name
+    println!("    {}:{}    {}", fn_loc.dir().to_string_lossy(), fn_loc.line(), src_fn_loc.trim_start());
     Ok(())
 }
 

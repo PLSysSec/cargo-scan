@@ -676,6 +676,8 @@ impl<'a> Scanner<'a> {
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Unary(x) => {
+                // TODO: Once we have type info, check to see if we deref a
+                //       pointer here
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Unsafe(x) => {
