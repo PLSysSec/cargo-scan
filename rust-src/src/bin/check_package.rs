@@ -245,6 +245,7 @@ impl CallStackInfo {
 
 fn print_call_stack_infos(stack: Vec<CallStackInfo>) {
     let missing_fn_str = "Missing fn decl";
+    // TODO: Colorize
     for CallStackInfo {fn_string, filename, lineno} in stack {
         println!("{}:{}", filename, lineno);
         match fn_string {
@@ -266,10 +267,9 @@ fn fn_decl_info(fn_loc: &SrcLoc) -> Result<CallStackInfo> {
         .nth(fn_loc.line() - 1)
         .ok_or_else(|| anyhow!("Source lineno past end of file"))?;
 
-    // TODO: Colorize
     // TODO: Capture just the function name
     let res = CallStackInfo::new(
-        Some(src_fn_loc.trim_start().to_string()),
+        Some(src_fn_loc.split('{').next().unwrap().trim().to_string()),
         format!("{}", fn_loc.dir().to_string_lossy()).to_string(),
         fn_loc.line(),
     );
