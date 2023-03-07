@@ -231,7 +231,30 @@ fn print_effect_src(
     Ok(())
 }
 
-fn print_fn_decl(fn_loc: &SrcLoc) -> Result<()> {
+struct CallStackInfo {
+    fn_string: Option<String>,
+    filename: String,
+    lineno: usize,
+}
+
+impl CallStackInfo {
+    fn new(fn_string: Option<String>, filename: String, lineno: usize) -> Self {
+        Self { fn_string, filename, lineno }
+    }
+}
+
+fn print_call_stack_infos(stack: Vec<CallStackInfo>) {
+    let missing_fn_str = "Missing fn decl";
+    for CallStackInfo {fn_string, filename, lineno} in stack {
+        println!("{}:{}", filename, lineno);
+        match fn_string {
+            Some(f) => println!("    {}", f),
+            None => println!("    {}", missing_fn_str),
+        };
+    }
+}
+
+fn fn_decl_info(fn_loc: &SrcLoc) -> Result<CallStackInfo> {
     let mut full_path = fn_loc.dir().clone();
     full_path.push(fn_loc.file());
 
@@ -244,29 +267,22 @@ fn print_fn_decl(fn_loc: &SrcLoc) -> Result<()> {
         .ok_or_else(|| anyhow!("Source lineno past end of file"))?;
 
     // TODO: Colorize
-    // TODO: Print these on a grid
-    // TODO: Print just the function name
-    println!("    {}:{}    {}", fn_loc.dir().to_string_lossy(), fn_loc.line(), src_fn_loc.trim_start());
-    Ok(())
+    // TODO: Capture just the function name
+    let res = CallStackInfo::new(
+        Some(src_fn_loc.trim_start().to_string()),
+        format!("{}", fn_loc.dir().to_string_lossy()).to_string(),
+        fn_loc.line(),
+    );
+    Ok(res)
 }
 
-fn print_missing_fn_decl(effect: &EffectInstance) -> Result<()> {
+fn missing_fn_decl_info(effect: &EffectInstance) -> CallStackInfo {
     let mut path_list = effect.call_loc().dir().clone();
     path_list.push(effect.call_loc().file());
     let full_path = path_list.join("/");
-    let full_path_str = full_path.to_str().ok_or_else(|| {
-        anyhow!("Couldn't convert path to string printing missing function declarations")
-    })?;
+    let full_path_str = full_path.to_string_lossy().to_string();
 
-    // TODO: Colorize
-    println!(
-        "    Missing function declaration: {{call: {}, path: {}, line: {}}}",
-        effect.caller(),
-        full_path_str,
-        effect.call_loc().line()
-    );
-
-    Ok(())
+    CallStackInfo::new(None, full_path_str, effect.call_loc().line())
 }
 
 fn print_call_stack(
@@ -275,19 +291,24 @@ fn print_call_stack(
     fn_locs: &HashMap<Ident, SrcLoc>,
 ) -> Result<()> {
     if !effect_history.is_empty() {
+        let mut call_stack_infos = vec![];
         // TODO: Colorize
         println!("EffectInstance call stack:");
-        match fn_locs.get(&Ident::new(curr_effect.caller().as_str())) {
-            Some(fn_loc) => print_fn_decl(fn_loc)?,
-            None => print_missing_fn_decl(curr_effect)?,
+        let call_info = match fn_locs.get(&Ident::new(curr_effect.caller().as_str())) {
+            Some(fn_loc) => fn_decl_info(fn_loc)?,
+            None => missing_fn_decl_info(curr_effect),
         };
+        call_stack_infos.push(call_info);
 
         for e in effect_history.iter().rev() {
-            match fn_locs.get(&Ident::new(e.caller().as_str())) {
-                Some(fn_loc) => print_fn_decl(fn_loc)?,
-                None => print_missing_fn_decl(e)?,
+            let call_info = match fn_locs.get(&Ident::new(e.caller().as_str())) {
+                Some(fn_loc) => fn_decl_info(fn_loc)?,
+                None => missing_fn_decl_info(e),
             };
+            call_stack_infos.push(call_info);
         }
+
+        print_call_stack_infos(call_stack_infos);
     }
 
     Ok(())
