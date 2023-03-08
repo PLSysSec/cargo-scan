@@ -246,8 +246,8 @@ impl CallStackInfo {
 fn print_call_stack_infos(stack: Vec<CallStackInfo>) {
     let missing_fn_str = "Missing fn decl";
     // TODO: Colorize
-    for CallStackInfo {fn_string, filename, lineno} in stack {
-        println!("{}:{}", filename, lineno);
+    for CallStackInfo { fn_string, filename, lineno } in stack {
+        println!("{}:{}", filename, lineno+1);
         match fn_string {
             Some(f) => println!("    {}", f),
             None => println!("    {}", missing_fn_str),
@@ -314,44 +314,55 @@ fn print_call_stack(
     Ok(())
 }
 
-fn print_effect_tree_info_helper(
+fn review_effect_tree_info_helper(
     orig_effect: &EffectInstance,
-    effect: &EffectInstance,
+    curr_effect: &EffectInstance,
     effect_tree: &EffectTree,
     effect_history: &[&EffectInstance],
+    fn_locs: &HashMap<Ident, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
     match effect_tree {
-        EffectTree::Leaf(_, _) => print_effect_info(
-            orig_effect,
-            effect,
-            effect_history,
-            &HashMap::new(),
-            config,
-        ),
+        EffectTree::Leaf(new_e, a) => {
+            print_effect_info(orig_effect, new_e, &effect_history, fn_locs, config)?;
+            // TODO: Colorize
+            println!("Policy annotation: {}", a);
+        }
         EffectTree::Branch(new_e, es) => {
+            // TODO: Colorize
+            print_effect_info(orig_effect, new_e, &effect_history, fn_locs, config)?;
+            println!("Policy annotation: {}", SafetyAnnotation::CallerChecked);
             let mut new_history = effect_history.to_owned();
             new_history.push(new_e);
             for new_tree in es {
-                print_effect_tree_info_helper(
+                review_effect_tree_info_helper(
                     orig_effect,
                     new_e,
                     new_tree,
-                    effect_history,
+                    &new_history,
+                    fn_locs,
                     config,
                 )?
             }
-            Ok(())
         }
     }
+    Ok(())
 }
 
-fn print_effect_tree_info(
+fn review_effect_tree_info(
     effect: &EffectInstance,
     effect_tree: &EffectTree,
+    fn_locs: &HashMap<Ident, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
-    print_effect_tree_info_helper(effect, effect, effect_tree, &Vec::new(), config)
+    review_effect_tree_info_helper(
+        effect,
+        effect,
+        effect_tree,
+        &Vec::new(),
+        fn_locs,
+        config,
+    )
 }
 
 fn print_effect_info(
@@ -468,31 +479,16 @@ fn is_policy_scan_valid(
     Ok(policy_effects == *scan_effects && policy.hash == hash)
 }
 
-fn is_policy_valid(policy: &PolicyFile, crate_path: PathBuf) -> Result<bool> {
-    let scan_res = scanner::scan_crate(&crate_path)?;
-    let scan_effects = scan_res.get_dangerous_effects();
-    is_policy_scan_valid(policy, &scan_effects, crate_path)
-}
-
 fn review_policy(args: Args, policy: PolicyFile) -> Result<()> {
-    if !is_policy_valid(&policy, args.crate_path.clone())? {
+    let scan_res = scanner::scan_crate(&args.crate_path)?;
+    let scan_effects = scan_res.get_dangerous_effects();
+    if !is_policy_scan_valid(&policy, &scan_effects, args.crate_path.clone())? {
         println!("Error: crate has changed since last policy scan.");
-        return Err(anyhow!("Invalid policy during reivew"));
+        return Err(anyhow!("Invalid policy during review"));
     }
 
-    // TODO: Scan here for call stack as well
     for (e, a) in policy.effects.iter() {
-        if print_effect_tree_info(e, a, &args.config).is_err() {
-            println!("Error printing effect information. Trying to continue...");
-        } else {
-            // TODO: Color annotations
-            match a {
-                EffectTree::Leaf(_, a) => println!("Policy annotation: {}\n", a),
-                EffectTree::Branch(_, _) => {
-                    println!("Policy annotation: {}\n", SafetyAnnotation::CallerChecked)
-                }
-            }
-        }
+        review_effect_tree_info(e, a, &scan_res.fn_locs, &args.config)?;
     }
 
     Ok(())
