@@ -247,7 +247,7 @@ fn print_call_stack_infos(stack: Vec<CallStackInfo>) {
     let missing_fn_str = "Missing fn decl";
     // TODO: Colorize
     for CallStackInfo { fn_string, filename, lineno } in stack {
-        println!("{}:{}", filename, lineno+1);
+        println!("{}:{}", filename, lineno + 1);
         match fn_string {
             Some(f) => println!("    {}", f),
             None => println!("    {}", missing_fn_str),
@@ -270,7 +270,7 @@ fn fn_decl_info(fn_loc: &SrcLoc) -> Result<CallStackInfo> {
     // TODO: Capture just the function name
     let res = CallStackInfo::new(
         Some(src_fn_loc.split('{').next().unwrap().trim().to_string()),
-        format!("{}", fn_loc.dir().to_string_lossy()).to_string(),
+        format!("{}", fn_loc.dir().to_string_lossy()),
         fn_loc.line(),
     );
     Ok(res)
@@ -316,7 +316,7 @@ fn print_call_stack(
 
 fn review_effect_tree_info_helper(
     orig_effect: &EffectInstance,
-    curr_effect: &EffectInstance,
+    _curr_effect: &EffectInstance,
     effect_tree: &EffectTree,
     effect_history: &[&EffectInstance],
     fn_locs: &HashMap<Path, SrcLoc>,
@@ -324,13 +324,13 @@ fn review_effect_tree_info_helper(
 ) -> Result<()> {
     match effect_tree {
         EffectTree::Leaf(new_e, a) => {
-            print_effect_info(orig_effect, new_e, &effect_history, fn_locs, config)?;
+            print_effect_info(orig_effect, new_e, effect_history, fn_locs, config)?;
             // TODO: Colorize
             println!("Policy annotation: {}", a);
         }
         EffectTree::Branch(new_e, es) => {
             // TODO: Colorize
-            print_effect_info(orig_effect, new_e, &effect_history, fn_locs, config)?;
+            print_effect_info(orig_effect, new_e, effect_history, fn_locs, config)?;
             println!("Policy annotation: {}", SafetyAnnotation::CallerChecked);
             let mut new_history = effect_history.to_owned();
             new_history.push(new_e);
