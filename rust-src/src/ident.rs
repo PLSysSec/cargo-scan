@@ -116,6 +116,37 @@ impl Path {
     }
 }
 
+/// Type representing a *canonical* Path identifier,
+/// i.e. from the root
+pub struct CanonicalPath(Path);
+
+impl CanonicalPath {
+    pub fn invariant(&self) -> bool {
+        self.as_str().starts_with("crate::")
+    }
+
+    pub fn new(s: &str) -> Self {
+        Self::new_owned(s.to_string())
+    }
+    pub fn new_owned(s: String) -> Self {
+        Self::from_path(Path::new_owned(s))
+    }
+    pub fn from_path(p: Path) -> Self {
+        let result = Self(p);
+        debug_assert!(result.invariant());
+        result
+    }
+    pub fn to_path(self) -> Path {
+        self.0
+    }
+    pub fn as_path(&self) -> &Path {
+        &self.0
+    }
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
 /// Type representing a pattern over Paths
 ///
 /// Currently supported: only patterns of the form
