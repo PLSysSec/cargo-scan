@@ -2,7 +2,6 @@
 Number of dangerous imports by crate:
 tokio: 605
 hyper: 341
-socket2: 174
 winapi: 116
 cc: 69
 mio: 50
@@ -26,12 +25,11 @@ memchr: 2
 unicode-width: 2
 rustc_version: 2
 crossbeam-channel: 2
-h2: 2
 rand: 1
 proc-macro2: 1
 time: 1
 semver: 1
 bytes: 1
 ===== Crate Totals =====
-32 crates with 1 or more dangerous imports
-68 crates with 0 dangerous imports
+30 crates with 1 or more dangerous imports
+70 crates with 0 dangerous imports
