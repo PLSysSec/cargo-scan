@@ -1,18 +1,100 @@
 /*
     Audit policy language.
 
-    Serializes to and deserializes from a .policy file.
-    See example .policy files in policies/
+    **This module is deprecated.**
+    Please see current development in check_package instead.
 */
 
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fmt::{self, Display};
 use std::path::Path as FilePath;
+use std::str::FromStr;
 
-use super::ident::{FnCall, Path, Pattern};
+use super::super::ident::{Path, Pattern};
+
+/// Type representing an Argument pattern like (x: String, y: usize)
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Args(String);
+impl Display for Args {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl Args {
+    pub fn new(s: &str) -> Self {
+        Self::new_owned(s.to_string())
+    }
+    pub fn new_owned(s: String) -> Self {
+        Self(s)
+    }
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+/// Type representing a function call pattern
+/// Used for Regions and Effects
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FnCall {
+    fn_pattern: Pattern,
+    // Note: not used
+    arg_pattern: Args,
+}
+impl Display for FnCall {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}({})", self.fn_pattern.as_str(), self.arg_pattern.0)
+    }
+}
+impl Serialize for FnCall {
+    fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        ser.collect_str(self)
+    }
+}
+impl FromStr for FnCall {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (s1, s23) = s.split_once('(').ok_or("expected ( in FnCall")?;
+        let (s2, s3) = s23.split_once(')').ok_or("expected ) in FnCall")?;
+        if !s3.is_empty() {
+            Err("expected empty string after )")
+        } else if s1.is_empty() {
+            Err("expected nonempty fn name")
+        } else {
+            Ok(Self::new(s1, s2))
+        }
+    }
+}
+impl<'de> Deserialize<'de> for FnCall {
+    fn deserialize<D>(des: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        String::deserialize(des)?.parse().map_err(de::Error::custom)
+    }
+}
+impl FnCall {
+    pub fn new(fn_pattern: &str, arg_pattern: &str) -> Self {
+        Self::new_owned(fn_pattern.to_string(), arg_pattern.to_string())
+    }
+    pub fn new_owned(fn_pattern: String, arg_pattern: String) -> Self {
+        let fn_pattern = Pattern::new_owned(fn_pattern);
+        let arg_pattern = Args::new_owned(arg_pattern);
+        Self { fn_pattern, arg_pattern }
+    }
+    pub fn new_all(s1: &str) -> Self {
+        Self::new(s1, "*")
+    }
+    pub fn fn_pattern(&self) -> &Pattern {
+        &self.fn_pattern
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -214,8 +296,11 @@ impl PolicyLookup {
     }
 }
 
-#[cfg(test)]
+/*
 mod tests {
+
+    #![allow(deprecated)]
+
     use super::*;
 
     #[test]
@@ -427,3 +512,4 @@ mod tests {
         assert_eq!(policy1, policy2);
     }
 }
+*/

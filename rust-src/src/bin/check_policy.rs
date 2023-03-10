@@ -4,11 +4,15 @@
     Print out effects found that fail the policy, + whether or not
     the policy passes at the end.
 
-    TODO: update or delete this file
+    **This module is deprecated.**
+    Please see current development in check_package instead.
 */
 
+#![allow(deprecated)]
+#![deprecated]
+
 use cargo_scan::ident::{Path, Pattern};
-use cargo_scan::policy::{Policy, PolicyLookup};
+use cargo_scan::old::policy::{Policy, PolicyLookup};
 use cargo_scan::scanner;
 use cargo_scan::util;
 
