@@ -276,7 +276,7 @@ impl EffectInstance {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FnDec {
     pub src_loc: SrcLoc,
-    pub fn_name: Ident,
+    pub fn_name: Path,
 }
 impl FnDec {
     pub fn new<S>(filepath: &FilePath, decl_span: &S, fn_name: String) -> Self
@@ -284,7 +284,7 @@ impl FnDec {
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, decl_span);
-        let fn_name = Ident::new_owned(fn_name);
+        let fn_name = Path::new_owned(fn_name);
         Self { src_loc, fn_name }
     }
 }

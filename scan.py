@@ -35,11 +35,12 @@ def check_installed(cmd, test_arg="--version", check_exit_code=True):
 # Dependencies
 RUSTC = ["rustc"]
 CARGO = ["cargo"]
-SYN_FIND = ["./rust-src/target/release/find_sinks"]
-SYN_CHECK = ["./rust-src/target/release/check_policy"]
-# Uncomment for additional debugging (slower)
-# SYN_FIND = ["./rust-src/target/debug/find_sinks"]
-# SYN_CHECK = ["./rust-src/target/debug/check_policy"]
+# Uncomment to enable debug checks
+SYN_FIND = ["./rust-src/target/debug/find_sinks"]
+SYN_CHECK = ["./rust-src/target/debug/check_policy"]
+# Uncomment for release mode
+# SYN_FIND = ["./rust-src/target/release/find_sinks"]
+# SYN_CHECK = ["./rust-src/target/release/check_policy"]
 
 CARGO_MIRAI = CARGO + ["mirai"]
 CARGO_DOWNLOAD = CARGO + ["download"]

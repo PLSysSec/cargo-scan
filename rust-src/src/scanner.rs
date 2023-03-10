@@ -28,7 +28,7 @@ pub struct ScanResults {
     pub unsafe_traits: Vec<TraitDec>,
     pub ffi_calls: Vec<FFICall>,
 
-    pub fn_locs: HashMap<ident::Ident, SrcLoc>,
+    pub fn_locs: HashMap<ident::Path, SrcLoc>,
 
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,

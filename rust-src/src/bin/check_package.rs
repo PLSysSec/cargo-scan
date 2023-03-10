@@ -1,5 +1,5 @@
 use cargo_scan::effect::{EffectInstance, SrcLoc};
-use cargo_scan::ident::Ident;
+use cargo_scan::ident::Path;
 use cargo_scan::scanner;
 use cargo_scan::scanner::ScanResults;
 
@@ -288,20 +288,20 @@ fn missing_fn_decl_info(effect: &EffectInstance) -> CallStackInfo {
 fn print_call_stack(
     curr_effect: &EffectInstance,
     effect_history: &[&EffectInstance],
-    fn_locs: &HashMap<Ident, SrcLoc>,
+    fn_locs: &HashMap<Path, SrcLoc>,
 ) -> Result<()> {
     if !effect_history.is_empty() {
         let mut call_stack_infos = vec![];
         // TODO: Colorize
         println!("EffectInstance call stack:");
-        let call_info = match fn_locs.get(&Ident::new(curr_effect.caller().as_str())) {
+        let call_info = match fn_locs.get(&Path::new(curr_effect.caller().as_str())) {
             Some(fn_loc) => fn_decl_info(fn_loc)?,
             None => missing_fn_decl_info(curr_effect),
         };
         call_stack_infos.push(call_info);
 
         for e in effect_history.iter().rev() {
-            let call_info = match fn_locs.get(&Ident::new(e.caller().as_str())) {
+            let call_info = match fn_locs.get(&Path::new(e.caller().as_str())) {
                 Some(fn_loc) => fn_decl_info(fn_loc)?,
                 None => missing_fn_decl_info(e),
             };
@@ -319,7 +319,7 @@ fn review_effect_tree_info_helper(
     curr_effect: &EffectInstance,
     effect_tree: &EffectTree,
     effect_history: &[&EffectInstance],
-    fn_locs: &HashMap<Ident, SrcLoc>,
+    fn_locs: &HashMap<Path, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
     match effect_tree {
@@ -352,7 +352,7 @@ fn review_effect_tree_info_helper(
 fn review_effect_tree_info(
     effect: &EffectInstance,
     effect_tree: &EffectTree,
-    fn_locs: &HashMap<Ident, SrcLoc>,
+    fn_locs: &HashMap<Path, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
     review_effect_tree_info_helper(
@@ -369,7 +369,7 @@ fn print_effect_info(
     orig_effect: &EffectInstance,
     curr_effect: &EffectInstance,
     effect_history: &[&EffectInstance],
-    fn_locs: &HashMap<Ident, SrcLoc>,
+    fn_locs: &HashMap<Path, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
     println!();
