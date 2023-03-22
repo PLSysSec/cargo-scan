@@ -8,14 +8,16 @@ use anyhow::{anyhow, Result};
 
 use super::effect::SrcLoc;
 use super::ident::{Ident, Path as IdentPath};
-use ra_ap_hir::Semantics;
+use ra_ap_hir::{PathResolution, Semantics};
 use ra_ap_ide::{AnalysisHost, FileId, LineCol, RootDatabase, TextSize};
 use ra_ap_ide_db::defs::IdentClass;
 use ra_ap_paths::AbsPathBuf;
 use ra_ap_project_model::{CargoConfig, ProjectManifest, ProjectWorkspace};
 use ra_ap_rust_analyzer::cli::load_cargo::{load_workspace, LoadCargoConfig};
 
-use ra_ap_syntax::{AstNode, SourceFile, SyntaxToken, TokenAtOffset};
+use ra_ap_syntax::{
+    ast::Path as SyntaxPath, AstNode, SourceFile, SyntaxKind, SyntaxToken, TokenAtOffset,
+};
 use ra_ap_vfs::{Vfs, VfsPath};
 
 /// Path that is fully expanded and canonical
@@ -156,6 +158,32 @@ impl Resolver {
         let offset = self.find_offset(file_id, src_loc)?;
         let src_file = Self::get_src_file(file_id, sems);
         let token = Self::get_token(src_file, offset, ident)?;
+
+        let path_node =
+            token.parent_ancestors().find(|a| a.kind() == SyntaxKind::PATH).unwrap();
+        let syntax_path = SyntaxPath::cast(path_node).unwrap();
+        println!("syntax_path: {:?}", syntax_path);
+        println!("syntax_path: {:?}", syntax_path.coloncolon_token().unwrap().text());
+        let resolved_path = sems.resolve_path(&syntax_path).unwrap();
+
+        if let PathResolution::Def(resolved_def) = resolved_path {
+            let mod_path = resolved_def.canonical_module_path(db);
+
+            let mut canonical_path = String::new();
+
+            match resolved_def.canonical_module_path(db) {
+                Some(p) => {
+                    canonical_path.push_str("crate::");
+                    p.flat_map(|it| it.name(db)).for_each(|name| {
+                        canonical_path.push_str(name.to_string().as_str());
+                        canonical_path.push_str("::");
+                    });
+                    canonical_path.push_str(&resolved_def.name(db).unwrap().to_string())
+                }
+                None => canonical_path.push_str("No canonical path"),
+            };
+            println!("canonical_path: {:?}", canonical_path);
+        }
 
         match IdentClass::classify_token(sems, &token) {
             Some(ident) => {
