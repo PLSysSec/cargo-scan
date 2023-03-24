@@ -1,6 +1,6 @@
 # Cargo Scan
 
-`cargo scan` is a static analysis-assisted auditing tool for Cargo (Rust) dependencies.
+`cargo scan` is a static analysis-assisted supply chain security and auditing tool for Cargo (Rust) dependencies.
 It can also be used in tandem with [cargo vet](https://mozilla.github.io/cargo-vet/).
 
 `cargo scan` is under active development.
