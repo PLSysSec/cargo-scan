@@ -1,10 +1,10 @@
 # Cargo Scan
 
-`cargo scan` is an under-development tool to scan and analyze Cargo (Rust) dependencies for security and auditing purposes.
+`cargo scan` is a static analysis-assisted auditing tool for Cargo (Rust) dependencies.
 It can also be used in tandem with [cargo vet](https://mozilla.github.io/cargo-vet/).
 
-The tool is currently available as a Python wrapper `scan.py` which calls the Rust CLI.
-This repository also collects related experiments, test crates, and experimental data.
+`cargo scan` is under active development.
+The easiest way to run the tool right now is the Python wrapper `scan.py`.
 
 ## Installation
 
