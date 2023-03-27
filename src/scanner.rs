@@ -407,7 +407,7 @@ impl<'a> Scanner<'a> {
         // scan the impl block
         for item in &imp.items {
             match item {
-                syn::ImplItem::Method(m) => {
+                syn::ImplItem::Fn(m) => {
                     self.scan_method(m);
                 }
                 syn::ImplItem::Macro(_) => {
@@ -498,7 +498,8 @@ impl<'a> Scanner<'a> {
     fn scan_fn_decl(&mut self, f: &'a syn::ItemFn) {
         self.scan_fn(&f.sig, &f.block);
     }
-    fn scan_method(&mut self, m: &'a syn::ImplItemMethod) {
+    fn scan_method(&mut self, m: &'a syn::ImplItemFn) {
+        // NB: may or may not be a method, if there is no self keyword
         self.scan_fn(&m.sig, &m.block);
     }
     fn scan_fn(&mut self, f_sig: &'a syn::Signature, body: &'a syn::Block) {
@@ -531,9 +532,11 @@ impl<'a> Scanner<'a> {
     fn scan_fn_statement(&mut self, s: &'a syn::Stmt) {
         match s {
             syn::Stmt::Local(l) => self.scan_fn_local(l),
-            syn::Stmt::Expr(e) => self.scan_expr(e),
-            syn::Stmt::Semi(e, _) => self.scan_expr(e),
+            syn::Stmt::Expr(e, _semi) => self.scan_expr(e),
             syn::Stmt::Item(i) => self.scan_item_in_fn(i),
+            syn::Stmt::Macro(_) => {
+                self.skipped_macros += 1;
+            }
         }
     }
     fn scan_item_in_fn(&mut self, i: &'a syn::Item) {
@@ -541,8 +544,11 @@ impl<'a> Scanner<'a> {
         self.scan_item(i);
     }
     fn scan_fn_local(&mut self, l: &'a syn::Local) {
-        if let Some((_, b)) = &l.init {
-            self.scan_expr(b)
+        if let Some(let_expr) = &l.init {
+            self.scan_expr(&let_expr.expr);
+            if let Some((_, else_expr)) = &let_expr.diverge {
+                self.scan_expr(else_expr);
+            }
         }
     }
 
@@ -558,10 +564,6 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Assign(x) => {
-                self.scan_expr(&x.left);
-                self.scan_expr(&x.right);
-            }
-            syn::Expr::AssignOp(x) => {
                 self.scan_expr(&x.left);
                 self.scan_expr(&x.right);
             }
@@ -581,10 +583,6 @@ impl<'a> Scanner<'a> {
                 for s in &x.block.stmts {
                     self.scan_fn_statement(s);
                 }
-            }
-            syn::Expr::Box(x) => {
-                self.syn_warning("encountered box expression (unstable feature)", x);
-                self.scan_expr(&x.expr);
             }
             syn::Expr::Break(x) => {
                 if let Some(y) = &x.expr {
@@ -671,10 +669,10 @@ impl<'a> Scanner<'a> {
                 // typically a local variable
             }
             syn::Expr::Range(x) => {
-                if let Some(y) = &x.from {
+                if let Some(y) = &x.start {
                     self.scan_expr(y);
                 }
-                if let Some(y) = &x.to {
+                if let Some(y) = &x.end {
                     self.scan_expr(y);
                 }
             }
@@ -711,9 +709,6 @@ impl<'a> Scanner<'a> {
                 for y in x.elems.iter() {
                     self.scan_expr(y);
                 }
-            }
-            syn::Expr::Type(x) => {
-                self.scan_expr(&x.expr);
             }
             syn::Expr::Unary(x) => {
                 // TODO: Once we have type info, check to see if we deref a
