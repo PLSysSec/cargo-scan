@@ -140,8 +140,19 @@ impl<'a> Scanner<'a> {
             skipped_fn_calls: 0,
         }
     }
+
+    /// Top-level invariant -- called before consuming results
+    pub fn assert_top_level_invariant(&self) {
+        debug_assert!(self.scope_mods.is_empty());
+        debug_assert!(self.scope_use.is_empty());
+        debug_assert!(self.scope_fun.is_empty());
+        debug_assert!(self.scope_effect_blocks.is_empty());
+        debug_assert_eq!(self.scope_unsafe, 0);
+    }
+
     /// Results of the scan (consumes the scanner)
     pub fn get_results(self) -> ScanResults {
+        self.assert_top_level_invariant();
         ScanResults {
             effects: self.effects,
             effect_blocks: self.effect_blocks,
