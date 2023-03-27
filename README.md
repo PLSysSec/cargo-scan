@@ -1,37 +1,57 @@
 # Cargo Scan
 
-`cargo scan` is a static analysis-assisted supply chain security and auditing tool for Cargo (Rust) dependencies.
+`cargo scan` is a supply chain auditing tool for Cargo (Rust) dependencies using static analysis.
 It can also be used in tandem with [cargo vet](https://mozilla.github.io/cargo-vet/).
 
-`cargo scan` is under active development.
-The easiest way to run the tool right now is the Python wrapper `scan.py`.
+`cargo scan` is under active development and all interfaces should be assumed to be unstable.
 
 ## Installation
 
-Make sure you have Python 3 (at least 3.7) and [Rust](https://www.rust-lang.org/tools/install), then run `make install`.
+Make sure you have [Rust](https://www.rust-lang.org/tools/install), then run `make install`.
 
-This installs [cargo-download](https://crates.io/crates/cargo-download) and our fork of [MIRAI](https://github.com/facebookexperimental/MIRAI).
-It also builds the Rust source.
-Installation has currently been tested on Mac OS (Monterey) and Linux (Arch Linux).
+This installs [cargo-download](https://crates.io/crates/cargo-download) and builds the Rust source.
+Installation has been tested on Mac OS (Monterey) and Linux (Arch Linux).
 
-If you want to use the `-g` option, you also need to install [graphviz](https://graphviz.org/download/): on Mac, `brew install graphviz`.
+## Quick-start
+
+### Obtaining a crate
+
+To use Cargo Scan you first need a crate. You can either:
+- use our script to download one automatically:
+```
+./scripts/scan.py -c <crate name>
+```
+- use one of the test crates in `data/test-crates`, or
+- download your own Rust crate and put it in a folder somewhere.
+
+The `scan.py` script simply calls `cargo download` on the crate and puts it in `data/packages`, so you can also run `cargo download` yourself.
 
 ## Running a scan
 
 To scan a crate, looking for dangerous function calls:
 ```
-./scan.py -c <crate name>
+cargo run --bin find_sinks <path to crate>
 ```
 
-This uses the default backend based on source-code syntax. To scan a crate using the MIRAI backend instead:
+Crates can be put anywhere, but are generally placed in `data/packages` for our scripting. For example,
 ```
-./scan.py -c <crate name> -m
-```
-
-Both of the above will download the requested crate to `data/packages` from [crates.io](crates.io).
-To try out the tool on your own example crate, add it as a folder under `data/test-packages`, then run using the `-t` option:
-```
-./scan.py -c <crate name> -t
+cargo run --bin find_sinks data/packages/num_cpus
+cargo run --bin find_sinks data/test-packages/permissions-ex
 ```
 
-For additional options, run `./scan.py -h` or run one of the pre-defined experiments that can be found in `Makefile`.
+## Running an audit
+
+To audit a package:
+```
+cargo run --bin audit <path to crate> crate.policy
+```
+
+## Unit tests
+
+- Run `cargo test` to run Rust unit tests
+
+- Run `make test` to re-run the tool on all our test packages, whose results are in `data/results` and placed under version control to check for any regressions.
+
+## Running an experiment
+
+You can also run `./scripts/scan.py -h` to see options for running an experiment; this is useful for running a scan on a large list of crates, e.g. the top 100 crates on crates.io or your own provided list. Alternatively, see `Makefile` for some pre-defined experiments to run, such as `make top10`.
