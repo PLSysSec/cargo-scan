@@ -77,9 +77,9 @@ impl ScanResults {
         self.effects.iter().filter(|x| x.pattern().is_some()).collect::<HashSet<_>>()
     }
 
-    pub fn get_callers<'a, 'b>(
+    pub fn get_callers<'a>(
         &'a self,
-        callee: &'b ident::Path,
+        callee: &ident::Path,
     ) -> HashSet<&'a EffectInstance> {
         let mut callers = HashSet::new();
         for e in &self.effects {
