@@ -696,7 +696,7 @@ impl<'a> Scanner<'a> {
                 let unsafe_block = &x.block;
                 self.scope_blocks.push(unsafe_block);
                 self.effect_blocks
-                    .push(EffectBlock::new_unsafe_block(self.filepath, unsafe_block));
+                    .push(EffectBlock::new_unsafe_expr(self.filepath, unsafe_block));
                 for s in &x.block.stmts {
                     self.scan_fn_statement(s);
                 }
@@ -777,14 +777,16 @@ impl<'a> Scanner<'a> {
         );
         self.effects.push(eff);
     }
-    fn push_ffi_call_to_unsafe_block(&mut self, ffi_call: &FFICall) {
+    fn push_ffi_call_to_unsafe_block(&mut self, _ffi_call: &FFICall) {
+        // TODO fix
         if let Some(b) = self.scope_blocks.last_mut() {
             let cur_block_loc = SrcLoc::from_span(self.filepath, b);
 
             for b in &mut self.effect_blocks {
                 let src_loc = b.get_src_loc();
                 if cur_block_loc == *src_loc {
-                    b.add_ffi_call(FFICall::clone(ffi_call));
+                    // TODO fix
+                    // b.add_ffi_call(FFICall::clone(ffi_call));
                     break;
                 }
             }

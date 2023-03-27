@@ -289,52 +289,63 @@ impl FnDec {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum BlockType {
-    UnsafeBlock,
-    UnsafeFn(Ident),
-}
-
 /// Type representing a *block* of zero or more dangerous effects.
 /// The block can be:
 /// - an expression enclosed by `unsafe { ... }`
-/// - an unsafe function decl `unsafe fn ...`
-/// - an unsafe trait impl `unsafe impl <Trait> for <Type> ...`
+/// - a normal function decl `fn foo(args) { ... }`
+/// - an unsafe function decl `unsafe fn foo(args) { ... }`
 ///
-/// We use this model because we don't currently enumerate all the "bad"
-/// things unsafe code could do as individual effects.
-/// This is TBD and could change later.
+/// It also contains a Vector of effects inside the block.
+/// However, note that the vector could be empty --
+/// we don't currently enumerate all the "bad"
+/// things unsafe code could do as individual effects, such as
+/// pointer derefs etc.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EffectBlock {
     src_loc: SrcLoc,
-    ffi_calls: Vec<FFICall>,
     block_type: BlockType,
+    effects: Vec<EffectInstance>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum BlockType {
+    UnsafeExpr,
+    NormalFn(Ident),
+    UnsafeFn(Ident),
 }
 impl EffectBlock {
-    pub fn new_unsafe_block<S>(filepath: &FilePath, block_span: &S) -> Self
+    pub fn new_unsafe_expr<S>(filepath: &FilePath, block_span: &S) -> Self
     where
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, block_span);
-        let ffi_calls = Vec::new();
-        let block_type = BlockType::UnsafeBlock;
-        Self { src_loc, ffi_calls, block_type }
+        let block_type = BlockType::UnsafeExpr;
+        let effects = Vec::new();
+        Self { src_loc, block_type, effects }
+    }
+    pub fn new_fn<S>(filepath: &FilePath, decl_span: &S, fn_name: String) -> Self
+    where
+        S: Spanned,
+    {
+        let src_loc = SrcLoc::from_span(filepath, decl_span);
+        let block_type = BlockType::NormalFn(Ident::new_owned(fn_name));
+        let effects = Vec::new();
+        Self { src_loc, block_type, effects }
     }
     pub fn new_unsafe_fn<S>(filepath: &FilePath, decl_span: &S, fn_name: String) -> Self
     where
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, decl_span);
-        let ffi_calls = Vec::new();
-        let block_type = BlockType::UnsafeFn(Ident::new_owned(fn_name));
-        Self { src_loc, ffi_calls, block_type }
+        let block_type = BlockType::NormalFn(Ident::new_owned(fn_name));
+        let effects = Vec::new();
+        Self { src_loc, block_type, effects }
     }
 
     pub fn get_src_loc(&self) -> &SrcLoc {
         &self.src_loc
     }
-    pub fn add_ffi_call(&mut self, ffi_call: FFICall) {
-        self.ffi_calls.push(ffi_call);
+    pub fn push_effect(&mut self, effect: EffectInstance) {
+        self.effects.push(effect);
     }
 }
 
