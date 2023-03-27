@@ -157,7 +157,7 @@ pub enum Effect {
     /// Function call (callee path) matching a sink pattern
     SinkCall(Sink),
     /// FFI call
-    FFICall(FFICall),
+    FFICall,
     /// Other call (callee path), not matching any sink pattern
     OtherCall,
 }
@@ -165,14 +165,14 @@ impl Effect {
     fn sink_pattern(&self) -> Option<&Sink> {
         match self {
             Self::SinkCall(s) => Some(s),
-            Self::FFICall(_) => None,
+            Self::FFICall => None,
             Self::OtherCall => None,
         }
     }
     fn simple_str(&self) -> &str {
         match self {
             Self::SinkCall(s) => s.as_str(),
-            Self::FFICall(_) => "[FFI call]",
+            Self::FFICall => "[FFI call]",
             Self::OtherCall => "[none]",
         }
     }
@@ -206,7 +206,7 @@ impl EffectInstance {
         caller: String,
         callee: String,
         callsite: &S,
-        ffi: Option<FFICall>,
+        is_unsafe: bool,
     ) -> Self
     where
         S: Spanned,
@@ -220,10 +220,12 @@ impl EffectInstance {
             let prefix = infer::fully_qualified_prefix(filepath);
             Path::new_owned(format!("{}::{}", prefix, callee))
         };
-        let eff_type = if let Some(ffi) = ffi {
-            Effect::FFICall(ffi)
-        } else if let Some(pat) = Sink::new_match(&callee) {
+        let eff_type = if let Some(pat) = Sink::new_match(&callee) {
             Effect::SinkCall(pat)
+        } else if is_unsafe {
+            // TODO: right now we conservatively mark any function inside
+            // an unsafe block as an FFI call
+            Effect::FFICall
         } else {
             Effect::OtherCall
         };
@@ -355,7 +357,7 @@ impl EffectBlock {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct TraitImpl {
     src_loc: SrcLoc,
-    tr_name: Ident,
+    tr_name: Path,
 }
 impl TraitImpl {
     pub fn new<S>(impl_span: &S, filepath: &FilePath, tr_name: String) -> Self
@@ -363,7 +365,7 @@ impl TraitImpl {
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, impl_span);
-        let tr_name = Ident::new_owned(tr_name);
+        let tr_name = Path::new_owned(tr_name);
         Self { src_loc, tr_name }
     }
 }
@@ -374,7 +376,7 @@ impl TraitImpl {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct TraitDec {
     src_loc: SrcLoc,
-    tr_name: Ident,
+    tr_name: Path,
 }
 impl TraitDec {
     pub fn new<S>(trait_span: &S, filepath: &FilePath, tr_name: String) -> Self
@@ -382,7 +384,7 @@ impl TraitDec {
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, trait_span);
-        let tr_name = Ident::new_owned(tr_name);
+        let tr_name = Path::new_owned(tr_name);
         Self { src_loc, tr_name }
     }
 }

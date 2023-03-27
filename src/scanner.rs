@@ -2,9 +2,7 @@
     Scanner to parse a Rust source file and find all function call locations.
 */
 
-use super::effect::{
-    EffectBlock, EffectInstance, FFICall, FnDec, SrcLoc, TraitDec, TraitImpl,
-};
+use super::effect::{EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl};
 use super::ident;
 use super::util::infer;
 
@@ -100,14 +98,16 @@ pub struct Scanner<'a> {
     effect_blocks: Vec<EffectBlock>,
     unsafe_traits: Vec<TraitDec>,
     unsafe_impls: Vec<TraitImpl>,
-    ffi_decls: HashMap<String, &'a syn::Ident>,
-    ffi_calls: Vec<FFICall>,
     fn_decls: Vec<FnDec>,
     // stack-based scopes for parsing (always empty at top-level)
     scope_mods: Vec<&'a syn::Ident>,
     scope_use: Vec<&'a syn::Ident>,
     scope_fun: Vec<&'a syn::Ident>,
-    scope_blocks: Vec<&'a syn::Block>,
+    scope_effect_blocks: Vec<EffectBlock>,
+    // Number of unsafe keywords the current scope is nested inside
+    // (includes only unsafe blocks and fn decls -- unsafe traits and
+    // unsafe impls don't alone imply unsafe operations)
+    scope_unsafe: usize,
     // collecting use statements that are in scope
     use_names: HashMap<String, Vec<&'a syn::Ident>>,
     use_globs: Vec<Vec<&'a syn::Ident>>,
@@ -126,15 +126,14 @@ impl<'a> Scanner<'a> {
             filepath,
             effects: Vec::new(),
             effect_blocks: Vec::new(),
-            ffi_calls: Vec::new(),
             unsafe_impls: Vec::new(),
-            ffi_decls: HashMap::new(),
             unsafe_traits: Vec::new(),
             fn_decls: Vec::new(),
             scope_mods: Vec::new(),
             scope_use: Vec::new(),
             scope_fun: Vec::new(),
-            scope_blocks: Vec::new(),
+            scope_effect_blocks: Vec::new(),
+            scope_unsafe: 0,
             use_names: HashMap::new(),
             use_globs: Vec::new(),
             skipped_macros: 0,
@@ -175,7 +174,7 @@ impl<'a> Scanner<'a> {
             syn::Item::Mod(m) => self.scan_mod(m),
             syn::Item::Use(u) => self.scan_use(u),
             syn::Item::Impl(imp) => self.scan_impl(imp),
-            syn::Item::Fn(fun) => self.scan_fn(fun),
+            syn::Item::Fn(fun) => self.scan_fn_decl(fun),
             syn::Item::Trait(t) => self.scan_trait(t),
             syn::Item::ForeignMod(fm) => self.scan_foreign_mod(fm),
             syn::Item::Macro(_) => {
@@ -230,9 +229,12 @@ impl<'a> Scanner<'a> {
     */
 
     fn scan_foreign_mod(&mut self, fm: &'a syn::ItemForeignMod) {
+        debug_assert_eq!(self.scope_unsafe, 0);
+        self.scope_unsafe += 1;
         for i in &fm.items {
             self.scan_foreign_item(i);
         }
+        self.scope_unsafe -= 1;
     }
 
     fn scan_foreign_item(&mut self, i: &'a syn::ForeignItem) {
@@ -247,10 +249,10 @@ impl<'a> Scanner<'a> {
         // https://docs.rs/syn/latest/syn/enum.ForeignItem.html
     }
 
-    fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn) {
-        let fn_name = &f.sig.ident;
-        // TBD possibly fragile; we may not need this when name resolution is working
-        self.ffi_decls.insert(fn_name.to_string(), fn_name);
+    fn scan_foreign_fn(&mut self, _f: &'a syn::ForeignItemFn) {
+        // TBD
+        // let fn_name = &f.sig.ident;
+        // self.ffi_decls.insert(fn_name.to_string(), fn_name);
     }
 
     /*
@@ -268,7 +270,9 @@ impl<'a> Scanner<'a> {
             if *v_old != v_new {
                 let msg = format!(
                     "Name conflict found in use scope: {} (old: {:?} new: {:?})",
-                    k, Self::path_to_string(v_old), Self::path_to_string(&v_new)
+                    k,
+                    Self::path_to_string(v_old),
+                    Self::path_to_string(&v_new)
                 );
                 self.warning(&msg);
             }
@@ -356,6 +360,14 @@ impl<'a> Scanner<'a> {
         result
     }
 
+    fn lookup_filepath_ident(&self, i: &'a syn::Ident) -> String {
+        // TODO after name resolution is working:
+        // decide which of these we actually need and make it robust
+        let filename = infer::fully_qualified_prefix(self.filepath);
+        let path_str = Self::path_to_string(self.lookup_ident(&i));
+        format!("{}::{}", filename, path_str)
+    }
+
     /*
         Trait declarations
     */
@@ -366,6 +378,7 @@ impl<'a> Scanner<'a> {
             // we found an `unsafe trait` declaration
             self.unsafe_traits.push(TraitDec::new(t, self.filepath, t_name.to_string()));
         }
+        // TBD: handle trait block, e.g. default implementations
     }
 
     /*
@@ -375,19 +388,11 @@ impl<'a> Scanner<'a> {
         // push the impl block scope to scope_mods
         let scope_adds = if let Some((_, tr, _)) = &imp.trait_ {
             // scope trait impls under trait name
-            self.scan_impl_trait_path(tr)
+            self.scan_impl_trait_path(tr, imp)
         } else {
             // scope type impls under type name
             self.scan_impl_type(&imp.self_ty)
         };
-
-        if imp.unsafety.is_some() {
-            // we found an `unsafe impl` declaration
-            if let Some((_, tr, _)) = &imp.trait_ {
-                let tr_name = tr.segments[0].ident.to_string();
-                self.unsafe_impls.push(TraitImpl::new(imp, self.filepath, tr_name));
-            }
-        }
 
         // scan the impl block
         for item in &imp.items {
@@ -405,6 +410,7 @@ impl<'a> Scanner<'a> {
             }
         }
 
+        // Drop additional scope adds
         for _ in 0..scope_adds {
             self.scope_mods.pop();
         }
@@ -455,8 +461,19 @@ impl<'a> Scanner<'a> {
         }
         fullpath.len()
     }
-    fn scan_impl_trait_path(&mut self, tr: &'a syn::Path) -> usize {
+    fn scan_impl_trait_path(
+        &mut self,
+        tr: &'a syn::Path,
+        imp: &'a syn::ItemImpl,
+    ) -> usize {
         // return: the number of items added to scope_mods
+
+        if imp.unsafety.is_some() {
+            // we found an `unsafe impl` declaration
+            let tr_name = Self::path_to_string(&self.lookup_path(tr));
+            self.unsafe_impls.push(TraitImpl::new(imp, self.filepath, tr_name));
+        }
+
         let fullpath = self.lookup_path(tr);
         self.scope_mods.extend(&fullpath);
         if fullpath.is_empty() {
@@ -468,33 +485,44 @@ impl<'a> Scanner<'a> {
     /*
         Function and method declarations
     */
-    fn scan_fn(&mut self, f: &'a syn::ItemFn) {
-        let f_name = &f.sig.ident;
-        let f_unsafety: &Option<syn::token::Unsafe> = &f.sig.unsafety;
-        if f_unsafety.is_some() {
-            // we found an `unsafe fn` declaration
-            self.effect_blocks.push(EffectBlock::new_unsafe_fn(
-                self.filepath,
-                f,
-                f_name.to_string(),
-            ));
-        }
-        let prefix = infer::fully_qualified_prefix(self.filepath);
-        let full_fn_name = format!("{}::{}", prefix, f_name);
-        self.fn_decls.push(FnDec::new(self.filepath, f, full_fn_name));
-        self.scope_fun.push(f_name);
-        for s in &f.block.stmts {
-            self.scan_fn_statement(s);
-        }
-        self.scope_fun.pop();
+    fn scan_fn_decl(&mut self, f: &'a syn::ItemFn) {
+        self.scan_fn(&f.sig, &f.block);
     }
     fn scan_method(&mut self, m: &'a syn::ImplItemMethod) {
-        let m_name = &m.sig.ident;
-        self.scope_fun.push(m_name);
-        for s in &m.block.stmts {
+        self.scan_fn(&m.sig, &m.block);
+    }
+    fn scan_fn(&mut self, f_sig: &'a syn::Signature, body: &'a syn::Block) {
+        let f_ident = &f_sig.ident;
+        let f_name = f_ident.to_string();
+        // TBD
+        let _f_name_full = self.lookup_filepath_ident(f_ident);
+        let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
+        self.fn_decls.push(FnDec::new(self.filepath, body, f_name.clone()));
+        let effect_block = if f_unsafety.is_some() {
+            // we found an `unsafe fn` declaration
+            if self.scope_unsafe >= 1 {
+                self.syn_warning(
+                    "found unsafe keyword nested inside an already unsafe context",
+                    f_unsafety,
+                );
+            }
+            self.scope_unsafe += 1;
+
+            EffectBlock::new_unsafe_fn(self.filepath, body, f_name)
+        } else {
+            EffectBlock::new_fn(self.filepath, body, f_name)
+        };
+        self.scope_effect_blocks.push(effect_block);
+        self.scope_fun.push(f_ident);
+        for s in &body.stmts {
             self.scan_fn_statement(s);
         }
         self.scope_fun.pop();
+        self.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
+        if f_unsafety.is_some() {
+            debug_assert!(self.scope_unsafe >= 1);
+            self.scope_unsafe -= 1;
+        }
     }
     fn scan_fn_statement(&mut self, s: &'a syn::Stmt) {
         match s {
@@ -689,15 +717,8 @@ impl<'a> Scanner<'a> {
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Unsafe(x) => {
-                // Add code here to gather unsafe blocks.
-                let unsafe_block = &x.block;
-                self.scope_blocks.push(unsafe_block);
-                self.effect_blocks
-                    .push(EffectBlock::new_unsafe_expr(self.filepath, unsafe_block));
-                for s in &x.block.stmts {
-                    self.scan_fn_statement(s);
-                }
-                self.scope_blocks.pop();
+                // ***** THE THIRD IMPORTANT CASE *****
+                self.scan_unsafe_block(x);
             }
             syn::Expr::Verbatim(v) => {
                 self.syn_warning("skipping Verbatim expression", v);
@@ -716,6 +737,25 @@ impl<'a> Scanner<'a> {
             }
             _ => self.syn_warning("encountered unknown expression", e),
         }
+    }
+
+    fn scan_unsafe_block(&mut self, x: &'a syn::ExprUnsafe) {
+        if self.scope_unsafe >= 1 {
+            self.syn_warning(
+                "found unsafe keyword nested inside an already unsafe context",
+                x,
+            );
+        }
+        self.scope_unsafe += 1;
+
+        let effect_block = EffectBlock::new_unsafe_expr(self.filepath, &x.block);
+        self.scope_effect_blocks.push(effect_block);
+        for s in &x.block.stmts {
+            self.scan_fn_statement(s);
+        }
+        self.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
+
+        self.scope_unsafe -= 1;
     }
 
     /*
@@ -739,30 +779,13 @@ impl<'a> Scanner<'a> {
     }
 
     /// push an Effect to the list of results based on this call site.
-    fn push_callsite<S>(
-        &mut self,
-        callee_span: S,
-        callee_path: String,
-        callee_ident: Option<&syn::Ident>,
-    ) where
-        S: Spanned,
+    fn push_callsite<S>(&mut self, callee_span: S, callee_path: String)
+    where
+        S: Debug + Spanned,
     {
         let mod_scope = self.get_mod_scope();
         let caller_name =
             self.get_fun_scope().expect("push_callsite called outside of a function!");
-
-        // check for FFI call
-        let mut ffi = None;
-        if let Some(callee_ident) = callee_ident {
-            let callee_name = callee_ident.to_string();
-            if let Some(&dec_loc) = self.ffi_decls.get(&callee_name) {
-                let ffi_call =
-                    FFICall::new(&callee_span, &dec_loc, self.filepath, callee_name);
-                self.push_ffi_call_to_unsafe_block(&ffi_call);
-                self.ffi_calls.push(ffi_call.clone());
-                ffi = Some(ffi_call)
-            }
-        }
 
         let eff = EffectInstance::new_call(
             self.filepath,
@@ -770,28 +793,17 @@ impl<'a> Scanner<'a> {
             caller_name,
             callee_path,
             &callee_span,
-            ffi,
+            self.scope_unsafe > 0,
         );
-        self.effects.push(eff);
-    }
-    fn push_ffi_call_to_unsafe_block(&mut self, _ffi_call: &FFICall) {
-        // TODO fix
-        if let Some(b) = self.scope_blocks.last_mut() {
-            let cur_block_loc = SrcLoc::from_span(self.filepath, b);
-
-            for b in &mut self.effect_blocks {
-                let src_loc = b.get_src_loc();
-                if cur_block_loc == *src_loc {
-                    // TODO fix
-                    // b.add_ffi_call(FFICall::clone(ffi_call));
-                    break;
-                }
-            }
+        if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
+            effect_block.push_effect(eff.clone())
         } else {
-            // this case is occurring on some top100 crates
-            // TODO debug
-            self.warning("couldn't get last index of scope_blocks");
+            self.syn_warning(
+                "Unexpected function call site found outside an effect block",
+                callee_span,
+            );
         }
+        self.effects.push(eff);
     }
 
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
@@ -800,7 +812,7 @@ impl<'a> Scanner<'a> {
                 let callee_path = self.lookup_path(&p.path);
                 let callee_ident = *callee_path.last().unwrap();
                 let callee_path_str = Self::path_to_string(&callee_path);
-                self.push_callsite(callee_ident, callee_path_str, Some(callee_ident));
+                self.push_callsite(callee_ident, callee_path_str);
             }
             syn::Expr::Paren(x) => {
                 // e.g. (my_struct.f)(x)
@@ -826,18 +838,18 @@ impl<'a> Scanner<'a> {
         match m {
             syn::Member::Named(i) => {
                 let callee_path = format!("[FIELD]::{}", i);
-                self.push_callsite(i, callee_path, None);
+                self.push_callsite(i, callee_path);
             }
             syn::Member::Unnamed(idx) => {
                 let callee_path = format!("[FIELD]::{}", idx.index);
-                self.push_callsite(idx, callee_path, None);
+                self.push_callsite(idx, callee_path);
             }
         }
     }
 
     fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
         let callee_path = format!("[METHOD]::{}", i);
-        self.push_callsite(i, callee_path, None);
+        self.push_callsite(i, callee_path);
     }
 }
 

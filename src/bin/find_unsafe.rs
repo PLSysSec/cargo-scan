@@ -22,7 +22,7 @@ fn main() -> Result<()> {
     let results = scanner::scan_crate(&args.crate_path)?;
 
     if !results.effect_blocks.is_empty() {
-        println!("=== Unsafe effect blocks ===");
+        println!("=== Effect blocks ===");
         for bl_decl in results.effect_blocks {
             println!("{:?}", bl_decl);
         }
