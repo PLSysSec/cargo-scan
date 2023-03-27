@@ -2,10 +2,10 @@
 Number of dangerous imports by crate:
 tokio: 605
 hyper: 341
-winapi: 116
+winapi: 125
 cc: 69
+libc: 55
 mio: 50
-libc: 37
 parking_lot_core: 27
 tokio-util: 26
 termcolor: 15
