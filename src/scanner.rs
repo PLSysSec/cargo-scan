@@ -240,7 +240,6 @@ impl<'a> Scanner<'a> {
     */
 
     fn scan_foreign_mod(&mut self, fm: &'a syn::ItemForeignMod) {
-        debug_assert_eq!(self.scope_unsafe, 0);
         self.scope_unsafe += 1;
         for i in &fm.items {
             self.scan_foreign_item(i);
@@ -511,12 +510,6 @@ impl<'a> Scanner<'a> {
         self.fn_decls.push(FnDec::new(self.filepath, body, f_name.clone()));
         let effect_block = if f_unsafety.is_some() {
             // we found an `unsafe fn` declaration
-            if self.scope_unsafe >= 1 {
-                self.syn_warning(
-                    "found unsafe keyword nested inside an already unsafe context",
-                    f_unsafety,
-                );
-            }
             self.scope_unsafe += 1;
 
             EffectBlock::new_unsafe_fn(self.filepath, body, f_name)
@@ -751,12 +744,6 @@ impl<'a> Scanner<'a> {
     }
 
     fn scan_unsafe_block(&mut self, x: &'a syn::ExprUnsafe) {
-        if self.scope_unsafe >= 1 {
-            self.syn_warning(
-                "found unsafe keyword nested inside an already unsafe context",
-                x,
-            );
-        }
         self.scope_unsafe += 1;
 
         let effect_block = EffectBlock::new_unsafe_expr(self.filepath, &x.block);
