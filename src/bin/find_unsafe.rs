@@ -14,6 +14,9 @@ use std::path::PathBuf;
 struct Args {
     /// Path to crate directory; should contain a 'src' directory and a Cargo.toml file
     crate_path: PathBuf,
+    /// Show verbose output
+    #[arg(short, long, default_value_t = false)]
+    verbose: bool,
 }
 
 fn main() -> Result<()> {
@@ -39,6 +42,22 @@ fn main() -> Result<()> {
         println!("=== Unsafe trait impls ===");
         for impl_decl in results.unsafe_impls {
             println!("{:?}", impl_decl);
+        }
+    }
+
+    if args.verbose {
+        if results.skipped_fn_calls > 0 {
+            eprintln!(
+                "Note: analysis skipped {} function calls \
+                (closures or other complex expressions called as functions)",
+                results.skipped_fn_calls
+            );
+        }
+        if results.skipped_macros > 0 {
+            eprintln!(
+                "Note: analysis skipped {} macro invocations",
+                results.skipped_macros
+            );
         }
     }
 

@@ -169,6 +169,13 @@ impl Effect {
             Self::OtherCall => None,
         }
     }
+    fn is_sink(&self) -> bool {
+        match self {
+            Self::SinkCall(_) => true,
+            Self::FFICall => true,
+            Self::OtherCall => false,
+        }
+    }
     fn simple_str(&self) -> &str {
         match self {
             Self::SinkCall(s) => s.as_str(),
@@ -264,6 +271,14 @@ impl EffectInstance {
 
     pub fn pattern(&self) -> Option<&Sink> {
         self.eff_type.sink_pattern()
+    }
+
+    pub fn is_ffi(&self) -> bool {
+        self.eff_type == Effect::FFICall
+    }
+
+    pub fn is_sink(&self) -> bool {
+        self.eff_type.is_sink()
     }
 
     pub fn call_loc(&self) -> &SrcLoc {

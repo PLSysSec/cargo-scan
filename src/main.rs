@@ -1,4 +1,4 @@
 fn main() {
     println!("=== Cargo Scan ===");
-    println!("Cargo Scan doesn't yet have a Rust CLI endpoint. Please use the Python endpoint at https://github.com/PLSysSec/cargo-scan.")
+    println!("run with `cargo run --bin audit` or `cargo run --bin find_sinks`")
 }
