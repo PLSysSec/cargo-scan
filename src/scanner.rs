@@ -186,8 +186,6 @@ impl<'a> Scanner<'a> {
             // For all syntax elements see
             // https://docs.rs/syn/latest/syn/enum.Item.html
             // Potentially interesting:
-            // Trait(t) -- default impls are an issue here
-            // ForeignMod(ItemForeignMod) -- extern items like extern "C" { ... }
             // Const(ItemConst), Static(ItemStatic) -- for information flow
         }
     }
@@ -213,6 +211,25 @@ impl<'a> Scanner<'a> {
         }
     }
 
+    /*
+        Reusable warning loggers
+    */
+
+    fn warning(&self, msg: &str) {
+        eprintln!("Warning: {}", msg)
+    }
+
+    fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
+        let file = self.filepath.to_string_lossy();
+        let line = syn_node.span().start().line;
+        let col = syn_node.span().start().column;
+        eprintln!("Warning: {} ({:?}) ({}:{}:{})", msg, syn_node, file, line, col);
+    }
+
+    /*
+        Extern blocks
+    */
+
     fn scan_foreign_mod(&mut self, fm: &'a syn::ItemForeignMod) {
         let items = &fm.items;
         for i in items {
@@ -221,24 +238,20 @@ impl<'a> Scanner<'a> {
     }
 
     fn scan_foreign_item(&mut self, i: &'a syn::ForeignItem) {
-        if let syn::ForeignItem::Fn(f) = i {
-            self.scan_foreign_fn(f)
+        match i {
+            syn::ForeignItem::Fn(f) => self.scan_foreign_fn(f),
+            syn::ForeignItem::Macro(_) => {
+                self.skipped_macros += 1;
+            }
+            _ => {} // Ignored: Static, Type, Macro, Verbatim
+                    // https://docs.rs/syn/latest/syn/enum.ForeignItem.html
         }
     }
 
     fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn) {
         let fn_name = &f.sig.ident;
+        // TBD possibly fragile; we may not need this when name resolution is working
         self.ffi_decls.insert(fn_name.to_string(), fn_name);
-    }
-
-    /*
-        Reusable warning logger
-    */
-    fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
-        let file = self.filepath.to_string_lossy();
-        let line = syn_node.span().start().line;
-        let col = syn_node.span().start().column;
-        eprintln!("Warning: {} ({:?}) ({}:{}:{})", msg, syn_node, file, line, col);
     }
 
     /*
@@ -249,8 +262,21 @@ impl<'a> Scanner<'a> {
     }
     fn save_scope_use_under(&mut self, lookup_key: &'a syn::Ident) {
         // save the use scope under an identifier/lookup key
-        // TBD: maybe warn if there is a name conflict
-        self.use_names.insert(lookup_key.to_string(), self.scope_use_snapshot());
+        let k = lookup_key.to_string();
+        let v_new = self.scope_use_snapshot();
+        if cfg!(debug) && self.use_names.contains_key(&k) {
+            let v_old = self.use_names.get(&k).unwrap();
+            if v_old != &v_new {
+                let old: Vec<String> = v_old.iter().map(|s| s.to_string()).collect();
+                let new: Vec<String> = v_new.iter().map(|s| s.to_string()).collect();
+                let msg = format!(
+                    "Name conflict found in use scope: {} (old: {:?} new: {:?})",
+                    k, old, new
+                );
+                self.warning(&msg);
+            }
+        }
+        self.use_names.insert(k, v_new);
     }
     fn scan_use(&mut self, u: &'a syn::ItemUse) {
         // TBD: may need to do something special here if already inside a fn
@@ -765,7 +791,7 @@ impl<'a> Scanner<'a> {
         } else {
             // this case is occurring on some top100 crates
             // TODO debug
-            eprintln!("Error: couldn't get last index of scope_blocks");
+            self.warning("couldn't get last index of scope_blocks");
         }
     }
 
