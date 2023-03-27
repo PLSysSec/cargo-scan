@@ -35,24 +35,21 @@ def check_installed(cmd, test_arg="--version", check_exit_code=True):
 # Dependencies
 RUSTC = ["rustc"]
 CARGO = ["cargo"]
+CARGO_DOWNLOAD = CARGO + ["download"]
+
 # Uncomment to enable debug checks
 SYN_FIND = ["./rust-src/target/debug/find_sinks"]
 # Uncomment for release mode
 # SYN_FIND = ["./rust-src/target/release/find_sinks"]
 
-CARGO_MIRAI = CARGO + ["mirai"]
-CARGO_DOWNLOAD = CARGO + ["download"]
-
 check_installed(RUSTC)
 check_installed(CARGO)
 check_installed(SYN_FIND)
-check_installed(CARGO_MIRAI)
 check_installed(CARGO_DOWNLOAD, check_exit_code=False)
 
 # Unchecked dependencies
 CP = ["cp"]
 OPEN = ["open"]
-GRAPHVIZ_DOT = ["dot"] # for -g option
 
 # ===== Additional constants =====
 
@@ -62,10 +59,6 @@ PROGRESS_INCS = 5
 CRATES_DIR = "data/packages"
 TEST_CRATES_DIR = "data/test-packages"
 RUST_SRC = "src"
-
-MIRAI_CONFIG = "mirai/config.json"
-MIRAI_FLAGS_KEY = "MIRAI_FLAGS"
-MIRAI_FLAGS_VAL = f"--call_graph_config ../../../{MIRAI_CONFIG}"
 
 # Potentially dangerous stdlib imports.
 OF_INTEREST_STD = [
@@ -94,10 +87,6 @@ OF_INTEREST_OTHER = [
     "tokio_util::net",
     "socket2",
 ]
-
-# Text file with all of the above
-# TODO: replace the above and put all in one place
-OF_INTEREST_TXT = "data/of_interest.txt"
 
 RESULTS_DIR = "data/results"
 RESULTS_ALL_SUFFIX = "_all.csv"
@@ -142,8 +131,7 @@ def sanitize_comma(s):
 class Effect:
     """
     Data related to an effect
-    used as an intermediate output for both the grep-based and the
-    mirai-based effects analysis
+    Mirrors rust-src/src/effect.rs
     """
     # Name of crate, e.g. num_cpus
     crate: str
@@ -176,7 +164,7 @@ class Effect:
 
         return ", ".join([crate, caller, callee, pattern, dir, file, line, col])
 
-# ===== Used by both backends =====
+# ===== Crate lists and cargo download =====
 
 def count_lines(cratefile, header_row=True):
     with open(cratefile, 'r') as fh:
@@ -259,97 +247,6 @@ def scan_crate(crate, crate_dir, of_interest, add_args):
         eff = Effect(*line.split(", "))
         yield eff
 
-# ===== MIRAI backend =====
-
-def parse_mirai_call_line(line):
-    parts = (line
-        .replace(" (", " ")
-        .replace("(", " ")
-        .replace(" ~ ", " ")
-        .replace("), ", " ")
-        .replace(")", " ")
-        .replace(": ", " ")
-        .strip()
-        .split(" ")
-    )
-    if len(parts) != 6:
-        logging.warning(f"MIRAI output: expected 6 parts: {parts}")
-        return None
-    logging.debug(f"MIRAI call line, parsed into parts: {parts}")
-    # Examples:
-    # ['DefId', '0:6', 'num_cpus[1818]::get_num_physical_cpus', 'src/lib.rs:324:20', '324:34', '#0']
-    # ['DefId', '0:5', 'num_cpus[1818]::get_physical', 'src/lib.rs:109:5', '109:28', '#0']
-    fun = re.sub(r"\[[0-9a-f]*\]", "", parts[2])
-    # module = fun.rsplit("::", 1)[0]
-    src_dir, path = tuple(parts[3].split("/", 1))
-    file, line, col = tuple(path.split(':', 2))
-    return fun, src_dir, file, line, col
-
-def mirai_call_path_as_effect(crate, crate_dir, call_path, of_interest):
-    # Convert a call path to an Effect object
-    # crate is the name of the crate
-    # crate_dir is the path to the crate (from scan.py top-level directory)
-    # call_path is a nonempty list of (effect_fun, src_dir, path)
-    # of_interest is a list of patterns
-    callee_fun, src_dir, callee_file, callee_line, callee_col = call_path[0]
-    if len(call_path) > 1:
-        caller_fun, src_dir2, caller_file, caller_line, caller_col = call_path[1]
-        if src_dir != src_dir2:
-            logging.warning(f"MIRAI: callee and caller in different source dirs: {src_dir1} and {src_dir2}")
-    else:
-        logging.warning(f"MIRAI: call path of length 1: {call_path}")
-        caller = "Unknown"
-        caller_path = "Unknown"
-
-    dir = crate_dir + "/" + src_dir
-
-    pattern = is_of_interest(callee_fun, of_interest)
-    if pattern is None:
-        logging.warning("MIRAI: output didn't match any pattern of interest")
-        pattern = "::".join(callee_mod.split("::")[0:2])
-
-    return Effect(
-        crate,
-        caller_fun,
-        callee_fun,
-        pattern,
-        dir,
-        callee_file,
-        callee_line,
-        callee_col,
-    )
-
-def scan_crate_mirai(crate, crate_dir, of_interest, add_args):
-    # Run our MIRAI fork; yield effects
-    os.environ[MIRAI_FLAGS_KEY] = MIRAI_FLAGS_VAL
-    subprocess.run(CARGO + ["clean"], cwd=crate_dir, check=True)
-    command = CARGO_MIRAI + add_args
-    logging.debug(f"Calling MIRAI: {command} in {crate_dir}")
-    proc = subprocess.Popen(command, cwd=crate_dir, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
-    call_path = []
-    for line in iter(proc.stdout.readline, b""):
-        line = line.strip().decode("utf-8")
-        if line == "~~~New Fn~~~~~":
-            logging.trace("MIRAI: new function")
-        elif line == "Call Path:":
-            logging.trace("MIRAI: new call path")
-            if call_path:
-                yield mirai_call_path_as_effect(crate, crate_dir, call_path, of_interest)
-            call_path = []
-        elif line[0:6] == "Call: ":
-            result = parse_mirai_call_line(line[6:])
-            if result is not None:
-                logging.trace(f"MIRAI call: {result}")
-                call_path.append(result)
-        else:
-            logging.warning(f"Unrecognized MIRAI output line: {line}")
-    if call_path:
-        yield mirai_call_path_as_effect(crate, crate_dir, call_path, of_interest)
-
-def view_callgraph_mirai(crate_dir):
-    subprocess.run(GRAPHVIZ_DOT + ["-Tpng", "graph.dot", "-o", "graph.png"], cwd=crate_dir, check=True)
-    subprocess.run(OPEN + ["graph.png"], cwd=crate_dir, check=True)
-
 # ===== Entrypoint =====
 
 def main():
@@ -359,8 +256,6 @@ def main():
     group.add_argument('-i', '--infile', help="Instead of scanning a single crate, provide a list of crates as a CSV file")
     parser.add_argument('-t', '--test-run', action="store_true", help=f"Test run: use existing crates in {TEST_CRATES_DIR} instead of downloading via cargo-download")
     parser.add_argument('-o', '--output-prefix', help="Output file prefix to save results")
-    parser.add_argument('-m', '--mirai', action="store_true", help="Use the MIRAI backend instead of the source-code backend")
-    parser.add_argument('-g', '--call-graph', action="store_true", help="View the call graph as a .png (only works with -m; requires graphviz to be installed)")
     parser.add_argument('-s', '--std', action="store_true", help="Flag standard library imports only")
     parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
 
@@ -372,9 +267,6 @@ def main():
     log_level = [logging.INFO, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG, logging.TRACE][args.verbose]
     logging.basicConfig(level=log_level)
     logging.debug(args)
-
-    if args.call_graph and not args.mirai:
-        logging.warning("-g/--call-graph option ignored without -m/--mirai")
 
     if args.test_run:
         logging.info("=== Test run ===")
@@ -394,24 +286,20 @@ def main():
     if args.output_prefix is None and num_crates > 1:
         logging.warning("No results prefix specified; results of this run will not be saved")
 
-    progress_inc = num_crates // PROGRESS_INCS
     of_interest = OF_INTEREST_STD
     if not args.std:
         of_interest += OF_INTEREST_OTHER
 
     add_args = []
-    if args.mirai:
-        scan_fun = scan_crate_mirai
-    else:
-        scan_fun = scan_crate
-        if args.verbose >= 4:
-            add_args = ["-v"]
+    if args.verbose >= 4:
+        add_args = ["-v"]
 
     logging.info(f"=== Scanning {crates_infostr} in {crates_dir} ===")
 
     results = []
     crate_summary = {c: 0 for c in crates}
     pattern_summary = {p: 0 for p in of_interest}
+    progress_inc = num_crates // PROGRESS_INCS
 
     for i, crate in enumerate(crates):
         if progress_inc > 0 and i > 0 and i % progress_inc == 0:
@@ -425,17 +313,13 @@ def main():
             sys.exit(1)
 
         crate_dir = os.path.join(crates_dir, crate)
-        for effect in scan_fun(crate, crate_dir, of_interest, add_args):
+        for effect in scan_crate(crate, crate_dir, of_interest, add_args):
             logging.debug(f"effect found: {effect.to_csv()}")
             results.append(effect)
             # Update summaries
             crate_summary[crate] += 1
             pattern_summary.setdefault(effect.pattern, 0)
             pattern_summary[effect.pattern] += 1
-
-    if args.mirai and args.call_graph:
-        logging.info("=== Generating call graph as a PNG ===")
-        view_callgraph_mirai(crate_dir)
 
     # Sanity check
     if sum(crate_summary.values()) != sum(pattern_summary.values()):
