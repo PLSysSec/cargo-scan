@@ -104,7 +104,6 @@ pub struct Scanner<'a> {
     ffi_calls: Vec<FFICall>,
     fn_decls: Vec<FnDec>,
     // stack-based scopes for parsing (always empty at top-level)
-    // TBD: can probably combine all types of scope into one
     scope_mods: Vec<&'a syn::Ident>,
     scope_use: Vec<&'a syn::Ident>,
     scope_fun: Vec<&'a syn::Ident>,
@@ -231,8 +230,7 @@ impl<'a> Scanner<'a> {
     */
 
     fn scan_foreign_mod(&mut self, fm: &'a syn::ItemForeignMod) {
-        let items = &fm.items;
-        for i in items {
+        for i in &fm.items {
             self.scan_foreign_item(i);
         }
     }
@@ -243,9 +241,10 @@ impl<'a> Scanner<'a> {
             syn::ForeignItem::Macro(_) => {
                 self.skipped_macros += 1;
             }
-            _ => {} // Ignored: Static, Type, Macro, Verbatim
-                    // https://docs.rs/syn/latest/syn/enum.ForeignItem.html
+            _ => {}
         }
+        // Ignored: Static, Type, Macro, Verbatim
+        // https://docs.rs/syn/latest/syn/enum.ForeignItem.html
     }
 
     fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn) {
@@ -266,12 +265,10 @@ impl<'a> Scanner<'a> {
         let v_new = self.scope_use_snapshot();
         if cfg!(debug) && self.use_names.contains_key(&k) {
             let v_old = self.use_names.get(&k).unwrap();
-            if v_old != &v_new {
-                let old: Vec<String> = v_old.iter().map(|s| s.to_string()).collect();
-                let new: Vec<String> = v_new.iter().map(|s| s.to_string()).collect();
+            if *v_old != v_new {
                 let msg = format!(
                     "Name conflict found in use scope: {} (old: {:?} new: {:?})",
-                    k, old, new
+                    k, Self::path_to_string(v_old), Self::path_to_string(&v_new)
                 );
                 self.warning(&msg);
             }
