@@ -5,8 +5,7 @@ SCAN_PY = ./scripts/scan.py
 
 install:
 	cargo install cargo-download
-	cargo build
-	cargo build --release
+	cargo build && cargo build --release
 
 install-mirai: install
 	cargo install cargo-download
@@ -14,13 +13,10 @@ install-mirai: install
 	git submodule update
 	cd mirai/MIRAI && cargo install --locked --path ./checker
 
-checks:
-	cargo build
+test: install
 	cargo test
 	cargo clippy
 	cargo fmt
-
-test: install
 	$(SCAN_PY) -t -i data/crate-lists/test-crates.csv -o test -vvv
 
 top10: install
