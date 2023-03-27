@@ -1,4 +1,4 @@
-crate, caller, callee, pattern, dir, file, line, col
+crate, fn_decl, callee, effect, dir, file, line, col
 caller_checked, caller_checked::local_effect, libc::sysctl, libc, data/test-packages/caller-checked/src, main.rs, 9, 14
 caller_checked, caller_checked::sub::effect, libc::sysconf, libc, data/test-packages/caller-checked/src, sub.rs, 6, 14
 caller_checked, caller_checked::sub::effect, libc::sysctl, libc, data/test-packages/caller-checked/src, sub.rs, 8, 14

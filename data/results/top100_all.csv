@@ -1,4 +1,4 @@
-crate, caller, callee, pattern, dir, file, line, col
+crate, fn_decl, callee, effect, dir, file, line, col
 rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, libc::pthread_atfork, libc, data/packages/rand/src/rngs/adapter, reseeding.rs, 321, 37
 libc, libc::fuchsia::mod::__CMSG_NEXT, libc::fuchsia::mod::__CMSG_LEN, libc, data/packages/libc/src/fuchsia, mod.rs, 3333, 26
 libc, libc::unix::solarish::compat::cfsetspeed, libc::unix::solarish::compat::cfsetispeed, libc, data/packages/libc/src/unix/solarish, compat.rs, 37, 6
