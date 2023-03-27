@@ -1,16 +1,37 @@
 crate, fn_decl, callee, effect, dir, file, line, col
+caller_checked, caller_checked::local_effect, [METHOD]::as_ptr, [FFI call], data/test-packages/caller-checked/src, main.rs, 10, 27
+caller_checked, caller_checked::local_effect, core::ptr::null_mut, [FFI call], data/test-packages/caller-checked/src, main.rs, 12, 17
+caller_checked, caller_checked::local_effect, core::ptr::null_mut, [FFI call], data/test-packages/caller-checked/src, main.rs, 13, 17
+caller_checked, caller_checked::local_effect, core::ptr::null_mut, [FFI call], data/test-packages/caller-checked/src, main.rs, 14, 17
 caller_checked, caller_checked::local_effect, libc::sysctl, libc, data/test-packages/caller-checked/src, main.rs, 9, 14
 caller_checked, caller_checked::sub::effect, libc::sysconf, libc, data/test-packages/caller-checked/src, sub.rs, 6, 14
+caller_checked, caller_checked::sub::effect, core::ffi::CStr::from_bytes_with_nul, [FFI call], data/test-packages/caller-checked/src, sub.rs, 7, 35
+caller_checked, caller_checked::sub::effect, [METHOD]::unwrap, [FFI call], data/test-packages/caller-checked/src, sub.rs, 7, 76
+caller_checked, caller_checked::sub::effect, [METHOD]::as_ptr, [FFI call], data/test-packages/caller-checked/src, sub.rs, 9, 27
+caller_checked, caller_checked::sub::effect, core::ptr::null_mut, [FFI call], data/test-packages/caller-checked/src, sub.rs, 11, 17
+caller_checked, caller_checked::sub::effect, core::ptr::null_mut, [FFI call], data/test-packages/caller-checked/src, sub.rs, 12, 17
+caller_checked, caller_checked::sub::effect, core::ptr::null_mut, [FFI call], data/test-packages/caller-checked/src, sub.rs, 13, 17
 caller_checked, caller_checked::sub::effect, libc::sysctl, libc, data/test-packages/caller-checked/src, sub.rs, 8, 14
 libc_ex, libc_ex::main, libc::sysconf, libc, data/test-packages/libc-ex/src, main.rs, 6, 14
+libc_ex, libc_ex::main, core::ffi::CStr::from_bytes_with_nul, [FFI call], data/test-packages/libc-ex/src, main.rs, 7, 35
+libc_ex, libc_ex::main, [METHOD]::unwrap, [FFI call], data/test-packages/libc-ex/src, main.rs, 7, 76
+libc_ex, libc_ex::main, [METHOD]::as_ptr, [FFI call], data/test-packages/libc-ex/src, main.rs, 9, 27
+libc_ex, libc_ex::main, core::ptr::null_mut, [FFI call], data/test-packages/libc-ex/src, main.rs, 10, 17
+libc_ex, libc_ex::main, core::ptr::null_mut, [FFI call], data/test-packages/libc-ex/src, main.rs, 11, 17
+libc_ex, libc_ex::main, core::ptr::null_mut, [FFI call], data/test-packages/libc-ex/src, main.rs, 12, 17
 libc_ex, libc_ex::main, libc::sysctlbyname, libc, data/test-packages/libc-ex/src, main.rs, 8, 14
 num_cpus_minimal, num_cpus_minimal::get_num_cpus, libc::sysconf, libc, data/test-packages/num_cpus_minimal/src, main.rs, 13, 30
+num_cpus_minimal, num_cpus_minimal::get_num_physical_cpus, [METHOD]::as_ptr, [FFI call], data/test-packages/num_cpus_minimal/src, main.rs, 29, 24
+num_cpus_minimal, num_cpus_minimal::get_num_physical_cpus, std::ptr::null_mut, [FFI call], data/test-packages/num_cpus_minimal/src, main.rs, 32, 17
 num_cpus_minimal, num_cpus_minimal::get_num_physical_cpus, libc::sysctlbyname, libc, data/test-packages/num_cpus_minimal/src, main.rs, 28, 32
 permissions_ex, permissions_ex::remove, std::process::Command::new, std::process, data/test-packages/permissions-ex/src, lib.rs, 12, 13
 permissions_ex, permissions_ex::save_data, std::fs::write, std::fs, data/test-packages/permissions-ex/src, lib.rs, 17, 8
 permissions_ex, permissions_ex::prepare_data, std::fs::write, std::fs, data/test-packages/permissions-ex/src, lib.rs, 22, 12
+toy_crates, toy_crates::num_cpus::get_num_physical_cpus, [METHOD]::as_ptr, [FFI call], data/test-packages/toy-crates/src, num_cpus.rs, 19, 24
+toy_crates, toy_crates::num_cpus::get_num_physical_cpus, std::ptr::null_mut, [FFI call], data/test-packages/toy-crates/src, num_cpus.rs, 22, 17
 toy_crates, toy_crates::num_cpus::get_num_physical_cpus, libc::sysctlbyname, libc, data/test-packages/toy-crates/src, num_cpus.rs, 18, 14
 toy_crates, toy_crates::num_cpus::get_num_cpus, libc::sysconf, libc, data/test-packages/toy-crates/src, num_cpus.rs, 32, 30
 toy_crates, toy_crates::rustc_version::version_meta, std::env::var_os, std::env, data/test-packages/toy-crates/src, rustc_version.rs, 16, 19
 toy_crates, toy_crates::rustc_version::version_meta, std::process::Command::new, std::process, data/test-packages/toy-crates/src, rustc_version.rs, 17, 38
 toy_crates, toy_crates::url_client::ping_example_com, std::net::TcpListener::bind, std::net, data/test-packages/toy-crates/src, url_client.rs, 13, 32
+unsafe_test, unsafe_test::main, unsafe_test::my_unsafe_fn, [FFI call], data/test-packages/unsafe-test/src, main.rs, 24, 8

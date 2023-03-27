@@ -1,5 +1,6 @@
 ===== Patterns =====
 Total instances of each import pattern:
+[FFI call]: 7119
 hyper::client: 279
 tokio::io: 183
 winapi: 151
