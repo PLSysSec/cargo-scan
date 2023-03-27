@@ -37,10 +37,8 @@ RUSTC = ["rustc"]
 CARGO = ["cargo"]
 # Uncomment to enable debug checks
 SYN_FIND = ["./rust-src/target/debug/find_sinks"]
-SYN_CHECK = ["./rust-src/target/debug/check_policy"]
 # Uncomment for release mode
 # SYN_FIND = ["./rust-src/target/release/find_sinks"]
-# SYN_CHECK = ["./rust-src/target/release/check_policy"]
 
 CARGO_MIRAI = CARGO + ["mirai"]
 CARGO_DOWNLOAD = CARGO + ["download"]
@@ -48,7 +46,6 @@ CARGO_DOWNLOAD = CARGO + ["download"]
 check_installed(RUSTC)
 check_installed(CARGO)
 check_installed(SYN_FIND)
-check_installed(SYN_CHECK)
 check_installed(CARGO_MIRAI)
 check_installed(CARGO_DOWNLOAD, check_exit_code=False)
 
@@ -262,30 +259,6 @@ def scan_crate(crate, crate_dir, of_interest, add_args):
         eff = Effect(*line.split(", "))
         yield eff
 
-def scan_file_policy(crate, root, file, of_interest, add_args):
-    filepath = os.path.join(root, file)
-    logging.trace(f"Scanning file: {filepath}")
-
-    command = SYN_CHECK + [filepath] + add_args
-    logging.debug(f"Running: {command}")
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-    for line in iter(proc.stdout.readline, b""):
-        line = line.strip().decode("utf-8")
-        eff = Effect(*line.split(", "))
-        logging.trace(f"Effect found: {eff}")
-        if eff.pattern is None:
-            logging.warning(f"Effect not annotated with an effect pattern: {eff}")
-        yield eff
-
-def scan_crate_policy(crate, crate_dir, of_interest, add_args):
-    src = os.path.join(crate_dir, RUST_SRC)
-    for root, dirs, files in os.walk(src):
-        files.sort()
-        dirs.sort()
-        for file in files:
-            if os.path.splitext(file)[1] == ".rs":
-                yield from scan_file_policy(crate, root, file, of_interest, add_args)
-
 # ===== MIRAI backend =====
 
 def parse_mirai_call_line(line):
@@ -387,7 +360,6 @@ def main():
     parser.add_argument('-t', '--test-run', action="store_true", help=f"Test run: use existing crates in {TEST_CRATES_DIR} instead of downloading via cargo-download")
     parser.add_argument('-o', '--output-prefix', help="Output file prefix to save results")
     parser.add_argument('-m', '--mirai', action="store_true", help="Use the MIRAI backend instead of the source-code backend")
-    parser.add_argument('-p', '--policy', help="Policy file to check the output against (not supported by -m)")
     parser.add_argument('-g', '--call-graph', action="store_true", help="View the call graph as a .png (only works with -m; requires graphviz to be installed)")
     parser.add_argument('-s', '--std', action="store_true", help="Flag standard library imports only")
     parser.add_argument('-v', '--verbose', action="count", help="Verbosity level: v=err, vv=warning, vvv=info, vvvv=debug, vvvvv=trace (default: info)", default=0)
@@ -403,9 +375,6 @@ def main():
 
     if args.call_graph and not args.mirai:
         logging.warning("-g/--call-graph option ignored without -m/--mirai")
-    if args.mirai and args.policy:
-        logging.error("MIRAI backend (-m) does not yet support checking against a policy (-p)")
-        sys.exit(1)
 
     if args.test_run:
         logging.info("=== Test run ===")
@@ -431,10 +400,7 @@ def main():
         of_interest += OF_INTEREST_OTHER
 
     add_args = []
-    if args.policy is not None:
-        scan_fun = scan_crate_policy
-        add_args = [args.policy, OF_INTEREST_TXT]
-    elif args.mirai:
+    if args.mirai:
         scan_fun = scan_crate_mirai
     else:
         scan_fun = scan_crate
