@@ -35,10 +35,10 @@ CARGO = ["cargo"]
 CARGO_DOWNLOAD = CARGO + ["download"]
 
 # Uncomment to enable debug checks
-SYN_FIND = ["./rust-src/target/debug/find_sinks"]
+SYN_FIND = ["./target/debug/find_sinks"]
 # Uncomment for release mode
-# SYN_FIND = ["./rust-src/target/release/find_sinks"]
-SYN_CSV_HEADER = ["./rust-src/target/debug/csv_header"]
+# SYN_FIND = ["./target/release/find_sinks"]
+SYN_CSV_HEADER = ["./target/debug/csv_header"]
 
 check_installed(RUSTC)
 check_installed(CARGO)
