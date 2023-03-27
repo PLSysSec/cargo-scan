@@ -293,7 +293,6 @@ impl FnDec {
 pub enum BlockType {
     UnsafeBlock,
     UnsafeFn(Ident),
-    UnsafeImpl(Ident),
 }
 
 /// Type representing a *block* of zero or more dangerous effects.
@@ -330,15 +329,6 @@ impl EffectBlock {
         let block_type = BlockType::UnsafeFn(Ident::new_owned(fn_name));
         Self { src_loc, ffi_calls, block_type }
     }
-    pub fn new_unsafe_impl<S>(filepath: &FilePath, impl_span: &S, tr_name: String) -> Self
-    where
-        S: Spanned,
-    {
-        let src_loc = SrcLoc::from_span(filepath, impl_span);
-        let ffi_calls = Vec::new();
-        let block_type = BlockType::UnsafeImpl(Ident::new_owned(tr_name));
-        Self { src_loc, ffi_calls, block_type }
-    }
 
     pub fn get_src_loc(&self) -> &SrcLoc {
         &self.src_loc
@@ -348,8 +338,27 @@ impl EffectBlock {
     }
 }
 
-/// Unsafe trait declarations
-/// Since a trait declaration cannot itself have any unsafe code,
+/// Trait implementations
+/// Since an unsafe trait impl cannot itself have any unsafe code,
+/// we do not consider it to be an effect block.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct TraitImpl {
+    src_loc: SrcLoc,
+    tr_name: Ident,
+}
+impl TraitImpl {
+    pub fn new<S>(impl_span: &S, filepath: &FilePath, tr_name: String) -> Self
+    where
+        S: Spanned,
+    {
+        let src_loc = SrcLoc::from_span(filepath, impl_span);
+        let tr_name = Ident::new_owned(tr_name);
+        Self { src_loc, tr_name }
+    }
+}
+
+/// Trait declarations
+/// Since an unsafe trait declaration cannot itself have any unsafe code,
 /// we do not consider it to be an effect block.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct TraitDec {

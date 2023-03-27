@@ -2,7 +2,9 @@
     Scanner to parse a Rust source file and find all function call locations.
 */
 
-use super::effect::{EffectBlock, EffectInstance, FFICall, FnDec, SrcLoc, TraitDec};
+use super::effect::{
+    EffectBlock, EffectInstance, FFICall, FnDec, SrcLoc, TraitDec, TraitImpl,
+};
 use super::ident;
 use super::util::infer;
 
@@ -20,13 +22,10 @@ use walkdir::WalkDir;
 #[derive(Debug)]
 pub struct ScanResults {
     pub effects: Vec<EffectInstance>,
-
-    pub unsafe_blocks: Vec<EffectBlock>,
-    pub unsafe_decls: Vec<EffectBlock>,
-    pub unsafe_impls: Vec<EffectBlock>,
+    pub effect_blocks: Vec<EffectBlock>,
 
     pub unsafe_traits: Vec<TraitDec>,
-    pub ffi_calls: Vec<FFICall>,
+    pub unsafe_impls: Vec<TraitImpl>,
 
     pub fn_locs: HashMap<ident::Path, SrcLoc>,
 
@@ -38,11 +37,9 @@ impl ScanResults {
     fn new() -> Self {
         ScanResults {
             effects: Vec::new(),
-            unsafe_blocks: Vec::new(),
-            unsafe_decls: Vec::new(),
-            unsafe_impls: Vec::new(),
+            effect_blocks: Vec::new(),
             unsafe_traits: Vec::new(),
-            ffi_calls: Vec::new(),
+            unsafe_impls: Vec::new(),
             fn_locs: HashMap::new(),
             skipped_macros: 0,
             skipped_fn_calls: 0,
@@ -52,22 +49,18 @@ impl ScanResults {
     fn combine_results(&mut self, other: &mut Self) {
         let ScanResults {
             effects: o_effects,
-            unsafe_blocks: o_unsafe_blocks,
-            unsafe_decls: o_unsafe_decls,
-            unsafe_impls: o_unsafe_impls,
+            effect_blocks: o_effect_blocks,
             unsafe_traits: o_unsafe_traits,
-            ffi_calls: o_ffi_calls,
+            unsafe_impls: o_unsafe_impls,
             fn_locs: o_fn_locs,
             skipped_macros: o_skipped_macros,
             skipped_fn_calls: o_skipped_fn_calls,
         } = other;
 
         self.effects.append(o_effects);
-        self.unsafe_blocks.append(o_unsafe_blocks);
-        self.unsafe_decls.append(o_unsafe_decls);
-        self.unsafe_impls.append(o_unsafe_impls);
+        self.effect_blocks.append(o_effect_blocks);
         self.unsafe_traits.append(o_unsafe_traits);
-        self.ffi_calls.append(o_ffi_calls);
+        self.unsafe_impls.append(o_unsafe_impls);
         self.fn_locs.extend(o_fn_locs.drain());
         self.skipped_macros += *o_skipped_macros;
         self.skipped_fn_calls += *o_skipped_fn_calls;
@@ -104,10 +97,9 @@ pub struct Scanner<'a> {
     filepath: &'a Path,
     // output
     effects: Vec<EffectInstance>,
-    unsafe_blocks: Vec<EffectBlock>,
-    unsafe_decls: Vec<EffectBlock>,
-    unsafe_impls: Vec<EffectBlock>,
+    effect_blocks: Vec<EffectBlock>,
     unsafe_traits: Vec<TraitDec>,
+    unsafe_impls: Vec<TraitImpl>,
     ffi_decls: HashMap<String, &'a syn::Ident>,
     ffi_calls: Vec<FFICall>,
     fn_decls: Vec<FnDec>,
@@ -134,11 +126,10 @@ impl<'a> Scanner<'a> {
         Self {
             filepath,
             effects: Vec::new(),
+            effect_blocks: Vec::new(),
             ffi_calls: Vec::new(),
-            ffi_decls: HashMap::new(),
-            unsafe_blocks: Vec::new(),
-            unsafe_decls: Vec::new(),
             unsafe_impls: Vec::new(),
+            ffi_decls: HashMap::new(),
             unsafe_traits: Vec::new(),
             fn_decls: Vec::new(),
             scope_mods: Vec::new(),
@@ -155,11 +146,9 @@ impl<'a> Scanner<'a> {
     pub fn get_results(self) -> ScanResults {
         ScanResults {
             effects: self.effects,
-            ffi_calls: self.ffi_calls,
-            unsafe_blocks: self.unsafe_blocks,
-            unsafe_decls: self.unsafe_decls,
-            unsafe_impls: self.unsafe_impls,
+            effect_blocks: self.effect_blocks,
             unsafe_traits: self.unsafe_traits,
+            unsafe_impls: self.unsafe_impls,
             fn_locs: self
                 .fn_decls
                 .into_iter()
@@ -373,11 +362,7 @@ impl<'a> Scanner<'a> {
             // we found an `unsafe impl` declaration
             if let Some((_, tr, _)) = &imp.trait_ {
                 let tr_name = tr.segments[0].ident.to_string();
-                self.unsafe_impls.push(EffectBlock::new_unsafe_impl(
-                    self.filepath,
-                    imp,
-                    tr_name,
-                ));
+                self.unsafe_impls.push(TraitImpl::new(imp, self.filepath, tr_name));
             }
         }
 
@@ -465,7 +450,7 @@ impl<'a> Scanner<'a> {
         let f_unsafety: &Option<syn::token::Unsafe> = &f.sig.unsafety;
         if f_unsafety.is_some() {
             // we found an `unsafe fn` declaration
-            self.unsafe_decls.push(EffectBlock::new_unsafe_fn(
+            self.effect_blocks.push(EffectBlock::new_unsafe_fn(
                 self.filepath,
                 f,
                 f_name.to_string(),
@@ -684,7 +669,7 @@ impl<'a> Scanner<'a> {
                 // Add code here to gather unsafe blocks.
                 let unsafe_block = &x.block;
                 self.scope_blocks.push(unsafe_block);
-                self.unsafe_blocks
+                self.effect_blocks
                     .push(EffectBlock::new_unsafe_block(self.filepath, unsafe_block));
                 for s in &x.block.stmts {
                     self.scan_fn_statement(s);
@@ -770,7 +755,7 @@ impl<'a> Scanner<'a> {
         if let Some(b) = self.scope_blocks.last_mut() {
             let cur_block_loc = SrcLoc::from_span(self.filepath, b);
 
-            for b in &mut self.unsafe_blocks {
+            for b in &mut self.effect_blocks {
                 let src_loc = b.get_src_loc();
                 if cur_block_loc == *src_loc {
                     b.add_ffi_call(FFICall::clone(ffi_call));

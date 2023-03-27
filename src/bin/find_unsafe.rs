@@ -21,17 +21,10 @@ fn main() -> Result<()> {
 
     let results = scanner::scan_crate(&args.crate_path)?;
 
-    if !results.unsafe_blocks.is_empty() {
-        println!("=== Unsafe blocks ===");
-        for bl_decl in results.unsafe_blocks {
+    if !results.effect_blocks.is_empty() {
+        println!("=== Unsafe effect blocks ===");
+        for bl_decl in results.effect_blocks {
             println!("{:?}", bl_decl);
-        }
-    }
-
-    if !results.unsafe_decls.is_empty() {
-        println!("=== Unsafe fn declarations ===");
-        for fn_decl in results.unsafe_decls {
-            println!("{:?}", fn_decl);
         }
     }
 
@@ -46,13 +39,6 @@ fn main() -> Result<()> {
         println!("=== Unsafe trait impls ===");
         for impl_decl in results.unsafe_impls {
             println!("{:?}", impl_decl);
-        }
-    }
-
-    if !results.ffi_calls.is_empty() {
-        println!("=== FFI Calls ===");
-        for ffi_call in results.ffi_calls {
-            println!("{:?}", ffi_call);
         }
     }
 
