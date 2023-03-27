@@ -10,16 +10,13 @@ import argparse
 import csv
 import logging
 import os
-import re
 import subprocess
 import sys
-from dataclasses import dataclass
 from functools import partial, partialmethod
 
 # ===== Check requirements =====
 
-# requires v3.7 for dataclasses
-MIN_PYTHON = (3, 7)
+MIN_PYTHON = (3, 0)
 if sys.version_info < MIN_PYTHON:
     version = f"{MIN_PYTHON[0]}.{MIN_PYTHON[1]}"
     found = f"{sys.version_info.major}.{sys.version_info.minor}"
@@ -41,6 +38,7 @@ CARGO_DOWNLOAD = CARGO + ["download"]
 SYN_FIND = ["./rust-src/target/debug/find_sinks"]
 # Uncomment for release mode
 # SYN_FIND = ["./rust-src/target/release/find_sinks"]
+SYN_CSV_HEADER = ["./rust-src/target/debug/csv_header"]
 
 check_installed(RUSTC)
 check_installed(CARGO)
@@ -120,50 +118,6 @@ def truncate_str(s, n):
     else:
         return s[:(n-3)] + "..."
 
-# ===== CSV output for effects =====
-
-def sanitize_comma(s):
-    if "," in s:
-        logging.warning(f"found unexpected comma in: {s}")
-    return s.replace(',', '')
-
-@dataclass
-class Effect:
-    """
-    Data related to an effect
-    Mirrors rust-src/src/effect.rs
-    """
-    # Name of crate, e.g. num_cpus
-    crate: str
-    # Full path to caller function, e.g. num_cpus::linux::logical_cpus
-    caller: str
-    # Callee (effect) function, e.g. libc::sched_getaffinity
-    callee: str
-    # Effect pattern -- prefix of callee (effect), e.g. libc
-    pattern: str
-    # Directory in which the call occurs
-    dir: str
-    # File in which the call occurs -- in the above directory
-    file: str
-    # Loc in which the call occurs -- in the above file
-    line: int
-    col: int
-
-    def csv_header():
-        return ", ".join(["crate", "caller", "callee", "pattern", "dir", "file", "line, col"])
-
-    def to_csv(self):
-        crate = sanitize_comma(self.crate)
-        caller = sanitize_comma(self.caller)
-        callee = sanitize_comma(self.callee)
-        pattern = sanitize_comma(self.pattern)
-        dir = sanitize_comma(self.dir)
-        file = sanitize_comma(self.file)
-        line = str(self.line)
-        col = str(self.col)
-
-        return ", ".join([crate, caller, callee, pattern, dir, file, line, col])
-
 # ===== Crate lists and cargo download =====
 
 def count_lines(cratefile, header_row=True):
@@ -225,27 +179,29 @@ def make_crate_summary(crate_summary):
 
     return result
 
-def is_of_interest(line, of_interest):
-    found = None
-    for p in of_interest:
-        if re.search(p, line):
-            if found is not None:
-                logging.warning(f"Matched multiple patterns of interest: {line}")
-            found = p
-    return found
-
 # ===== Syn backend =====
+
+def get_effect_csv_header():
+    logging.debug(f"Getting effect CSV header")
+    command = SYN_CSV_HEADER
+    logging.debug(f"Running: {command}")
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+    results = []
+    for line in iter(proc.stdout.readline, b""):
+        results.append(line.strip().decode("utf-8"))
+    if len(results) != 1:
+        logging.error(f"Expected only a single-line CSV header! {results}")
+    return results[0]
 
 def scan_crate(crate, crate_dir, of_interest, add_args):
     logging.debug(f"Scanning crate: {crate}")
-
     command = SYN_FIND + [crate_dir] + add_args
     logging.debug(f"Running: {command}")
     proc = subprocess.Popen(command, stdout=subprocess.PIPE)
     for line in iter(proc.stdout.readline, b""):
-        line = line.strip().decode("utf-8")
-        eff = Effect(*line.split(", "))
-        yield eff
+        effect_csv = line.strip().decode("utf-8")
+        effect_pat = effect_csv.split(", ")[3]
+        yield effect_pat, effect_csv
 
 # ===== Entrypoint =====
 
@@ -313,13 +269,15 @@ def main():
             sys.exit(1)
 
         crate_dir = os.path.join(crates_dir, crate)
-        for effect in scan_crate(crate, crate_dir, of_interest, add_args):
-            logging.debug(f"effect found: {effect.to_csv()}")
-            results.append(effect)
+        for eff_pat, eff_csv in scan_crate(crate, crate_dir, of_interest, add_args):
+            logging.debug(f"effect found: {eff_csv}")
+            results.append(eff_csv)
             # Update summaries
             crate_summary[crate] += 1
-            pattern_summary.setdefault(effect.pattern, 0)
-            pattern_summary[effect.pattern] += 1
+            pattern_summary.setdefault(eff_pat, 0)
+            pattern_summary[eff_pat] += 1
+
+    effect_csv_header = get_effect_csv_header()
 
     # Sanity check
     if sum(crate_summary.values()) != sum(pattern_summary.values()):
@@ -329,11 +287,8 @@ def main():
 
     if args.output_prefix is None:
         if num_crates == 1:
-            results_str = "===== All results =====\n"
-            for result in results:
-                results_str += result.to_csv()
-                results_str += '\n'
-            logging.info(results_str.rstrip())
+            results_str = "===== All results =====\n" + '\n'.join(results)
+            logging.info(results_str)
 
         else:
             logging.info(make_pattern_summary(pattern_summary).rstrip())
@@ -352,9 +307,9 @@ def main():
 
         logging.info(f"Saving all results to {results_path}")
         with open(results_path, 'w') as fh:
-            fh.write(Effect.csv_header() + '\n')
-            for effect in results:
-                fh.write(effect.to_csv() + '\n')
+            fh.write(effect_csv_header + '\n')
+            for eff_csv in results:
+                fh.write(eff_csv + '\n')
 
         logging.info(f"Saving pattern totals to {pattern_path}")
         with open(pattern_path, 'w') as fh:
