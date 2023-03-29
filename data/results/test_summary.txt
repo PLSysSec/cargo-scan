@@ -5,7 +5,7 @@ libc-ex: 8
 toy-crates: 7
 num_cpus_minimal: 4
 permissions-ex: 3
-unsafe-test: 1
+unsafe-test: 2
 ===== Crate Totals =====
 6 crates with 1 or more dangerous imports
 4 crates with 0 dangerous imports
