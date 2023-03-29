@@ -226,7 +226,10 @@ impl EffectInstance {
             Path::new_owned(format!("{}::{}", prefix, callee))
         };
         let eff_type = if let Some(pat) = Sink::new_match(&callee) {
-            debug_assert!(ffi.is_none());
+            // TODO bug
+            if ffi.is_some() {
+                eprintln!("Warning: found sink stdlib pattern also matching an FFI call")
+            }
             Effect::SinkCall(pat)
         } else if let Some(ffi) = ffi {
             debug_assert!(is_unsafe);

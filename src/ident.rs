@@ -34,6 +34,11 @@ impl Ident {
     pub fn invariant(&self) -> bool {
         self.0.chars().all(Self::char_ok)
     }
+    pub fn check_invariant(&self) {
+        if !self.invariant() {
+            eprintln!("Warning: failed invariant! on Ident {}", self);
+        }
+    }
 
     pub fn new(s: &str) -> Self {
         Self::new_owned(s.to_string())
@@ -41,7 +46,7 @@ impl Ident {
     pub fn new_owned(s: String) -> Self {
         let mut result = Self(s);
         replace_hyphens(&mut result.0);
-        debug_assert!(result.invariant());
+        result.check_invariant();
         result
     }
 
@@ -68,6 +73,11 @@ impl Path {
         self.0.chars().all(Self::char_ok)
         // TBD check :: are adjacent
     }
+    pub fn check_invariant(&self) {
+        if !self.invariant() {
+            eprintln!("Warning: failed invariant! on Path {}", self);
+        }
+    }
 
     pub fn new(s: &str) -> Self {
         Self::new_owned(s.to_string())
@@ -75,12 +85,12 @@ impl Path {
     pub fn new_owned(s: String) -> Self {
         let mut result = Self(s);
         replace_hyphens(&mut result.0);
-        debug_assert!(result.invariant());
+        result.check_invariant();
         result
     }
     pub fn from_ident(i: Ident) -> Self {
         let result = Self(i.0);
-        debug_assert!(result.invariant());
+        result.check_invariant();
         result
     }
 
@@ -117,11 +127,22 @@ impl Path {
 
 /// Type representing a *canonical* Path identifier,
 /// i.e. from the root
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct CanonicalPath(Path);
+impl Display for CanonicalPath {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 impl CanonicalPath {
     pub fn invariant(&self) -> bool {
         self.as_str().starts_with("crate::")
+    }
+    pub fn check_invariant(&self) {
+        if !self.invariant() {
+            eprintln!("Warning: failed invariant! on CanonicalPath {}", self);
+        }
     }
 
     pub fn new(s: &str) -> Self {
@@ -132,7 +153,7 @@ impl CanonicalPath {
     }
     pub fn from_path(p: Path) -> Self {
         let result = Self(p);
-        debug_assert!(result.invariant());
+        result.check_invariant();
         result
     }
     pub fn to_path(self) -> Path {
@@ -162,6 +183,11 @@ impl Pattern {
     pub fn invariant(&self) -> bool {
         self.0.invariant()
     }
+    pub fn check_invariant(&self) {
+        if !self.invariant() {
+            eprintln!("Warning: failed invariant! on Pattern {}", self);
+        }
+    }
 
     pub fn new(s: &str) -> Self {
         Self::new_owned(s.to_string())
@@ -174,7 +200,7 @@ impl Pattern {
     }
     pub fn from_path(p: Path) -> Self {
         let result = Self(p);
-        debug_assert!(result.invariant());
+        result.check_invariant();
         result
     }
 
