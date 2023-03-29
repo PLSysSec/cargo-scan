@@ -1,22 +1,23 @@
 ===== Patterns =====
 Total instances of each import pattern:
-[FFI call]: 7119
+[Unsafe]: 7376
 hyper::client: 279
-tokio::io: 183
-winapi: 151
-libc: 136
+tokio::io: 184
+socket2: 158
+winapi: 153
+libc: 139
 tokio::fs: 130
 tokio::net: 122
 tokio::process: 75
 std::env: 73
-std::fs: 50
-std::net: 45
+std::net: 65
+std::fs: 51
 std::path: 39
 std::process: 35
 hyper::server: 32
 std::os: 28
 mio::net: 25
+[FFI]: 21
 mio::unix: 9
 tokio_util::udp: 9
-socket2: 9
 tokio_util::net: 4
