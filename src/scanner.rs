@@ -378,6 +378,11 @@ impl<'a> Scanner<'a> {
         format!("{}::{}", filename, path_str)
     }
 
+    fn is_ffi(&self, _ffi: &str) -> bool {
+        // TBD
+        false
+    }
+
     /*
         Trait declarations
     */
@@ -780,23 +785,25 @@ impl<'a> Scanner<'a> {
         let caller_name =
             self.get_fun_scope().expect("push_callsite called outside of a function!");
 
-        let eff = EffectInstance::new_call(
+        if let Some(eff) = EffectInstance::new_call(
             self.filepath,
             &mod_scope,
             caller_name,
-            callee_path,
+            callee_path.clone(),
             &callee_span,
             self.scope_unsafe > 0,
-        );
-        if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
-            effect_block.push_effect(eff.clone())
-        } else {
-            self.syn_warning(
-                "Unexpected function call site found outside an effect block",
-                callee_span,
-            );
+            self.is_ffi(&callee_path),
+        ) {
+            if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
+                effect_block.push_effect(eff.clone())
+            } else {
+                self.syn_warning(
+                    "Unexpected function call site found outside an effect block",
+                    callee_span,
+                );
+            }
+            self.effects.push(eff);
         }
-        self.effects.push(eff);
     }
 
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {

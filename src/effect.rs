@@ -151,36 +151,33 @@ impl FFICall {
 }
 
 /// Type representing a single effect.
-/// For us, this can be any function call to some dangerous function.
+/// For us, this can be any function call to some dangerous function:
+/// - a sink pattern in the standard library
+/// - an FFI call
+/// - an unsafe operation such as a pointer dereference
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Effect {
     /// Function call (callee path) matching a sink pattern
     SinkCall(Sink),
     /// FFI call
     FFICall,
-    /// Other call (callee path), not matching any sink pattern
-    OtherCall,
+    /// Unsafe operation, e.g. pointer deref
+    /// see: https://doc.rust-lang.org/nomicon/what-unsafe-does.html
+    UnsafeOp,
 }
 impl Effect {
     fn sink_pattern(&self) -> Option<&Sink> {
         match self {
             Self::SinkCall(s) => Some(s),
             Self::FFICall => None,
-            Self::OtherCall => None,
-        }
-    }
-    fn is_sink(&self) -> bool {
-        match self {
-            Self::SinkCall(_) => true,
-            Self::FFICall => true,
-            Self::OtherCall => false,
+            Self::UnsafeOp => None,
         }
     }
     fn simple_str(&self) -> &str {
         match self {
             Self::SinkCall(s) => s.as_str(),
-            Self::FFICall => "[FFI call]",
-            Self::OtherCall => "[none]",
+            Self::FFICall => "[FFI]",
+            Self::UnsafeOp => "[Unsafe]",
         }
     }
     fn to_csv(&self) -> String {
@@ -214,7 +211,8 @@ impl EffectInstance {
         callee: String,
         callsite: &S,
         is_unsafe: bool,
-    ) -> Self
+        is_ffi: bool,
+    ) -> Option<Self>
     where
         S: Spanned,
     {
@@ -228,16 +226,18 @@ impl EffectInstance {
             Path::new_owned(format!("{}::{}", prefix, callee))
         };
         let eff_type = if let Some(pat) = Sink::new_match(&callee) {
+            debug_assert!(!is_ffi);
             Effect::SinkCall(pat)
-        } else if is_unsafe {
-            // TODO: right now we conservatively mark any function inside
-            // an unsafe block as an FFI call
+        } else if is_ffi {
+            debug_assert!(is_unsafe);
             Effect::FFICall
+        } else if is_unsafe {
+            Effect::UnsafeOp
         } else {
-            Effect::OtherCall
+            return None;
         };
         let call_loc = SrcLoc::from_span(filepath, callsite);
-        Self { caller_loc, call_loc, callee, eff_type }
+        Some(Self { caller_loc, call_loc, callee, eff_type })
     }
 
     pub fn caller(&self) -> &Path {
@@ -277,8 +277,8 @@ impl EffectInstance {
         self.eff_type == Effect::FFICall
     }
 
-    pub fn is_sink(&self) -> bool {
-        self.eff_type.is_sink()
+    pub fn is_unsafe_op(&self) -> bool {
+        self.eff_type == Effect::UnsafeOp
     }
 
     pub fn call_loc(&self) -> &SrcLoc {

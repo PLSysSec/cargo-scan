@@ -26,11 +26,7 @@ fn main() -> Result<()> {
     let results = scanner::scan_crate(&args.crate_path)?;
 
     for effect in results.effects {
-        if effect.is_sink() {
-            println!("{}", effect.to_csv());
-        } else if args.verbose {
-            eprintln!("Skipping: {}", effect.to_csv());
-        }
+        println!("{}", effect.to_csv());
     }
 
     if args.verbose {
