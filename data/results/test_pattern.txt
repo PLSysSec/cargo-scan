@@ -1,11 +1,12 @@
 ===== Patterns =====
 Total instances of each import pattern:
-[FFI call]: 22
+[Unsafe]: 21
 libc: 9
 std::fs: 2
 std::process: 2
 std::env: 1
 std::net: 1
+[FFI]: 1
 std::os: 0
 std::path: 0
 winapi: 0
