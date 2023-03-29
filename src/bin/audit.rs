@@ -240,8 +240,6 @@ fn print_effect_src(
     let file_id = files.add(format!("{}", effect_loc.file().display()), src_contents);
 
     // construct the codespan diagnostic
-    // TODO: make this a better effect message
-    // TODO: Don't display "Error" at the start of the message
     let mut diag_string = "effects: ".to_string();
     for e in effect_origin.effects().iter().map(|e| match e.eff_type() {
         Effect::SinkCall(sink) => format!("sink - {}", sink),
@@ -250,12 +248,10 @@ fn print_effect_src(
     }) {
         diag_string.push_str(&format!("{}\n", e));
     }
-    let diag = Diagnostic::error()
-        .with_message(format!("effect: {:?}", diag_string))
-        .with_labels(vec![
-            Label::primary(file_id, effect_start..effect_end),
-            Label::secondary(file_id, surrounding_start..surrounding_end),
-        ]);
+    let diag = Diagnostic::error().with_message(diag_string).with_labels(vec![
+        Label::primary(file_id, effect_start..effect_end),
+        Label::secondary(file_id, surrounding_start..surrounding_end),
+    ]);
 
     let writer = StandardStream::stderr(ColorChoice::Always);
     let config = codespan_reporting::term::Config::default();
