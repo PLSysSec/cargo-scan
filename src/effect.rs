@@ -190,6 +190,7 @@ impl Effect {
 /// it does not include cases for EffectBlocks, which are tracked separately.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EffectInstance {
+    // TODO: Fold caller_loc and call_loc into EffectBlock
     /// Path to the caller function or module scope (Rust path::to::fun)
     caller_loc: ModPathLoc,
     /// Location of call or other effect (Directory, file, line)
@@ -272,6 +273,10 @@ impl EffectInstance {
         format!("{}, {}, {}, {}", caller_loc_csv, callee, effect, call_loc_csv)
     }
 
+    pub fn eff_type(&self) -> &Effect {
+        &self.eff_type
+    }
+
     pub fn pattern(&self) -> Option<&Sink> {
         self.eff_type.sink_pattern()
     }
@@ -322,6 +327,8 @@ impl FnDec {
 /// pointer derefs etc.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EffectBlock {
+    // TODO: Include the span in the EffectBlock
+    // TODO: Include the ident of the enclosing function
     src_loc: SrcLoc,
     block_type: BlockType,
     effects: Vec<EffectInstance>,
@@ -361,11 +368,15 @@ impl EffectBlock {
         Self { src_loc, block_type, effects }
     }
 
-    pub fn get_src_loc(&self) -> &SrcLoc {
+    pub fn src_loc(&self) -> &SrcLoc {
         &self.src_loc
     }
     pub fn push_effect(&mut self, effect: EffectInstance) {
         self.effects.push(effect);
+    }
+
+    pub fn effects(&self) -> &Vec<EffectInstance> {
+        &self.effects
     }
 }
 

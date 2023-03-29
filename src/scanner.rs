@@ -64,8 +64,12 @@ impl ScanResults {
         self.skipped_fn_calls += *o_skipped_fn_calls;
     }
 
-    pub fn get_dangerous_effects(&self) -> HashSet<&EffectInstance> {
+    pub fn dangerous_effects(&self) -> HashSet<&EffectInstance> {
         self.effects.iter().filter(|x| x.pattern().is_some()).collect::<HashSet<_>>()
+    }
+
+    pub fn effect_blocks_set(&self) -> HashSet<&EffectBlock> {
+        self.effect_blocks.iter().collect::<HashSet<_>>()
     }
 
     pub fn get_callers<'a>(
@@ -84,9 +88,6 @@ impl ScanResults {
         callers
     }
 }
-
-// TODO: Make this a trait so we have a uniform interface between cargo-scan
-//       the mirai tool
 
 /// Stateful object to scan Rust source code for effects (fn calls of interest)
 #[derive(Debug)]
