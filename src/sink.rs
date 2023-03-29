@@ -6,6 +6,7 @@
 use super::ident::{Path, Pattern};
 
 use serde::{Deserialize, Serialize};
+use std::fmt::{self, Display};
 
 /// Hard-coded list of sink patterns
 const SINK_PATTERNS: &[&str] = &[
@@ -32,6 +33,13 @@ const SINK_PATTERNS: &[&str] = &[
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Sink(Pattern);
+
+impl Display for Sink {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 impl Sink {
     /// Get the sink pattern matching a callee.
     /// This uses the hardcoded list of sink patterns in SINK_PATTERNS.
