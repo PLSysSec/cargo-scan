@@ -98,7 +98,9 @@ pub struct Scanner<'a> {
     effect_blocks: Vec<EffectBlock>,
     unsafe_traits: Vec<TraitDec>,
     unsafe_impls: Vec<TraitImpl>,
+    // Saved function declarations
     fn_decls: Vec<FnDec>,
+    ffi_decls: HashMap<String, &'a syn::Ident>,
     // stack-based scopes for parsing (always empty at top-level)
     scope_mods: Vec<&'a syn::Ident>,
     scope_use: Vec<&'a syn::Ident>,
@@ -129,6 +131,7 @@ impl<'a> Scanner<'a> {
             unsafe_impls: Vec::new(),
             unsafe_traits: Vec::new(),
             fn_decls: Vec::new(),
+            ffi_decls: HashMap::new(),
             scope_mods: Vec::new(),
             scope_use: Vec::new(),
             scope_fun: Vec::new(),
@@ -259,10 +262,9 @@ impl<'a> Scanner<'a> {
         // https://docs.rs/syn/latest/syn/enum.ForeignItem.html
     }
 
-    fn scan_foreign_fn(&mut self, _f: &'a syn::ForeignItemFn) {
-        // TBD
-        // let fn_name = &f.sig.ident;
-        // self.ffi_decls.insert(fn_name.to_string(), fn_name);
+    fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn) {
+        let fn_name = &f.sig.ident;
+        self.ffi_decls.insert(fn_name.to_string(), fn_name);
     }
 
     /*
@@ -378,9 +380,9 @@ impl<'a> Scanner<'a> {
         format!("{}::{}", filename, path_str)
     }
 
-    fn is_ffi(&self, _ffi: &str) -> bool {
+    fn lookup_ffi(&self, ffi: &str) -> Option<ident::Path> {
         // TBD
-        false
+        self.ffi_decls.get(ffi).map(|x| ident::Path::new_owned(x.to_string()))
     }
 
     /*
@@ -792,7 +794,7 @@ impl<'a> Scanner<'a> {
             callee_path.clone(),
             &callee_span,
             self.scope_unsafe > 0,
-            self.is_ffi(&callee_path),
+            self.lookup_ffi(&callee_path),
         ) {
             if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
                 effect_block.push_effect(eff.clone())

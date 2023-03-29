@@ -160,7 +160,7 @@ pub enum Effect {
     /// Function call (callee path) matching a sink pattern
     SinkCall(Sink),
     /// FFI call
-    FFICall,
+    FFICall(Path),
     /// Unsafe operation, e.g. pointer deref
     /// see: https://doc.rust-lang.org/nomicon/what-unsafe-does.html
     UnsafeOp,
@@ -169,14 +169,14 @@ impl Effect {
     fn sink_pattern(&self) -> Option<&Sink> {
         match self {
             Self::SinkCall(s) => Some(s),
-            Self::FFICall => None,
+            Self::FFICall(_) => None,
             Self::UnsafeOp => None,
         }
     }
     fn simple_str(&self) -> &str {
         match self {
             Self::SinkCall(s) => s.as_str(),
-            Self::FFICall => "[FFI]",
+            Self::FFICall(_) => "[FFI]",
             Self::UnsafeOp => "[Unsafe]",
         }
     }
@@ -211,7 +211,7 @@ impl EffectInstance {
         callee: String,
         callsite: &S,
         is_unsafe: bool,
-        is_ffi: bool,
+        ffi: Option<Path>,
     ) -> Option<Self>
     where
         S: Spanned,
@@ -226,11 +226,11 @@ impl EffectInstance {
             Path::new_owned(format!("{}::{}", prefix, callee))
         };
         let eff_type = if let Some(pat) = Sink::new_match(&callee) {
-            debug_assert!(!is_ffi);
+            debug_assert!(ffi.is_none());
             Effect::SinkCall(pat)
-        } else if is_ffi {
+        } else if let Some(ffi) = ffi {
             debug_assert!(is_unsafe);
-            Effect::FFICall
+            Effect::FFICall(ffi)
         } else if is_unsafe {
             Effect::UnsafeOp
         } else {
@@ -274,7 +274,7 @@ impl EffectInstance {
     }
 
     pub fn is_ffi(&self) -> bool {
-        self.eff_type == Effect::FFICall
+        matches!(self.eff_type, Effect::FFICall(_))
     }
 
     pub fn is_unsafe_op(&self) -> bool {
