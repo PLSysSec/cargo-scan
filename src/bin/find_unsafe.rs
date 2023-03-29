@@ -1,6 +1,8 @@
 /*
-    Parse a Rust source file and find all instances of unsafe
-    code or FFI calls, printing them to stdout.
+    Parse a Rust source file and print out unsafe blocks:
+    - effect blocks
+    - unsafe trait definitions
+    - unsafe trait implementations
 */
 
 use cargo_scan::scanner;

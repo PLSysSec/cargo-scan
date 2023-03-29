@@ -1,7 +1,9 @@
 /*
-    Parse a Rust source file and find all function calls
-    which are of interest according to sinks.rs,
+    Parse a Rust source file and find all potentially dangerous effects,
     printing them to stdout (one per line).
+
+    Effects are printed in a CSV format -- run --bin csv_header to get
+    the header or see effect.rs.
 */
 
 use cargo_scan::scanner;
