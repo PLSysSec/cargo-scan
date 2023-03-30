@@ -220,20 +220,19 @@ fn print_effect_src(
 
     // calculate the byte ranges for the effect
     // TODO: Off by 1? Might have to change in the effect calculation.
-    // TODO: Highlight the entire expression as the main error if it's multi-line
-    //       and update the surrounding lines correspondingly
-    let effect_line = effect_loc.start_line() - 1;
+    let start_effect_line = effect_loc.start_line() - 1;
+    let end_effect_line = effect_loc.end_line() - 1;
     let bounded_start_line =
-        std::cmp::max(effect_line - config.lines_before_effect as usize, 0);
+        std::cmp::max(start_effect_line - config.lines_before_effect as usize, 0);
     let bounded_end_line = std::cmp::min(
-        effect_line - config.lines_after_effect as usize,
+        end_effect_line - config.lines_after_effect as usize,
         src_linenum_ranges.len(),
     );
 
     let surrounding_start = src_linenum_ranges.get(&bounded_start_line).unwrap().0;
     let surrounding_end = src_linenum_ranges.get(&bounded_end_line).unwrap().1;
-    let effect_start = src_linenum_ranges.get(&effect_line).unwrap().0;
-    let effect_end = src_linenum_ranges.get(&effect_line).unwrap().1;
+    let effect_start = src_linenum_ranges.get(&start_effect_line).unwrap().0;
+    let effect_end = src_linenum_ranges.get(&end_effect_line).unwrap().1;
 
     // TODO: cache files?
     let mut files = SimpleFiles::new();
