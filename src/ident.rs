@@ -2,7 +2,8 @@
     Rust identifiers, paths, and patterns
 
     Ident: std, fs, File
-    Path: std::fs::File
+    Path: std, std::fs, fs::File, super::fs::File, std::fs::File
+    CanonicalPath: crate::fs::File
     Pattern: std::fs, std::fs::*
 */
 
@@ -12,9 +13,23 @@ use std::fmt::{self, Display};
 use super::util::iter::FreshIter;
 
 fn replace_hyphens(s: &mut String) {
-    // TODO: replace with more efficient in-place implementation
-    let s_new = s.replace('-', "_");
-    *s = s_new;
+    while let Some(i) = s.find('-') {
+        s.replace_range(i..(i + 1), "_");
+    }
+}
+
+#[test]
+fn test_replace_hyphens() {
+    let mut s1 = "abcd_efgh_ijkl".to_string();
+    let mut s2 = "abcd-efgh_ijkl".to_string();
+    let mut s3 = "abcd-efgh-ijkl".to_string();
+    let s = s1.clone();
+    replace_hyphens(&mut s1);
+    replace_hyphens(&mut s2);
+    replace_hyphens(&mut s3);
+    assert_eq!(s1, s);
+    assert_eq!(s2, s);
+    assert_eq!(s3, s);
 }
 
 /// An Rust name identifier, without colons
@@ -31,9 +46,11 @@ impl Ident {
     fn char_ok(c: char) -> bool {
         c.is_ascii_alphanumeric() || c == '_' || c == '[' || c == ']'
     }
+
     pub fn invariant(&self) -> bool {
         self.0.chars().all(Self::char_ok)
     }
+
     pub fn check_invariant(&self) {
         if !self.invariant() {
             eprintln!("Warning: failed invariant! on Ident {}", self);
@@ -43,6 +60,7 @@ impl Ident {
     pub fn new(s: &str) -> Self {
         Self::new_owned(s.to_string())
     }
+
     pub fn new_owned(s: String) -> Self {
         let mut result = Self(s);
         replace_hyphens(&mut result.0);
@@ -69,10 +87,12 @@ impl Path {
     fn char_ok(c: char) -> bool {
         c.is_ascii_alphanumeric() || c == '_' || c == '[' || c == ']' || c == ':'
     }
+
     pub fn invariant(&self) -> bool {
         self.0.chars().all(Self::char_ok)
         // TBD check :: are adjacent
     }
+
     pub fn check_invariant(&self) {
         if !self.invariant() {
             eprintln!("Warning: failed invariant! on Path {}", self);
@@ -82,12 +102,14 @@ impl Path {
     pub fn new(s: &str) -> Self {
         Self::new_owned(s.to_string())
     }
+
     pub fn new_owned(s: String) -> Self {
         let mut result = Self(s);
         replace_hyphens(&mut result.0);
         result.check_invariant();
         result
     }
+
     pub fn from_ident(i: Ident) -> Self {
         let result = Self(i.0);
         result.check_invariant();
@@ -98,6 +120,7 @@ impl Path {
     pub fn idents(&self) -> impl Iterator<Item = Ident> + '_ {
         self.0.split("::").map(Ident::new)
     }
+
     /// Iterator over patterns *which match* the path
     /// Current implementation using FreshIter
     pub fn patterns(&self) -> impl Iterator<Item = Pattern> {
@@ -139,6 +162,7 @@ impl CanonicalPath {
     pub fn invariant(&self) -> bool {
         self.as_str().starts_with("crate::")
     }
+
     pub fn check_invariant(&self) {
         if !self.invariant() {
             eprintln!("Warning: failed invariant! on CanonicalPath {}", self);
@@ -146,22 +170,27 @@ impl CanonicalPath {
     }
 
     pub fn new(s: &str) -> Self {
-        Self::new_owned(s.to_string())
+        Self::from_path(Path::new(s))
     }
+
     pub fn new_owned(s: String) -> Self {
         Self::from_path(Path::new_owned(s))
     }
+
     pub fn from_path(p: Path) -> Self {
         let result = Self(p);
         result.check_invariant();
         result
     }
+
     pub fn to_path(self) -> Path {
         self.0
     }
+
     pub fn as_path(&self) -> &Path {
         &self.0
     }
+
     pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
@@ -183,6 +212,7 @@ impl Pattern {
     pub fn invariant(&self) -> bool {
         self.0.invariant()
     }
+
     pub fn check_invariant(&self) {
         if !self.invariant() {
             eprintln!("Warning: failed invariant! on Pattern {}", self);
@@ -190,14 +220,17 @@ impl Pattern {
     }
 
     pub fn new(s: &str) -> Self {
-        Self::new_owned(s.to_string())
+        Self::from_path(Path::new(s))
     }
+
     pub fn new_owned(s: String) -> Self {
         Self::from_path(Path::new_owned(s))
     }
+
     pub fn from_ident(i: Ident) -> Self {
         Self::from_path(Path::from_ident(i))
     }
+
     pub fn from_path(p: Path) -> Self {
         let result = Self(p);
         result.check_invariant();
@@ -213,6 +246,7 @@ impl Pattern {
     pub fn subset(&self, other: &Self) -> bool {
         self.0.matches(other)
     }
+
     /// Return true if the set of paths denoted by self is
     /// a superset of those denoted by other
     pub fn superset(&self, other: &Self) -> bool {

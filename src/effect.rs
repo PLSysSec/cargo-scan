@@ -35,7 +35,7 @@ impl ModPathLoc {
 
         // TODO: Find the fully qualified name before we create the EffectInstance/ModPathLoc
         let crt_string = infer::infer_crate(filepath);
-        let crt = Ident::new_owned(crt_string.clone());
+        let crt = Ident::new(&crt_string);
 
         // Infer module
         let mut post_src = infer::infer_module(filepath);
