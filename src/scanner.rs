@@ -524,7 +524,7 @@ impl<'a> Scanner<'a> {
         // TBD
         let _f_name_full = self.lookup_filepath_ident(f_ident);
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
-        self.fn_decls.push(FnDec::new(self.filepath, body, f_name.clone()));
+        self.fn_decls.push(FnDec::new(self.filepath, f_sig, f_name.clone()));
         let effect_block = if f_unsafety.is_some() {
             // we found an `unsafe fn` declaration
             self.scope_unsafe += 1;
