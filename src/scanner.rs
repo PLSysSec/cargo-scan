@@ -2,6 +2,8 @@
     Scanner to parse a Rust source file and find all function call locations.
 */
 
+use crate::effect::BlockType;
+
 use super::effect::{EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl};
 use super::ident;
 use super::util::infer;
@@ -68,8 +70,14 @@ impl ScanResults {
         self.effects.iter().filter(|x| x.pattern().is_some()).collect::<HashSet<_>>()
     }
 
-    pub fn effect_blocks_set(&self) -> HashSet<&EffectBlock> {
-        self.effect_blocks.iter().collect::<HashSet<_>>()
+    pub fn unsafe_effect_blocks_set(&self) -> HashSet<&EffectBlock> {
+        self.effect_blocks
+            .iter()
+            .filter(|x| match x.block_type() {
+                BlockType::UnsafeExpr | BlockType::UnsafeFn(_) => true,
+                BlockType::NormalFn(_) => false,
+            })
+            .collect::<HashSet<_>>()
     }
 
     pub fn get_callers<'a>(

@@ -371,6 +371,11 @@ impl EffectBlock {
     pub fn src_loc(&self) -> &SrcLoc {
         &self.src_loc
     }
+
+    pub fn block_type(&self) -> &BlockType {
+        &self.block_type
+    }
+
     pub fn push_effect(&mut self, effect: EffectInstance) {
         self.effects.push(effect);
     }

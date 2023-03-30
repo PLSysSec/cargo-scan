@@ -512,7 +512,7 @@ fn is_policy_scan_valid(
 
 fn review_policy(args: Args, policy: PolicyFile) -> Result<()> {
     let scan_res = scanner::scan_crate(&args.crate_path)?;
-    let scan_effect_blocks = scan_res.effect_blocks_set();
+    let scan_effect_blocks = scan_res.unsafe_effect_blocks_set();
     if !is_policy_scan_valid(&policy, &scan_effect_blocks, args.crate_path.clone())? {
         println!("Error: crate has changed since last policy scan.");
         return Err(anyhow!("Invalid policy during review"));
@@ -644,7 +644,7 @@ fn audit_effect_tree(
 
 fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     let scan_res = scanner::scan_crate(&args.crate_path)?;
-    let scan_effect_blocks = scan_res.effect_blocks_set();
+    let scan_effect_blocks = scan_res.unsafe_effect_blocks_set();
 
     if args.debug {
         println!("{:?}", scan_res);
@@ -697,7 +697,6 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     for (e, t) in policy_file.audit_trees.iter_mut() {
         match t.get_leaf_annotation() {
             Some(SafetyAnnotation::Skipped) => {
-                // TODO: Early exit
                 if audit_effect_tree(e, t, &scan_res, &args.config)?
                     == AuditStatus::EarlyExit
                 {
