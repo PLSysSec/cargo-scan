@@ -572,8 +572,6 @@ fn audit_leaf<'a>(
     // TODO: Handle no call sites
     if status == SafetyAnnotation::CallerChecked {
         // Add all call locations as parents of this effect
-        dbg!(&curr_effect.caller_path);
-        dbg!(scan_res.get_callers(&curr_effect.caller_path));
         let new_check_locs = scan_res
             .get_callers(&curr_effect.caller_path)
             .into_iter()
