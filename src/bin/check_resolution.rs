@@ -24,7 +24,7 @@ pub fn main() -> Result<()> {
     let mut filepath = std::path::PathBuf::from(&args.crate_path);
     filepath.push("src/main.rs");
 
-    let s = SrcLoc::new(filepath.as_path(), args.line, args.col);
+    let s = SrcLoc::new(filepath.as_path(), args.line, args.col, args.line, args.col);
     let i = Ident::new(&args.name);
 
     let mut out = String::from("Canonical path for '");

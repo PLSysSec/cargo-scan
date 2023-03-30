@@ -222,7 +222,7 @@ fn print_effect_src(
     // TODO: Off by 1? Might have to change in the effect calculation.
     // TODO: Highlight the entire expression as the main error if it's multi-line
     //       and update the surrounding lines correspondingly
-    let effect_line = effect_loc.line() - 1;
+    let effect_line = effect_loc.start_line() - 1;
     let bounded_start_line =
         std::cmp::max(effect_line - config.lines_before_effect as usize, 0);
     let bounded_end_line = std::cmp::min(
@@ -240,16 +240,16 @@ fn print_effect_src(
     let file_id = files.add(format!("{}", effect_loc.file().display()), src_contents);
 
     // construct the codespan diagnostic
-    let mut diag_string = "effects: ".to_string();
+    let mut diag_msg = "effects: ".to_string();
     for e in effect_origin.effects().iter().map(|e| match e.eff_type() {
         Effect::SinkCall(sink) => format!("sink - {}", sink),
         Effect::FFICall(path) => format!("ffi call - {}", path),
         Effect::UnsafeOp => "unsafe op".to_string(),
         Effect::OtherCall => todo!(),
     }) {
-        diag_string.push_str(&format!("{}\n", e));
+        diag_msg.push_str(&format!("{}\n", e));
     }
-    let diag = Diagnostic::error().with_message(diag_string).with_labels(vec![
+    let diag = Diagnostic::help().with_message(diag_msg).with_labels(vec![
         Label::primary(file_id, effect_start..effect_end),
         Label::secondary(file_id, surrounding_start..surrounding_end),
     ]);
@@ -294,16 +294,16 @@ fn fn_decl_info(fn_loc: &SrcLoc) -> Result<CallStackInfo> {
     let src_contents = std::fs::read_to_string(full_path)?;
 
     // TODO: Print the full definition if it spans multiple lines
-    let mut src_lines = src_contents.splitn(fn_loc.line() + 1, '\n');
+    let mut src_lines = src_contents.splitn(fn_loc.start_line() + 1, '\n');
     let src_fn_loc = src_lines
-        .nth(fn_loc.line() - 1)
+        .nth(fn_loc.start_line() - 1)
         .ok_or_else(|| anyhow!("Source lineno past end of file"))?;
 
     // TODO: Capture just the function name
     let res = CallStackInfo::new(
         Some(src_fn_loc.split('{').next().unwrap().trim().to_string()),
         format!("{}", fn_loc.dir().to_string_lossy()),
-        fn_loc.line(),
+        fn_loc.start_line(),
     );
     Ok(res)
 }
@@ -314,7 +314,7 @@ fn missing_fn_decl_info(effect_loc: &SrcLoc) -> CallStackInfo {
     let full_path = path_list.join("/");
     let full_path_str = full_path.to_string_lossy().to_string();
 
-    CallStackInfo::new(None, full_path_str, effect_loc.line())
+    CallStackInfo::new(None, full_path_str, effect_loc.start_line())
 }
 
 fn print_call_stack(
@@ -572,6 +572,8 @@ fn audit_leaf<'a>(
     // TODO: Handle no call sites
     if status == SafetyAnnotation::CallerChecked {
         // Add all call locations as parents of this effect
+        dbg!(&curr_effect.caller_path);
+        dbg!(scan_res.get_callers(&curr_effect.caller_path));
         let new_check_locs = scan_res
             .get_callers(&curr_effect.caller_path)
             .into_iter()

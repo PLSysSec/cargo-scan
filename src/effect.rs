@@ -74,25 +74,39 @@ pub struct SrcLoc {
     /// File in which the expression occurs -- in the above directory
     file: FilePathBuf,
     /// Location in which the expression occurs -- in the above file
-    line: usize,
-    col: usize,
+    start_line: usize,
+    start_col: usize,
+    end_line: usize,
+    end_col: usize,
 }
 
 impl SrcLoc {
-    pub fn new(filepath: &FilePath, line: usize, col: usize) -> Self {
+    pub fn new(
+        filepath: &FilePath,
+        start_line: usize,
+        start_col: usize,
+        end_line: usize,
+        end_col: usize,
+    ) -> Self {
         // TBD: use unwrap_or_else
         let dir = filepath.parent().unwrap().to_owned();
         let file = FilePathBuf::from(filepath.file_name().unwrap());
-        Self { dir, file, line, col }
+        Self { dir, file, start_line, start_col, end_line, end_col }
     }
 
     pub fn from_span<S>(filepath: &FilePath, span: &S) -> Self
     where
         S: Spanned,
     {
-        let line = span.span().start().line;
-        let col = span.span().start().column;
-        Self::new(filepath, line, col)
+        let span_start = span.span().start();
+        let span_end = span.span().end();
+
+        let start_line = span_start.line;
+        let start_col = span_start.column;
+        let end_line = span_end.line;
+        let end_col = span_end.column;
+
+        Self::new(filepath, start_line, start_col, end_line, end_col)
     }
 
     pub fn csv_header() -> &'static str {
@@ -102,7 +116,7 @@ impl SrcLoc {
     pub fn to_csv(&self) -> String {
         let dir = csv::sanitize_path(&self.dir);
         let file = csv::sanitize_path(&self.file);
-        format!("{}, {}, {}, {}", dir, file, self.line, self.col)
+        format!("{}, {}, {}, {}", dir, file, self.start_line, self.start_col)
     }
 
     pub fn dir(&self) -> &FilePathBuf {
@@ -113,12 +127,20 @@ impl SrcLoc {
         &self.file
     }
 
-    pub fn line(&self) -> usize {
-        self.line
+    pub fn start_line(&self) -> usize {
+        self.start_line
     }
 
-    pub fn col(&self) -> usize {
-        self.col
+    pub fn start_col(&self) -> usize {
+        self.start_col
+    }
+
+    pub fn end_line(&self) -> usize {
+        self.end_line
+    }
+
+    pub fn end_col(&self) -> usize {
+        self.end_col
     }
 }
 

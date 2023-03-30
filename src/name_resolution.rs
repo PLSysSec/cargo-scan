@@ -105,8 +105,8 @@ impl Resolver {
 
     fn find_offset(&self, file_id: FileId, src_loc: SrcLoc) -> Result<TextSize> {
         // LineCol is zero-based
-        let line: u32 = src_loc.line() as u32 - 1;
-        let col: u32 = src_loc.col() as u32 - 1;
+        let line: u32 = src_loc.start_line() as u32 - 1;
+        let col: u32 = src_loc.start_col() as u32 - 1;
         let line_col = LineCol { line, col };
 
         let line_index = self.host.analysis().file_line_index(file_id)?;
