@@ -245,6 +245,7 @@ fn print_effect_src(
         Effect::SinkCall(sink) => format!("sink - {}", sink),
         Effect::FFICall(path) => format!("ffi call - {}", path),
         Effect::UnsafeOp => "unsafe op".to_string(),
+        Effect::OtherCall => todo!(),
     }) {
         diag_string.push_str(&format!("{}\n", e));
     }

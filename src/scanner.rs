@@ -796,7 +796,7 @@ impl<'a> Scanner<'a> {
         let caller_name =
             self.get_fun_scope().expect("push_callsite called outside of a function!");
 
-        if let Some(eff) = EffectInstance::new_call(
+        let eff = EffectInstance::new_call(
             self.filepath,
             &mod_scope,
             caller_name,
@@ -804,17 +804,16 @@ impl<'a> Scanner<'a> {
             &callee_span,
             self.scope_unsafe > 0,
             self.lookup_ffi(&callee_path),
-        ) {
-            if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
-                effect_block.push_effect(eff.clone())
-            } else {
-                self.syn_warning(
-                    "Unexpected function call site found outside an effect block",
-                    callee_span,
-                );
-            }
-            self.effects.push(eff);
+        );
+        if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
+            effect_block.push_effect(eff.clone())
+        } else {
+            self.syn_warning(
+                "Unexpected function call site found outside an effect block",
+                callee_span,
+            );
         }
+        self.effects.push(eff);
     }
 
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {

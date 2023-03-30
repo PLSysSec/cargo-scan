@@ -28,7 +28,11 @@ fn main() -> Result<()> {
     let results = scanner::scan_crate(&args.crate_path)?;
 
     for effect in results.effects {
-        println!("{}", effect.to_csv());
+        if effect.is_dangerous() {
+            println!("{}", effect.to_csv());
+        } else if args.verbose {
+            println!("Skipping: {}", effect.to_csv());
+        }
     }
 
     if args.verbose {

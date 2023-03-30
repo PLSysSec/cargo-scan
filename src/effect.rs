@@ -164,6 +164,8 @@ pub enum Effect {
     /// Unsafe operation, e.g. pointer deref
     /// see: https://doc.rust-lang.org/nomicon/what-unsafe-does.html
     UnsafeOp,
+    /// Other function call -- not dangerous
+    OtherCall,
 }
 impl Effect {
     fn sink_pattern(&self) -> Option<&Sink> {
@@ -171,15 +173,19 @@ impl Effect {
             Self::SinkCall(s) => Some(s),
             Self::FFICall(_) => None,
             Self::UnsafeOp => None,
+            Self::OtherCall => None,
         }
     }
+
     fn simple_str(&self) -> &str {
         match self {
             Self::SinkCall(s) => s.as_str(),
             Self::FFICall(_) => "[FFI]",
             Self::UnsafeOp => "[Unsafe]",
+            Self::OtherCall => "[None]",
         }
     }
+
     fn to_csv(&self) -> String {
         csv::sanitize_comma(self.simple_str())
     }
@@ -213,7 +219,7 @@ impl EffectInstance {
         callsite: &S,
         is_unsafe: bool,
         ffi: Option<Path>,
-    ) -> Option<Self>
+    ) -> Self
     where
         S: Spanned,
     {
@@ -238,24 +244,28 @@ impl EffectInstance {
         } else if is_unsafe {
             Effect::UnsafeOp
         } else {
-            return None;
+            Effect::OtherCall
         };
         let call_loc = SrcLoc::from_span(filepath, callsite);
-        Some(Self { caller_loc, call_loc, callee, eff_type })
+        Self { caller_loc, call_loc, callee, eff_type }
     }
 
     pub fn caller(&self) -> &Path {
         self.caller_loc.path()
     }
+
     pub fn caller_path(&self) -> &str {
         self.caller_loc.path().as_str()
     }
+
     pub fn callee(&self) -> &Path {
         &self.callee
     }
+
     pub fn callee_path(&self) -> &str {
         self.callee.as_str()
     }
+
     /// Get the caller and callee as full paths
     pub fn caller_callee(&self) -> (&str, &str) {
         (self.caller_path(), self.callee_path())
@@ -264,6 +274,7 @@ impl EffectInstance {
     pub fn csv_header() -> &'static str {
         "crate, fn_decl, callee, effect, dir, file, line, col"
     }
+
     pub fn to_csv(&self) -> String {
         let caller_loc_csv = self.caller_loc.to_csv();
         let callee = csv::sanitize_comma(self.callee.as_str());
@@ -286,7 +297,11 @@ impl EffectInstance {
     }
 
     pub fn is_unsafe_op(&self) -> bool {
-        self.eff_type == Effect::UnsafeOp
+        matches!(self.eff_type, Effect::UnsafeOp)
+    }
+
+    pub fn is_dangerous(&self) -> bool {
+        !matches!(self.eff_type, Effect::OtherCall)
     }
 
     pub fn call_loc(&self) -> &SrcLoc {
