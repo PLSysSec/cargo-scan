@@ -74,8 +74,8 @@ impl ScanResults {
         self.effect_blocks
             .iter()
             .filter(|x| match x.block_type() {
-                BlockType::UnsafeExpr | BlockType::UnsafeFn(_) => true,
-                BlockType::NormalFn(_) => false,
+                BlockType::UnsafeExpr | BlockType::UnsafeFn => true,
+                BlockType::NormalFn => false,
             })
             .collect::<HashSet<_>>()
     }
@@ -524,6 +524,8 @@ impl<'a> Scanner<'a> {
         // TBD
         let _f_name_full = self.lookup_filepath_ident(f_ident);
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
+        // NOTE: always push the new function declaration before scanning the
+        //       body so we have access to the function its in for unsafe blocks
         self.fn_decls.push(FnDec::new(self.filepath, f_sig, f_name.clone()));
         let effect_block = if f_unsafety.is_some() {
             // we found an `unsafe fn` declaration
@@ -757,7 +759,13 @@ impl<'a> Scanner<'a> {
     fn scan_unsafe_block(&mut self, x: &'a syn::ExprUnsafe) {
         self.scope_unsafe += 1;
 
-        let effect_block = EffectBlock::new_unsafe_expr(self.filepath, &x.block);
+        // We will always be in a function definition inside of a block, so it
+        // is safe to unwrap the last fn_decl
+        let effect_block = EffectBlock::new_unsafe_expr(
+            self.filepath,
+            &x.block,
+            self.fn_decls.last().unwrap().clone(),
+        );
         self.scope_effect_blocks.push(effect_block);
         for s in &x.block.stmts {
             self.scan_fn_statement(s);

@@ -369,40 +369,55 @@ pub struct EffectBlock {
     src_loc: SrcLoc,
     block_type: BlockType,
     effects: Vec<EffectInstance>,
+    containing_fn: FnDec,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum BlockType {
     UnsafeExpr,
-    NormalFn(Ident),
-    UnsafeFn(Ident),
+    NormalFn,
+    UnsafeFn,
 }
 impl EffectBlock {
-    pub fn new_unsafe_expr<S>(filepath: &FilePath, block_span: &S) -> Self
+    pub fn new_unsafe_expr<S>(
+        filepath: &FilePath,
+        block_span: &S,
+        containing_fn: FnDec,
+    ) -> Self
     where
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, block_span);
         let block_type = BlockType::UnsafeExpr;
         let effects = Vec::new();
-        Self { src_loc, block_type, effects }
+        Self { src_loc, block_type, effects, containing_fn }
     }
     pub fn new_fn<S>(filepath: &FilePath, decl_span: &S, fn_name: String) -> Self
     where
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, decl_span);
-        let block_type = BlockType::NormalFn(Ident::new_owned(fn_name));
+        let block_type = BlockType::NormalFn;
         let effects = Vec::new();
-        Self { src_loc, block_type, effects }
+        Self {
+            src_loc,
+            block_type,
+            effects,
+            containing_fn: FnDec::new(filepath, decl_span, fn_name),
+        }
     }
     pub fn new_unsafe_fn<S>(filepath: &FilePath, decl_span: &S, fn_name: String) -> Self
     where
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, decl_span);
-        let block_type = BlockType::NormalFn(Ident::new_owned(fn_name));
+        let block_type = BlockType::NormalFn;
         let effects = Vec::new();
-        Self { src_loc, block_type, effects }
+        Self {
+            src_loc,
+            block_type,
+            effects,
+            containing_fn: FnDec::new(filepath, decl_span, fn_name),
+        }
     }
 
     pub fn src_loc(&self) -> &SrcLoc {
