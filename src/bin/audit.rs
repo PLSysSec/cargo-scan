@@ -248,7 +248,6 @@ fn print_effect_src(
             // a new label with the signature
             let sig_start = src_linenum_ranges.get(&loc.start_line()).unwrap().0;
             let sig_end = src_linenum_ranges.get(&loc.end_line()).unwrap().1;
-            dbg!((sig_start, sig_end));
             vec![
                 Label::secondary(file_id, sig_start..sig_end),
                 Label::primary(file_id, effect_start..effect_end),
