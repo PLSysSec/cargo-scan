@@ -115,10 +115,7 @@ impl EffectInfo {
     }
 
     pub fn from_block(effect: &EffectBlock) -> Self {
-        match effect.effects().first() {
-            Some(e) => EffectInfo::from_instance(e),
-            None => EffectInfo::new(Path::new(""), effect.src_loc().clone()),
-        }
+        EffectInfo::new(effect.containing_fn().fn_name.clone(), effect.src_loc().clone())
     }
 }
 

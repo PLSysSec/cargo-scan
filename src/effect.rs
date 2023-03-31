@@ -435,6 +435,10 @@ impl EffectBlock {
     pub fn effects(&self) -> &Vec<EffectInstance> {
         &self.effects
     }
+
+    pub fn containing_fn(&self) -> &FnDec {
+        &self.containing_fn
+    }
 }
 
 /// Trait implementations
