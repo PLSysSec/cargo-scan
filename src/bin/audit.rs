@@ -199,9 +199,11 @@ fn get_policy_file(policy_filepath: PathBuf) -> Result<Option<PolicyFile>> {
 fn print_effect_src(
     effect_origin: &EffectBlock,
     effect: &EffectInfo,
+    fn_locs: &HashMap<Path, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
-    let effect_loc = &effect.callee_loc;
+    // NOTE: The codespan lines are 0-indexed, but SrcLocs are 1-indexed
+    let effect_loc = &effect.callee_loc.sub1();
     let mut full_path = effect_loc.dir().clone();
     full_path.push(effect_loc.file());
 
@@ -216,9 +218,8 @@ fn print_effect_src(
     });
 
     // calculate the byte ranges for the effect
-    // TODO: Off by 1? Might have to change in the effect calculation.
-    let start_effect_line = effect_loc.start_line() - 1;
-    let end_effect_line = effect_loc.end_line() - 1;
+    let start_effect_line = effect_loc.start_line();
+    let end_effect_line = effect_loc.end_line();
     let bounded_start_line =
         std::cmp::max(start_effect_line - config.lines_before_effect as usize, 0);
     let bounded_end_line = std::cmp::min(
@@ -235,6 +236,45 @@ fn print_effect_src(
     let mut files = SimpleFiles::new();
     let file_id = files.add(format!("{}", effect_loc.file().display()), src_contents);
 
+    // If the labels don't include the function signature, include it as
+    // another label
+    // NOTE: The codespan lines are 0-indexed, but SrcLocs are 1-indexed
+    let labels = match fn_locs.get(&effect.caller_path).map(|x| x.sub1()) {
+        Some(loc)
+            if loc.start_line() < surrounding_start
+                && loc.end_line() < surrounding_start =>
+        {
+            // The signature is entirely outside the current label range, so add
+            // a new label with the signature
+            let sig_start = src_linenum_ranges.get(&loc.start_line()).unwrap().0;
+            let sig_end = src_linenum_ranges.get(&loc.end_line()).unwrap().1;
+            dbg!((sig_start, sig_end));
+            vec![
+                Label::secondary(file_id, sig_start..sig_end),
+                Label::primary(file_id, effect_start..effect_end),
+                Label::secondary(file_id, surrounding_start..surrounding_end),
+            ]
+        }
+        Some(loc) if loc.start_line() < surrounding_start => {
+            // The start of the signature is outside the current label range, so
+            // extend the surrounding range to include the start of the function
+            // signature
+            let sig_start = src_linenum_ranges.get(&loc.start_line()).unwrap().0;
+            vec![
+                Label::primary(file_id, effect_start..effect_end),
+                Label::secondary(file_id, sig_start..surrounding_end),
+            ]
+        }
+        Some(_) | None => {
+            // The function signature is already included in the label range or
+            // we couldn't find the function definition
+            vec![
+                Label::primary(file_id, effect_start..effect_end),
+                Label::secondary(file_id, surrounding_start..surrounding_end),
+            ]
+        }
+    };
+
     // construct the codespan diagnostic
     let mut diag_msg = "effects: ".to_string();
     for e in effect_origin.effects().iter().map(|e| match e.eff_type() {
@@ -245,10 +285,7 @@ fn print_effect_src(
     }) {
         diag_msg.push_str(&format!("{}\n", e));
     }
-    let diag = Diagnostic::help().with_message(diag_msg).with_labels(vec![
-        Label::primary(file_id, effect_start..effect_end),
-        Label::secondary(file_id, surrounding_start..surrounding_end),
-    ]);
+    let diag = Diagnostic::help().with_message(diag_msg).with_labels(labels);
 
     let writer = StandardStream::stderr(ColorChoice::Always);
     let config = codespan_reporting::term::Config::default();
@@ -395,7 +432,7 @@ fn print_effect_info(
     println!("=================================================");
     print_call_stack(curr_effect, effect_history, fn_locs)?;
     println!();
-    print_effect_src(orig_effect, curr_effect, config)?;
+    print_effect_src(orig_effect, curr_effect, fn_locs, config)?;
     Ok(())
 }
 

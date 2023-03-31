@@ -109,6 +109,13 @@ impl SrcLoc {
         Self::new(filepath, start_line, start_col, end_line, end_col)
     }
 
+    pub fn sub1(&self) -> Self {
+        let mut res = self.clone();
+        res.start_line -= 1;
+        res.end_line -= 1;
+        res
+    }
+
     pub fn csv_header() -> &'static str {
         "dir, file, line, col"
     }
