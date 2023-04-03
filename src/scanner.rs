@@ -522,11 +522,11 @@ impl<'a> Scanner<'a> {
         let f_ident = &f_sig.ident;
         let f_name = f_ident.to_string();
         // TBD
-        let _f_name_full = self.lookup_filepath_ident(f_ident);
+        let f_name_full = self.lookup_filepath_ident(f_ident);
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
         // NOTE: always push the new function declaration before scanning the
         //       body so we have access to the function its in for unsafe blocks
-        self.fn_decls.push(FnDec::new(self.filepath, f_sig, f_name.clone()));
+        self.fn_decls.push(FnDec::new(self.filepath, f_sig, f_name_full.clone()));
         let effect_block = if f_unsafety.is_some() {
             // we found an `unsafe fn` declaration
             self.scope_unsafe += 1;
