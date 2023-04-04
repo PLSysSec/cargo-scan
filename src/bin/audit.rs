@@ -221,9 +221,9 @@ fn print_effect_src(
     let start_effect_line = effect_loc.start_line();
     let end_effect_line = effect_loc.end_line();
     let bounded_start_line =
-        std::cmp::max(start_effect_line - config.lines_before_effect as usize, 0);
+        start_effect_line.saturating_sub(config.lines_before_effect as usize);
     let bounded_end_line = std::cmp::min(
-        end_effect_line - config.lines_after_effect as usize,
+        end_effect_line + config.lines_after_effect as usize,
         src_linenum_ranges.len(),
     );
 
@@ -239,22 +239,22 @@ fn print_effect_src(
     // If the labels don't include the function signature, include it as
     // another label
     // NOTE: The codespan lines are 0-indexed, but SrcLocs are 1-indexed
-    let labels = match fn_locs.get(&effect.caller_path).map(|x| x.sub1()) {
+    let mut labels = match fn_locs.get(&effect.caller_path).map(|x| x.sub1()) {
         Some(loc)
-            if loc.start_line() < surrounding_start
-                && loc.end_line() < surrounding_start =>
+            if loc.start_line() < bounded_start_line
+                && loc.end_line() < bounded_start_line =>
         {
             // The signature is entirely outside the current label range, so add
             // a new label with the signature
             let sig_start = src_linenum_ranges.get(&loc.start_line()).unwrap().0;
             let sig_end = src_linenum_ranges.get(&loc.end_line()).unwrap().1;
             vec![
-                Label::secondary(file_id, sig_start..sig_end),
                 Label::primary(file_id, effect_start..effect_end),
+                Label::secondary(file_id, sig_start..sig_end),
                 Label::secondary(file_id, surrounding_start..surrounding_end),
             ]
         }
-        Some(loc) if loc.start_line() < surrounding_start => {
+        Some(loc) if loc.start_line() < bounded_start_line => {
             // The start of the signature is outside the current label range, so
             // extend the surrounding range to include the start of the function
             // signature
@@ -274,17 +274,24 @@ fn print_effect_src(
         }
     };
 
+    let label_msg = if effect_origin.containing_fn().fn_name == effect.caller_path {
+        // We are in the original function, so print all the effects in the
+        // EffectBlock
+        effect_origin.effects().iter().filter_map(|x| match x.eff_type() {
+            Effect::SinkCall(sink) => Some(format!("sink call: {}", sink)),
+            Effect::FFICall(call) => Some(format!("ffi call: {}", call)),
+            _ => None,
+        }).collect::<Vec<_>>().join("\n")
+    } else {
+        "call safety marked as callee-checked".to_string()
+    };
+    let l = labels.remove(0);
+    labels.insert(0, l.with_message(label_msg));
+
     // construct the codespan diagnostic
-    let mut diag_msg = "effects: ".to_string();
-    for e in effect_origin.effects().iter().map(|e| match e.eff_type() {
-        Effect::SinkCall(sink) => format!("sink - {}", sink),
-        Effect::FFICall(path) => format!("ffi call - {}", path),
-        Effect::UnsafeOp => "unsafe op".to_string(),
-        Effect::OtherCall => todo!(),
-    }) {
-        diag_msg.push_str(&format!("{}\n", e));
-    }
-    let diag = Diagnostic::help().with_message(diag_msg).with_labels(labels);
+    let diag = Diagnostic::help()
+        .with_code("Audit location")
+        .with_labels(labels);
 
     let writer = StandardStream::stderr(ColorChoice::Always);
     let config = codespan_reporting::term::Config::default();

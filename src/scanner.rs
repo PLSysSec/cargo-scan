@@ -514,10 +514,12 @@ impl<'a> Scanner<'a> {
     fn scan_fn_decl(&mut self, f: &'a syn::ItemFn) {
         self.scan_fn(&f.sig, &f.block);
     }
+
     fn scan_method(&mut self, m: &'a syn::ImplItemFn) {
         // NB: may or may not be a method, if there is no self keyword
         self.scan_fn(&m.sig, &m.block);
     }
+
     fn scan_fn(&mut self, f_sig: &'a syn::Signature, body: &'a syn::Block) {
         let f_ident = &f_sig.ident;
         let f_name = f_ident.to_string();
