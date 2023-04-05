@@ -14,6 +14,7 @@ use super::util::{csv, infer};
 
 use serde::{Deserialize, Serialize};
 use std::path::{Path as FilePath, PathBuf as FilePathBuf};
+use syn;
 use syn::spanned::Spanned;
 
 /*
@@ -342,19 +343,43 @@ impl EffectInstance {
     Data model for effect blocks (unsafe blocks, functions, and impls)
 */
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum Visibility {
+    Public,
+    Private,
+}
+
+impl From<&syn::Visibility> for Visibility {
+    fn from(vis: &syn::Visibility) -> Self {
+        match vis {
+            syn::Visibility::Public(_) => Visibility::Public,
+            // NOTE: We don't care about public restrictions, only if a function
+            //       is visible to other crates
+            _ => Visibility::Private,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FnDec {
     pub src_loc: SrcLoc,
     pub fn_name: Path,
+    pub vis: Visibility,
 }
+
 impl FnDec {
-    pub fn new<S>(filepath: &FilePath, decl_span: &S, fn_name: String) -> Self
+    pub fn new<S>(
+        filepath: &FilePath,
+        decl_span: &S,
+        fn_name: String,
+        vis: &syn::Visibility,
+    ) -> Self
     where
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, decl_span);
         let fn_name = Path::new_owned(fn_name);
-        Self { src_loc, fn_name }
+        Self { src_loc, fn_name, vis: vis.into() }
     }
 }
 
@@ -398,7 +423,12 @@ impl EffectBlock {
         let effects = Vec::new();
         Self { src_loc, block_type, effects, containing_fn }
     }
-    pub fn new_fn<S>(filepath: &FilePath, decl_span: &S, fn_name: String) -> Self
+    pub fn new_fn<S>(
+        filepath: &FilePath,
+        decl_span: &S,
+        fn_name: String,
+        vis: &syn::Visibility,
+    ) -> Self
     where
         S: Spanned,
     {
@@ -409,10 +439,15 @@ impl EffectBlock {
             src_loc,
             block_type,
             effects,
-            containing_fn: FnDec::new(filepath, decl_span, fn_name),
+            containing_fn: FnDec::new(filepath, decl_span, fn_name, vis),
         }
     }
-    pub fn new_unsafe_fn<S>(filepath: &FilePath, decl_span: &S, fn_name: String) -> Self
+    pub fn new_unsafe_fn<S>(
+        filepath: &FilePath,
+        decl_span: &S,
+        fn_name: String,
+        vis: &syn::Visibility,
+    ) -> Self
     where
         S: Spanned,
     {
@@ -423,7 +458,7 @@ impl EffectBlock {
             src_loc,
             block_type,
             effects,
-            containing_fn: FnDec::new(filepath, decl_span, fn_name),
+            containing_fn: FnDec::new(filepath, decl_span, fn_name, vis),
         }
     }
 

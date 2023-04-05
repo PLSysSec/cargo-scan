@@ -4,7 +4,7 @@
 
 use crate::effect::BlockType;
 
-use super::effect::{EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl};
+use super::effect::{EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility};
 use super::ident;
 use super::util::infer;
 
@@ -28,6 +28,7 @@ pub struct ScanResults {
     pub unsafe_impls: Vec<TraitImpl>,
 
     pub fn_locs: HashMap<ident::Path, SrcLoc>,
+    pub pub_fns: Vec<ident::Path>,
 
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
@@ -41,6 +42,7 @@ impl ScanResults {
             unsafe_traits: Vec::new(),
             unsafe_impls: Vec::new(),
             fn_locs: HashMap::new(),
+            pub_fns: Vec::new(),
             skipped_macros: 0,
             skipped_fn_calls: 0,
         }
@@ -53,6 +55,7 @@ impl ScanResults {
             unsafe_traits: o_unsafe_traits,
             unsafe_impls: o_unsafe_impls,
             fn_locs: o_fn_locs,
+            pub_fns: o_pub_fns,
             skipped_macros: o_skipped_macros,
             skipped_fn_calls: o_skipped_fn_calls,
         } = other;
@@ -62,6 +65,7 @@ impl ScanResults {
         self.unsafe_traits.append(o_unsafe_traits);
         self.unsafe_impls.append(o_unsafe_impls);
         self.fn_locs.extend(o_fn_locs.drain());
+        self.pub_fns.append(o_pub_fns);
         self.skipped_macros += *o_skipped_macros;
         self.skipped_fn_calls += *o_skipped_fn_calls;
     }
@@ -170,10 +174,14 @@ impl<'a> Scanner<'a> {
             effect_blocks: self.effect_blocks,
             unsafe_traits: self.unsafe_traits,
             unsafe_impls: self.unsafe_impls,
+            pub_fns: self.fn_decls.iter().filter_map(|fun| match fun.vis {
+                Visibility::Public => Some(fun.fn_name.clone()),
+                Visibility::Private => None,
+            }).collect(),
             fn_locs: self
                 .fn_decls
                 .into_iter()
-                .map(|FnDec { src_loc, fn_name }| (fn_name, src_loc))
+                .map(|FnDec { src_loc, fn_name, vis: _ }| (fn_name, src_loc))
                 .collect::<HashMap<_, _>>(),
             skipped_macros: self.skipped_macros,
             skipped_fn_calls: self.skipped_fn_calls,
@@ -512,15 +520,15 @@ impl<'a> Scanner<'a> {
         Function and method declarations
     */
     fn scan_fn_decl(&mut self, f: &'a syn::ItemFn) {
-        self.scan_fn(&f.sig, &f.block);
+        self.scan_fn(&f.sig, &f.block, &f.vis);
     }
 
     fn scan_method(&mut self, m: &'a syn::ImplItemFn) {
         // NB: may or may not be a method, if there is no self keyword
-        self.scan_fn(&m.sig, &m.block);
+        self.scan_fn(&m.sig, &m.block, &m.vis);
     }
 
-    fn scan_fn(&mut self, f_sig: &'a syn::Signature, body: &'a syn::Block) {
+    fn scan_fn(&mut self, f_sig: &'a syn::Signature, body: &'a syn::Block, vis: &'a syn::Visibility) {
         let f_ident = &f_sig.ident;
         let f_name = f_ident.to_string();
         // TBD
@@ -528,14 +536,14 @@ impl<'a> Scanner<'a> {
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
         // NOTE: always push the new function declaration before scanning the
         //       body so we have access to the function its in for unsafe blocks
-        self.fn_decls.push(FnDec::new(self.filepath, f_sig, f_name_full.clone()));
+        self.fn_decls.push(FnDec::new(self.filepath, f_sig, f_name_full, vis));
         let effect_block = if f_unsafety.is_some() {
             // we found an `unsafe fn` declaration
             self.scope_unsafe += 1;
 
-            EffectBlock::new_unsafe_fn(self.filepath, body, f_name)
+            EffectBlock::new_unsafe_fn(self.filepath, body, f_name, vis)
         } else {
-            EffectBlock::new_fn(self.filepath, body, f_name)
+            EffectBlock::new_fn(self.filepath, body, f_name, vis)
         };
         self.scope_effect_blocks.push(effect_block);
         self.scope_fun.push(f_ident);
