@@ -4,7 +4,9 @@
 
 use crate::effect::BlockType;
 
-use super::effect::{EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility};
+use super::effect::{
+    EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
+};
 use super::ident;
 use super::util::infer;
 
@@ -174,10 +176,14 @@ impl<'a> Scanner<'a> {
             effect_blocks: self.effect_blocks,
             unsafe_traits: self.unsafe_traits,
             unsafe_impls: self.unsafe_impls,
-            pub_fns: self.fn_decls.iter().filter_map(|fun| match fun.vis {
-                Visibility::Public => Some(fun.fn_name.clone()),
-                Visibility::Private => None,
-            }).collect(),
+            pub_fns: self
+                .fn_decls
+                .iter()
+                .filter_map(|fun| match fun.vis {
+                    Visibility::Public => Some(fun.fn_name.clone()),
+                    Visibility::Private => None,
+                })
+                .collect(),
             fn_locs: self
                 .fn_decls
                 .into_iter()
@@ -389,6 +395,10 @@ impl<'a> Scanner<'a> {
         result
     }
 
+    fn aggregate_path(p: &[&'a syn::Ident]) -> ident::Path {
+        ident::Path::new_owned(Self::path_to_string(p))
+    }
+
     fn lookup_filepath_ident(&self, i: &'a syn::Ident) -> String {
         // TODO after name resolution is working:
         // decide which of these we actually need and make it robust
@@ -400,6 +410,66 @@ impl<'a> Scanner<'a> {
     fn lookup_ffi(&self, ffi: &str) -> Option<ident::Path> {
         // TBD
         self.ffi_decls.get(ffi).map(|x| ident::Path::new_owned(x.to_string()))
+    }
+
+    fn lookup_method(&self, i: &syn::Ident) -> ident::Path {
+        ident::Path::new_owned(format!("[METHOD]::{}", i))
+    }
+
+    fn lookup_field(&self, i: &syn::Ident) -> ident::Path {
+        ident::Path::new_owned(format!("[FIELD]::{}", i))
+    }
+
+    fn lookup_field_index(&self, idx: &syn::Index) -> ident::Path {
+        ident::Path::new_owned(format!("[FIELD]::{}", idx.index))
+    }
+
+    fn lookup_expr_path(
+        &self,
+        expr_path: &'a syn::ExprPath,
+    ) -> (&'a syn::Ident, ident::Path) {
+        let callee_vec = self.lookup_path(&expr_path.path);
+        let callee_ident = *callee_vec.last().unwrap();
+        (callee_ident, Self::aggregate_path(&callee_vec))
+    }
+
+    fn lookup_callee(&self, callee: &ident::Path) -> ident::Path {
+        // Hacky inferences
+        if callee.as_str().contains("::") {
+            // The callee is (probably) already fully qualified
+            callee.clone()
+        } else {
+            let prefix = infer::fully_qualified_prefix(self.filepath);
+            ident::Path::new_owned(format!("{}::{}", prefix, callee.as_str()))
+        }
+    }
+
+    fn lookup_caller(&self, filepath: &Path, fn_decl: String) -> ident::CanonicalPath {
+        // Hacky inferences
+        let crt_string = infer::infer_crate(filepath);
+        let mut post_src = infer::infer_module(filepath);
+
+        // Get current path ["crt", "mod1", "mod2", ...]
+        let mut mod_scope = self.get_mod_scope();
+
+        // combine crate, module scope, and file-level modules (mod_scope)
+        // to form full module path
+        let mut full_scope: Vec<String> = vec![crt_string];
+        full_scope.append(&mut post_src);
+        full_scope.append(&mut mod_scope);
+        full_scope.push(fn_decl);
+
+        ident::CanonicalPath::new_owned(full_scope.join("::"))
+    }
+
+    #[allow(dead_code, unused_variables)]
+    fn resolve_ident(&self, s: &SrcLoc, i: ident::Ident) -> Option<ident::CanonicalPath> {
+        todo!()
+    }
+
+    #[allow(dead_code, unused_variables)]
+    fn resolve_path(&self, s: &SrcLoc, i: ident::Ident) -> Option<ident::CanonicalPath> {
+        todo!()
     }
 
     /*
@@ -528,7 +598,12 @@ impl<'a> Scanner<'a> {
         self.scan_fn(&m.sig, &m.block, &m.vis);
     }
 
-    fn scan_fn(&mut self, f_sig: &'a syn::Signature, body: &'a syn::Block, vis: &'a syn::Visibility) {
+    fn scan_fn(
+        &mut self,
+        f_sig: &'a syn::Signature,
+        body: &'a syn::Block,
+        vis: &'a syn::Visibility,
+    ) {
         let f_ident = &f_sig.ident;
         let f_name = f_ident.to_string();
         // TBD
@@ -806,22 +881,22 @@ impl<'a> Scanner<'a> {
     }
 
     /// push an Effect to the list of results based on this call site.
-    fn push_callsite<S>(&mut self, callee_span: S, callee_path: String)
+    fn push_callsite<S>(&mut self, callee_span: S, callee: ident::Path)
     where
         S: Debug + Spanned,
     {
-        let mod_scope = self.get_mod_scope();
         let caller_name =
             self.get_fun_scope().expect("push_callsite called outside of a function!");
+        let caller = self.lookup_caller(self.filepath, caller_name);
+        let callee_full = self.lookup_callee(&callee);
 
         let eff = EffectInstance::new_call(
             self.filepath,
-            &mod_scope,
-            caller_name,
-            callee_path.clone(),
+            caller,
+            callee_full,
             &callee_span,
             self.scope_unsafe > 0,
-            self.lookup_ffi(&callee_path),
+            self.lookup_ffi(callee.as_str()),
         );
         if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
             effect_block.push_effect(eff.clone())
@@ -837,10 +912,8 @@ impl<'a> Scanner<'a> {
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
         match f {
             syn::Expr::Path(p) => {
-                let callee_path = self.lookup_path(&p.path);
-                let callee_ident = *callee_path.last().unwrap();
-                let callee_path_str = Self::path_to_string(&callee_path);
-                self.push_callsite(callee_ident, callee_path_str);
+                let (span, callee) = self.lookup_expr_path(p);
+                self.push_callsite(span, callee);
             }
             syn::Expr::Paren(x) => {
                 // e.g. (my_struct.f)(x)
@@ -865,19 +938,16 @@ impl<'a> Scanner<'a> {
     fn scan_expr_call_field(&mut self, m: &'a syn::Member) {
         match m {
             syn::Member::Named(i) => {
-                let callee_path = format!("[FIELD]::{}", i);
-                self.push_callsite(i, callee_path);
+                self.push_callsite(i, self.lookup_field(i));
             }
             syn::Member::Unnamed(idx) => {
-                let callee_path = format!("[FIELD]::{}", idx.index);
-                self.push_callsite(idx, callee_path);
+                self.push_callsite(idx, self.lookup_field_index(idx));
             }
         }
     }
 
     fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
-        let callee_path = format!("[METHOD]::{}", i);
-        self.push_callsite(i, callee_path);
+        self.push_callsite(i, self.lookup_method(i));
     }
 }
 
