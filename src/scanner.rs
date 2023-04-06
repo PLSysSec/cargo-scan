@@ -11,7 +11,7 @@ use super::ident;
 use super::util::infer;
 
 use anyhow::{anyhow, Result};
-use petgraph::graph::DiGraph;
+use petgraph::graph::{DiGraph, NodeIndex};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -147,6 +147,7 @@ pub struct ScanData {
     fn_decls: Vec<FnDec>,
 
     call_graph: DiGraph<ident::Path, SrcLoc>,
+    node_idxs: HashMap<ident::Path, NodeIndex>,
     // info about skipped nodes
     skipped_macros: usize,
     skipped_fn_calls: usize,
@@ -161,6 +162,7 @@ impl ScanData {
             unsafe_impls: Vec::new(),
             fn_decls: Vec::new(),
             call_graph: DiGraph::new(),
+            node_idxs: HashMap::new(),
             skipped_macros: 0,
             skipped_fn_calls: 0,
         }
@@ -641,9 +643,14 @@ impl<'a, 'b> Scanner<'a, 'b> {
         // TBD
         let f_name_full = self.lookup_filepath_ident(f_ident);
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
+
+        let fn_dec = FnDec::new(self.filepath, f_sig, f_name_full, vis);
+        let node_idx = self.data.call_graph.add_node(fn_dec.fn_name.clone());
+        self.data.node_idxs.insert(fn_dec.fn_name.clone(), node_idx);
         // NOTE: always push the new function declaration before scanning the
         //       body so we have access to the function its in for unsafe blocks
-        self.data.fn_decls.push(FnDec::new(self.filepath, f_sig, f_name_full, vis));
+        self.data.fn_decls.push(fn_dec);
+
         let effect_block = if f_unsafety.is_some() {
             // we found an `unsafe fn` declaration
             self.scope_unsafe += 1;
@@ -921,6 +928,14 @@ impl<'a, 'b> Scanner<'a, 'b> {
             self.get_fun_scope().expect("push_callsite called outside of a function!");
         let caller = self.lookup_caller(self.filepath, caller_name);
         let callee_full = self.lookup_callee(&callee);
+
+        let caller_node_idx = self.data.node_idxs.get(caller.as_path()).unwrap();
+        let callee_node_idx = self.data.node_idxs.get(&callee_full).unwrap();
+        self.data.call_graph.add_edge(
+            *caller_node_idx,
+            *callee_node_idx,
+            SrcLoc::from_span(self.filepath, &callee_span.span()),
+        );
 
         let eff = EffectInstance::new_call(
             self.filepath,
