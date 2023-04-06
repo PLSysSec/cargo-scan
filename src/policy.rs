@@ -2,9 +2,9 @@ use super::effect::{EffectBlock, EffectInstance, SrcLoc};
 use super::ident::Path;
 
 use std::collections::HashMap;
-use std::io::{Read, Write};
 use std::fmt;
 use std::fs::File;
+use std::io::{Read, Write};
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
@@ -90,7 +90,10 @@ impl EffectTree {
 
     /// Sets the annotation for a leaf node and returns Some previous annotation,
     /// or None if it was a branch node
-    pub fn set_annotation(&mut self, new_a: SafetyAnnotation) -> Option<SafetyAnnotation> {
+    pub fn set_annotation(
+        &mut self,
+        new_a: SafetyAnnotation,
+    ) -> Option<SafetyAnnotation> {
         match self {
             EffectTree::Leaf(_, a) => {
                 let ret = *a;
@@ -146,8 +149,8 @@ impl PolicyFile {
         if json.is_empty() {
             return Ok(None);
         }
+
         let policy_file = serde_json::from_str(&json)?;
         Ok(Some(policy_file))
     }
-
 }

@@ -11,6 +11,7 @@ use super::ident;
 use super::util::infer;
 
 use anyhow::{anyhow, Result};
+use petgraph::graph::DiGraph;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -32,12 +33,14 @@ pub struct ScanResults {
     pub fn_locs: HashMap<ident::Path, SrcLoc>,
     pub pub_fns: Vec<ident::Path>,
 
+    pub call_graph: DiGraph<ident::Path, SrcLoc>,
+
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
 }
 
 impl ScanResults {
-    fn new() -> Self {
+    fn _new() -> Self {
         ScanResults {
             effects: Vec::new(),
             effect_blocks: Vec::new(),
@@ -45,12 +48,13 @@ impl ScanResults {
             unsafe_impls: Vec::new(),
             fn_locs: HashMap::new(),
             pub_fns: Vec::new(),
+            call_graph: DiGraph::new(),
             skipped_macros: 0,
             skipped_fn_calls: 0,
         }
     }
 
-    fn combine_results(&mut self, other: &mut Self) {
+    fn _combine_results(&mut self, other: &mut Self) {
         let ScanResults {
             effects: o_effects,
             effect_blocks: o_effect_blocks,
@@ -58,6 +62,7 @@ impl ScanResults {
             unsafe_impls: o_unsafe_impls,
             fn_locs: o_fn_locs,
             pub_fns: o_pub_fns,
+            call_graph: _o_call_graph,
             skipped_macros: o_skipped_macros,
             skipped_fn_calls: o_skipped_fn_calls,
         } = other;
@@ -103,19 +108,73 @@ impl ScanResults {
     }
 }
 
-/// Stateful object to scan Rust source code for effects (fn calls of interest)
-#[derive(Debug)]
-pub struct Scanner<'a> {
-    // filepath that the scanner is being run on
-    filepath: &'a Path,
-    // output
+impl From<ScanData> for ScanResults {
+    fn from(data: ScanData) -> Self {
+        ScanResults {
+            effects: data.effects,
+            effect_blocks: data.effect_blocks,
+            unsafe_traits: data.unsafe_traits,
+            unsafe_impls: data.unsafe_impls,
+            pub_fns: data
+                .fn_decls
+                .iter()
+                .filter_map(|fun| match fun.vis {
+                    Visibility::Public => Some(fun.fn_name.clone()),
+                    Visibility::Private => None,
+                })
+                .collect(),
+            fn_locs: data
+                .fn_decls
+                .into_iter()
+                .map(|FnDec { src_loc, fn_name, vis: _ }| (fn_name, src_loc))
+                .collect::<HashMap<_, _>>(),
+            call_graph: data.call_graph,
+            skipped_macros: data.skipped_macros,
+            skipped_fn_calls: data.skipped_fn_calls,
+        }
+    }
+}
+
+/// Holds the intermediate state between scans which doesn't hold references
+/// to file data
+#[derive(Debug, Default)]
+pub struct ScanData {
     effects: Vec<EffectInstance>,
     effect_blocks: Vec<EffectBlock>,
     unsafe_traits: Vec<TraitDec>,
     unsafe_impls: Vec<TraitImpl>,
     // Saved function declarations
     fn_decls: Vec<FnDec>,
+
+    call_graph: DiGraph<ident::Path, SrcLoc>,
+    // info about skipped nodes
+    skipped_macros: usize,
+    skipped_fn_calls: usize,
+}
+
+impl ScanData {
+    pub fn new() -> Self {
+        ScanData {
+            effects: Vec::new(),
+            effect_blocks: Vec::new(),
+            unsafe_traits: Vec::new(),
+            unsafe_impls: Vec::new(),
+            fn_decls: Vec::new(),
+            call_graph: DiGraph::new(),
+            skipped_macros: 0,
+            skipped_fn_calls: 0,
+        }
+    }
+}
+
+/// Stateful object to scan Rust source code for effects (fn calls of interest)
+#[derive(Debug)]
+pub struct Scanner<'a, 'b> {
+    // filepath that the scanner is being run on
+    filepath: &'a Path,
+    // Saved function declarations
     ffi_decls: HashMap<String, &'a syn::Ident>,
+
     // stack-based scopes for parsing (always empty at top-level)
     scope_mods: Vec<&'a syn::Ident>,
     scope_use: Vec<&'a syn::Ident>,
@@ -128,24 +187,18 @@ pub struct Scanner<'a> {
     // collecting use statements that are in scope
     use_names: HashMap<String, Vec<&'a syn::Ident>>,
     use_globs: Vec<Vec<&'a syn::Ident>>,
-    // info about skipped nodes
-    skipped_macros: usize,
-    skipped_fn_calls: usize,
+
+    data: &'b mut ScanData,
 }
 
-impl<'a> Scanner<'a> {
+impl<'a, 'b> Scanner<'a, 'b> {
     /*
         Main public API
     */
     /// Create a new scanner tied to a filepath
-    pub fn new(filepath: &'a Path) -> Self {
+    pub fn new(filepath: &'a Path, data: &'b mut ScanData) -> Self {
         Self {
             filepath,
-            effects: Vec::new(),
-            effect_blocks: Vec::new(),
-            unsafe_impls: Vec::new(),
-            unsafe_traits: Vec::new(),
-            fn_decls: Vec::new(),
             ffi_decls: HashMap::new(),
             scope_mods: Vec::new(),
             scope_use: Vec::new(),
@@ -154,8 +207,7 @@ impl<'a> Scanner<'a> {
             scope_unsafe: 0,
             use_names: HashMap::new(),
             use_globs: Vec::new(),
-            skipped_macros: 0,
-            skipped_fn_calls: 0,
+            data,
         }
     }
 
@@ -166,32 +218,6 @@ impl<'a> Scanner<'a> {
         debug_assert!(self.scope_fun.is_empty());
         debug_assert!(self.scope_effect_blocks.is_empty());
         debug_assert_eq!(self.scope_unsafe, 0);
-    }
-
-    /// Results of the scan (consumes the scanner)
-    pub fn get_results(self) -> ScanResults {
-        self.assert_top_level_invariant();
-        ScanResults {
-            effects: self.effects,
-            effect_blocks: self.effect_blocks,
-            unsafe_traits: self.unsafe_traits,
-            unsafe_impls: self.unsafe_impls,
-            pub_fns: self
-                .fn_decls
-                .iter()
-                .filter_map(|fun| match fun.vis {
-                    Visibility::Public => Some(fun.fn_name.clone()),
-                    Visibility::Private => None,
-                })
-                .collect(),
-            fn_locs: self
-                .fn_decls
-                .into_iter()
-                .map(|FnDec { src_loc, fn_name, vis: _ }| (fn_name, src_loc))
-                .collect::<HashMap<_, _>>(),
-            skipped_macros: self.skipped_macros,
-            skipped_fn_calls: self.skipped_fn_calls,
-        }
     }
 
     /*
@@ -206,6 +232,7 @@ impl<'a> Scanner<'a> {
             self.scan_item(i);
         }
     }
+
     pub fn scan_item(&mut self, i: &'a syn::Item) {
         match i {
             syn::Item::Mod(m) => self.scan_mod(m),
@@ -215,7 +242,7 @@ impl<'a> Scanner<'a> {
             syn::Item::Trait(t) => self.scan_trait(t),
             syn::Item::ForeignMod(fm) => self.scan_foreign_mod(fm),
             syn::Item::Macro(_) => {
-                self.skipped_macros += 1;
+                self.data.skipped_macros += 1;
             }
             _ => (),
             // For all syntax elements see
@@ -224,6 +251,7 @@ impl<'a> Scanner<'a> {
             // Const(ItemConst), Static(ItemStatic) -- for information flow
         }
     }
+
     pub fn scan_mod(&mut self, m: &'a syn::ItemMod) {
         // TBD: reset use state; handle super keywords
         if let Some((_, items)) = &m.content {
@@ -277,7 +305,7 @@ impl<'a> Scanner<'a> {
         match i {
             syn::ForeignItem::Fn(f) => self.scan_foreign_fn(f),
             syn::ForeignItem::Macro(_) => {
-                self.skipped_macros += 1;
+                self.data.skipped_macros += 1;
             }
             _ => {}
         }
@@ -357,7 +385,7 @@ impl<'a> Scanner<'a> {
     // use map lookups
     // weird signature: need a double reference on i because i is owned by cur function
     // all hail the borrow checker for catching this error
-    fn lookup_ident<'b>(&'b self, i: &'b &'a syn::Ident) -> &'b [&'a syn::Ident]
+    fn lookup_ident<'c>(&'c self, i: &'c &'a syn::Ident) -> &'c [&'a syn::Ident]
     where
         'a: 'b,
     {
@@ -480,7 +508,11 @@ impl<'a> Scanner<'a> {
         let t_unsafety = t.unsafety;
         if t_unsafety.is_some() {
             // we found an `unsafe trait` declaration
-            self.unsafe_traits.push(TraitDec::new(t, self.filepath, t_name.to_string()));
+            self.data.unsafe_traits.push(TraitDec::new(
+                t,
+                self.filepath,
+                t_name.to_string(),
+            ));
         }
         // TBD: handle trait block, e.g. default implementations
     }
@@ -505,7 +537,7 @@ impl<'a> Scanner<'a> {
                     self.scan_method(m);
                 }
                 syn::ImplItem::Macro(_) => {
-                    self.skipped_macros += 1;
+                    self.data.skipped_macros += 1;
                 }
                 syn::ImplItem::Verbatim(v) => {
                     self.syn_warning("skipping Verbatim expression", v);
@@ -526,7 +558,7 @@ impl<'a> Scanner<'a> {
             syn::Type::Paren(x) => self.scan_impl_type(&x.elem),
             syn::Type::Path(x) => self.scan_impl_type_path(&x.path),
             syn::Type::Macro(_) => {
-                self.skipped_macros += 1;
+                self.data.skipped_macros += 1;
                 0
             }
             syn::Type::TraitObject(x) => {
@@ -575,7 +607,7 @@ impl<'a> Scanner<'a> {
         if imp.unsafety.is_some() {
             // we found an `unsafe impl` declaration
             let tr_name = Self::path_to_string(&self.lookup_path(tr));
-            self.unsafe_impls.push(TraitImpl::new(imp, self.filepath, tr_name));
+            self.data.unsafe_impls.push(TraitImpl::new(imp, self.filepath, tr_name));
         }
 
         let fullpath = self.lookup_path(tr);
@@ -611,7 +643,7 @@ impl<'a> Scanner<'a> {
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
         // NOTE: always push the new function declaration before scanning the
         //       body so we have access to the function its in for unsafe blocks
-        self.fn_decls.push(FnDec::new(self.filepath, f_sig, f_name_full, vis));
+        self.data.fn_decls.push(FnDec::new(self.filepath, f_sig, f_name_full, vis));
         let effect_block = if f_unsafety.is_some() {
             // we found an `unsafe fn` declaration
             self.scope_unsafe += 1;
@@ -626,7 +658,7 @@ impl<'a> Scanner<'a> {
             self.scan_fn_statement(s);
         }
         self.scope_fun.pop();
-        self.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
+        self.data.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
         if f_unsafety.is_some() {
             debug_assert!(self.scope_unsafe >= 1);
             self.scope_unsafe -= 1;
@@ -638,7 +670,7 @@ impl<'a> Scanner<'a> {
             syn::Stmt::Expr(e, _semi) => self.scan_expr(e),
             syn::Stmt::Item(i) => self.scan_item_in_fn(i),
             syn::Stmt::Macro(_) => {
-                self.skipped_macros += 1;
+                self.data.skipped_macros += 1;
             }
         }
     }
@@ -745,7 +777,7 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Macro(_) => {
-                self.skipped_macros += 1;
+                self.data.skipped_macros += 1;
             }
             syn::Expr::Match(x) => {
                 self.scan_expr(&x.expr);
@@ -849,13 +881,13 @@ impl<'a> Scanner<'a> {
         let effect_block = EffectBlock::new_unsafe_expr(
             self.filepath,
             &x.block,
-            self.fn_decls.last().unwrap().clone(),
+            self.data.fn_decls.last().unwrap().clone(),
         );
         self.scope_effect_blocks.push(effect_block);
         for s in &x.block.stmts {
             self.scan_fn_statement(s);
         }
-        self.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
+        self.data.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
 
         self.scope_unsafe -= 1;
     }
@@ -906,7 +938,7 @@ impl<'a> Scanner<'a> {
                 callee_span,
             );
         }
-        self.effects.push(eff);
+        self.data.effects.push(eff);
     }
 
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
@@ -925,12 +957,12 @@ impl<'a> Scanner<'a> {
                 self.scan_expr_call_field(&x.member)
             }
             syn::Expr::Macro(_) => {
-                self.skipped_macros += 1;
+                self.data.skipped_macros += 1;
             }
             _ => {
                 // anything else could be a function, too -- could return a closure
                 // or fn pointer. No way to tell w/o type information.
-                self.skipped_fn_calls += 1;
+                self.data.skipped_fn_calls += 1;
             }
         }
     }
@@ -952,25 +984,19 @@ impl<'a> Scanner<'a> {
 }
 
 /// Load the Rust file at the filepath and scan it
-pub fn load_and_scan(filepath: &Path) -> ScanResults {
+pub fn load_and_scan(filepath: &Path, scan_data: &mut ScanData) -> Result<()> {
     // based on example at https://docs.rs/syn/latest/syn/struct.File.html
-    let mut file = File::open(filepath).unwrap_or_else(|err| {
-        panic!("scanner.rs: Error: Unable to open file: {:?} ({:?})", filepath, err)
-    });
+    let mut file = File::open(filepath)?;
 
     let mut src = String::new();
-    file.read_to_string(&mut src).unwrap_or_else(|err| {
-        panic!("scanner.rs: Error: Unable to read file: {:?} ({:?})", filepath, err)
-    });
+    file.read_to_string(&mut src)?;
 
-    let syntax_tree = syn::parse_file(&src).unwrap_or_else(|err| {
-        panic!("scanner.rs: Error: Unable to parse file: {:?} ({:?})", filepath, err)
-    });
+    let syntax_tree = syn::parse_file(&src)?;
 
-    let mut scanner = Scanner::new(filepath);
+    let mut scanner = Scanner::new(filepath, scan_data);
     scanner.scan_file(&syntax_tree);
 
-    scanner.get_results()
+    Ok(())
 }
 
 /// Scan the supplied crate
@@ -986,13 +1012,11 @@ pub fn scan_crate(crate_path: &Path) -> Result<ScanResults> {
         return Err(anyhow!("Path is not a crate; missing Cargo.toml: {:?}", crate_path));
     }
 
-    let mut final_result = ScanResults::new();
+    let mut scan_data = ScanData::new();
 
     // TODO: For now, only walking through the src dir, but might want to
     //       include others (e.g. might codegen in other dirs)
     // We have a valid crate, so iterate through all the rust src
-    // TODO: Does this work in alphabetical orer?
-    // scan.py script currently needs the order to be deterministic across calls
     for entry in WalkDir::new(crate_path.join(Path::new("src")))
         .sort_by_file_name()
         .into_iter()
@@ -1004,10 +1028,8 @@ pub fn scan_crate(crate_path: &Path) -> Result<ScanResults> {
             _ => false,
         })
     {
-        let mut next_scan = load_and_scan(Path::new(entry?.path()));
-
-        final_result.combine_results(&mut next_scan);
+        load_and_scan(Path::new(entry?.path()), &mut scan_data)?;
     }
 
-    Ok(final_result)
+    Ok(scan_data.into())
 }
