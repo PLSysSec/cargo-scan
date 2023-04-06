@@ -18,7 +18,7 @@ test: install
 	cargo clippy
 	cargo fmt
 	$(SCAN_PY) -t -i data/crate-lists/test-crates.csv -o test -vvv
-	git diff data/results
+	- git diff data/results
 
 top10: install
 	$(SCAN_PY) -i data/crate-lists/top10.csv -o top10
