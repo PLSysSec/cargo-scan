@@ -7,7 +7,7 @@ use crate::effect::BlockType;
 use super::effect::{
     EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
 };
-use super::ident;
+use super::ident::{CanonicalPath, Ident, Path};
 use super::util::infer;
 
 use anyhow::{anyhow, Result};
@@ -17,7 +17,7 @@ use std::collections::HashSet;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::Read;
-use std::path::Path;
+use std::path::Path as FilePath;
 use syn::spanned::Spanned;
 use walkdir::WalkDir;
 
@@ -30,10 +30,10 @@ pub struct ScanResults {
     pub unsafe_traits: Vec<TraitDec>,
     pub unsafe_impls: Vec<TraitImpl>,
 
-    pub fn_locs: HashMap<ident::Path, SrcLoc>,
-    pub pub_fns: Vec<ident::Path>,
+    pub fn_locs: HashMap<Path, SrcLoc>,
+    pub pub_fns: Vec<Path>,
 
-    pub call_graph: DiGraph<ident::Path, SrcLoc>,
+    pub call_graph: DiGraph<Path, SrcLoc>,
 
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
@@ -91,10 +91,7 @@ impl ScanResults {
             .collect::<HashSet<_>>()
     }
 
-    pub fn get_callers<'a>(
-        &'a self,
-        callee: &ident::Path,
-    ) -> HashSet<&'a EffectInstance> {
+    pub fn get_callers<'a>(&'a self, callee: &Path) -> HashSet<&'a EffectInstance> {
         let mut callers = HashSet::new();
         for e in &self.effects {
             // TODO: Update this when we get more intelligent name resolution
@@ -146,8 +143,8 @@ pub struct ScanData {
     // Saved function declarations
     fn_decls: Vec<FnDec>,
 
-    call_graph: DiGraph<ident::Path, SrcLoc>,
-    node_idxs: HashMap<ident::Path, NodeIndex>,
+    call_graph: DiGraph<Path, SrcLoc>,
+    node_idxs: HashMap<Path, NodeIndex>,
     // info about skipped nodes
     skipped_macros: usize,
     skipped_fn_calls: usize,
@@ -173,7 +170,7 @@ impl ScanData {
 #[derive(Debug)]
 pub struct Scanner<'a, 'b> {
     // filepath that the scanner is being run on
-    filepath: &'a Path,
+    filepath: &'a FilePath,
 
     // stack-based scopes for parsing (always empty at top-level)
     scope_mods: Vec<&'a syn::Ident>,
@@ -191,7 +188,7 @@ pub struct Scanner<'a, 'b> {
     use_globs: Vec<Vec<&'a syn::Ident>>,
 
     // Saved FFI declarations
-    ffi_decls: HashMap<&'a syn::Ident, ident::Path>,
+    ffi_decls: HashMap<&'a syn::Ident, Path>,
 
     data: &'b mut ScanData,
 }
@@ -201,7 +198,7 @@ impl<'a, 'b> Scanner<'a, 'b> {
         Main public API
     */
     /// Create a new scanner tied to a filepath
-    pub fn new(filepath: &'a Path, data: &'b mut ScanData) -> Self {
+    pub fn new(filepath: &'a FilePath, data: &'b mut ScanData) -> Self {
         Self {
             filepath,
             ffi_decls: HashMap::new(),
@@ -417,73 +414,67 @@ impl<'a, 'b> Scanner<'a, 'b> {
         result
     }
 
-    fn get_mod_scope(&self) -> ident::Path {
+    fn get_mod_scope(&self) -> Path {
         let mods: Vec<String> = self.scope_mods.iter().map(|i| i.to_string()).collect();
-        ident::Path::new_owned(mods.join("::"))
+        Path::new_owned(mods.join("::"))
     }
 
-    fn get_fun_scope(&self) -> Option<ident::Ident> {
+    fn get_fun_scope(&self) -> Option<Ident> {
         self.scope_fun.last().cloned().map(Self::syn_to_ident)
     }
 
-    fn syn_to_ident(i: &syn::Ident) -> ident::Ident {
-        ident::Ident::new_owned(i.to_string())
+    fn syn_to_ident(i: &syn::Ident) -> Ident {
+        Ident::new_owned(i.to_string())
     }
 
-    fn syn_to_path(i: &syn::Ident) -> ident::Path {
-        ident::Path::from_ident(Self::syn_to_ident(i))
+    fn syn_to_path(i: &syn::Ident) -> Path {
+        Path::from_ident(Self::syn_to_ident(i))
     }
 
-    fn aggregate_path(p: &[&'a syn::Ident]) -> ident::Path {
-        let mut result = ident::Path::new_empty();
+    fn aggregate_path(p: &[&'a syn::Ident]) -> Path {
+        let mut result = Path::new_empty();
         for &i in p {
             result.push_ident(&Self::syn_to_ident(i));
         }
         result
     }
 
-    fn lookup_fn_decl(&self, i: &'a syn::Ident) -> ident::Path {
+    fn lookup_fn_decl(&self, i: &'a syn::Ident) -> Path {
         // TODO after name resolution is working:
         // decide which of these we actually need and make it robust
-        let mut result =
-            ident::Path::new_owned(infer::fully_qualified_prefix(self.filepath));
+        let mut result = Path::new_owned(infer::fully_qualified_prefix(self.filepath));
         result.append(&Self::aggregate_path(self.lookup_ident(&i)));
         result
     }
 
-    fn lookup_ffi(&self, ffi: &syn::Ident) -> Option<ident::Path> {
+    fn lookup_ffi(&self, ffi: &syn::Ident) -> Option<Path> {
         // TBD
         self.ffi_decls.get(ffi).cloned()
     }
 
-    fn lookup_method(&self, i: &syn::Ident) -> ident::Path {
-        ident::Path::new_owned(format!("[METHOD]::{}", i))
+    fn lookup_method(&self, i: &syn::Ident) -> Path {
+        Path::new_owned(format!("[METHOD]::{}", i))
     }
 
-    fn lookup_field(&self, i: &syn::Ident) -> ident::Path {
-        ident::Path::new_owned(format!("[FIELD]::{}", i))
+    fn lookup_field(&self, i: &syn::Ident) -> Path {
+        Path::new_owned(format!("[FIELD]::{}", i))
     }
 
-    fn lookup_field_index(&self, idx: &syn::Index) -> ident::Path {
-        ident::Path::new_owned(format!("[FIELD]::{}", idx.index))
+    fn lookup_field_index(&self, idx: &syn::Index) -> Path {
+        Path::new_owned(format!("[FIELD]::{}", idx.index))
     }
 
-    fn lookup_expr_path(
-        &self,
-        expr_path: &'a syn::ExprPath,
-    ) -> (&'a syn::Ident, ident::Path) {
+    fn lookup_expr_path(&self, expr_path: &'a syn::ExprPath) -> (&'a syn::Ident, Path) {
         let callee_vec = self.lookup_path(&expr_path.path);
         let callee_ident = *callee_vec.last().unwrap();
         (callee_ident, Self::aggregate_path(&callee_vec))
     }
 
-    fn lookup_caller(&self) -> ident::CanonicalPath {
+    fn lookup_caller(&self) -> CanonicalPath {
         // Hacky inferences
-        let mut result =
-            ident::CanonicalPath::new_owned(infer::infer_crate(self.filepath));
-        result.append_path(&ident::Path::new_owned(
-            infer::infer_module(self.filepath).join("::"),
-        ));
+        let mut result = CanonicalPath::new_owned(infer::infer_crate(self.filepath));
+        result
+            .append_path(&Path::new_owned(infer::infer_module(self.filepath).join("::")));
 
         // Push current mod scope [ "mod1", "mod2", ...]
         result.append_path(&self.get_mod_scope());
@@ -495,12 +486,12 @@ impl<'a, 'b> Scanner<'a, 'b> {
     }
 
     #[allow(dead_code, unused_variables)]
-    fn resolve_ident(&self, s: &SrcLoc, i: ident::Ident) -> Option<ident::CanonicalPath> {
+    fn resolve_ident(&self, s: &SrcLoc, i: Ident) -> Option<CanonicalPath> {
         todo!()
     }
 
     #[allow(dead_code, unused_variables)]
-    fn resolve_path(&self, s: &SrcLoc, i: ident::Path) -> Option<ident::CanonicalPath> {
+    fn resolve_path(&self, s: &SrcLoc, i: Path) -> Option<CanonicalPath> {
         todo!()
     }
 
@@ -910,12 +901,8 @@ impl<'a, 'b> Scanner<'a, 'b> {
     }
 
     /// push an Effect to the list of results based on this call site.
-    fn push_callsite<S>(
-        &mut self,
-        callee_span: S,
-        callee: ident::Path,
-        ffi: Option<ident::Path>,
-    ) where
+    fn push_callsite<S>(&mut self, callee_span: S, callee: Path, ffi: Option<Path>)
+    where
         S: Debug + Spanned,
     {
         let caller = self.lookup_caller();
@@ -994,7 +981,7 @@ impl<'a, 'b> Scanner<'a, 'b> {
 }
 
 /// Load the Rust file at the filepath and scan it
-pub fn load_and_scan(filepath: &Path, scan_data: &mut ScanData) -> Result<()> {
+pub fn load_and_scan(filepath: &FilePath, scan_data: &mut ScanData) -> Result<()> {
     // based on example at https://docs.rs/syn/latest/syn/struct.File.html
     let mut file = File::open(filepath)?;
 
@@ -1010,7 +997,7 @@ pub fn load_and_scan(filepath: &Path, scan_data: &mut ScanData) -> Result<()> {
 }
 
 /// Scan the supplied crate
-pub fn scan_crate(crate_path: &Path) -> Result<ScanResults> {
+pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
     // Make sure the path is a crate
     if !crate_path.is_dir() {
         return Err(anyhow!("Path is not a crate; not a directory: {:?}", crate_path));
@@ -1027,18 +1014,18 @@ pub fn scan_crate(crate_path: &Path) -> Result<ScanResults> {
     // TODO: For now, only walking through the src dir, but might want to
     //       include others (e.g. might codegen in other dirs)
     // We have a valid crate, so iterate through all the rust src
-    for entry in WalkDir::new(crate_path.join(Path::new("src")))
+    for entry in WalkDir::new(crate_path.join(FilePath::new("src")))
         .sort_by_file_name()
         .into_iter()
         .filter(|e| match e {
             Ok(ne) if ne.path().is_file() => {
-                let fname = Path::new(ne.file_name());
+                let fname = FilePath::new(ne.file_name());
                 fname.to_str().map_or(false, |x| x.ends_with(".rs"))
             }
             _ => false,
         })
     {
-        load_and_scan(Path::new(entry?.path()), &mut scan_data)?;
+        load_and_scan(FilePath::new(entry?.path()), &mut scan_data)?;
     }
 
     Ok(scan_data.into())
