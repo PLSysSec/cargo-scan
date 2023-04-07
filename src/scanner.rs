@@ -174,21 +174,24 @@ impl ScanData {
 pub struct Scanner<'a, 'b> {
     // filepath that the scanner is being run on
     filepath: &'a Path,
-    // Saved function declarations
-    ffi_decls: HashMap<String, &'a syn::Ident>,
 
     // stack-based scopes for parsing (always empty at top-level)
     scope_mods: Vec<&'a syn::Ident>,
     scope_use: Vec<&'a syn::Ident>,
     scope_fun: Vec<&'a syn::Ident>,
     scope_effect_blocks: Vec<EffectBlock>,
+
     // Number of unsafe keywords the current scope is nested inside
     // (includes only unsafe blocks and fn decls -- unsafe traits and
     // unsafe impls don't alone imply unsafe operations)
     scope_unsafe: usize,
+
     // collecting use statements that are in scope
-    use_names: HashMap<String, Vec<&'a syn::Ident>>,
+    use_names: HashMap<&'a syn::Ident, Vec<&'a syn::Ident>>,
     use_globs: Vec<Vec<&'a syn::Ident>>,
+
+    // Saved FFI declarations
+    ffi_decls: HashMap<&'a syn::Ident, ident::Path>,
 
     data: &'b mut ScanData,
 }
@@ -317,7 +320,8 @@ impl<'a, 'b> Scanner<'a, 'b> {
 
     fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn) {
         let fn_name = &f.sig.ident;
-        self.ffi_decls.insert(fn_name.to_string(), fn_name);
+        let fn_path = self.lookup_fn_decl(fn_name);
+        self.ffi_decls.insert(fn_name, fn_path);
     }
 
     /*
@@ -328,19 +332,18 @@ impl<'a, 'b> Scanner<'a, 'b> {
     }
     fn save_scope_use_under(&mut self, lookup_key: &'a syn::Ident) {
         // save the use scope under an identifier/lookup key
-        let k = lookup_key.to_string();
         let v_new = self.scope_use_snapshot();
-        if cfg!(debug) && self.use_names.contains_key(&k) {
-            let v_old = self.use_names.get(&k).unwrap();
+        if cfg!(debug) && self.use_names.contains_key(lookup_key) {
+            let v_old = self.use_names.get(lookup_key).unwrap();
             if *v_old != v_new {
                 let msg = format!(
-                    "Name conflict found in use scope: {} (old: {:?} new: {:?})",
-                    k, v_old, v_new
+                    "Name conflict found in use scope: {:?} (old: {:?} new: {:?})",
+                    lookup_key, v_old, v_new
                 );
                 self.warning(&msg);
             }
         }
-        self.use_names.insert(k, v_new);
+        self.use_names.insert(lookup_key, v_new);
     }
     fn scan_use(&mut self, u: &'a syn::ItemUse) {
         // TBD: may need to do something special here if already inside a fn
@@ -392,9 +395,8 @@ impl<'a, 'b> Scanner<'a, 'b> {
     where
         'a: 'b,
     {
-        let s = i.to_string();
         self.use_names
-            .get(&s)
+            .get(i)
             .map(|v| v.as_slice())
             .unwrap_or_else(|| std::slice::from_ref(i))
     }
@@ -440,7 +442,7 @@ impl<'a, 'b> Scanner<'a, 'b> {
         result
     }
 
-    fn lookup_filepath_ident(&self, i: &'a syn::Ident) -> ident::Path {
+    fn lookup_fn_decl(&self, i: &'a syn::Ident) -> ident::Path {
         // TODO after name resolution is working:
         // decide which of these we actually need and make it robust
         let mut result =
@@ -449,9 +451,9 @@ impl<'a, 'b> Scanner<'a, 'b> {
         result
     }
 
-    fn lookup_ffi(&self, ffi: &str) -> Option<ident::Path> {
+    fn lookup_ffi(&self, ffi: &syn::Ident) -> Option<ident::Path> {
         // TBD
-        self.ffi_decls.get(ffi).map(|x| ident::Path::new_owned(x.to_string()))
+        self.ffi_decls.get(ffi).cloned()
     }
 
     fn lookup_method(&self, i: &syn::Ident) -> ident::Path {
@@ -637,7 +639,7 @@ impl<'a, 'b> Scanner<'a, 'b> {
         let f_ident = &f_sig.ident;
         let f_name = Self::syn_to_path(f_ident);
         // TBD
-        let f_name_full = self.lookup_filepath_ident(f_ident);
+        let f_name_full = self.lookup_fn_decl(f_ident);
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
 
         let fn_dec = FnDec::new(self.filepath, f_sig, f_name_full, vis);
@@ -908,8 +910,12 @@ impl<'a, 'b> Scanner<'a, 'b> {
     }
 
     /// push an Effect to the list of results based on this call site.
-    fn push_callsite<S>(&mut self, callee_span: S, callee: ident::Path)
-    where
+    fn push_callsite<S>(
+        &mut self,
+        callee_span: S,
+        callee: ident::Path,
+        ffi: Option<ident::Path>,
+    ) where
         S: Debug + Spanned,
     {
         let caller = self.lookup_caller();
@@ -928,10 +934,10 @@ impl<'a, 'b> Scanner<'a, 'b> {
         let eff = EffectInstance::new_call(
             self.filepath,
             caller,
-            callee.clone(),
+            callee,
             &callee_span,
             self.scope_unsafe > 0,
-            self.lookup_ffi(callee.as_str()),
+            ffi,
         );
         if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
             effect_block.push_effect(eff.clone())
@@ -948,7 +954,8 @@ impl<'a, 'b> Scanner<'a, 'b> {
         match f {
             syn::Expr::Path(p) => {
                 let (span, callee) = self.lookup_expr_path(p);
-                self.push_callsite(span, callee);
+                let ffi = self.lookup_ffi(span);
+                self.push_callsite(span, callee, ffi);
             }
             syn::Expr::Paren(x) => {
                 // e.g. (my_struct.f)(x)
@@ -973,16 +980,16 @@ impl<'a, 'b> Scanner<'a, 'b> {
     fn scan_expr_call_field(&mut self, m: &'a syn::Member) {
         match m {
             syn::Member::Named(i) => {
-                self.push_callsite(i, self.lookup_field(i));
+                self.push_callsite(i, self.lookup_field(i), None);
             }
             syn::Member::Unnamed(idx) => {
-                self.push_callsite(idx, self.lookup_field_index(idx));
+                self.push_callsite(idx, self.lookup_field_index(idx), None);
             }
         }
     }
 
     fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
-        self.push_callsite(i, self.lookup_method(i));
+        self.push_callsite(i, self.lookup_method(i), self.lookup_ffi(i));
     }
 }
 
