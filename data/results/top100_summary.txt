@@ -1,19 +1,17 @@
 ===== Crate Summary =====
 Number of dangerous imports by crate:
-tokio: 1417
+tokio: 960
 memchr: 954
 hashbrown: 618
 parking_lot_core: 475
-socket2: 450
-hyper: 401
-mio: 320
+socket2: 354
+mio: 314
 crossbeam-epoch: 313
 aho-corasick: 284
 ppv-lite86: 281
 bytes: 249
 anyhow: 225
 futures-util: 209
-winapi: 201
 crossbeam-channel: 199
 crossbeam-deque: 193
 lock_api: 187
@@ -25,6 +23,8 @@ arrayvec: 143
 generic-array: 126
 parking_lot: 112
 getrandom: 104
+winapi: 91
+hyper: 90
 libc: 87
 semver: 66
 futures-task: 60
@@ -32,12 +32,12 @@ crossbeam-utils: 44
 once_cell: 40
 thread_local: 39
 http: 39
-tokio-util: 37
 byteorder: 36
 num_cpus: 33
 futures-channel: 33
 chrono: 30
 syn: 25
+tokio-util: 24
 nom: 22
 time: 21
 indexmap: 20
