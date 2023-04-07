@@ -929,13 +929,16 @@ impl<'a, 'b> Scanner<'a, 'b> {
         let caller = self.lookup_caller(self.filepath, caller_name);
         let callee_full = self.lookup_callee(&callee);
 
-        let caller_node_idx = self.data.node_idxs.get(caller.as_path()).unwrap();
-        let callee_node_idx = self.data.node_idxs.get(&callee_full).unwrap();
-        self.data.call_graph.add_edge(
-            *caller_node_idx,
-            *callee_node_idx,
-            SrcLoc::from_span(self.filepath, &callee_span.span()),
-        );
+        // TBD: unwraps were causing `make test` to crash
+        if let Some(caller_node_idx) = self.data.node_idxs.get(caller.as_path()) {
+            if let Some(callee_node_idx) = self.data.node_idxs.get(&callee_full) {
+                self.data.call_graph.add_edge(
+                    *caller_node_idx,
+                    *callee_node_idx,
+                    SrcLoc::from_span(self.filepath, &callee_span.span()),
+                );
+            }
+        }
 
         let eff = EffectInstance::new_call(
             self.filepath,
