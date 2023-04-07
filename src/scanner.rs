@@ -384,7 +384,10 @@ impl<'a, 'b> Scanner<'a, 'b> {
         }
     }
 
-    // use map lookups
+    /*
+        Name resolution methods
+    */
+
     // weird signature: need a double reference on i because i is owned by cur function
     // all hail the borrow checker for catching this error
     fn lookup_ident<'c>(&'c self, i: &'c &'a syn::Ident) -> &'c [&'a syn::Ident]
@@ -412,6 +415,15 @@ impl<'a, 'b> Scanner<'a, 'b> {
         result.extend(it);
 
         result
+    }
+
+    fn get_mod_scope(&self) -> ident::Path {
+        let mods: Vec<String> = self.scope_mods.iter().map(|i| i.to_string()).collect();
+        ident::Path::new_owned(mods.join("::"))
+    }
+
+    fn get_fun_scope(&self) -> Option<ident::Ident> {
+        self.scope_fun.last().map(|s| ident::Ident::new_owned(s.to_string()))
     }
 
     fn path_to_string(p: &[&'a syn::Ident]) -> String {
@@ -466,30 +478,31 @@ impl<'a, 'b> Scanner<'a, 'b> {
     fn lookup_callee(&self, callee: &ident::Path) -> ident::Path {
         // Hacky inferences
         if callee.as_str().contains("::") {
+            // eprintln!("INFO: branch 1 taken");
             // The callee is (probably) already fully qualified
             callee.clone()
         } else {
+            // eprintln!("INFO: branch 2 taken");
             let prefix = infer::fully_qualified_prefix(self.filepath);
             ident::Path::new_owned(format!("{}::{}", prefix, callee.as_str()))
         }
     }
 
-    fn lookup_caller(&self, filepath: &Path, fn_decl: String) -> ident::CanonicalPath {
+    fn lookup_caller(&self) -> ident::CanonicalPath {
         // Hacky inferences
-        let crt_string = infer::infer_crate(filepath);
-        let mut post_src = infer::infer_module(filepath);
+        let mut result =
+            ident::CanonicalPath::new_owned(infer::infer_crate(self.filepath));
+        result.append_path(&ident::Path::new_owned(
+            infer::infer_module(self.filepath).join("::"),
+        ));
 
-        // Get current path ["crt", "mod1", "mod2", ...]
-        let mut mod_scope = self.get_mod_scope();
+        // Push current mod scope [ "mod1", "mod2", ...]
+        result.append_path(&self.get_mod_scope());
 
-        // combine crate, module scope, and file-level modules (mod_scope)
-        // to form full module path
-        let mut full_scope: Vec<String> = vec![crt_string];
-        full_scope.append(&mut post_src);
-        full_scope.append(&mut mod_scope);
-        full_scope.push(fn_decl);
+        // Push current function
+        result.push_ident(&self.get_fun_scope().expect("not inside a function!"));
 
-        ident::CanonicalPath::new_owned(full_scope.join("::"))
+        result
     }
 
     #[allow(dead_code, unused_variables)]
@@ -498,7 +511,7 @@ impl<'a, 'b> Scanner<'a, 'b> {
     }
 
     #[allow(dead_code, unused_variables)]
-    fn resolve_path(&self, s: &SrcLoc, i: ident::Ident) -> Option<ident::CanonicalPath> {
+    fn resolve_path(&self, s: &SrcLoc, i: ident::Path) -> Option<ident::CanonicalPath> {
         todo!()
     }
 
@@ -911,26 +924,16 @@ impl<'a, 'b> Scanner<'a, 'b> {
         }
     }
 
-    fn get_mod_scope(&self) -> Vec<String> {
-        self.scope_mods.iter().map(|i| i.to_string()).collect()
-    }
-
-    fn get_fun_scope(&self) -> Option<String> {
-        self.scope_fun.last().map(|s| s.to_string())
-    }
-
     /// push an Effect to the list of results based on this call site.
     fn push_callsite<S>(&mut self, callee_span: S, callee: ident::Path)
     where
         S: Debug + Spanned,
     {
-        let caller_name =
-            self.get_fun_scope().expect("push_callsite called outside of a function!");
-        let caller = self.lookup_caller(self.filepath, caller_name);
+        let caller_full = self.lookup_caller();
         let callee_full = self.lookup_callee(&callee);
 
         // TBD: unwraps were causing `make test` to crash
-        if let Some(caller_node_idx) = self.data.node_idxs.get(caller.as_path()) {
+        if let Some(caller_node_idx) = self.data.node_idxs.get(caller_full.as_path()) {
             if let Some(callee_node_idx) = self.data.node_idxs.get(&callee_full) {
                 self.data.call_graph.add_edge(
                     *caller_node_idx,
@@ -942,7 +945,7 @@ impl<'a, 'b> Scanner<'a, 'b> {
 
         let eff = EffectInstance::new_call(
             self.filepath,
-            caller,
+            caller_full,
             callee_full,
             &callee_span,
             self.scope_unsafe > 0,

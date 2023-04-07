@@ -34,6 +34,7 @@ fn test_replace_hyphens() {
 
 /// An Rust name identifier, without colons
 /// E.g.: env
+/// Should be a nonempty string
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Ident(String);
 impl Display for Ident {
@@ -48,7 +49,7 @@ impl Ident {
     }
 
     pub fn invariant(&self) -> bool {
-        self.0.chars().all(Self::char_ok)
+        self.0.chars().all(Self::char_ok) && !self.0.is_empty()
     }
 
     pub fn check_invariant(&self) {
@@ -75,6 +76,7 @@ impl Ident {
 
 /// A Rust path identifier, with colons
 /// E.g.: std::env::var_os
+/// Semantically a (possibly empty) sequence of Idents
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Path(String);
 impl Display for Path {
@@ -118,6 +120,36 @@ impl Path {
         result
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn push_ident(&mut self, i: &Ident) {
+        if !self.is_empty() {
+            self.0.push_str("::");
+        }
+        self.0.push_str(i.as_str());
+        self.check_invariant();
+    }
+
+    pub fn pop_ident(&mut self) -> Option<Ident> {
+        let (s1, s2) = self.0.rsplit_once("::")?;
+        let result = Ident::new(s2);
+        self.0 = s1.to_string();
+        self.check_invariant();
+        Some(result)
+    }
+
+    pub fn append(&mut self, other: &Self) {
+        if !other.is_empty() {
+            if !self.is_empty() {
+                self.0.push_str("::");
+            }
+            self.0.push_str(other.as_str());
+            self.check_invariant();
+        }
+    }
+
     /// Iterator over identifiers in the path
     pub fn idents(&self) -> impl Iterator<Item = Ident> + '_ {
         self.0.split("::").map(Ident::new)
@@ -152,6 +184,7 @@ impl Path {
 
 /// Type representing a *canonical* Path identifier,
 /// i.e. from the root
+/// Should not be empty.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct CanonicalPath(Path);
 impl Display for CanonicalPath {
@@ -167,7 +200,7 @@ impl CanonicalPath {
     }
 
     pub fn invariant(&self) -> bool {
-        self.0 .0.chars().all(Self::char_ok)
+        self.0 .0.chars().all(Self::char_ok) && !self.0.is_empty()
     }
 
     pub fn check_invariant(&self) {
@@ -188,6 +221,22 @@ impl CanonicalPath {
         let result = Self(p);
         result.check_invariant();
         result
+    }
+
+    pub fn push_ident(&mut self, i: &Ident) {
+        self.0.push_ident(i);
+        self.check_invariant();
+    }
+
+    pub fn pop_ident(&mut self) -> Option<Ident> {
+        let result = self.0.pop_ident();
+        self.check_invariant();
+        result
+    }
+
+    pub fn append_path(&mut self, other: &Path) {
+        self.0.append(other);
+        self.check_invariant();
     }
 
     pub fn crate_name(&self) -> Ident {
