@@ -34,5 +34,5 @@ toy_crates, toy_crates::num_cpus::get_num_cpus, libc::sysconf, libc, data/test-p
 toy_crates, toy_crates::rustc_version::version_meta, std::env::var_os, std::env, data/test-packages/toy-crates/src, rustc_version.rs, 16, 19
 toy_crates, toy_crates::rustc_version::version_meta, std::process::Command::new, std::process, data/test-packages/toy-crates/src, rustc_version.rs, 17, 38
 toy_crates, toy_crates::url_client::ping_example_com, std::net::TcpListener::bind, std::net, data/test-packages/toy-crates/src, url_client.rs, 13, 32
-unsafe_test, unsafe_test::main, unsafe_test::my_unsafe_fn, [Unsafe], data/test-packages/unsafe-test/src, main.rs, 27, 8
-unsafe_test, unsafe_test::main, unsafe_test::my_unsafe_c_ffi, [FFI], data/test-packages/unsafe-test/src, main.rs, 31, 8
+unsafe_test, unsafe_test::main, my_unsafe_fn, [Unsafe], data/test-packages/unsafe-test/src, main.rs, 27, 8
+unsafe_test, unsafe_test::main, my_unsafe_c_ffi, [FFI], data/test-packages/unsafe-test/src, main.rs, 31, 8

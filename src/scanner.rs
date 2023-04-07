@@ -335,9 +335,7 @@ impl<'a, 'b> Scanner<'a, 'b> {
             if *v_old != v_new {
                 let msg = format!(
                     "Name conflict found in use scope: {} (old: {:?} new: {:?})",
-                    k,
-                    Self::path_to_string(v_old),
-                    Self::path_to_string(&v_new)
+                    k, v_old, v_new
                 );
                 self.warning(&msg);
             }
@@ -423,30 +421,32 @@ impl<'a, 'b> Scanner<'a, 'b> {
     }
 
     fn get_fun_scope(&self) -> Option<ident::Ident> {
-        self.scope_fun.last().map(|s| ident::Ident::new_owned(s.to_string()))
+        self.scope_fun.last().cloned().map(Self::syn_to_ident)
     }
 
-    fn path_to_string(p: &[&'a syn::Ident]) -> String {
-        let mut result: String = "".to_string();
-        for i in p {
-            result.push_str(&i.to_string());
-            result.push_str("::");
-        }
-        assert_eq!(result.pop(), Some(':'));
-        assert_eq!(result.pop(), Some(':'));
-        result
+    fn syn_to_ident(i: &syn::Ident) -> ident::Ident {
+        ident::Ident::new_owned(i.to_string())
+    }
+
+    fn syn_to_path(i: &syn::Ident) -> ident::Path {
+        ident::Path::from_ident(Self::syn_to_ident(i))
     }
 
     fn aggregate_path(p: &[&'a syn::Ident]) -> ident::Path {
-        ident::Path::new_owned(Self::path_to_string(p))
+        let mut result = ident::Path::new_empty();
+        for &i in p {
+            result.push_ident(&Self::syn_to_ident(i));
+        }
+        result
     }
 
-    fn lookup_filepath_ident(&self, i: &'a syn::Ident) -> String {
+    fn lookup_filepath_ident(&self, i: &'a syn::Ident) -> ident::Path {
         // TODO after name resolution is working:
         // decide which of these we actually need and make it robust
-        let filename = infer::fully_qualified_prefix(self.filepath);
-        let path_str = Self::path_to_string(self.lookup_ident(&i));
-        format!("{}::{}", filename, path_str)
+        let mut result =
+            ident::Path::new_owned(infer::fully_qualified_prefix(self.filepath));
+        result.append(&Self::aggregate_path(self.lookup_ident(&i)));
+        result
     }
 
     fn lookup_ffi(&self, ffi: &str) -> Option<ident::Path> {
@@ -473,19 +473,6 @@ impl<'a, 'b> Scanner<'a, 'b> {
         let callee_vec = self.lookup_path(&expr_path.path);
         let callee_ident = *callee_vec.last().unwrap();
         (callee_ident, Self::aggregate_path(&callee_vec))
-    }
-
-    fn lookup_callee(&self, callee: &ident::Path) -> ident::Path {
-        // Hacky inferences
-        if callee.as_str().contains("::") {
-            // eprintln!("INFO: branch 1 taken");
-            // The callee is (probably) already fully qualified
-            callee.clone()
-        } else {
-            // eprintln!("INFO: branch 2 taken");
-            let prefix = infer::fully_qualified_prefix(self.filepath);
-            ident::Path::new_owned(format!("{}::{}", prefix, callee.as_str()))
-        }
     }
 
     fn lookup_caller(&self) -> ident::CanonicalPath {
@@ -519,15 +506,11 @@ impl<'a, 'b> Scanner<'a, 'b> {
         Trait declarations
     */
     fn scan_trait(&mut self, t: &'a syn::ItemTrait) {
-        let t_name = &t.ident;
+        let t_name = Self::syn_to_path(&t.ident);
         let t_unsafety = t.unsafety;
         if t_unsafety.is_some() {
             // we found an `unsafe trait` declaration
-            self.data.unsafe_traits.push(TraitDec::new(
-                t,
-                self.filepath,
-                t_name.to_string(),
-            ));
+            self.data.unsafe_traits.push(TraitDec::new(t, self.filepath, t_name));
         }
         // TBD: handle trait block, e.g. default implementations
     }
@@ -621,7 +604,7 @@ impl<'a, 'b> Scanner<'a, 'b> {
 
         if imp.unsafety.is_some() {
             // we found an `unsafe impl` declaration
-            let tr_name = Self::path_to_string(&self.lookup_path(tr));
+            let tr_name = Self::aggregate_path(&self.lookup_path(tr));
             self.data.unsafe_impls.push(TraitImpl::new(imp, self.filepath, tr_name));
         }
 
@@ -652,7 +635,7 @@ impl<'a, 'b> Scanner<'a, 'b> {
         vis: &'a syn::Visibility,
     ) {
         let f_ident = &f_sig.ident;
-        let f_name = f_ident.to_string();
+        let f_name = Self::syn_to_path(f_ident);
         // TBD
         let f_name_full = self.lookup_filepath_ident(f_ident);
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
@@ -929,12 +912,11 @@ impl<'a, 'b> Scanner<'a, 'b> {
     where
         S: Debug + Spanned,
     {
-        let caller_full = self.lookup_caller();
-        let callee_full = self.lookup_callee(&callee);
+        let caller = self.lookup_caller();
 
         // TBD: unwraps were causing `make test` to crash
-        if let Some(caller_node_idx) = self.data.node_idxs.get(caller_full.as_path()) {
-            if let Some(callee_node_idx) = self.data.node_idxs.get(&callee_full) {
+        if let Some(caller_node_idx) = self.data.node_idxs.get(caller.as_path()) {
+            if let Some(callee_node_idx) = self.data.node_idxs.get(&callee) {
                 self.data.call_graph.add_edge(
                     *caller_node_idx,
                     *callee_node_idx,
@@ -945,8 +927,8 @@ impl<'a, 'b> Scanner<'a, 'b> {
 
         let eff = EffectInstance::new_call(
             self.filepath,
-            caller_full,
-            callee_full,
+            caller,
+            callee.clone(),
             &callee_span,
             self.scope_unsafe > 0,
             self.lookup_ffi(callee.as_str()),

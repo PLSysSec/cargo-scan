@@ -297,14 +297,13 @@ impl FnDec {
     pub fn new<S>(
         filepath: &FilePath,
         decl_span: &S,
-        fn_name: String,
+        fn_name: Path,
         vis: &syn::Visibility,
     ) -> Self
     where
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, decl_span);
-        let fn_name = Path::new_owned(fn_name);
         Self { src_loc, fn_name, vis: vis.into() }
     }
 }
@@ -352,7 +351,7 @@ impl EffectBlock {
     pub fn new_fn<S>(
         filepath: &FilePath,
         decl_span: &S,
-        fn_name: String,
+        fn_name: Path,
         vis: &syn::Visibility,
     ) -> Self
     where
@@ -371,7 +370,7 @@ impl EffectBlock {
     pub fn new_unsafe_fn<S>(
         filepath: &FilePath,
         decl_span: &S,
-        fn_name: String,
+        fn_name: Path,
         vis: &syn::Visibility,
     ) -> Self
     where
@@ -418,12 +417,11 @@ pub struct TraitImpl {
     tr_name: Path,
 }
 impl TraitImpl {
-    pub fn new<S>(impl_span: &S, filepath: &FilePath, tr_name: String) -> Self
+    pub fn new<S>(impl_span: &S, filepath: &FilePath, tr_name: Path) -> Self
     where
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, impl_span);
-        let tr_name = Path::new_owned(tr_name);
         Self { src_loc, tr_name }
     }
 }
@@ -437,12 +435,11 @@ pub struct TraitDec {
     tr_name: Path,
 }
 impl TraitDec {
-    pub fn new<S>(trait_span: &S, filepath: &FilePath, tr_name: String) -> Self
+    pub fn new<S>(trait_span: &S, filepath: &FilePath, tr_name: Path) -> Self
     where
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, trait_span);
-        let tr_name = Path::new_owned(tr_name);
         Self { src_loc, tr_name }
     }
 }

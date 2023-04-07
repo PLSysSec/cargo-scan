@@ -114,6 +114,10 @@ impl Path {
         result
     }
 
+    pub fn new_empty() -> Self {
+        Self::new("")
+    }
+
     pub fn from_ident(i: Ident) -> Self {
         let result = Self(i.0);
         result.check_invariant();
