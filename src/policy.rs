@@ -63,14 +63,17 @@ impl EffectInfo {
     }
 
     pub fn from_instance(effect: &EffectInstance) -> Self {
-        let caller_src_path = effect.caller().clone();
+        let caller_src_path = effect.caller().clone().to_path();
         let callee_loc = effect.call_loc().clone();
 
         EffectInfo::new(caller_src_path, callee_loc)
     }
 
     pub fn from_block(effect: &EffectBlock) -> Self {
-        EffectInfo::new(effect.containing_fn().fn_name.clone(), effect.src_loc().clone())
+        EffectInfo::new(
+            effect.containing_fn().fn_name.clone().to_path(),
+            effect.src_loc().clone(),
+        )
     }
 }
 

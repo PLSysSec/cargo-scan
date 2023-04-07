@@ -124,6 +124,15 @@ impl Path {
         result
     }
 
+    pub fn from_idents(is: impl Iterator<Item = Ident>) -> Self {
+        let mut result = Self::new_empty();
+        for i in is {
+            result.push_ident(&i)
+        }
+        result.check_invariant();
+        result
+    }
+
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
@@ -144,6 +153,11 @@ impl Path {
         Some(result)
     }
 
+    pub fn last_ident(&self) -> Option<Ident> {
+        let (_, i) = self.0.rsplit_once("::")?;
+        Some(Ident::new(i))
+    }
+
     pub fn append(&mut self, other: &Self) {
         if !other.is_empty() {
             if !self.is_empty() {
@@ -157,6 +171,11 @@ impl Path {
     /// Iterator over identifiers in the path
     pub fn idents(&self) -> impl Iterator<Item = Ident> + '_ {
         self.0.split("::").map(Ident::new)
+    }
+
+    /// O(n) length check
+    pub fn len(&self) -> usize {
+        self.idents().count()
     }
 
     /// Iterator over patterns *which match* the path
@@ -183,6 +202,12 @@ impl Path {
 
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+
+impl Default for Path {
+    fn default() -> Self {
+        Self::new_empty()
     }
 }
 

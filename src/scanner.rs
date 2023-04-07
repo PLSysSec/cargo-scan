@@ -31,7 +31,7 @@ pub struct ScanResults {
     pub unsafe_impls: Vec<TraitImpl>,
 
     pub fn_locs: HashMap<Path, SrcLoc>,
-    pub pub_fns: Vec<Path>,
+    pub pub_fns: Vec<CanonicalPath>,
 
     pub call_graph: DiGraph<Path, SrcLoc>,
 
@@ -123,7 +123,7 @@ impl From<ScanData> for ScanResults {
             fn_locs: data
                 .fn_decls
                 .into_iter()
-                .map(|FnDec { src_loc, fn_name, vis: _ }| (fn_name, src_loc))
+                .map(|FnDec { src_loc, fn_name, vis: _ }| (fn_name.to_path(), src_loc))
                 .collect::<HashMap<_, _>>(),
             call_graph: data.call_graph,
             skipped_macros: data.skipped_macros,
@@ -172,24 +172,26 @@ pub struct Scanner<'a, 'b> {
     // filepath that the scanner is being run on
     filepath: &'a FilePath,
 
-    // stack-based scopes for parsing (always empty at top-level)
+    // crate+module which the current filepath implements (e.g. mycrate::fs)
+    modpath: CanonicalPath,
+
+    // stack-based scopes (always empty at top level)
     scope_mods: Vec<&'a syn::Ident>,
     scope_use: Vec<&'a syn::Ident>,
     scope_fun: Vec<&'a syn::Ident>,
     scope_effect_blocks: Vec<EffectBlock>,
 
     // Number of unsafe keywords the current scope is nested inside
-    // (includes only unsafe blocks and fn decls -- unsafe traits and
-    // unsafe impls don't alone imply unsafe operations)
+    // (always 0 at top level)
+    // (includes only unsafe blocks and fn decls -- not traits and trait impls)
     scope_unsafe: usize,
 
-    // collecting use statements that are in scope
+    // name lookup scopes (not necessarily empty)
     use_names: HashMap<&'a syn::Ident, Vec<&'a syn::Ident>>,
     use_globs: Vec<Vec<&'a syn::Ident>>,
+    ffi_decls: HashMap<&'a syn::Ident, CanonicalPath>,
 
-    // Saved FFI declarations
-    ffi_decls: HashMap<&'a syn::Ident, Path>,
-
+    // Target to accumulate scan results
     data: &'b mut ScanData,
 }
 
@@ -199,8 +201,12 @@ impl<'a, 'b> Scanner<'a, 'b> {
     */
     /// Create a new scanner tied to a filepath
     pub fn new(filepath: &'a FilePath, data: &'b mut ScanData) -> Self {
+        // TBD: incomplete, replace with name resolution
+        let modpath = CanonicalPath::new_owned(infer::fully_qualified_prefix(filepath));
+
         Self {
             filepath,
+            modpath,
             ffi_decls: HashMap::new(),
             scope_mods: Vec::new(),
             scope_use: Vec::new(),
@@ -317,7 +323,7 @@ impl<'a, 'b> Scanner<'a, 'b> {
 
     fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn) {
         let fn_name = &f.sig.ident;
-        let fn_path = self.lookup_fn_decl(fn_name);
+        let fn_path = self.lookup_ident_canonical(fn_name);
         self.ffi_decls.insert(fn_name, fn_path);
     }
 
@@ -388,7 +394,7 @@ impl<'a, 'b> Scanner<'a, 'b> {
 
     // weird signature: need a double reference on i because i is owned by cur function
     // all hail the borrow checker for catching this error
-    fn lookup_ident<'c>(&'c self, i: &'c &'a syn::Ident) -> &'c [&'a syn::Ident]
+    fn lookup_ident_vec<'c>(&'c self, i: &'c &'a syn::Ident) -> &'c [&'a syn::Ident]
     where
         'a: 'b,
     {
@@ -401,26 +407,17 @@ impl<'a, 'b> Scanner<'a, 'b> {
     // this one creates a new path, so it has to return a Vec anyway
     // precond: input path must be nonempty
     // return: nonempty Vec of identifiers in the full path
-    fn lookup_path(&self, p: &'a syn::Path) -> Vec<&'a syn::Ident> {
+    fn lookup_path_vec(&self, p: &'a syn::Path) -> Vec<&'a syn::Ident> {
         let mut result = Vec::new();
         let mut it = p.segments.iter().map(|seg| &seg.ident);
 
         // first part of the path based on lookup
         let fst: &'a syn::Ident = it.next().unwrap();
-        result.extend(self.lookup_ident(&fst));
+        result.extend(self.lookup_ident_vec(&fst));
         // second part of the path based on any additional sub-scoping
         result.extend(it);
 
         result
-    }
-
-    fn get_mod_scope(&self) -> Path {
-        let mods: Vec<String> = self.scope_mods.iter().map(|i| i.to_string()).collect();
-        Path::new_owned(mods.join("::"))
-    }
-
-    fn get_fun_scope(&self) -> Option<Ident> {
-        self.scope_fun.last().cloned().map(Self::syn_to_ident)
     }
 
     fn syn_to_ident(i: &syn::Ident) -> Ident {
@@ -439,42 +436,57 @@ impl<'a, 'b> Scanner<'a, 'b> {
         result
     }
 
-    fn lookup_fn_decl(&self, i: &'a syn::Ident) -> Path {
-        // TODO after name resolution is working:
-        // decide which of these we actually need and make it robust
-        let mut result = Path::new_owned(infer::fully_qualified_prefix(self.filepath));
-        result.append(&Self::aggregate_path(self.lookup_ident(&i)));
+    fn lookup_ident(&self, i: &'a syn::Ident) -> Path {
+        Self::aggregate_path(self.lookup_ident_vec(&i))
+    }
+
+    fn lookup_path(&self, p: &'a syn::Path) -> Path {
+        Self::aggregate_path(&self.lookup_path_vec(p))
+    }
+
+    fn lookup_ident_canonical(&self, i: &'a syn::Ident) -> CanonicalPath {
+        let mut result = self.modpath.clone();
+        result.append_path(&self.lookup_ident(i));
         result
     }
 
-    fn lookup_ffi(&self, ffi: &syn::Ident) -> Option<Path> {
-        // TBD
+    // fn lookup_path_canonical(&self, p: &'a syn::Path) -> CanonicalPath {
+    //     let mut result = self.modpath.clone();
+    //     result.append_path(&self.lookup_path(p));
+    //     result
+    // }
+
+    fn get_mod_scope(&self) -> Path {
+        Path::from_idents(self.scope_mods.iter().map(|&i| Self::syn_to_ident(i)))
+    }
+
+    fn get_fun_scope(&self) -> Option<Ident> {
+        self.scope_fun.last().cloned().map(Self::syn_to_ident)
+    }
+
+    fn lookup_ffi(&self, ffi: &syn::Ident) -> Option<CanonicalPath> {
+        // TBD: incomplete, replace with name resolution
         self.ffi_decls.get(ffi).cloned()
     }
 
     fn lookup_method(&self, i: &syn::Ident) -> Path {
+        // TBD: incomplete, replace with name resolution
         Path::new_owned(format!("[METHOD]::{}", i))
     }
 
     fn lookup_field(&self, i: &syn::Ident) -> Path {
+        // TBD: incomplete, replace with name resolution
         Path::new_owned(format!("[FIELD]::{}", i))
     }
 
     fn lookup_field_index(&self, idx: &syn::Index) -> Path {
+        // TBD: incomplete, replace with name resolution
         Path::new_owned(format!("[FIELD]::{}", idx.index))
-    }
-
-    fn lookup_expr_path(&self, expr_path: &'a syn::ExprPath) -> (&'a syn::Ident, Path) {
-        let callee_vec = self.lookup_path(&expr_path.path);
-        let callee_ident = *callee_vec.last().unwrap();
-        (callee_ident, Self::aggregate_path(&callee_vec))
     }
 
     fn lookup_caller(&self) -> CanonicalPath {
         // Hacky inferences
-        let mut result = CanonicalPath::new_owned(infer::infer_crate(self.filepath));
-        result
-            .append_path(&Path::new_owned(infer::infer_module(self.filepath).join("::")));
+        let mut result = self.modpath.clone();
 
         // Push current mod scope [ "mod1", "mod2", ...]
         result.append_path(&self.get_mod_scope());
@@ -483,16 +495,6 @@ impl<'a, 'b> Scanner<'a, 'b> {
         result.push_ident(&self.get_fun_scope().expect("not inside a function!"));
 
         result
-    }
-
-    #[allow(dead_code, unused_variables)]
-    fn resolve_ident(&self, s: &SrcLoc, i: Ident) -> Option<CanonicalPath> {
-        todo!()
-    }
-
-    #[allow(dead_code, unused_variables)]
-    fn resolve_path(&self, s: &SrcLoc, i: Path) -> Option<CanonicalPath> {
-        todo!()
     }
 
     /*
@@ -581,7 +583,7 @@ impl<'a, 'b> Scanner<'a, 'b> {
     }
     fn scan_impl_type_path(&mut self, ty: &'a syn::Path) -> usize {
         // return: the number of items added to scope_mods
-        let fullpath = self.lookup_path(ty);
+        let fullpath = self.lookup_path_vec(ty);
         self.scope_mods.extend(&fullpath);
         if fullpath.is_empty() {
             self.syn_warning("unexpected empty impl type path", ty);
@@ -597,11 +599,11 @@ impl<'a, 'b> Scanner<'a, 'b> {
 
         if imp.unsafety.is_some() {
             // we found an `unsafe impl` declaration
-            let tr_name = Self::aggregate_path(&self.lookup_path(tr));
+            let tr_name = self.lookup_path(tr);
             self.data.unsafe_impls.push(TraitImpl::new(imp, self.filepath, tr_name));
         }
 
-        let fullpath = self.lookup_path(tr);
+        let fullpath = self.lookup_path_vec(tr);
         self.scope_mods.extend(&fullpath);
         if fullpath.is_empty() {
             self.syn_warning("unexpected empty trait name path", tr);
@@ -628,14 +630,15 @@ impl<'a, 'b> Scanner<'a, 'b> {
         vis: &'a syn::Visibility,
     ) {
         let f_ident = &f_sig.ident;
-        let f_name = Self::syn_to_path(f_ident);
-        // TBD
-        let f_name_full = self.lookup_fn_decl(f_ident);
+        self.scope_fun.push(f_ident);
+
+        // let f_name = Self::syn_to_ident(f_ident);
+        let f_name = self.lookup_caller();
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
 
-        let fn_dec = FnDec::new(self.filepath, f_sig, f_name_full, vis);
-        let node_idx = self.data.call_graph.add_node(fn_dec.fn_name.clone());
-        self.data.node_idxs.insert(fn_dec.fn_name.clone(), node_idx);
+        let fn_dec = FnDec::new(self.filepath, f_sig, f_name.clone(), vis);
+        let node_idx = self.data.call_graph.add_node(f_name.as_path().clone());
+        self.data.node_idxs.insert(f_name.as_path().clone(), node_idx);
         // NOTE: always push the new function declaration before scanning the
         //       body so we have access to the function its in for unsafe blocks
         self.data.fn_decls.push(fn_dec);
@@ -649,10 +652,11 @@ impl<'a, 'b> Scanner<'a, 'b> {
             EffectBlock::new_fn(self.filepath, body, f_name, vis)
         };
         self.scope_effect_blocks.push(effect_block);
-        self.scope_fun.push(f_ident);
+
         for s in &body.stmts {
             self.scan_fn_statement(s);
         }
+
         self.scope_fun.pop();
         self.data.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
         if f_unsafety.is_some() {
@@ -901,8 +905,12 @@ impl<'a, 'b> Scanner<'a, 'b> {
     }
 
     /// push an Effect to the list of results based on this call site.
-    fn push_callsite<S>(&mut self, callee_span: S, callee: Path, ffi: Option<Path>)
-    where
+    fn push_callsite<S>(
+        &mut self,
+        callee_span: S,
+        callee: Path,
+        ffi: Option<CanonicalPath>,
+    ) where
         S: Debug + Spanned,
     {
         let caller = self.lookup_caller();
@@ -940,7 +948,8 @@ impl<'a, 'b> Scanner<'a, 'b> {
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
         match f {
             syn::Expr::Path(p) => {
-                let (span, callee) = self.lookup_expr_path(p);
+                let span = &p.path.segments.last().unwrap().ident;
+                let callee = self.lookup_path(&p.path);
                 let ffi = self.lookup_ffi(span);
                 self.push_callsite(span, callee, ffi);
             }

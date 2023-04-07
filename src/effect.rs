@@ -121,7 +121,7 @@ pub enum Effect {
     /// Function call (callee path) matching a sink pattern
     SinkCall(Sink),
     /// FFI call
-    FFICall(Path),
+    FFICall(CanonicalPath),
     /// Unsafe operation, e.g. pointer deref
     /// see: https://doc.rust-lang.org/nomicon/what-unsafe-does.html
     UnsafeOp,
@@ -177,7 +177,7 @@ impl EffectInstance {
         callee: Path,
         callsite: &S,
         is_unsafe: bool,
-        ffi: Option<Path>,
+        ffi: Option<CanonicalPath>,
     ) -> Self
     where
         S: Spanned,
@@ -204,8 +204,8 @@ impl EffectInstance {
         Self { caller, call_loc, callee, eff_type }
     }
 
-    pub fn caller(&self) -> &Path {
-        self.caller.as_path()
+    pub fn caller(&self) -> &CanonicalPath {
+        &self.caller
     }
 
     pub fn caller_path(&self) -> &str {
@@ -289,7 +289,7 @@ impl From<&syn::Visibility> for Visibility {
 pub struct FnDec {
     pub src_loc: SrcLoc,
     // TBD: should be CanonicalPath?
-    pub fn_name: Path,
+    pub fn_name: CanonicalPath,
     pub vis: Visibility,
 }
 
@@ -297,7 +297,7 @@ impl FnDec {
     pub fn new<S>(
         filepath: &FilePath,
         decl_span: &S,
-        fn_name: Path,
+        fn_name: CanonicalPath,
         vis: &syn::Visibility,
     ) -> Self
     where
@@ -351,7 +351,7 @@ impl EffectBlock {
     pub fn new_fn<S>(
         filepath: &FilePath,
         decl_span: &S,
-        fn_name: Path,
+        fn_name: CanonicalPath,
         vis: &syn::Visibility,
     ) -> Self
     where
@@ -370,7 +370,7 @@ impl EffectBlock {
     pub fn new_unsafe_fn<S>(
         filepath: &FilePath,
         decl_span: &S,
-        fn_name: Path,
+        fn_name: CanonicalPath,
         vis: &syn::Visibility,
     ) -> Self
     where
