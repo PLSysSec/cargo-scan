@@ -137,7 +137,7 @@ proc_macro2, proc_macro2::fallback::Literal::from_str_unchecked, [METHOD]::to_ow
 proc_macro2, proc_macro2::fallback::Literal::from_str_unchecked, Literal::_new, [Unsafe], data/packages/proc-macro2/src, fallback.rs, 851, 17
 proc_macro2, proc_macro2::Literal::from_str_unchecked, crate::fallback::Literal::from_str_unchecked, [Unsafe], data/packages/proc-macro2/src, lib.rs, 1264, 36
 proc_macro2, proc_macro2::Literal::from_str_unchecked, Literal::_new, [Unsafe], data/packages/proc-macro2/src, lib.rs, 1264, 17
-proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, crate::detection::inside_proc_macro, [Unsafe], data/packages/proc-macro2/src, wrapper.rs, 1, 22
+proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, crate::detection::inside_proc_macro, [Unsafe], data/packages/proc-macro2/src, wrapper.rs, 828, 11
 proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, compiler_literal_from_str, [Unsafe], data/packages/proc-macro2/src, wrapper.rs, 829, 30
 proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, [METHOD]::expect, [Unsafe], data/packages/proc-macro2/src, wrapper.rs, 829, 62
 proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, Literal::Compiler, [Unsafe], data/packages/proc-macro2/src, wrapper.rs, 829, 21
