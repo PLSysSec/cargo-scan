@@ -109,6 +109,7 @@ dependencies = [
  "codespan-reporting",
  "colored",
  "inquire",
+ "itertools",
  "proc-macro2",
  "ra_ap_hir",
  "ra_ap_ide",

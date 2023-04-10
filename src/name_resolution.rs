@@ -5,20 +5,25 @@ use std::path::{Path, PathBuf};
 
 use crate::ident::CanonicalPath;
 use anyhow::{anyhow, Result};
+use ra_ap_hir::db::{HirDatabase};
+use ra_ap_ide_db::FxHashMap;
+use ra_ap_ide_db::base_db::{SourceDatabase};
 
 use super::effect::SrcLoc;
 use super::ident::{Ident, Path as IdentPath};
-use ra_ap_hir::{PathResolution, Semantics};
-use ra_ap_ide::{AnalysisHost, FileId, LineCol, RootDatabase, TextSize};
-use ra_ap_ide_db::defs::IdentClass;
+use ra_ap_hir::{AsAssocItem, Semantics};
+use ra_ap_ide::{
+    AnalysisHost, FileId, LineCol, RootDatabase, TextSize,
+};
+use ra_ap_ide_db::defs::{Definition, IdentClass};
 use ra_ap_paths::AbsPathBuf;
-use ra_ap_project_model::{CargoConfig, ProjectManifest, ProjectWorkspace};
+use ra_ap_project_model::{CargoConfig, ProjectManifest, ProjectWorkspace, RustcSource, CargoFeatures, InvocationStrategy, UnsetTestCrates, InvocationLocation};
 use ra_ap_rust_analyzer::cli::load_cargo::{load_workspace, LoadCargoConfig};
 
-use ra_ap_syntax::{
-    ast::Path as SyntaxPath, AstNode, SourceFile, SyntaxKind, SyntaxToken, TokenAtOffset,
-};
+use ra_ap_syntax::{AstNode, SourceFile, SyntaxToken, TokenAtOffset};
 use ra_ap_vfs::{Vfs, VfsPath};
+
+use itertools::Itertools;
 
 /// Path that is fully expanded and canonical
 /// e.g. if I do `use libc::foobar as baz`
@@ -36,6 +41,19 @@ use ra_ap_vfs::{Vfs, VfsPath};
 /// e.g. for push we should return `std::vec::Vec::push`
 
 pub fn resolve_path(s: SrcLoc, p: IdentPath) -> CanonicalPath {
+    // let path_node =
+    //     token.parent_ancestors().find(|a| a.kind() == SyntaxKind::PATH).unwrap();
+    // println!("node = {:?}", path_node);
+    // let syntax_path = SyntaxPath::cast(path_node).unwrap();
+    // println!("syntax_path: {:?}", syntax_path.to_string());
+    // let resolved_path = sems.resolve_path(&syntax_path);
+    // println!("resolved path: {:?}", resolved_path);
+
+    // if let Some(PathResolution::Def(resolved_def)) = resolved_path {
+    //     let mod_path = resolved_def.canonical_path(db);
+    //     println!("canon path: {:?}, {:?}", mod_path, resolved_def.module(db).unwrap().name(db).unwrap().to_string());
+    //     println!();
+    // }
     todo!()
 }
 
@@ -45,7 +63,48 @@ pub struct Resolver {
     // sems: Semantics<'a, RootDatabase>
 }
 impl Resolver {
-    pub fn new(crate_path: &PathBuf, cargo_config: &CargoConfig) -> Result<Resolver> {
+    fn cargo_config() -> CargoConfig {
+        // List of features to activate (or deactivate).
+        let features = CargoFeatures::default();
+    
+        // Target triple
+        let target = None;
+    
+        // Whether to load sysroot crates (`std`, `core` & friends).
+        let sysroot = Some(RustcSource::Discover);
+    
+        // rustc private crate source
+        let rustc_source = None;
+    
+        // crates to disable `#[cfg(test)]` on
+        let unset_test_crates = UnsetTestCrates::All;
+    
+        // Setup RUSTC_WRAPPER to point to `rust-analyzer` binary itself.
+        let wrap_rustc_in_build_scripts = true;
+    
+        let run_build_script_command = None;
+    
+        // Support extra environment variables via CLI:
+        let extra_env = FxHashMap::default();
+    
+        let invocation_strategy = InvocationStrategy::PerWorkspace;
+        let invocation_location = InvocationLocation::Workspace;
+    
+        CargoConfig {
+            features,
+            target,
+            sysroot,
+            rustc_source,
+            unset_test_crates,
+            wrap_rustc_in_build_scripts,
+            run_build_script_command,
+            extra_env,
+            invocation_strategy,
+            invocation_location,
+        }
+    }
+    
+    pub fn new(crate_path: &PathBuf) -> Result<Resolver> {
         let canon_path = canonicalize(crate_path).unwrap();
         let abs_path = AbsPathBuf::assert(canon_path);
         // Make sure the path is a crate
@@ -58,14 +117,15 @@ impl Resolver {
 
         // TODO: Maybe allow to load and analyze multiple crates
         let manifest = ProjectManifest::discover_single(&abs_path)?;
+        let cargo_config = &Self::cargo_config();
 
         let no_progress = &|_| {};
         let ws = ProjectWorkspace::load(manifest, cargo_config, no_progress)?;
 
         let load_config = LoadCargoConfig {
             load_out_dirs_from_check: true,
-            with_proc_macro: false,
-            prefill_caches: false,
+            with_proc_macro: true,
+            prefill_caches: true,
         };
 
         let (host, vfs, _) = load_workspace(ws, &cargo_config.extra_env, &load_config)?;
@@ -144,7 +204,7 @@ impl Resolver {
             return Ok(rtoken);
         }
 
-        Err(anyhow!("Could not find any '{:?}' token", ident))
+        Err(anyhow!("Could not find any '{:?}' token", ident.as_str()))
     }
 
     fn resolve(
@@ -159,79 +219,65 @@ impl Resolver {
         let src_file = Self::get_src_file(file_id, sems);
         let token = Self::get_token(src_file, offset, ident)?;
 
-        let path_node =
-            token.parent_ancestors().find(|a| a.kind() == SyntaxKind::PATH).unwrap();
-        let syntax_path = SyntaxPath::cast(path_node).unwrap();
-        println!("syntax_path: {:?}", syntax_path);
-        println!("syntax_path: {:?}", syntax_path.coloncolon_token().unwrap().text());
-        let resolved_path = sems.resolve_path(&syntax_path).unwrap();
-
-        if let PathResolution::Def(resolved_def) = resolved_path {
-            let mod_path = resolved_def.canonical_module_path(db);
-
-            let mut canonical_path = String::new();
-
-            match resolved_def.canonical_module_path(db) {
-                Some(p) => {
-                    canonical_path.push_str("crate::");
-                    p.flat_map(|it| it.name(db)).for_each(|name| {
-                        canonical_path.push_str(name.to_string().as_str());
-                        canonical_path.push_str("::");
-                    });
-                    canonical_path.push_str(&resolved_def.name(db).unwrap().to_string())
-                }
-                None => canonical_path.push_str("No canonical path"),
-            };
-            println!("canonical_path: {:?}", canonical_path);
-        }
-
         match IdentClass::classify_token(sems, &token) {
             Some(ident) => {
                 let defs = ident.definitions();
                 let def = defs[0];
 
-                ///////////////////////////
-                // let mod_def = match def {
-                //     Definition::Function(it) => ModuleDef::from(it),
-                //     Definition::Macro(it) => ModuleDef::from(it),
-                //     Definition::Module(it) => ModuleDef::from(it),
-                //     Definition::Adt(it) => ModuleDef::from(it),
-                //     Definition::Variant(it) => ModuleDef::from(it),
-                //     Definition::Const(it) => ModuleDef::from(it),
-                //     Definition::Static(it) => ModuleDef::from(it),
-                //     Definition::Trait(it) => ModuleDef::from(it),
-                //     Definition::TypeAlias(it) => ModuleDef::from(it),
-                //     Definition::BuiltinType(it) => ModuleDef::from(it),
-                //     Definition::Field(_) => todo!(),
-                //     Definition::SelfType(_) => todo!(),
-                //     Definition::Local(_) => todo!(),
-                //     Definition::GenericParam(_) => todo!(),
-                //     Definition::Label(_) => todo!(),
-                //     Definition::DeriveHelper(_) => todo!(),
-                //     Definition::BuiltinAttr(_) => todo!(),
-                //     Definition::ToolModule(_) => todo!(),
+                let container = Self::get_container_name(db, def);
+                let def_name = def.name(db).map(|name| name.to_string());
+                let module = def.module(db).unwrap();
+                
+                //TODO: this is not working properly yet
+                //try to exclude modules that are just block expressions,
+                //that should not produce canonical paths
+                if module.name(db).is_none() && !module.is_mod_rs(db) {
+                    println!("There should be no canonical path for {:?}", def.name(db));
+                }
 
-                // };
-                // println!("mod def {:?}", mod_def.canonical_path(db));
-                //////////////////////////
+                let crate_name = db.crate_graph()[module.krate().into()]
+                    .display_name
+                    .as_ref()
+                    .map(|it| it.to_string());
+                let module_path = module
+                    .path_to_root(db)
+                    .into_iter()
+                    .rev()
+                    .flat_map(|it| it.name(db).map(|name| name.to_string()));
 
-                let mut canonical_path = String::new();
+                let cp = crate_name
+                    .into_iter()
+                    .chain(module_path)
+                    .chain(container)
+                    .chain(def_name)
+                    .join("::");
 
-                match def.canonical_module_path(db) {
-                    Some(p) => {
-                        canonical_path.push_str("crate::");
-                        p.flat_map(|it| it.name(db)).for_each(|name| {
-                            canonical_path.push_str(name.to_string().as_str());
-                            canonical_path.push_str("::");
-                        });
-                        canonical_path.push_str(&def.name(db).unwrap().to_string())
-                    }
-                    None => canonical_path.push_str("No canonical path"),
-                };
-                Ok(CanonicalPath::new_owned(canonical_path))
+                Ok(CanonicalPath::new_owned(cp))
             }
             None => Err(anyhow!("Could not classify token {:?}", token)),
         }
+    }
+
+    fn get_container_name(db: &dyn HirDatabase, def: Definition) -> Option<String> {
+        match def {
+            Definition::Field(f) => Some(f.parent_def(db).name(db)),
+            Definition::Local(l) => l.parent(db).name(db),
+            Definition::Function(f) => {
+                if let Some(item) = f.as_assoc_item(db) {
+                    match item.container(db) {
+                        ra_ap_hir::AssocItemContainer::Trait(t) => Some(t.name(db)),
+                        ra_ap_hir::AssocItemContainer::Impl(i) => {
+                            i.self_ty(db).as_adt().map(|adt| adt.name(db))
+                        }
+                    }
+                } else {
+                    None
+                }
+            }
+            Definition::Variant(e) => Some(e.parent_enum(db).name(db)),
+            _ => None,
+        }
+        .map(|name| name.to_string())
     }
 
     pub fn resolve_ident(&self, s: SrcLoc, i: Ident) -> Result<CanonicalPath> {

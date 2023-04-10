@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use anyhow::Result;
 use cargo_scan::{effect::SrcLoc, ident::Ident, name_resolution::Resolver};
 use clap::Parser;
-use ra_ap_project_model::CargoConfig;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -20,7 +19,8 @@ struct Args {
 pub fn main() -> Result<()> {
     let args = Args::parse();
 
-    let res = Resolver::new(&args.crate_path, &CargoConfig::default()).unwrap();
+    // let cargo_config = CargoConfig::
+    let res = Resolver::new(&args.crate_path).unwrap();
     let mut filepath = std::path::PathBuf::from(&args.crate_path);
     filepath.push("src/main.rs");
 
