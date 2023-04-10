@@ -1,12 +1,11 @@
-use cargo_scan::effect::{EffectInstance, SrcLoc};
+use cargo_scan::effect::{Effect, EffectBlock, SrcLoc};
 use cargo_scan::ident::Path;
+use cargo_scan::policy::*;
 use cargo_scan::scanner;
 use cargo_scan::scanner::ScanResults;
 
 use std::collections::{HashMap, HashSet};
-use std::fmt;
 use std::fs::File;
-use std::io::{Read, Write};
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
@@ -16,10 +15,6 @@ use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use inquire::{validator::Validation, Text};
-use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
-use sha2::{Digest, Sha256};
-use walkdir::WalkDir;
 
 #[derive(Parser, Debug)]
 struct Config {
@@ -58,127 +53,16 @@ struct Args {
     debug: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
-enum SafetyAnnotation {
-    Skipped,
-    Safe,
-    Unsafe,
-    CallerChecked,
-}
-
-impl fmt::Display for SafetyAnnotation {
-    // This trait requires `fmt` with this exact signature.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            SafetyAnnotation::Skipped => write!(f, "Skipped"),
-            SafetyAnnotation::Safe => write!(f, "Safe"),
-            SafetyAnnotation::Unsafe => write!(f, "Unsafe"),
-            SafetyAnnotation::CallerChecked => write!(f, "Caller-checked"),
-        }
-    }
-}
-
-fn hash_dir(p: PathBuf) -> Result<[u8; 32]> {
-    let mut hasher = Sha256::new();
-    for entry in WalkDir::new(p) {
-        match entry {
-            Ok(ne) if ne.path().is_file() => {
-                let mut file = File::open(ne.path())?;
-                let mut buf = Vec::new();
-                file.read_to_end(&mut buf)?;
-                hasher.update(buf);
-            }
-            _ => (),
-        }
-    }
-
-    Ok(hasher.finalize().into())
-}
-
-#[derive(PartialEq, Debug, Serialize, Deserialize)]
-enum EffectTree {
-    Leaf(EffectInstance, SafetyAnnotation),
-    Branch(EffectInstance, Vec<EffectTree>),
-}
-
-impl EffectTree {
-    fn get_leaf_annotation(&self) -> Option<SafetyAnnotation> {
-        match self {
-            EffectTree::Leaf(_, a) => Some(*a),
-            EffectTree::Branch(_, _) => None,
-        }
-    }
-
-    /// Sets the annotation for a leaf node and returns Some previous annotation,
-    /// or None if it was a branch node
-    fn set_annotation(&mut self, new_a: SafetyAnnotation) -> Option<SafetyAnnotation> {
-        match self {
-            EffectTree::Leaf(_, a) => {
-                let ret = *a;
-                *a = new_a;
-                Some(ret)
-            }
-            _ => None,
-        }
-    }
-}
-
-// TODO: Include information about crate/version
-// TODO: We should include more information from the ScanResult
-#[serde_as]
-#[derive(Serialize, Deserialize)]
-struct PolicyFile {
-    // TODO: Serde doesn't like this hashmap for some reason (?)
-    #[serde_as(as = "Vec<(_, _)>")]
-    effects: HashMap<EffectInstance, EffectTree>,
-    // TODO: Make the base_dir a crate instead
-    base_dir: PathBuf,
-    hash: [u8; 32],
-}
-
-impl PolicyFile {
-    fn new(p: PathBuf) -> Result<Self> {
-        let hash = hash_dir(p.clone())?;
-        Ok(PolicyFile { effects: HashMap::new(), base_dir: p, hash })
-    }
-
-    fn save_to_file(&self, p: PathBuf) -> Result<()> {
-        let json = serde_json::to_string(self)?;
-        let mut f = File::create(p)?;
-        f.write_all(json.as_bytes())?;
-        Ok(())
-    }
-}
-
-// Returns Some policy file if it exists, or None if we should create a new one.
-// Errors if the policy filepath is invalid or if we can't read an existing
-// policy file
-fn get_policy_file(policy_filepath: PathBuf) -> Result<Option<PolicyFile>> {
-    if policy_filepath.is_dir() {
-        return Err(anyhow!("Policy file filepath is a directory"));
-    } else if !policy_filepath.is_file() {
-        return Ok(None);
-    }
-
-    // We found a policy file
-    // TODO: make this display a message if the file isn't the proper format
-    let json = std::fs::read_to_string(policy_filepath)?;
-
-    // If we try to read an empty file, just make a new one
-    if json.is_empty() {
-        return Ok(None);
-    }
-    let policy_file = serde_json::from_str(&json)?;
-    Ok(Some(policy_file))
-}
-
 fn print_effect_src(
-    orig_effect: &EffectInstance,
-    effect: &EffectInstance,
+    effect_origin: &EffectBlock,
+    effect: &EffectInfo,
+    fn_locs: &HashMap<Path, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
-    let mut full_path = effect.call_loc().dir().clone();
-    full_path.push(effect.call_loc().file());
+    // NOTE: The codespan lines are 0-indexed, but SrcLocs are 1-indexed
+    let effect_loc = &effect.callee_loc.sub1();
+    let mut full_path = effect_loc.dir().clone();
+    full_path.push(effect_loc.file());
 
     let src_contents = std::fs::read_to_string(full_path)?;
 
@@ -191,36 +75,84 @@ fn print_effect_src(
     });
 
     // calculate the byte ranges for the effect
-    // TODO: Off by 1? Might have to change in the effect calculation.
-    // TODO: Highlight the entire expression as the main error if it's multi-line
-    //       and update the surrounding lines correspondingly
-    let effect_line = effect.call_loc().line() - 1;
+    let start_effect_line = effect_loc.start_line();
+    let end_effect_line = effect_loc.end_line();
     let bounded_start_line =
-        std::cmp::max(effect_line - config.lines_before_effect as usize, 0);
+        start_effect_line.saturating_sub(config.lines_before_effect as usize);
     let bounded_end_line = std::cmp::min(
-        effect_line - config.lines_after_effect as usize,
+        end_effect_line + config.lines_after_effect as usize,
         src_linenum_ranges.len(),
     );
 
     let surrounding_start = src_linenum_ranges.get(&bounded_start_line).unwrap().0;
     let surrounding_end = src_linenum_ranges.get(&bounded_end_line).unwrap().1;
-    let effect_start = src_linenum_ranges.get(&effect_line).unwrap().0;
-    let effect_end = src_linenum_ranges.get(&effect_line).unwrap().1;
+    let effect_start = src_linenum_ranges.get(&start_effect_line).unwrap().0;
+    let effect_end = src_linenum_ranges.get(&end_effect_line).unwrap().1;
 
     // TODO: cache files?
     let mut files = SimpleFiles::new();
-    let file_id =
-        files.add(format!("{}", effect.call_loc().file().display()), src_contents);
+    let file_id = files.add(format!("{}", effect_loc.file().display()), src_contents);
+
+    // If the labels don't include the function signature, include it as
+    // another label
+    // NOTE: The codespan lines are 0-indexed, but SrcLocs are 1-indexed
+    let mut labels = match fn_locs.get(&effect.caller_path).map(|x| x.sub1()) {
+        Some(loc)
+            if loc.start_line() < bounded_start_line
+                && loc.end_line() < bounded_start_line =>
+        {
+            // The signature is entirely outside the current label range, so add
+            // a new label with the signature
+            let sig_start = src_linenum_ranges.get(&loc.start_line()).unwrap().0;
+            let sig_end = src_linenum_ranges.get(&loc.end_line()).unwrap().1;
+            vec![
+                Label::primary(file_id, effect_start..effect_end),
+                Label::secondary(file_id, sig_start..sig_end),
+                Label::secondary(file_id, surrounding_start..surrounding_end),
+            ]
+        }
+        Some(loc) if loc.start_line() < bounded_start_line => {
+            // The start of the signature is outside the current label range, so
+            // extend the surrounding range to include the start of the function
+            // signature
+            let sig_start = src_linenum_ranges.get(&loc.start_line()).unwrap().0;
+            vec![
+                Label::primary(file_id, effect_start..effect_end),
+                Label::secondary(file_id, sig_start..surrounding_end),
+            ]
+        }
+        Some(_) | None => {
+            // The function signature is already included in the label range or
+            // we couldn't find the function definition
+            vec![
+                Label::primary(file_id, effect_start..effect_end),
+                Label::secondary(file_id, surrounding_start..surrounding_end),
+            ]
+        }
+    };
+
+    let label_msg =
+        if effect_origin.containing_fn().fn_name.as_path() == &effect.caller_path {
+            // We are in the original function, so print all the effects in the
+            // EffectBlock
+            effect_origin
+                .effects()
+                .iter()
+                .filter_map(|x| match x.eff_type() {
+                    Effect::SinkCall(sink) => Some(format!("sink call: {}", sink)),
+                    Effect::FFICall(call) => Some(format!("ffi call: {}", call)),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        } else {
+            "call safety marked as callee-checked".to_string()
+        };
+    let l = labels.remove(0);
+    labels.insert(0, l.with_message(label_msg));
 
     // construct the codespan diagnostic
-    // TODO: make this a better effect message
-    // TODO: Don't display "Error" at the start of the message
-    let diag = Diagnostic::error()
-        .with_message(format!("effect: {:?}", orig_effect.pattern().as_ref()))
-        .with_labels(vec![
-            Label::primary(file_id, effect_start..effect_end),
-            Label::secondary(file_id, surrounding_start..surrounding_end),
-        ]);
+    let diag = Diagnostic::help().with_code("Audit location").with_labels(labels);
 
     let writer = StandardStream::stderr(ColorChoice::Always);
     let config = codespan_reporting::term::Config::default();
@@ -262,48 +194,48 @@ fn fn_decl_info(fn_loc: &SrcLoc) -> Result<CallStackInfo> {
     let src_contents = std::fs::read_to_string(full_path)?;
 
     // TODO: Print the full definition if it spans multiple lines
-    let mut src_lines = src_contents.splitn(fn_loc.line() + 1, '\n');
+    let mut src_lines = src_contents.splitn(fn_loc.start_line() + 1, '\n');
     let src_fn_loc = src_lines
-        .nth(fn_loc.line() - 1)
+        .nth(fn_loc.start_line() - 1)
         .ok_or_else(|| anyhow!("Source lineno past end of file"))?;
 
     // TODO: Capture just the function name
     let res = CallStackInfo::new(
         Some(src_fn_loc.split('{').next().unwrap().trim().to_string()),
         format!("{}", fn_loc.dir().to_string_lossy()),
-        fn_loc.line(),
+        fn_loc.start_line(),
     );
     Ok(res)
 }
 
-fn missing_fn_decl_info(effect: &EffectInstance) -> CallStackInfo {
-    let mut path_list = effect.call_loc().dir().clone();
-    path_list.push(effect.call_loc().file());
+fn missing_fn_decl_info(effect_loc: &SrcLoc) -> CallStackInfo {
+    let mut path_list = effect_loc.dir().clone();
+    path_list.push(effect_loc.file());
     let full_path = path_list.join("/");
     let full_path_str = full_path.to_string_lossy().to_string();
 
-    CallStackInfo::new(None, full_path_str, effect.call_loc().line())
+    CallStackInfo::new(None, full_path_str, effect_loc.start_line())
 }
 
 fn print_call_stack(
-    curr_effect: &EffectInstance,
-    effect_history: &[&EffectInstance],
+    curr_effect: &EffectInfo,
+    effect_history: &[&EffectInfo],
     fn_locs: &HashMap<Path, SrcLoc>,
 ) -> Result<()> {
     if !effect_history.is_empty() {
         let mut call_stack_infos = vec![];
         // TODO: Colorize
         println!("EffectInstance call stack:");
-        let call_info = match fn_locs.get(&Path::new(curr_effect.caller().as_str())) {
+        let call_info = match fn_locs.get(&curr_effect.caller_path) {
             Some(fn_loc) => fn_decl_info(fn_loc)?,
-            None => missing_fn_decl_info(curr_effect),
+            None => missing_fn_decl_info(&curr_effect.callee_loc),
         };
         call_stack_infos.push(call_info);
 
         for e in effect_history.iter().rev() {
-            let call_info = match fn_locs.get(&Path::new(e.caller().as_str())) {
+            let call_info = match fn_locs.get(&e.caller_path) {
                 Some(fn_loc) => fn_decl_info(fn_loc)?,
-                None => missing_fn_decl_info(e),
+                None => missing_fn_decl_info(&e.callee_loc),
             };
             call_stack_infos.push(call_info);
         }
@@ -315,10 +247,9 @@ fn print_call_stack(
 }
 
 fn review_effect_tree_info_helper(
-    orig_effect: &EffectInstance,
-    _curr_effect: &EffectInstance,
+    orig_effect: &EffectBlock,
     effect_tree: &EffectTree,
-    effect_history: &[&EffectInstance],
+    effect_history: &[&EffectInfo],
     fn_locs: &HashMap<Path, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
@@ -337,7 +268,6 @@ fn review_effect_tree_info_helper(
             for new_tree in es {
                 review_effect_tree_info_helper(
                     orig_effect,
-                    new_e,
                     new_tree,
                     &new_history,
                     fn_locs,
@@ -350,25 +280,18 @@ fn review_effect_tree_info_helper(
 }
 
 fn review_effect_tree_info(
-    effect: &EffectInstance,
+    effect: &EffectBlock,
     effect_tree: &EffectTree,
     fn_locs: &HashMap<Path, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
-    review_effect_tree_info_helper(
-        effect,
-        effect,
-        effect_tree,
-        &Vec::new(),
-        fn_locs,
-        config,
-    )
+    review_effect_tree_info_helper(effect, effect_tree, &Vec::new(), fn_locs, config)
 }
 
 fn print_effect_info(
-    orig_effect: &EffectInstance,
-    curr_effect: &EffectInstance,
-    effect_history: &[&EffectInstance],
+    orig_effect: &EffectBlock,
+    curr_effect: &EffectInfo,
+    effect_history: &[&EffectInfo],
     fn_locs: &HashMap<Path, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
@@ -376,7 +299,7 @@ fn print_effect_info(
     println!("=================================================");
     print_call_stack(curr_effect, effect_history, fn_locs)?;
     println!();
-    print_effect_src(orig_effect, curr_effect, config)?;
+    print_effect_src(orig_effect, curr_effect, fn_locs, config)?;
     Ok(())
 }
 
@@ -416,7 +339,7 @@ enum ContinueStatus {
 fn handle_invalid_policy(
     policy: &mut PolicyFile,
     policy_path: &mut PathBuf,
-    scan_effects: &HashSet<&EffectInstance>,
+    scan_effect_blocks: &HashSet<&EffectBlock>,
 ) -> Result<ContinueStatus> {
     // TODO: Colorize
     println!("Crate has changed from last policy audit");
@@ -438,11 +361,21 @@ fn handle_invalid_policy(
             // TODO: Prompt user for new policy path
             println!("Generating new policy file");
 
-            policy.effects = scan_effects
+            policy.audit_trees = scan_effect_blocks
                 .clone()
                 .into_iter()
-                .map(|x| {
-                    (x.clone(), EffectTree::Leaf(x.clone(), SafetyAnnotation::Skipped))
+                .map(|x: &EffectBlock| {
+                    // TODO: for now we assume that all EffectBlocks include an EffectInstance,
+                    //       this isn't true, but we have to get caller location into
+                    //       EffectBocks before we can do this correctly
+                    let effect_instance = x.effects().first().unwrap();
+                    (
+                        x.clone(),
+                        EffectTree::Leaf(
+                            EffectInfo::from_instance(effect_instance),
+                            SafetyAnnotation::Skipped,
+                        ),
+                    )
                 })
                 .collect::<HashMap<_, _>>();
             policy.hash = hash_dir(policy.base_dir.clone())?;
@@ -468,26 +401,25 @@ fn handle_invalid_policy(
 
 fn is_policy_scan_valid(
     policy: &PolicyFile,
-    scan_effects: &HashSet<&EffectInstance>,
+    scan_effect_blocks: &HashSet<&EffectBlock>,
     crate_path: PathBuf,
 ) -> Result<bool> {
-    let policy_effects = policy.effects.keys().collect::<HashSet<_>>();
+    let policy_effect_blocks = policy.audit_trees.keys().collect::<HashSet<_>>();
     let hash = hash_dir(crate_path)?;
-    // NOTE: We're checking the hash in addition to the effects for now
-    //       because we might have changed how we scan packages for
-    //       effects.
-    Ok(policy_effects == *scan_effects && policy.hash == hash)
+    // NOTE: We're checking the hash in addition to the effect blocks for now
+    //       because we might have changed how we scan packages for effects.
+    Ok(policy_effect_blocks == *scan_effect_blocks && policy.hash == hash)
 }
 
 fn review_policy(args: Args, policy: PolicyFile) -> Result<()> {
     let scan_res = scanner::scan_crate(&args.crate_path)?;
-    let scan_effects = scan_res.get_dangerous_effects();
-    if !is_policy_scan_valid(&policy, &scan_effects, args.crate_path.clone())? {
+    let scan_effect_blocks = scan_res.unsafe_effect_blocks_set();
+    if !is_policy_scan_valid(&policy, &scan_effect_blocks, args.crate_path.clone())? {
         println!("Error: crate has changed since last policy scan.");
         return Err(anyhow!("Invalid policy during review"));
     }
 
-    for (e, a) in policy.effects.iter() {
+    for (e, a) in policy.audit_trees.iter() {
         review_effect_tree_info(e, a, &scan_res.fn_locs, &args.config)?;
     }
 
@@ -501,9 +433,9 @@ enum AuditStatus {
 }
 
 fn audit_leaf<'a>(
-    orig_effect: &'a EffectInstance,
+    orig_effect: &'a EffectBlock,
     effect_tree: &mut EffectTree,
-    effect_history: &[&'a EffectInstance],
+    effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
     config: &Config,
 ) -> Result<AuditStatus> {
@@ -541,9 +473,14 @@ fn audit_leaf<'a>(
     if status == SafetyAnnotation::CallerChecked {
         // Add all call locations as parents of this effect
         let new_check_locs = scan_res
-            .get_callers(curr_effect.caller())
+            .get_callers(&curr_effect.caller_path)
             .into_iter()
-            .map(|x| EffectTree::Leaf(x.clone(), SafetyAnnotation::Skipped))
+            .map(|x| {
+                EffectTree::Leaf(
+                    EffectInfo::from_instance(&x.clone()),
+                    SafetyAnnotation::Skipped,
+                )
+            })
             .collect::<Vec<_>>();
         *effect_tree = EffectTree::Branch(curr_effect, new_check_locs);
         audit_branch(orig_effect, effect_tree, effect_history, scan_res, config)
@@ -556,9 +493,9 @@ fn audit_leaf<'a>(
 }
 
 fn audit_branch<'a>(
-    orig_effect: &'a EffectInstance,
+    orig_effect: &'a EffectBlock,
     effect_tree: &mut EffectTree,
-    effect_history: &[&'a EffectInstance],
+    effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
     config: &Config,
 ) -> Result<AuditStatus> {
@@ -591,7 +528,7 @@ fn audit_branch<'a>(
 }
 
 fn audit_effect_tree(
-    orig_effect: &EffectInstance,
+    orig_effect: &EffectBlock,
     effect_tree: &mut EffectTree,
     scan_res: &ScanResults,
     config: &Config,
@@ -607,14 +544,8 @@ fn audit_effect_tree(
 }
 
 fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
-    // TODO: Might want to fold the ScanResults into the policy file/policy
-    //       file creation
-
-    // TODO: There's a lot of stuff in the scan right now that isn't included
-    //       in the effects. We should make sure we're reporting everything we
-    //       care about.
     let scan_res = scanner::scan_crate(&args.crate_path)?;
-    let scan_effects = scan_res.get_dangerous_effects();
+    let scan_effect_blocks = scan_res.unsafe_effect_blocks_set();
 
     if args.debug {
         println!("{:?}", scan_res);
@@ -624,10 +555,14 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     let mut policy_path = args.policy_path.clone();
     let mut policy_file = match policy_file {
         Some(mut pf) => {
-            if !is_policy_scan_valid(&pf, &scan_effects, args.crate_path.clone())? {
+            if !is_policy_scan_valid(&pf, &scan_effect_blocks, args.crate_path.clone())? {
                 // TODO: If the policy file diverges from the effects at all, we
                 //       should enter incremental mode and detect what's changed
-                match handle_invalid_policy(&mut pf, &mut policy_path, &scan_effects) {
+                match handle_invalid_policy(
+                    &mut pf,
+                    &mut policy_path,
+                    &scan_effect_blocks,
+                ) {
                     Ok(ContinueStatus::Continue) => (),
                     Ok(ContinueStatus::ExitNow) => return Ok(()),
                     Err(e) => return Err(e),
@@ -642,11 +577,17 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
 
             // Return an empty PolicyFile, we'll add effects to it later
             let mut pf = PolicyFile::new(args.crate_path.clone())?;
-            pf.effects = scan_effects
+            pf.audit_trees = scan_effect_blocks
                 .clone()
                 .into_iter()
                 .map(|x| {
-                    (x.clone(), EffectTree::Leaf(x.clone(), SafetyAnnotation::Skipped))
+                    (
+                        x.clone(),
+                        EffectTree::Leaf(
+                            EffectInfo::from_block(x),
+                            SafetyAnnotation::Skipped,
+                        ),
+                    )
                 })
                 .collect::<HashMap<_, _>>();
             pf
@@ -654,10 +595,9 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     };
 
     // Iterate through the effects and prompt the user for if they're safe
-    for (e, t) in policy_file.effects.iter_mut() {
+    for (e, t) in policy_file.audit_trees.iter_mut() {
         match t.get_leaf_annotation() {
             Some(SafetyAnnotation::Skipped) => {
-                // TODO: Early exit
                 if audit_effect_tree(e, t, &scan_res, &args.config)?
                     == AuditStatus::EarlyExit
                 {
@@ -681,7 +621,7 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
 }
 
 fn runner(args: Args) -> Result<()> {
-    let policy_file = get_policy_file(args.policy_path.clone())?;
+    let policy_file = PolicyFile::read_policy(args.policy_path.clone())?;
 
     if args.review {
         match policy_file {

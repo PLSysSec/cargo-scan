@@ -17,10 +17,17 @@ fn unsafe_block_ex() {
     }
 }
 
+extern "C" {
+    pub fn my_unsafe_c_ffi();
+}
 
 fn main() {
     println!("Hello, world!");
     unsafe {
         my_unsafe_fn();
+    }
+    println!("FFI example");
+    unsafe {
+        my_unsafe_c_ffi();
     }
 }

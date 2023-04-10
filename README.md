@@ -30,13 +30,13 @@ The `scan.py` script simply calls `cargo download` on the crate and puts it in `
 
 To scan a crate, looking for dangerous function calls:
 ```
-cargo run --bin find_sinks <path to crate>
+cargo run --bin scan <path to crate>
 ```
 
 Crates can be put anywhere, but are generally placed in `data/packages` for our scripting. For example,
 ```
-cargo run --bin find_sinks data/packages/num_cpus
-cargo run --bin find_sinks data/test-packages/permissions-ex
+cargo run --bin scan data/packages/num_cpus
+cargo run --bin scan data/test-packages/permissions-ex
 ```
 
 ## Running an audit

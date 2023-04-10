@@ -1,6 +1,9 @@
 /*
-    Parse a Rust source file and find all function calls, printing them to stdout
-    (one per line).
+    Parse a Rust source file and find all potentially dangerous effects,
+    printing them to stdout (one per line).
+
+    Effects are printed in a CSV format -- run --bin csv_header to get
+    the header or see effect.rs.
 */
 
 use cargo_scan::scanner;
@@ -25,7 +28,11 @@ fn main() -> Result<()> {
     let results = scanner::scan_crate(&args.crate_path)?;
 
     for effect in results.effects {
-        println!("{}", effect.to_csv());
+        if effect.is_dangerous() {
+            println!("{}", effect.to_csv());
+        } else if args.verbose {
+            println!("Skipping: {}", effect.to_csv());
+        }
     }
 
     if args.verbose {

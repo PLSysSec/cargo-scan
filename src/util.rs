@@ -1,13 +1,10 @@
 /// Utility functions
 
-/// Crate and module inference
-///
-/// These are currently very hacky
-
+/// Hacky crate and module inferences from filepath
 pub mod infer {
     use std::path::Path;
 
-    pub fn infer_crate(filepath: &Path) -> String {
+    fn infer_crate(filepath: &Path) -> String {
         let crate_src: Vec<String> = filepath
             .iter()
             .map(|x| {
@@ -25,7 +22,7 @@ pub mod infer {
         crate_string
     }
 
-    pub fn infer_module(filepath: &Path) -> Vec<String> {
+    fn infer_module(filepath: &Path) -> Vec<String> {
         let post_src: Vec<String> = filepath
             .iter()
             .map(|x| {

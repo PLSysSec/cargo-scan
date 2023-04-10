@@ -1,150 +1,150 @@
 crate, fn_decl, callee, effect, dir, file, line, col
-rand, rand::distributions::other::crate::distributions::Distribution::sample, core::char::from_u32_unchecked, [FFI call], data/packages/rand/src/distributions, other.rs, 91, 23
-rand, rand::distributions::other::crate::distributions::DistString::append_string, [METHOD]::as_mut_vec, [FFI call], data/packages/rand/src/distributions, other.rs, 131, 27
-rand, rand::distributions::other::crate::distributions::DistString::append_string, [METHOD]::sample_iter, [FFI call], data/packages/rand/src/distributions, other.rs, 132, 26
-rand, rand::distributions::other::crate::distributions::DistString::append_string, [METHOD]::take, [FFI call], data/packages/rand/src/distributions, other.rs, 132, 43
-rand, rand::distributions::other::crate::distributions::DistString::append_string, [METHOD]::extend, [FFI call], data/packages/rand/src/distributions, other.rs, 132, 14
-rand, rand::distributions::other::crate::distributions::Distribution::sample, core::mem::MaybeUninit::uninit, [FFI call], data/packages/rand/src/distributions, other.rs, 199, 66
-rand, rand::distributions::other::crate::distributions::Distribution::sample, [METHOD]::assume_init, [FFI call], data/packages/rand/src/distributions, other.rs, 199, 75
-rand, rand::distributions::other::crate::distributions::Distribution::sample, mem::transmute_copy, [FFI call], data/packages/rand/src/distributions, other.rs, 205, 22
-rand, rand::distributions::slice::crate::distributions::Distribution::sample, [METHOD]::get_unchecked, [FFI call], data/packages/rand/src/distributions, slice.rs, 98, 28
-rand, rand::distributions::uniform::UniformSampler::sample, core::char::from_u32_unchecked, [FFI call], data/packages/rand/src/distributions, uniform.rs, 786, 29
-rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, rand::rngs::adapter::reseeding::Some, [FFI call], data/packages/rand/src/rngs/adapter, reseeding.rs, 322, 16
-rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, rand::rngs::adapter::reseeding::Some, [FFI call], data/packages/rand/src/rngs/adapter, reseeding.rs, 323, 16
-rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, rand::rngs::adapter::reseeding::Some, [FFI call], data/packages/rand/src/rngs/adapter, reseeding.rs, 324, 16
+rand, rand::distributions::other::crate::distributions::Distribution::sample, core::char::from_u32_unchecked, [Unsafe], data/packages/rand/src/distributions, other.rs, 91, 23
+rand, rand::distributions::other::crate::distributions::DistString::append_string, [METHOD]::as_mut_vec, [Unsafe], data/packages/rand/src/distributions, other.rs, 131, 27
+rand, rand::distributions::other::crate::distributions::DistString::append_string, [METHOD]::sample_iter, [Unsafe], data/packages/rand/src/distributions, other.rs, 132, 26
+rand, rand::distributions::other::crate::distributions::DistString::append_string, [METHOD]::take, [Unsafe], data/packages/rand/src/distributions, other.rs, 132, 43
+rand, rand::distributions::other::crate::distributions::DistString::append_string, [METHOD]::extend, [Unsafe], data/packages/rand/src/distributions, other.rs, 132, 14
+rand, rand::distributions::other::crate::distributions::Distribution::sample, core::mem::MaybeUninit::uninit, [Unsafe], data/packages/rand/src/distributions, other.rs, 199, 66
+rand, rand::distributions::other::crate::distributions::Distribution::sample, [METHOD]::assume_init, [Unsafe], data/packages/rand/src/distributions, other.rs, 199, 75
+rand, rand::distributions::other::crate::distributions::Distribution::sample, mem::transmute_copy, [Unsafe], data/packages/rand/src/distributions, other.rs, 205, 22
+rand, rand::distributions::slice::crate::distributions::Distribution::sample, [METHOD]::get_unchecked, [Unsafe], data/packages/rand/src/distributions, slice.rs, 98, 28
+rand, rand::distributions::uniform::UniformSampler::sample, core::char::from_u32_unchecked, [Unsafe], data/packages/rand/src/distributions, uniform.rs, 786, 29
+rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, Some, [Unsafe], data/packages/rand/src/rngs/adapter, reseeding.rs, 322, 16
+rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, Some, [Unsafe], data/packages/rand/src/rngs/adapter, reseeding.rs, 323, 16
+rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, Some, [Unsafe], data/packages/rand/src/rngs/adapter, reseeding.rs, 324, 16
 rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, libc::pthread_atfork, libc, data/packages/rand/src/rngs/adapter, reseeding.rs, 321, 37
-rand, rand::rngs::thread::crate::RngCore::next_u32, [METHOD]::get, [FFI call], data/packages/rand/src/rngs, thread.rs, 104, 42
-rand, rand::rngs::thread::crate::RngCore::next_u64, [METHOD]::get, [FFI call], data/packages/rand/src/rngs, thread.rs, 112, 42
-rand, rand::rngs::thread::crate::RngCore::fill_bytes, [METHOD]::get, [FFI call], data/packages/rand/src/rngs, thread.rs, 119, 42
-rand, rand::rngs::thread::crate::RngCore::try_fill_bytes, [METHOD]::get, [FFI call], data/packages/rand/src/rngs, thread.rs, 126, 42
-syn, syn::buffer::Drop::drop, std::slice::from_raw_parts_mut, [FFI call], data/packages/syn/src, buffer.rs, 52, 31
-syn, syn::buffer::Drop::drop, Box::from_raw, [FFI call], data/packages/syn/src, buffer.rs, 53, 25
-syn, syn::buffer::TokenBuffer::inner_new, [METHOD]::add, [FFI call], data/packages/syn/src, buffer.rs, 117, 44
-syn, syn::buffer::TokenBuffer::inner_new, [METHOD]::add, [FFI call], data/packages/syn/src, buffer.rs, 120, 56
-syn, syn::buffer::TokenBuffer::inner_new, std::hint::unreachable_unchecked, [FFI call], data/packages/syn/src, buffer.rs, 122, 36
-syn, syn::buffer::TokenBuffer::inner_new, [METHOD]::add, [FFI call], data/packages/syn/src, buffer.rs, 127, 55
-syn, syn::buffer::TokenBuffer::inner_new, std::hint::unreachable_unchecked, [FFI call], data/packages/syn/src, buffer.rs, 130, 36
-syn, syn::buffer::TokenBuffer::begin, [METHOD]::add, [FFI call], data/packages/syn/src, buffer.rs, 162, 51
-syn, syn::buffer::TokenBuffer::begin, Cursor::create, [FFI call], data/packages/syn/src, buffer.rs, 162, 25
-syn, syn::buffer::Cursor::bump, [METHOD]::offset, [FFI call], data/packages/syn/src, buffer.rs, 242, 32
-syn, syn::buffer::Cursor::bump, Cursor::create, [FFI call], data/packages/syn/src, buffer.rs, 242, 16
-syn, syn::buffer::Cursor::ignore_none, Cursor::create, [FFI call], data/packages/syn/src, buffer.rs, 257, 36
-syn, syn::buffer::Cursor::group, [METHOD]::bump, [FFI call], data/packages/syn/src, buffer.rs, 284, 70
-syn, syn::buffer::Cursor::ident, [METHOD]::bump, [FFI call], data/packages/syn/src, buffer.rs, 296, 70
-syn, syn::buffer::Cursor::punct, [METHOD]::bump, [FFI call], data/packages/syn/src, buffer.rs, 307, 51
-syn, syn::buffer::Cursor::literal, [METHOD]::bump, [FFI call], data/packages/syn/src, buffer.rs, 318, 76
-syn, syn::buffer::Cursor::lifetime, [METHOD]::bump, [FFI call], data/packages/syn/src, buffer.rs, 329, 41
-syn, syn::buffer::Cursor::token_tree, [METHOD]::bump, [FFI call], data/packages/syn/src, buffer.rs, 373, 34
-syn, syn::buffer::Cursor::skip, [METHOD]::bump, [FFI call], data/packages/syn/src, buffer.rs, 398, 41
-syn, syn::buffer::Cursor::skip, [METHOD]::bump, [FFI call], data/packages/syn/src, buffer.rs, 400, 58
-syn, syn::buffer::Cursor::skip, [METHOD]::bump, [FFI call], data/packages/syn/src, buffer.rs, 404, 36
-syn, syn::discouraged::Speculative::advance_to, [METHOD]::cursor, [FFI call], data/packages/syn/src, discouraged.rs, 192, 73
-syn, syn::discouraged::Speculative::advance_to, mem::transmute, [FFI call], data/packages/syn/src, discouraged.rs, 192, 31
-syn, syn::parse::advance_step_cursor, std::mem::transmute, [FFI call], data/packages/syn/src, parse.rs, 384, 18
-syn, syn::parse::new_parse_buffer, std::mem::transmute, [FFI call], data/packages/syn/src, parse.rs, 395, 38
-rand_core, rand_core::impls::Observable::as_byte_slice, core::slice::from_raw_parts, [FFI call], data/packages/rand_core/src, impls.rs, 70, 30
-rand_core, rand_core::impls::Observable::as_byte_slice, core::slice::from_raw_parts, [FFI call], data/packages/rand_core/src, impls.rs, 81, 30
-libc, libc::fuchsia::mod::__CMSG_NEXT, libc::fuchsia::mod::__CMSG_LEN, libc, data/packages/libc/src/fuchsia, mod.rs, 3333, 26
-libc, libc::fuchsia::mod::__CMSG_NEXT, [METHOD]::offset, [FFI call], data/packages/libc/src/fuchsia, mod.rs, 3333, 19
-libc, libc::fuchsia::mod::__MHDR_END, [METHOD]::offset, [FFI call], data/packages/libc/src/fuchsia, mod.rs, 3337, 33
-libc, libc::unix::haiku::native::get_cpu_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1236, 19
-libc, libc::unix::haiku::native::get_cpu_info, libc::unix::haiku::native::_get_cpu_info_etc, libc, data/packages/libc/src/unix/haiku, native.rs, 1232, 4
-libc, libc::unix::haiku::native::get_area_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1242, 40
-libc, libc::unix::haiku::native::get_area_info, libc::unix::haiku::native::_get_area_info, libc, data/packages/libc/src/unix/haiku, native.rs, 1242, 4
-libc, libc::unix::haiku::native::get_next_area_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1255, 19
-libc, libc::unix::haiku::native::get_next_area_info, libc::unix::haiku::native::_get_next_area_info, libc, data/packages/libc/src/unix/haiku, native.rs, 1251, 4
-libc, libc::unix::haiku::native::get_port_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1261, 41
-libc, libc::unix::haiku::native::get_port_info, libc::unix::haiku::native::_get_port_info, libc, data/packages/libc/src/unix/haiku, native.rs, 1261, 4
-libc, libc::unix::haiku::native::get_next_port_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1274, 19
-libc, libc::unix::haiku::native::get_next_port_info, libc::unix::haiku::native::_get_next_port_info, libc, data/packages/libc/src/unix/haiku, native.rs, 1270, 4
-libc, libc::unix::haiku::native::get_port_message_info_etc, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1288, 19
-libc, libc::unix::haiku::native::get_port_message_info_etc, libc::unix::haiku::native::_get_port_message_info_etc, libc, data/packages/libc/src/unix/haiku, native.rs, 1285, 4
-libc, libc::unix::haiku::native::get_sem_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1296, 39
-libc, libc::unix::haiku::native::get_sem_info, libc::unix::haiku::native::_get_sem_info, libc, data/packages/libc/src/unix/haiku, native.rs, 1296, 4
-libc, libc::unix::haiku::native::get_next_sem_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1305, 19
-libc, libc::unix::haiku::native::get_next_sem_info, libc::unix::haiku::native::_get_next_sem_info, libc, data/packages/libc/src/unix/haiku, native.rs, 1301, 4
-libc, libc::unix::haiku::native::get_team_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1311, 42
-libc, libc::unix::haiku::native::get_team_info, libc::unix::haiku::native::_get_team_info, libc, data/packages/libc/src/unix/haiku, native.rs, 1311, 4
-libc, libc::unix::haiku::native::get_next_team_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1316, 49
-libc, libc::unix::haiku::native::get_next_team_info, libc::unix::haiku::native::_get_next_team_info, libc, data/packages/libc/src/unix/haiku, native.rs, 1316, 4
-libc, libc::unix::haiku::native::get_team_usage_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1325, 19
-libc, libc::unix::haiku::native::get_team_usage_info, libc::unix::haiku::native::_get_team_usage_info, libc, data/packages/libc/src/unix/haiku, native.rs, 1321, 4
-libc, libc::unix::haiku::native::get_thread_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1331, 42
-libc, libc::unix::haiku::native::get_thread_info, libc::unix::haiku::native::_get_thread_info, libc, data/packages/libc/src/unix/haiku, native.rs, 1331, 4
-libc, libc::unix::haiku::native::get_next_thread_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1344, 19
-libc, libc::unix::haiku::native::get_next_thread_info, libc::unix::haiku::native::_get_next_thread_info, libc, data/packages/libc/src/unix/haiku, native.rs, 1340, 4
-libc, libc::unix::haiku::native::get_image_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1351, 44
-libc, libc::unix::haiku::native::get_image_info, libc::unix::haiku::native::_get_image_info, libc, data/packages/libc/src/unix/haiku, native.rs, 1351, 4
-libc, libc::unix::haiku::native::get_next_image_info, core::mem::size_of, [FFI call], data/packages/libc/src/unix/haiku, native.rs, 1364, 19
-libc, libc::unix::haiku::native::get_next_image_info, libc::unix::haiku::native::_get_next_image_info, libc, data/packages/libc/src/unix/haiku, native.rs, 1360, 4
-libc, libc::unix::solarish::compat::cfsetspeed, libc::unix::solarish::compat::cfsetispeed, libc, data/packages/libc/src/unix/solarish, compat.rs, 37, 6
-libc, libc::unix::solarish::compat::cfsetspeed, libc::unix::solarish::compat::cfsetospeed, libc, data/packages/libc/src/unix/solarish, compat.rs, 38, 6
-libc, libc::unix::solarish::compat::bail, libc::unix::solarish::compat::___errno, libc, data/packages/libc/src/unix/solarish, compat.rs, 43, 13
-libc, libc::unix::solarish::compat::bail, libc::unix::solarish::compat::close, libc, data/packages/libc/src/unix/solarish, compat.rs, 45, 10
-libc, libc::unix::solarish::compat::bail, libc::unix::solarish::compat::close, libc, data/packages/libc/src/unix/solarish, compat.rs, 48, 10
-libc, libc::unix::solarish::compat::bail, libc::unix::solarish::compat::___errno, libc, data/packages/libc/src/unix/solarish, compat.rs, 50, 5
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::posix_openpt, libc, data/packages/libc/src/unix/solarish, compat.rs, 63, 16
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::grantpt, libc, data/packages/libc/src/unix/solarish, compat.rs, 69, 9
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::unlockpt, libc, data/packages/libc/src/unix/solarish, compat.rs, 69, 31
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::bail, libc, data/packages/libc/src/unix/solarish, compat.rs, 70, 15
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::ptsname, libc, data/packages/libc/src/unix/solarish, compat.rs, 74, 23
-libc, libc::unix::solarish::compat::openpty, [METHOD]::is_null, [FFI call], data/packages/libc/src/unix/solarish, compat.rs, 75, 18
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::bail, libc, data/packages/libc/src/unix/solarish, compat.rs, 76, 15
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::open, libc, data/packages/libc/src/unix/solarish, compat.rs, 81, 16
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::bail, libc, data/packages/libc/src/unix/solarish, compat.rs, 83, 15
-libc, libc::unix::solarish::compat::openpty, [METHOD]::as_ptr, [FFI call], data/packages/libc/src/unix/solarish, compat.rs, 87, 44
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::ioctl, libc, data/packages/libc/src/unix/solarish, compat.rs, 87, 18
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::bail, libc, data/packages/libc/src/unix/solarish, compat.rs, 89, 15
-libc, libc::unix::solarish::compat::openpty, [METHOD]::as_ptr, [FFI call], data/packages/libc/src/unix/solarish, compat.rs, 93, 37
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::ioctl, libc, data/packages/libc/src/unix/solarish, compat.rs, 93, 13
-libc, libc::unix::solarish::compat::openpty, [METHOD]::as_ptr, [FFI call], data/packages/libc/src/unix/solarish, compat.rs, 93, 82
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::ioctl, libc, data/packages/libc/src/unix/solarish, compat.rs, 93, 56
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::bail, libc, data/packages/libc/src/unix/solarish, compat.rs, 94, 19
-libc, libc::unix::solarish::compat::openpty, [METHOD]::is_null, [FFI call], data/packages/libc/src/unix/solarish, compat.rs, 99, 14
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::tcsetattr, libc, data/packages/libc/src/unix/solarish, compat.rs, 99, 29
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::bail, libc, data/packages/libc/src/unix/solarish, compat.rs, 100, 15
-libc, libc::unix::solarish::compat::openpty, [METHOD]::is_null, [FFI call], data/packages/libc/src/unix/solarish, compat.rs, 104, 13
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::ioctl, libc, data/packages/libc/src/unix/solarish, compat.rs, 104, 28
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::bail, libc, data/packages/libc/src/unix/solarish, compat.rs, 105, 15
-libc, libc::unix::solarish::compat::openpty, [METHOD]::is_null, [FFI call], data/packages/libc/src/unix/solarish, compat.rs, 113, 13
-libc, libc::unix::solarish::compat::openpty, libc::unix::solarish::compat::strcpy, libc, data/packages/libc/src/unix/solarish, compat.rs, 114, 10
-libc, libc::unix::solarish::compat::forkpty, libc::unix::solarish::compat::openpty, libc, data/packages/libc/src/unix/solarish, compat.rs, 130, 7
-libc, libc::unix::solarish::compat::forkpty, libc::unix::solarish::compat::fork, libc, data/packages/libc/src/unix/solarish, compat.rs, 134, 16
-libc, libc::unix::solarish::compat::forkpty, libc::unix::solarish::compat::bail, libc, data/packages/libc/src/unix/solarish, compat.rs, 136, 15
-libc, libc::unix::solarish::compat::forkpty, libc::unix::solarish::compat::close, libc, data/packages/libc/src/unix/solarish, compat.rs, 140, 10
-libc, libc::unix::solarish::compat::forkpty, libc::unix::solarish::compat::close, libc, data/packages/libc/src/unix/solarish, compat.rs, 147, 6
-libc, libc::unix::solarish::compat::forkpty, libc::unix::solarish::compat::setsid, libc, data/packages/libc/src/unix/solarish, compat.rs, 153, 9
-libc, libc::unix::solarish::compat::forkpty, libc::unix::solarish::compat::ioctl, libc, data/packages/libc/src/unix/solarish, compat.rs, 154, 13
-libc, libc::unix::solarish::compat::forkpty, libc::unix::solarish::compat::dup2, libc, data/packages/libc/src/unix/solarish, compat.rs, 155, 13
-libc, libc::unix::solarish::compat::forkpty, libc::unix::solarish::compat::dup2, libc, data/packages/libc/src/unix/solarish, compat.rs, 156, 13
-libc, libc::unix::solarish::compat::forkpty, libc::unix::solarish::compat::dup2, libc, data/packages/libc/src/unix/solarish, compat.rs, 157, 13
-libc, libc::unix::solarish::compat::forkpty, libc::unix::solarish::compat::_exit, libc, data/packages/libc/src/unix/solarish, compat.rs, 162, 10
-libc, libc::unix::solarish::compat::forkpty, libc::unix::solarish::compat::close, libc, data/packages/libc/src/unix/solarish, compat.rs, 167, 10
-libc, libc::unix::solarish::mod::siginfo_t::si_addr, [METHOD]::sidata, [FFI call], data/packages/libc/src/unix/solarish, mod.rs, 1078, 42
-libc, libc::unix::solarish::mod::siginfo_t::si_uid, [METHOD]::sidata, [FFI call], data/packages/libc/src/unix/solarish, mod.rs, 1082, 38
-libc, libc::unix::solarish::mod::siginfo_t::si_value, [METHOD]::sidata, [FFI call], data/packages/libc/src/unix/solarish, mod.rs, 1086, 38
-libc, libc::unix::solarish::mod::siginfo_t::si_pid, [METHOD]::sidata, [FFI call], data/packages/libc/src/unix/solarish, mod.rs, 1090, 42
-libc, libc::unix::solarish::mod::siginfo_t::si_status, [METHOD]::sidata, [FFI call], data/packages/libc/src/unix/solarish, mod.rs, 1094, 42
-libc, libc::unix::solarish::mod::siginfo_t::si_utime, [METHOD]::sidata, [FFI call], data/packages/libc/src/unix/solarish, mod.rs, 1098, 42
-libc, libc::unix::solarish::mod::siginfo_t::si_stime, [METHOD]::sidata, [FFI call], data/packages/libc/src/unix/solarish, mod.rs, 1102, 42
-libc, libc::vxworks::mod::posix_memalign, libc::vxworks::mod::errnoGet, libc, data/packages/libc/src/vxworks, mod.rs, 1869, 18
-libc, libc::vxworks::mod::posix_memalign, libc::vxworks::mod::memalign, libc, data/packages/libc/src/vxworks, mod.rs, 1871, 19
-libc, libc::vxworks::mod::posix_memalign, libc::vxworks::mod::errnoSet, libc, data/packages/libc/src/vxworks, mod.rs, 1872, 10
-libc, libc::vxworks::mod::posix_memalign, [METHOD]::is_null, [FFI call], data/packages/libc/src/vxworks, mod.rs, 1874, 16
-proc_macro2, proc_macro2::fallback::TokenStream::take_inner, core::ptr::read, [FFI call], data/packages/proc-macro2/src, fallback.rs, 67, 22
+rand, rand::rngs::thread::crate::RngCore::next_u32, [METHOD]::get, [Unsafe], data/packages/rand/src/rngs, thread.rs, 104, 42
+rand, rand::rngs::thread::crate::RngCore::next_u64, [METHOD]::get, [Unsafe], data/packages/rand/src/rngs, thread.rs, 112, 42
+rand, rand::rngs::thread::crate::RngCore::fill_bytes, [METHOD]::get, [Unsafe], data/packages/rand/src/rngs, thread.rs, 119, 42
+rand, rand::rngs::thread::crate::RngCore::try_fill_bytes, [METHOD]::get, [Unsafe], data/packages/rand/src/rngs, thread.rs, 126, 42
+syn, syn::buffer::Drop::drop, std::slice::from_raw_parts_mut, [Unsafe], data/packages/syn/src, buffer.rs, 52, 31
+syn, syn::buffer::Drop::drop, Box::from_raw, [Unsafe], data/packages/syn/src, buffer.rs, 53, 25
+syn, syn::buffer::TokenBuffer::inner_new, [METHOD]::add, [Unsafe], data/packages/syn/src, buffer.rs, 117, 44
+syn, syn::buffer::TokenBuffer::inner_new, [METHOD]::add, [Unsafe], data/packages/syn/src, buffer.rs, 120, 56
+syn, syn::buffer::TokenBuffer::inner_new, std::hint::unreachable_unchecked, [Unsafe], data/packages/syn/src, buffer.rs, 122, 36
+syn, syn::buffer::TokenBuffer::inner_new, [METHOD]::add, [Unsafe], data/packages/syn/src, buffer.rs, 127, 55
+syn, syn::buffer::TokenBuffer::inner_new, std::hint::unreachable_unchecked, [Unsafe], data/packages/syn/src, buffer.rs, 130, 36
+syn, syn::buffer::TokenBuffer::begin, [METHOD]::add, [Unsafe], data/packages/syn/src, buffer.rs, 162, 51
+syn, syn::buffer::TokenBuffer::begin, Cursor::create, [Unsafe], data/packages/syn/src, buffer.rs, 162, 25
+syn, syn::buffer::Cursor::bump, [METHOD]::offset, [Unsafe], data/packages/syn/src, buffer.rs, 242, 32
+syn, syn::buffer::Cursor::bump, Cursor::create, [Unsafe], data/packages/syn/src, buffer.rs, 242, 16
+syn, syn::buffer::Cursor::ignore_none, Cursor::create, [Unsafe], data/packages/syn/src, buffer.rs, 257, 36
+syn, syn::buffer::Cursor::group, [METHOD]::bump, [Unsafe], data/packages/syn/src, buffer.rs, 284, 70
+syn, syn::buffer::Cursor::ident, [METHOD]::bump, [Unsafe], data/packages/syn/src, buffer.rs, 296, 70
+syn, syn::buffer::Cursor::punct, [METHOD]::bump, [Unsafe], data/packages/syn/src, buffer.rs, 307, 51
+syn, syn::buffer::Cursor::literal, [METHOD]::bump, [Unsafe], data/packages/syn/src, buffer.rs, 318, 76
+syn, syn::buffer::Cursor::lifetime, [METHOD]::bump, [Unsafe], data/packages/syn/src, buffer.rs, 329, 41
+syn, syn::buffer::Cursor::token_tree, [METHOD]::bump, [Unsafe], data/packages/syn/src, buffer.rs, 373, 34
+syn, syn::buffer::Cursor::skip, [METHOD]::bump, [Unsafe], data/packages/syn/src, buffer.rs, 398, 41
+syn, syn::buffer::Cursor::skip, [METHOD]::bump, [Unsafe], data/packages/syn/src, buffer.rs, 400, 58
+syn, syn::buffer::Cursor::skip, [METHOD]::bump, [Unsafe], data/packages/syn/src, buffer.rs, 404, 36
+syn, syn::discouraged::Speculative::advance_to, [METHOD]::cursor, [Unsafe], data/packages/syn/src, discouraged.rs, 192, 73
+syn, syn::discouraged::Speculative::advance_to, mem::transmute, [Unsafe], data/packages/syn/src, discouraged.rs, 192, 31
+syn, syn::parse::advance_step_cursor, std::mem::transmute, [Unsafe], data/packages/syn/src, parse.rs, 384, 18
+syn, syn::parse::new_parse_buffer, std::mem::transmute, [Unsafe], data/packages/syn/src, parse.rs, 395, 38
+rand_core, rand_core::impls::Observable::as_byte_slice, core::slice::from_raw_parts, [Unsafe], data/packages/rand_core/src, impls.rs, 70, 30
+rand_core, rand_core::impls::Observable::as_byte_slice, core::slice::from_raw_parts, [Unsafe], data/packages/rand_core/src, impls.rs, 81, 30
+libc, libc::fuchsia::mod::__CMSG_NEXT, __CMSG_LEN, [Unsafe], data/packages/libc/src/fuchsia, mod.rs, 3333, 26
+libc, libc::fuchsia::mod::__CMSG_NEXT, [METHOD]::offset, [Unsafe], data/packages/libc/src/fuchsia, mod.rs, 3333, 19
+libc, libc::fuchsia::mod::__MHDR_END, [METHOD]::offset, [Unsafe], data/packages/libc/src/fuchsia, mod.rs, 3337, 33
+libc, libc::unix::haiku::native::get_cpu_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1236, 19
+libc, libc::unix::haiku::native::get_cpu_info, _get_cpu_info_etc, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1232, 4
+libc, libc::unix::haiku::native::get_area_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1242, 40
+libc, libc::unix::haiku::native::get_area_info, _get_area_info, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1242, 4
+libc, libc::unix::haiku::native::get_next_area_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1255, 19
+libc, libc::unix::haiku::native::get_next_area_info, _get_next_area_info, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1251, 4
+libc, libc::unix::haiku::native::get_port_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1261, 41
+libc, libc::unix::haiku::native::get_port_info, _get_port_info, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1261, 4
+libc, libc::unix::haiku::native::get_next_port_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1274, 19
+libc, libc::unix::haiku::native::get_next_port_info, _get_next_port_info, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1270, 4
+libc, libc::unix::haiku::native::get_port_message_info_etc, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1288, 19
+libc, libc::unix::haiku::native::get_port_message_info_etc, _get_port_message_info_etc, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1285, 4
+libc, libc::unix::haiku::native::get_sem_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1296, 39
+libc, libc::unix::haiku::native::get_sem_info, _get_sem_info, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1296, 4
+libc, libc::unix::haiku::native::get_next_sem_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1305, 19
+libc, libc::unix::haiku::native::get_next_sem_info, _get_next_sem_info, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1301, 4
+libc, libc::unix::haiku::native::get_team_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1311, 42
+libc, libc::unix::haiku::native::get_team_info, _get_team_info, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1311, 4
+libc, libc::unix::haiku::native::get_next_team_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1316, 49
+libc, libc::unix::haiku::native::get_next_team_info, _get_next_team_info, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1316, 4
+libc, libc::unix::haiku::native::get_team_usage_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1325, 19
+libc, libc::unix::haiku::native::get_team_usage_info, _get_team_usage_info, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1321, 4
+libc, libc::unix::haiku::native::get_thread_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1331, 42
+libc, libc::unix::haiku::native::get_thread_info, _get_thread_info, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1331, 4
+libc, libc::unix::haiku::native::get_next_thread_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1344, 19
+libc, libc::unix::haiku::native::get_next_thread_info, _get_next_thread_info, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1340, 4
+libc, libc::unix::haiku::native::get_image_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1351, 44
+libc, libc::unix::haiku::native::get_image_info, _get_image_info, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1351, 4
+libc, libc::unix::haiku::native::get_next_image_info, core::mem::size_of, [Unsafe], data/packages/libc/src/unix/haiku, native.rs, 1364, 19
+libc, libc::unix::haiku::native::get_next_image_info, _get_next_image_info, [FFI], data/packages/libc/src/unix/haiku, native.rs, 1360, 4
+libc, libc::unix::solarish::compat::cfsetspeed, cfsetispeed, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 37, 6
+libc, libc::unix::solarish::compat::cfsetspeed, cfsetospeed, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 38, 6
+libc, libc::unix::solarish::compat::bail, ___errno, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 43, 13
+libc, libc::unix::solarish::compat::bail, close, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 45, 10
+libc, libc::unix::solarish::compat::bail, close, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 48, 10
+libc, libc::unix::solarish::compat::bail, ___errno, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 50, 5
+libc, libc::unix::solarish::compat::openpty, posix_openpt, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 63, 16
+libc, libc::unix::solarish::compat::openpty, grantpt, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 69, 9
+libc, libc::unix::solarish::compat::openpty, unlockpt, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 69, 31
+libc, libc::unix::solarish::compat::openpty, bail, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 70, 15
+libc, libc::unix::solarish::compat::openpty, ptsname, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 74, 23
+libc, libc::unix::solarish::compat::openpty, [METHOD]::is_null, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 75, 18
+libc, libc::unix::solarish::compat::openpty, bail, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 76, 15
+libc, libc::unix::solarish::compat::openpty, open, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 81, 16
+libc, libc::unix::solarish::compat::openpty, bail, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 83, 15
+libc, libc::unix::solarish::compat::openpty, [METHOD]::as_ptr, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 87, 44
+libc, libc::unix::solarish::compat::openpty, ioctl, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 87, 18
+libc, libc::unix::solarish::compat::openpty, bail, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 89, 15
+libc, libc::unix::solarish::compat::openpty, [METHOD]::as_ptr, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 93, 37
+libc, libc::unix::solarish::compat::openpty, ioctl, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 93, 13
+libc, libc::unix::solarish::compat::openpty, [METHOD]::as_ptr, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 93, 82
+libc, libc::unix::solarish::compat::openpty, ioctl, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 93, 56
+libc, libc::unix::solarish::compat::openpty, bail, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 94, 19
+libc, libc::unix::solarish::compat::openpty, [METHOD]::is_null, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 99, 14
+libc, libc::unix::solarish::compat::openpty, tcsetattr, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 99, 29
+libc, libc::unix::solarish::compat::openpty, bail, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 100, 15
+libc, libc::unix::solarish::compat::openpty, [METHOD]::is_null, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 104, 13
+libc, libc::unix::solarish::compat::openpty, ioctl, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 104, 28
+libc, libc::unix::solarish::compat::openpty, bail, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 105, 15
+libc, libc::unix::solarish::compat::openpty, [METHOD]::is_null, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 113, 13
+libc, libc::unix::solarish::compat::openpty, strcpy, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 114, 10
+libc, libc::unix::solarish::compat::forkpty, openpty, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 130, 7
+libc, libc::unix::solarish::compat::forkpty, fork, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 134, 16
+libc, libc::unix::solarish::compat::forkpty, bail, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 136, 15
+libc, libc::unix::solarish::compat::forkpty, close, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 140, 10
+libc, libc::unix::solarish::compat::forkpty, close, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 147, 6
+libc, libc::unix::solarish::compat::forkpty, setsid, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 153, 9
+libc, libc::unix::solarish::compat::forkpty, ioctl, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 154, 13
+libc, libc::unix::solarish::compat::forkpty, dup2, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 155, 13
+libc, libc::unix::solarish::compat::forkpty, dup2, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 156, 13
+libc, libc::unix::solarish::compat::forkpty, dup2, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 157, 13
+libc, libc::unix::solarish::compat::forkpty, _exit, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 162, 10
+libc, libc::unix::solarish::compat::forkpty, close, [Unsafe], data/packages/libc/src/unix/solarish, compat.rs, 167, 10
+libc, libc::unix::solarish::mod::siginfo_t::si_addr, [METHOD]::sidata, [Unsafe], data/packages/libc/src/unix/solarish, mod.rs, 1078, 42
+libc, libc::unix::solarish::mod::siginfo_t::si_uid, [METHOD]::sidata, [Unsafe], data/packages/libc/src/unix/solarish, mod.rs, 1082, 38
+libc, libc::unix::solarish::mod::siginfo_t::si_value, [METHOD]::sidata, [Unsafe], data/packages/libc/src/unix/solarish, mod.rs, 1086, 38
+libc, libc::unix::solarish::mod::siginfo_t::si_pid, [METHOD]::sidata, [Unsafe], data/packages/libc/src/unix/solarish, mod.rs, 1090, 42
+libc, libc::unix::solarish::mod::siginfo_t::si_status, [METHOD]::sidata, [Unsafe], data/packages/libc/src/unix/solarish, mod.rs, 1094, 42
+libc, libc::unix::solarish::mod::siginfo_t::si_utime, [METHOD]::sidata, [Unsafe], data/packages/libc/src/unix/solarish, mod.rs, 1098, 42
+libc, libc::unix::solarish::mod::siginfo_t::si_stime, [METHOD]::sidata, [Unsafe], data/packages/libc/src/unix/solarish, mod.rs, 1102, 42
+libc, libc::vxworks::mod::posix_memalign, errnoGet, [FFI], data/packages/libc/src/vxworks, mod.rs, 1869, 18
+libc, libc::vxworks::mod::posix_memalign, memalign, [FFI], data/packages/libc/src/vxworks, mod.rs, 1871, 19
+libc, libc::vxworks::mod::posix_memalign, errnoSet, [FFI], data/packages/libc/src/vxworks, mod.rs, 1872, 10
+libc, libc::vxworks::mod::posix_memalign, [METHOD]::is_null, [Unsafe], data/packages/libc/src/vxworks, mod.rs, 1874, 16
+proc_macro2, proc_macro2::fallback::TokenStream::take_inner, core::ptr::read, [Unsafe], data/packages/proc-macro2/src, fallback.rs, 67, 22
 proc_macro2, proc_macro2::fallback::Span::source_file, std::path::Path::new, std::path, data/packages/proc-macro2/src, fallback.rs, 498, 28
-proc_macro2, proc_macro2::fallback::Literal::from_str_unchecked, [METHOD]::to_owned, [FFI call], data/packages/proc-macro2/src, fallback.rs, 851, 27
-proc_macro2, proc_macro2::fallback::Literal::from_str_unchecked, Literal::_new, [FFI call], data/packages/proc-macro2/src, fallback.rs, 851, 17
-proc_macro2, proc_macro2::Literal::from_str_unchecked, crate::fallback::Literal::from_str_unchecked, [FFI call], data/packages/proc-macro2/src, lib.rs, 1264, 36
-proc_macro2, proc_macro2::Literal::from_str_unchecked, Literal::_new, [FFI call], data/packages/proc-macro2/src, lib.rs, 1264, 17
-proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, crate::detection::inside_proc_macro, [FFI call], data/packages/proc-macro2/src, wrapper.rs, 1, 22
-proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, proc_macro2::wrapper::compiler_literal_from_str, [FFI call], data/packages/proc-macro2/src, wrapper.rs, 829, 30
-proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, [METHOD]::expect, [FFI call], data/packages/proc-macro2/src, wrapper.rs, 829, 62
-proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, Literal::Compiler, [FFI call], data/packages/proc-macro2/src, wrapper.rs, 829, 21
-proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, crate::fallback::Literal::from_str_unchecked, [FFI call], data/packages/proc-macro2/src, wrapper.rs, 831, 49
-proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, Literal::Fallback, [FFI call], data/packages/proc-macro2/src, wrapper.rs, 831, 21
-serde, serde::de::format::Buf::as_str, lib::str::from_utf8_unchecked, [FFI call], data/packages/serde/src/de, format.rs, 16, 22
-serde, serde::ser::impls::ser::Serialize::serialize, str::from_utf8_unchecked, [FFI call], data/packages/serde/src/ser, impls.rs, 740, 51
+proc_macro2, proc_macro2::fallback::Literal::from_str_unchecked, [METHOD]::to_owned, [Unsafe], data/packages/proc-macro2/src, fallback.rs, 851, 27
+proc_macro2, proc_macro2::fallback::Literal::from_str_unchecked, Literal::_new, [Unsafe], data/packages/proc-macro2/src, fallback.rs, 851, 17
+proc_macro2, proc_macro2::Literal::from_str_unchecked, crate::fallback::Literal::from_str_unchecked, [Unsafe], data/packages/proc-macro2/src, lib.rs, 1264, 36
+proc_macro2, proc_macro2::Literal::from_str_unchecked, Literal::_new, [Unsafe], data/packages/proc-macro2/src, lib.rs, 1264, 17
+proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, crate::detection::inside_proc_macro, [Unsafe], data/packages/proc-macro2/src, wrapper.rs, 828, 11
+proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, compiler_literal_from_str, [Unsafe], data/packages/proc-macro2/src, wrapper.rs, 829, 30
+proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, [METHOD]::expect, [Unsafe], data/packages/proc-macro2/src, wrapper.rs, 829, 62
+proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, Literal::Compiler, [Unsafe], data/packages/proc-macro2/src, wrapper.rs, 829, 21
+proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, crate::fallback::Literal::from_str_unchecked, [Unsafe], data/packages/proc-macro2/src, wrapper.rs, 831, 49
+proc_macro2, proc_macro2::wrapper::Literal::from_str_unchecked, Literal::Fallback, [Unsafe], data/packages/proc-macro2/src, wrapper.rs, 831, 21
+serde, serde::de::format::Buf::as_str, lib::str::from_utf8_unchecked, [Unsafe], data/packages/serde/src/de, format.rs, 16, 22
+serde, serde::ser::impls::ser::Serialize::serialize, str::from_utf8_unchecked, [Unsafe], data/packages/serde/src/ser, impls.rs, 740, 51
 autocfg, autocfg::AutoCfg::new, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 141, 19
 autocfg, autocfg::AutoCfg::with_dir, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 156, 25
 autocfg, autocfg::AutoCfg::with_dir, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 160, 26
