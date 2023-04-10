@@ -168,7 +168,7 @@ impl ScanData {
 
 /// Stateful object to scan Rust source code for effects (fn calls of interest)
 #[derive(Debug)]
-pub struct Scanner<'a, 'b> {
+pub struct Scanner<'a> {
     // filepath that the scanner is being run on
     filepath: &'a FilePath,
 
@@ -192,15 +192,15 @@ pub struct Scanner<'a, 'b> {
     ffi_decls: HashMap<&'a syn::Ident, CanonicalPath>,
 
     // Target to accumulate scan results
-    data: &'b mut ScanData,
+    data: &'a mut ScanData,
 }
 
-impl<'a, 'b> Scanner<'a, 'b> {
+impl<'a> Scanner<'a> {
     /*
         Main public API
     */
     /// Create a new scanner tied to a filepath
-    pub fn new(filepath: &'a FilePath, data: &'b mut ScanData) -> Self {
+    pub fn new(filepath: &'a FilePath, data: &'a mut ScanData) -> Self {
         // TBD: incomplete, replace with name resolution
         let modpath = CanonicalPath::new_owned(infer::fully_qualified_prefix(filepath));
 
@@ -396,7 +396,7 @@ impl<'a, 'b> Scanner<'a, 'b> {
     // all hail the borrow checker for catching this error
     fn lookup_ident_vec<'c>(&'c self, i: &'c &'a syn::Ident) -> &'c [&'a syn::Ident]
     where
-        'a: 'b,
+        'a: 'c,
     {
         self.use_names
             .get(i)
