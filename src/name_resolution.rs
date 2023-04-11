@@ -1,29 +1,27 @@
 #![allow(unused_variables)]
 
-use std::fs::canonicalize;
-use std::path::{Path, PathBuf};
-
-use crate::ident::CanonicalPath;
-use anyhow::{anyhow, Result};
-use ra_ap_hir::db::{HirDatabase};
-use ra_ap_ide_db::FxHashMap;
-use ra_ap_ide_db::base_db::{SourceDatabase};
-
 use super::effect::SrcLoc;
-use super::ident::{Ident, Path as IdentPath};
-use ra_ap_hir::{AsAssocItem, Semantics};
-use ra_ap_ide::{
-    AnalysisHost, FileId, LineCol, RootDatabase, TextSize,
-};
-use ra_ap_ide_db::defs::{Definition, IdentClass};
-use ra_ap_paths::AbsPathBuf;
-use ra_ap_project_model::{CargoConfig, ProjectManifest, ProjectWorkspace, RustcSource, CargoFeatures, InvocationStrategy, UnsetTestCrates, InvocationLocation};
-use ra_ap_rust_analyzer::cli::load_cargo::{load_workspace, LoadCargoConfig};
+use super::ident::{CanonicalPath, Ident, Path as IdentPath};
 
+use ra_ap_hir::db::HirDatabase;
+use ra_ap_hir::{AsAssocItem, Semantics};
+use ra_ap_ide::{AnalysisHost, FileId, LineCol, RootDatabase, TextSize};
+use ra_ap_ide_db::base_db::SourceDatabase;
+use ra_ap_ide_db::defs::{Definition, IdentClass};
+use ra_ap_ide_db::FxHashMap;
+use ra_ap_paths::AbsPathBuf;
+use ra_ap_project_model::{
+    CargoConfig, CargoFeatures, InvocationLocation, InvocationStrategy, ProjectManifest,
+    ProjectWorkspace, RustcSource, UnsetTestCrates,
+};
+use ra_ap_rust_analyzer::cli::load_cargo::{load_workspace, LoadCargoConfig};
 use ra_ap_syntax::{AstNode, SourceFile, SyntaxToken, TokenAtOffset};
 use ra_ap_vfs::{Vfs, VfsPath};
 
+use anyhow::{anyhow, Result};
 use itertools::Itertools;
+use std::fs::canonicalize;
+use std::path::Path;
 
 /// Path that is fully expanded and canonical
 /// e.g. if I do `use libc::foobar as baz`
@@ -66,30 +64,30 @@ impl Resolver {
     fn cargo_config() -> CargoConfig {
         // List of features to activate (or deactivate).
         let features = CargoFeatures::default();
-    
+
         // Target triple
         let target = None;
-    
+
         // Whether to load sysroot crates (`std`, `core` & friends).
         let sysroot = Some(RustcSource::Discover);
-    
+
         // rustc private crate source
         let rustc_source = None;
-    
+
         // crates to disable `#[cfg(test)]` on
         let unset_test_crates = UnsetTestCrates::All;
-    
+
         // Setup RUSTC_WRAPPER to point to `rust-analyzer` binary itself.
         let wrap_rustc_in_build_scripts = true;
-    
+
         let run_build_script_command = None;
-    
+
         // Support extra environment variables via CLI:
         let extra_env = FxHashMap::default();
-    
+
         let invocation_strategy = InvocationStrategy::PerWorkspace;
         let invocation_location = InvocationLocation::Workspace;
-    
+
         CargoConfig {
             features,
             target,
@@ -103,8 +101,8 @@ impl Resolver {
             invocation_location,
         }
     }
-    
-    pub fn new(crate_path: &PathBuf) -> Result<Resolver> {
+
+    pub fn new(crate_path: &Path) -> Result<Resolver> {
         let canon_path = canonicalize(crate_path).unwrap();
         let abs_path = AbsPathBuf::assert(canon_path);
         // Make sure the path is a crate
@@ -227,7 +225,7 @@ impl Resolver {
                 let container = Self::get_container_name(db, def);
                 let def_name = def.name(db).map(|name| name.to_string());
                 let module = def.module(db).unwrap();
-                
+
                 //TODO: this is not working properly yet
                 //try to exclude modules that are just block expressions,
                 //that should not produce canonical paths
