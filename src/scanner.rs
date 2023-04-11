@@ -1,6 +1,4 @@
-/*
-    Scanner to parse a Rust source file and find all function call locations.
-*/
+//! Scanner to parse a Rust source file or crate and find all function call locations.
 
 use crate::effect::BlockType;
 

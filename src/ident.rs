@@ -1,11 +1,9 @@
-/*
-    Rust identifiers, paths, and patterns
-
-    Ident: std, fs, File
-    Path: std, std::fs, fs::File, super::fs::File, std::fs::File
-    CanonicalPath: crate::fs::File
-    Pattern: std::fs, std::fs::*
-*/
+//! Rust identifiers, paths, and patterns.
+//!
+//! Ident: std, fs, File
+//! Path: std, std::fs, fs::File, super::fs::File, std::fs::File
+//! CanonicalPath: crate::fs::File
+//! Pattern: std::fs, std::fs::*
 
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display};

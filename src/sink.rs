@@ -1,6 +1,4 @@
-/*
-    Hard-coded list of function patterns of interest, a.k.a. sinks.
-*/
+//! Hard-coded list of function patterns of interest, a.k.a. sinks.
 
 use super::ident::{Path, Pattern};
 

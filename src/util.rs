@@ -1,4 +1,4 @@
-/// Utility functions
+//! Utility functions
 
 /// Hacky crate and module inferences from filepath
 pub mod infer {
