@@ -1,7 +1,10 @@
 use super::effect::{EffectBlock, EffectInstance, SrcLoc};
 use super::ident::Path;
+use crate::ident::CanonicalPath;
+use crate::scanner;
+use crate::scanner::ScanResults;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -122,9 +125,25 @@ pub struct PolicyFile {
 }
 
 impl PolicyFile {
-    pub fn new(p: PathBuf) -> Result<Self> {
+    pub fn empty(p: PathBuf) -> Result<Self> {
         let hash = hash_dir(p.clone())?;
         Ok(PolicyFile { audit_trees: HashMap::new(), base_dir: p, hash })
+    }
+
+    pub fn set_base_audit_trees(&mut self, effect_blocks: HashSet<&EffectBlock>) {
+        self.audit_trees = effect_blocks
+            .clone()
+            .into_iter()
+            .map(|x| {
+                (
+                    x.clone(),
+                    EffectTree::Leaf(
+                        EffectInfo::from_block(x),
+                        SafetyAnnotation::Skipped,
+                    ),
+                )
+            })
+            .collect::<HashMap<_, _>>();
     }
 
     pub fn save_to_file(&self, p: PathBuf) -> Result<()> {
@@ -155,5 +174,53 @@ impl PolicyFile {
 
         let policy_file = serde_json::from_str(&json)?;
         Ok(Some(policy_file))
+    }
+
+    fn mark_caller_checked(
+        tree: &mut EffectTree,
+        pub_caller_checked: &mut Vec<Path>,
+        scan_res: &ScanResults,
+    ) {
+        if let EffectTree::Leaf(effect_info, annotation) = tree {
+            // Add the function to the list of sinks if it is public
+            if scan_res
+                .pub_fns
+                .contains(&CanonicalPath::from_path(effect_info.caller_path.clone()))
+            {
+                pub_caller_checked.push(effect_info.caller_path.clone());
+            }
+
+            let mut callers = scan_res
+                .get_callers(&effect_info.caller_path)
+                .into_iter()
+                .map(|x| {
+                    EffectTree::Leaf(
+                        EffectInfo::from_instance(&x.clone()),
+                        SafetyAnnotation::Skipped,
+                    )
+                })
+                .collect::<Vec<_>>();
+            if callers.is_empty() {
+                *annotation = SafetyAnnotation::CallerChecked;
+            } else {
+                for eff in callers.iter_mut() {
+                    PolicyFile::mark_caller_checked(eff, pub_caller_checked, scan_res);
+                }
+                *tree = EffectTree::Branch(effect_info.clone(), callers);
+            }
+        }
+    }
+
+    pub fn new_caller_checked_default(crate_path: PathBuf) -> Result<PolicyFile> {
+        let mut policy = PolicyFile::empty(crate_path.clone())?;
+        let scan_res = scanner::scan_crate(crate_path.as_path())?;
+        let mut pub_caller_checked = Vec::new();
+        policy.set_base_audit_trees(scan_res.unsafe_effect_blocks_set());
+
+        for (_, t) in policy.audit_trees.iter_mut() {
+            PolicyFile::mark_caller_checked(t, &mut pub_caller_checked, &scan_res);
+        }
+
+        Ok(policy)
     }
 }

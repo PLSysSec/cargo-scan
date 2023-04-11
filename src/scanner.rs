@@ -32,7 +32,7 @@ pub struct ScanResults {
     pub unsafe_impls: Vec<TraitImpl>,
 
     pub fn_locs: HashMap<Path, SrcLoc>,
-    pub pub_fns: Vec<CanonicalPath>,
+    pub pub_fns: HashSet<CanonicalPath>,
 
     pub call_graph: DiGraph<Path, SrcLoc>,
 
@@ -48,7 +48,7 @@ impl ScanResults {
             unsafe_traits: Vec::new(),
             unsafe_impls: Vec::new(),
             fn_locs: HashMap::new(),
-            pub_fns: Vec::new(),
+            pub_fns: HashSet::new(),
             call_graph: DiGraph::new(),
             skipped_macros: 0,
             skipped_fn_calls: 0,
@@ -73,7 +73,7 @@ impl ScanResults {
         self.unsafe_traits.append(o_unsafe_traits);
         self.unsafe_impls.append(o_unsafe_impls);
         self.fn_locs.extend(o_fn_locs.drain());
-        self.pub_fns.append(o_pub_fns);
+        self.pub_fns.extend(o_pub_fns.drain());
         self.skipped_macros += *o_skipped_macros;
         self.skipped_fn_calls += *o_skipped_fn_calls;
     }

@@ -576,20 +576,8 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
             File::create(policy_path.clone())?;
 
             // Return an empty PolicyFile, we'll add effects to it later
-            let mut pf = PolicyFile::new(args.crate_path.clone())?;
-            pf.audit_trees = scan_effect_blocks
-                .clone()
-                .into_iter()
-                .map(|x| {
-                    (
-                        x.clone(),
-                        EffectTree::Leaf(
-                            EffectInfo::from_block(x),
-                            SafetyAnnotation::Skipped,
-                        ),
-                    )
-                })
-                .collect::<HashMap<_, _>>();
+            let mut pf = PolicyFile::empty(args.crate_path.clone())?;
+            pf.set_base_audit_trees(scan_effect_blocks);
             pf
         }
     };
