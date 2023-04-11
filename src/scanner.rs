@@ -6,10 +6,10 @@ use super::effect::{
     EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
 };
 use super::ident::{CanonicalPath, Ident, Path};
-use super::name_resolution::Resolver;
+use super::resolve::{HackyResolver, Resolve};
 use super::util::infer;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use petgraph::graph::{DiGraph, NodeIndex};
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -167,13 +167,13 @@ impl ScanData {
 
 /// Stateful object to scan Rust source code for effects (fn calls of interest)
 #[derive(Debug)]
-pub struct Scanner<'a> {
+pub struct Scanner<'a, R: Resolve + 'a> {
     // filepath that the scanner is being run on
     filepath: &'a FilePath,
 
     // Name resolution resolver
     #[allow(dead_code)]
-    resolver: &'a Resolver,
+    resolver: &'a mut R,
 
     // crate+module which the current filepath implements (e.g. mycrate::fs)
     modpath: CanonicalPath,
@@ -198,14 +198,14 @@ pub struct Scanner<'a> {
     data: &'a mut ScanData,
 }
 
-impl<'a> Scanner<'a> {
+impl<'a, R: Resolve + 'a> Scanner<'a, R> {
     /*
         Main public API
     */
     /// Create a new scanner tied to a crate and file
     pub fn new(
         filepath: &'a FilePath,
-        resolver: &'a Resolver,
+        resolver: &'a mut R,
         data: &'a mut ScanData,
     ) -> Self {
         // TBD: incomplete, replace with name resolution
@@ -998,9 +998,9 @@ impl<'a> Scanner<'a> {
 }
 
 /// Load the Rust file at the filepath and scan it
-pub fn load_and_scan(
+pub fn load_and_scan<R: Resolve>(
     filepath: &FilePath,
-    resolver: &Resolver,
+    resolver: &mut R,
     scan_data: &mut ScanData,
 ) -> Result<()> {
     // based on example at https://docs.rs/syn/latest/syn/struct.File.html
@@ -1032,11 +1032,10 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
 
     let mut scan_data = ScanData::new();
 
-    eprint!("creating resolver...");
-    let resolver = Resolver::new(crate_path).unwrap_or_else(|e| {
-        panic!("failed to create Resolver for crate: {:?} ({}", crate_path, e)
-    });
-    eprintln!("created");
+    // eprint!("creating resolver...");
+    let mut resolver =
+        HackyResolver::new(crate_path).context("failed to create resolver")?;
+    // eprintln!("created");
 
     // TODO: For now, only walking through the src dir, but might want to
     //       include others (e.g. might codegen in other dirs)
@@ -1052,7 +1051,7 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
             _ => false,
         })
     {
-        load_and_scan(FilePath::new(entry?.path()), &resolver, &mut scan_data)?;
+        load_and_scan(FilePath::new(entry?.path()), &mut resolver, &mut scan_data)?;
     }
 
     Ok(scan_data.into())
