@@ -8,6 +8,7 @@ use super::effect::{
     EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
 };
 use super::ident::{CanonicalPath, Ident, Path};
+use super::name_resolution::Resolver;
 use super::util::infer;
 
 use anyhow::{anyhow, Result};
@@ -172,6 +173,10 @@ pub struct Scanner<'a> {
     // filepath that the scanner is being run on
     filepath: &'a FilePath,
 
+    // Name resolution resolver
+    #[allow(dead_code)]
+    resolver: &'a Resolver,
+
     // crate+module which the current filepath implements (e.g. mycrate::fs)
     modpath: CanonicalPath,
 
@@ -199,13 +204,18 @@ impl<'a> Scanner<'a> {
     /*
         Main public API
     */
-    /// Create a new scanner tied to a filepath
-    pub fn new(filepath: &'a FilePath, data: &'a mut ScanData) -> Self {
+    /// Create a new scanner tied to a crate and file
+    pub fn new(
+        filepath: &'a FilePath,
+        resolver: &'a Resolver,
+        data: &'a mut ScanData,
+    ) -> Self {
         // TBD: incomplete, replace with name resolution
         let modpath = CanonicalPath::new_owned(infer::fully_qualified_prefix(filepath));
 
         Self {
             filepath,
+            resolver,
             modpath,
             ffi_decls: HashMap::new(),
             scope_mods: Vec::new(),
@@ -990,7 +1000,11 @@ impl<'a> Scanner<'a> {
 }
 
 /// Load the Rust file at the filepath and scan it
-pub fn load_and_scan(filepath: &FilePath, scan_data: &mut ScanData) -> Result<()> {
+pub fn load_and_scan(
+    filepath: &FilePath,
+    resolver: &Resolver,
+    scan_data: &mut ScanData,
+) -> Result<()> {
     // based on example at https://docs.rs/syn/latest/syn/struct.File.html
     let mut file = File::open(filepath)?;
 
@@ -999,7 +1013,7 @@ pub fn load_and_scan(filepath: &FilePath, scan_data: &mut ScanData) -> Result<()
 
     let syntax_tree = syn::parse_file(&src)?;
 
-    let mut scanner = Scanner::new(filepath, scan_data);
+    let mut scanner = Scanner::new(filepath, resolver, scan_data);
     scanner.scan_file(&syntax_tree);
 
     Ok(())
@@ -1020,6 +1034,12 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
 
     let mut scan_data = ScanData::new();
 
+    eprint!("creating resolver...");
+    let resolver = Resolver::new(crate_path).unwrap_or_else(|e| {
+        panic!("failed to create Resolver for crate: {:?} ({}", crate_path, e)
+    });
+    eprintln!("created");
+
     // TODO: For now, only walking through the src dir, but might want to
     //       include others (e.g. might codegen in other dirs)
     // We have a valid crate, so iterate through all the rust src
@@ -1034,7 +1054,7 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
             _ => false,
         })
     {
-        load_and_scan(FilePath::new(entry?.path()), &mut scan_data)?;
+        load_and_scan(FilePath::new(entry?.path()), &resolver, &mut scan_data)?;
     }
 
     Ok(scan_data.into())

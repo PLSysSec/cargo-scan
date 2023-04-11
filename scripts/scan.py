@@ -35,9 +35,9 @@ CARGO = ["cargo"]
 CARGO_DOWNLOAD = CARGO + ["download"]
 
 # Uncomment to enable debug checks
-SYN_FIND = ["./target/debug/scan"]
+# SYN_FIND = ["./target/debug/scan"]
 # Uncomment for release mode
-# SYN_FIND = ["./target/release/scan"]
+SYN_FIND = ["./target/release/scan"]
 SYN_CSV_HEADER = ["./target/debug/csv_header"]
 
 check_installed(RUSTC)

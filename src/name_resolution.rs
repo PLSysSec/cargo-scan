@@ -55,6 +55,7 @@ pub fn resolve_path(s: SrcLoc, p: IdentPath) -> CanonicalPath {
     todo!()
 }
 
+#[derive(Debug)]
 pub struct Resolver {
     host: AnalysisHost,
     vfs: Vfs,
