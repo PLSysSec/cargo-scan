@@ -76,23 +76,6 @@ pub struct HackyResolver<'a> {
 }
 
 impl<'a> Resolve<'a> for HackyResolver<'a> {
-    fn new(filepath: &FilePath) -> Result<Self> {
-        // TBD: incomplete, replace with name resolution
-        let modpath = CanonicalPath::new_owned(infer::fully_qualified_prefix(filepath));
-
-        Ok(Self {
-            modpath,
-            scope_use: Vec::new(),
-            scope_mods: Vec::new(),
-            scope_fun: Vec::new(),
-            scope_fun_lens: Vec::new(),
-            scope_impl_adds: Vec::new(),
-            use_names: HashMap::new(),
-            ffi_decls: HashMap::new(),
-            use_globs: Vec::new(),
-        })
-    }
-
     fn assert_top_level_invariant(&self) {
         debug_assert!(self.scope_use.is_empty());
         debug_assert!(self.scope_mods.is_empty());
@@ -189,6 +172,23 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
 }
 
 impl<'a> HackyResolver<'a> {
+    pub fn new(filepath: &FilePath) -> Result<Self> {
+        // TBD: incomplete, replace with name resolution
+        let modpath = CanonicalPath::new_owned(infer::fully_qualified_prefix(filepath));
+
+        Ok(Self {
+            modpath,
+            scope_use: Vec::new(),
+            scope_mods: Vec::new(),
+            scope_fun: Vec::new(),
+            scope_fun_lens: Vec::new(),
+            scope_impl_adds: Vec::new(),
+            use_names: HashMap::new(),
+            ffi_decls: HashMap::new(),
+            use_globs: Vec::new(),
+        })
+    }
+
     /// Reusable warning logger
     fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
         let line = syn_node.span().start().line;
