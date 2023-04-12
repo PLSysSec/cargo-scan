@@ -235,7 +235,7 @@ impl Resolver {
                 //try to exclude modules that are just block expressions,
                 //that should not produce canonical paths
                 if module.name(db).is_none() && !module.is_mod_rs(db) {
-                    println!("There should be no canonical path for {:?}", def.name(db));
+                    eprintln!("There should be no canonical path for {:?}", def.name(db));
                 }
 
                 let crate_name = db.crate_graph()[module.krate().into()]
