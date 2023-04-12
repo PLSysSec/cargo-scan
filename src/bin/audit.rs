@@ -469,7 +469,6 @@ fn audit_leaf<'a>(
         }
     };
 
-    // TODO: Handle no call sites
     if status == SafetyAnnotation::CallerChecked {
         // Add all call locations as parents of this effect
         let new_check_locs = scan_res
@@ -482,8 +481,20 @@ fn audit_leaf<'a>(
                 )
             })
             .collect::<Vec<_>>();
-        *effect_tree = EffectTree::Branch(curr_effect, new_check_locs);
-        audit_branch(orig_effect, effect_tree, effect_history, scan_res, config)
+
+        if new_check_locs.is_empty() {
+            effect_tree.set_annotation(status);
+            Ok(AuditStatus::ContinueAudit)
+        } else {
+            *effect_tree = EffectTree::Branch(curr_effect, new_check_locs);
+            audit_branch(
+                orig_effect,
+                effect_tree,
+                effect_history,
+                scan_res,
+                config,
+            )
+        }
     } else {
         effect_tree.set_annotation(status).ok_or_else(|| {
             anyhow!("Tried to set the EffectTree annotation, but was a branch node")
