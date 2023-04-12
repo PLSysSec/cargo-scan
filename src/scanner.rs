@@ -5,11 +5,10 @@ use crate::effect::BlockType;
 use super::effect::{
     EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
 };
-use super::hacky_resolver::HackyResolver;
 use super::ident::{CanonicalPath, Path};
-use super::resolve::Resolve;
+use super::resolve::{RAResolver, Resolve};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use petgraph::graph::{DiGraph, NodeIndex};
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -743,7 +742,11 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
 }
 
 /// Load the Rust file at the filepath and scan it
-pub fn load_and_scan(filepath: &FilePath, scan_data: &mut ScanData) -> Result<()> {
+pub fn load_and_scan(
+    filepath: &FilePath,
+    resolver: &mut RAResolver,
+    scan_data: &mut ScanData,
+) -> Result<()> {
     // based on example at https://docs.rs/syn/latest/syn/struct.File.html
     let mut file = File::open(filepath)?;
 
@@ -752,12 +755,14 @@ pub fn load_and_scan(filepath: &FilePath, scan_data: &mut ScanData) -> Result<()
 
     let syntax_tree = syn::parse_file(&src)?;
 
-    // eprint!("creating resolver...");
-    let mut resolver =
-        HackyResolver::new(filepath).context("failed to create resolver")?;
-    // eprintln!("created");
+    // Uncomment for old hacky resolver
+    // let mut hacky_resolver =
+    //     HackyResolver::new(filepath).context("failed to create resolver")?;
+    // resolver.set_file(filepath);
+    // let mut scanner = Scanner::new(filepath, &mut hacky_resolver, scan_data);
 
-    let mut scanner = Scanner::new(filepath, &mut resolver, scan_data);
+    let mut scanner = Scanner::new(filepath, resolver, scan_data);
+
     scanner.scan_file(&syntax_tree);
 
     Ok(())
@@ -776,6 +781,10 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
         return Err(anyhow!("Path is not a crate; missing Cargo.toml: {:?}", crate_path));
     }
 
+    eprint!("creating resolver...");
+    let mut resolver = RAResolver::new(crate_path)?;
+    eprintln!("created");
+
     let mut scan_data = ScanData::new();
 
     // TODO: For now, only walking through the src dir, but might want to
@@ -792,7 +801,7 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
             _ => false,
         })
     {
-        load_and_scan(FilePath::new(entry?.path()), &mut scan_data)?;
+        load_and_scan(FilePath::new(entry?.path()), &mut resolver, &mut scan_data)?;
     }
 
     Ok(scan_data.into())

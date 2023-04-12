@@ -50,6 +50,7 @@ pub struct RAResolver {
 
 impl RAResolver {
     pub fn new(crt: &FilePath) -> Result<Self> {
+        // eprintln!("creating with crate: {:?}", crt);
         let inner = Resolver::new(crt)?;
         let filepath = crt.to_owned();
         Ok(Self { inner, filepath })
