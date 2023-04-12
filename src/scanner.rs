@@ -5,9 +5,9 @@ use crate::effect::BlockType;
 use super::effect::{
     EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
 };
+use super::hacky_resolver::HackyResolver;
 use super::ident::{CanonicalPath, Ident, Path};
-use super::resolve::{HackyResolver, Resolve};
-use super::util::infer;
+use super::resolve::Resolve;
 
 use anyhow::{anyhow, Context, Result};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -167,7 +167,7 @@ impl ScanData {
 
 /// Stateful object to scan Rust source code for effects (fn calls of interest)
 #[derive(Debug)]
-pub struct Scanner<'a, R: Resolve + 'a> {
+pub struct Scanner<'a, R: Resolve<'a> + 'a> {
     // filepath that the scanner is being run on
     filepath: &'a FilePath,
 
@@ -175,12 +175,8 @@ pub struct Scanner<'a, R: Resolve + 'a> {
     #[allow(dead_code)]
     resolver: &'a mut R,
 
-    // crate+module which the current filepath implements (e.g. mycrate::fs)
-    modpath: CanonicalPath,
-
     // stack-based scopes (always empty at top level)
     scope_mods: Vec<&'a syn::Ident>,
-    scope_use: Vec<&'a syn::Ident>,
     scope_fun: Vec<&'a syn::Ident>,
     scope_effect_blocks: Vec<EffectBlock>,
 
@@ -190,15 +186,13 @@ pub struct Scanner<'a, R: Resolve + 'a> {
     scope_unsafe: usize,
 
     // name lookup scopes (not necessarily empty)
-    use_names: HashMap<&'a syn::Ident, Vec<&'a syn::Ident>>,
-    use_globs: Vec<Vec<&'a syn::Ident>>,
     ffi_decls: HashMap<&'a syn::Ident, CanonicalPath>,
 
     // Target to accumulate scan results
     data: &'a mut ScanData,
 }
 
-impl<'a, R: Resolve + 'a> Scanner<'a, R> {
+impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
     /*
         Main public API
     */
@@ -208,29 +202,22 @@ impl<'a, R: Resolve + 'a> Scanner<'a, R> {
         resolver: &'a mut R,
         data: &'a mut ScanData,
     ) -> Self {
-        // TBD: incomplete, replace with name resolution
-        let modpath = CanonicalPath::new_owned(infer::fully_qualified_prefix(filepath));
-
         Self {
             filepath,
             resolver,
-            modpath,
             ffi_decls: HashMap::new(),
             scope_mods: Vec::new(),
-            scope_use: Vec::new(),
             scope_fun: Vec::new(),
             scope_effect_blocks: Vec::new(),
             scope_unsafe: 0,
-            use_names: HashMap::new(),
-            use_globs: Vec::new(),
             data,
         }
     }
 
     /// Top-level invariant -- called before consuming results
     pub fn assert_top_level_invariant(&self) {
+        self.resolver.assert_invariant();
         debug_assert!(self.scope_mods.is_empty());
-        debug_assert!(self.scope_use.is_empty());
         debug_assert!(self.scope_fun.is_empty());
         debug_assert!(self.scope_effect_blocks.is_empty());
         debug_assert_eq!(self.scope_unsafe, 0);
@@ -252,7 +239,9 @@ impl<'a, R: Resolve + 'a> Scanner<'a, R> {
     pub fn scan_item(&mut self, i: &'a syn::Item) {
         match i {
             syn::Item::Mod(m) => self.scan_mod(m),
-            syn::Item::Use(u) => self.scan_use(u),
+            syn::Item::Use(u) => {
+                self.resolver.scan_use(u);
+            }
             syn::Item::Impl(imp) => self.scan_impl(imp),
             syn::Item::Fn(fun) => self.scan_fn_decl(fun),
             syn::Item::Trait(t) => self.scan_trait(t),
@@ -291,12 +280,8 @@ impl<'a, R: Resolve + 'a> Scanner<'a, R> {
     }
 
     /*
-        Reusable warning loggers
+        Reusable warning logger
     */
-
-    fn warning(&self, msg: &str) {
-        eprintln!("Warning: {}", msg)
-    }
 
     fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
         let file = self.filepath.to_string_lossy();
@@ -331,103 +316,15 @@ impl<'a, R: Resolve + 'a> Scanner<'a, R> {
 
     fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn) {
         let fn_name = &f.sig.ident;
-        let fn_path = self.lookup_ident_canonical(fn_name);
+        let fn_path = self.resolver.resolve_ident_canonical(fn_name);
         self.ffi_decls.insert(fn_name, fn_path);
-    }
-
-    /*
-        Use statements
-    */
-    fn scope_use_snapshot(&self) -> Vec<&'a syn::Ident> {
-        self.scope_use.clone()
-    }
-    fn save_scope_use_under(&mut self, lookup_key: &'a syn::Ident) {
-        // save the use scope under an identifier/lookup key
-        let v_new = self.scope_use_snapshot();
-        if cfg!(debug) && self.use_names.contains_key(lookup_key) {
-            let v_old = self.use_names.get(lookup_key).unwrap();
-            if *v_old != v_new {
-                let msg = format!(
-                    "Name conflict found in use scope: {:?} (old: {:?} new: {:?})",
-                    lookup_key, v_old, v_new
-                );
-                self.warning(&msg);
-            }
-        }
-        self.use_names.insert(lookup_key, v_new);
-    }
-    fn scan_use(&mut self, u: &'a syn::ItemUse) {
-        // TBD: may need to do something special here if already inside a fn
-        // (scope_fun is nonempty)
-        self.scan_use_tree(&u.tree);
-    }
-    fn scan_use_tree(&mut self, u: &'a syn::UseTree) {
-        match u {
-            syn::UseTree::Path(p) => self.scan_use_path(p),
-            syn::UseTree::Name(n) => self.scan_use_name(n),
-            syn::UseTree::Rename(r) => self.scan_use_rename(r),
-            syn::UseTree::Glob(g) => self.scan_use_glob(g),
-            syn::UseTree::Group(g) => self.scan_use_group(g),
-        }
-    }
-    fn scan_use_path(&mut self, p: &'a syn::UsePath) {
-        self.scope_use.push(&p.ident);
-        self.scan_use_tree(&p.tree);
-        self.scope_use.pop();
-    }
-    fn scan_use_name(&mut self, n: &'a syn::UseName) {
-        self.scope_use.push(&n.ident);
-        self.save_scope_use_under(&n.ident);
-        self.scope_use.pop();
-    }
-    fn scan_use_rename(&mut self, r: &'a syn::UseRename) {
-        self.scope_use.push(&r.ident);
-        self.save_scope_use_under(&r.rename);
-        self.scope_use.pop();
-    }
-
-    fn scan_use_glob(&mut self, _g: &'a syn::UseGlob) {
-        self.use_globs.push(self.scope_use_snapshot());
-    }
-
-    fn scan_use_group(&mut self, g: &'a syn::UseGroup) {
-        for t in g.items.iter() {
-            self.scan_use_tree(t);
-        }
     }
 
     /*
         Name resolution methods
     */
 
-    // weird signature: need a double reference on i because i is owned by cur function
-    // all hail the borrow checker for catching this error
-    fn lookup_ident_vec<'c>(&'c self, i: &'c &'a syn::Ident) -> &'c [&'a syn::Ident]
-    where
-        'a: 'c,
-    {
-        self.use_names
-            .get(i)
-            .map(|v| v.as_slice())
-            .unwrap_or_else(|| std::slice::from_ref(i))
-    }
-
-    // this one creates a new path, so it has to return a Vec anyway
-    // precond: input path must be nonempty
-    // return: nonempty Vec of identifiers in the full path
-    fn lookup_path_vec(&self, p: &'a syn::Path) -> Vec<&'a syn::Ident> {
-        let mut result = Vec::new();
-        let mut it = p.segments.iter().map(|seg| &seg.ident);
-
-        // first part of the path based on lookup
-        let fst: &'a syn::Ident = it.next().unwrap();
-        result.extend(self.lookup_ident_vec(&fst));
-        // second part of the path based on any additional sub-scoping
-        result.extend(it);
-
-        result
-    }
-
+    // TBD: duplicated in HackyResolver
     fn syn_to_ident(i: &syn::Ident) -> Ident {
         Ident::new_owned(i.to_string())
     }
@@ -435,34 +332,6 @@ impl<'a, R: Resolve + 'a> Scanner<'a, R> {
     fn syn_to_path(i: &syn::Ident) -> Path {
         Path::from_ident(Self::syn_to_ident(i))
     }
-
-    fn aggregate_path(p: &[&'a syn::Ident]) -> Path {
-        let mut result = Path::new_empty();
-        for &i in p {
-            result.push_ident(&Self::syn_to_ident(i));
-        }
-        result
-    }
-
-    fn lookup_ident(&self, i: &'a syn::Ident) -> Path {
-        Self::aggregate_path(self.lookup_ident_vec(&i))
-    }
-
-    fn lookup_path(&self, p: &'a syn::Path) -> Path {
-        Self::aggregate_path(&self.lookup_path_vec(p))
-    }
-
-    fn lookup_ident_canonical(&self, i: &'a syn::Ident) -> CanonicalPath {
-        let mut result = self.modpath.clone();
-        result.append_path(&self.lookup_ident(i));
-        result
-    }
-
-    // fn lookup_path_canonical(&self, p: &'a syn::Path) -> CanonicalPath {
-    //     let mut result = self.modpath.clone();
-    //     result.append_path(&self.lookup_path(p));
-    //     result
-    // }
 
     fn get_mod_scope(&self) -> Path {
         Path::from_idents(self.scope_mods.iter().map(|&i| Self::syn_to_ident(i)))
@@ -493,8 +362,7 @@ impl<'a, R: Resolve + 'a> Scanner<'a, R> {
     }
 
     fn lookup_caller(&self) -> CanonicalPath {
-        // Hacky inferences
-        let mut result = self.modpath.clone();
+        let mut result = self.resolver.get_modpath();
 
         // Push current mod scope [ "mod1", "mod2", ...]
         result.append_path(&self.get_mod_scope());
@@ -591,7 +459,7 @@ impl<'a, R: Resolve + 'a> Scanner<'a, R> {
     }
     fn scan_impl_type_path(&mut self, ty: &'a syn::Path) -> usize {
         // return: the number of items added to scope_mods
-        let fullpath = self.lookup_path_vec(ty);
+        let fullpath = self.resolver.lookup_path_vec(ty);
         self.scope_mods.extend(&fullpath);
         if fullpath.is_empty() {
             self.syn_warning("unexpected empty impl type path", ty);
@@ -607,11 +475,11 @@ impl<'a, R: Resolve + 'a> Scanner<'a, R> {
 
         if imp.unsafety.is_some() {
             // we found an `unsafe impl` declaration
-            let tr_name = self.lookup_path(tr);
+            let tr_name = self.resolver.resolve_path(tr);
             self.data.unsafe_impls.push(TraitImpl::new(imp, self.filepath, tr_name));
         }
 
-        let fullpath = self.lookup_path_vec(tr);
+        let fullpath = self.resolver.lookup_path_vec(tr);
         self.scope_mods.extend(&fullpath);
         if fullpath.is_empty() {
             self.syn_warning("unexpected empty trait name path", tr);
@@ -957,7 +825,7 @@ impl<'a, R: Resolve + 'a> Scanner<'a, R> {
         match f {
             syn::Expr::Path(p) => {
                 let span = &p.path.segments.last().unwrap().ident;
-                let callee = self.lookup_path(&p.path);
+                let callee = self.resolver.resolve_path(&p.path);
                 let ffi = self.lookup_ffi(span);
                 self.push_callsite(span, callee, ffi);
             }
@@ -998,11 +866,7 @@ impl<'a, R: Resolve + 'a> Scanner<'a, R> {
 }
 
 /// Load the Rust file at the filepath and scan it
-pub fn load_and_scan<R: Resolve>(
-    filepath: &FilePath,
-    resolver: &mut R,
-    scan_data: &mut ScanData,
-) -> Result<()> {
+pub fn load_and_scan(filepath: &FilePath, scan_data: &mut ScanData) -> Result<()> {
     // based on example at https://docs.rs/syn/latest/syn/struct.File.html
     let mut file = File::open(filepath)?;
 
@@ -1011,7 +875,12 @@ pub fn load_and_scan<R: Resolve>(
 
     let syntax_tree = syn::parse_file(&src)?;
 
-    let mut scanner = Scanner::new(filepath, resolver, scan_data);
+    // eprint!("creating resolver...");
+    let mut resolver =
+        HackyResolver::new(filepath).context("failed to create resolver")?;
+    // eprintln!("created");
+
+    let mut scanner = Scanner::new(filepath, &mut resolver, scan_data);
     scanner.scan_file(&syntax_tree);
 
     Ok(())
@@ -1032,11 +901,6 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
 
     let mut scan_data = ScanData::new();
 
-    // eprint!("creating resolver...");
-    let mut resolver =
-        HackyResolver::new(crate_path).context("failed to create resolver")?;
-    // eprintln!("created");
-
     // TODO: For now, only walking through the src dir, but might want to
     //       include others (e.g. might codegen in other dirs)
     // We have a valid crate, so iterate through all the rust src
@@ -1051,7 +915,7 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
             _ => false,
         })
     {
-        load_and_scan(FilePath::new(entry?.path()), &mut resolver, &mut scan_data)?;
+        load_and_scan(FilePath::new(entry?.path()), &mut scan_data)?;
     }
 
     Ok(scan_data.into())

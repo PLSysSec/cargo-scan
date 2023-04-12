@@ -2,36 +2,24 @@
 //!
 //! Instantiated by:
 //! - Resolver in name_resolution.rs
+//! - HackyResolver in hacky_resolver.rs
 
-use super::ident::{CanonicalPath, Ident, Path};
+use super::ident::{CanonicalPath, Path};
 
 use anyhow::Result;
 use std::path::Path as FilePath;
 use syn;
 
-pub trait Resolve: Sized {
+pub trait Resolve<'a>: Sized {
     fn new(crt: &FilePath) -> Result<Self>;
+    fn assert_invariant(&self);
     fn push_scope(&mut self);
     fn pop_scope(&mut self);
-    fn scan_use(&mut self, use_path: &syn::UsePath);
-    fn resolve_path(&self, p: &Path) -> CanonicalPath;
-    fn resolve_ident(&self, i: &Ident) -> CanonicalPath;
-}
-
-#[derive(Debug)]
-pub struct HackyResolver();
-
-impl Resolve for HackyResolver {
-    fn new(_crt: &FilePath) -> Result<Self> {
-        Ok(Self())
-    }
-    fn push_scope(&mut self) {}
-    fn pop_scope(&mut self) {}
-    fn scan_use(&mut self, _use_path: &syn::UsePath) {}
-    fn resolve_path(&self, p: &Path) -> CanonicalPath {
-        CanonicalPath::from_path(p.clone())
-    }
-    fn resolve_ident(&self, i: &Ident) -> CanonicalPath {
-        CanonicalPath::from_path(Path::from_ident(i.clone()))
-    }
+    fn scan_use(&mut self, use_stmt: &'a syn::ItemUse);
+    fn resolve_ident(&self, i: &'a syn::Ident) -> Path;
+    fn resolve_path(&self, p: &'a syn::Path) -> Path;
+    fn resolve_ident_canonical(&self, i: &'a syn::Ident) -> CanonicalPath;
+    fn resolve_path_canonical(&self, i: &'a syn::Path) -> CanonicalPath;
+    fn get_modpath(&self) -> CanonicalPath;
+    fn lookup_path_vec(&self, p: &'a syn::Path) -> Vec<&'a syn::Ident>;
 }
