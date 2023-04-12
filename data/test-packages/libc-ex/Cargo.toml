@@ -1,5 +1,5 @@
 [package]
-name = "num_cpus_minimal"
+name = "libc-ex"
 version = "0.1.0"
 edition = "2021"
 

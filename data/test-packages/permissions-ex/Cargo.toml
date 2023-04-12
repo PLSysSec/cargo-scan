@@ -1,5 +1,5 @@
 [package]
-name = "permissions-types"
+name = "permissions-ex"
 version = "0.1.0"
 edition = "2021"
 

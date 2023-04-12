@@ -1,5 +1,5 @@
 use cargo_scan::effect::{Effect, EffectBlock, SrcLoc};
-use cargo_scan::ident::Path;
+use cargo_scan::ident::{CanonicalPath, Path};
 use cargo_scan::policy::*;
 use cargo_scan::scanner;
 use cargo_scan::scanner::ScanResults;
@@ -340,62 +340,97 @@ fn handle_invalid_policy(
     policy: &mut PolicyFile,
     policy_path: &mut PathBuf,
     scan_effect_blocks: &HashSet<&EffectBlock>,
+    overwrite_policy: bool,
 ) -> Result<ContinueStatus> {
     // TODO: Colorize
     println!("Crate has changed from last policy audit");
 
-    let ans = Text::new(
-        r#"Would you like to:
-  (c)ontinue with a new policy file, e(x)it tool w/o changes
-"#,
-    )
-    .with_validator(|x: &str| match x {
-        "c" | "x" => Ok(Validation::Valid),
-        _ => Ok(Validation::Invalid("Invalid input".into())),
-    })
-    .prompt()
-    .unwrap();
+    if overwrite_policy {
+        println!("Generating new policy file");
 
-    match ans.as_str() {
-        "c" => {
-            // TODO: Prompt user for new policy path
-            println!("Generating new policy file");
+        policy.audit_trees = scan_effect_blocks
+            .clone()
+            .into_iter()
+            .map(|x: &EffectBlock| {
+                // TODO: for now we assume that all EffectBlocks include an EffectInstance,
+                //       this isn't true, but we have to get caller location into
+                //       EffectBocks before we can do this correctly
+                let effect_instance = x.effects().first().unwrap();
+                (
+                    x.clone(),
+                    EffectTree::Leaf(
+                        EffectInfo::from_instance(effect_instance),
+                        SafetyAnnotation::Skipped,
+                    ),
+                )
+            })
+            .collect::<HashMap<_, _>>();
+        policy.hash = hash_dir(policy.base_dir.clone())?;
 
-            policy.audit_trees = scan_effect_blocks
-                .clone()
-                .into_iter()
-                .map(|x: &EffectBlock| {
-                    // TODO: for now we assume that all EffectBlocks include an EffectInstance,
-                    //       this isn't true, but we have to get caller location into
-                    //       EffectBocks before we can do this correctly
-                    let effect_instance = x.effects().first().unwrap();
-                    (
-                        x.clone(),
-                        EffectTree::Leaf(
-                            EffectInfo::from_instance(effect_instance),
-                            SafetyAnnotation::Skipped,
-                        ),
-                    )
-                })
-                .collect::<HashMap<_, _>>();
-            policy.hash = hash_dir(policy.base_dir.clone())?;
+        let mut policy_string = policy_path
+            .as_path()
+            .to_str()
+            .ok_or_else(|| anyhow!("Couldn't convert OS Path to str"))?
+            .to_string();
+        policy_string.push_str(".new");
+        println!("New policy file name: {}", &policy_string);
+        *policy_path = PathBuf::from(policy_string);
 
-            let mut policy_string = policy_path
-                .as_path()
-                .to_str()
-                .ok_or_else(|| anyhow!("Couldn't convert OS Path to str"))?
-                .to_string();
-            policy_string.push_str(".new");
-            println!("New policy file name: {}", &policy_string);
-            *policy_path = PathBuf::from(policy_string);
+        Ok(ContinueStatus::Continue)
+    } else {
+        let ans = Text::new(
+            r#"Would you like to:
+    (c)ontinue with a new policy file, e(x)it tool w/o changes
+    "#,
+        )
+        .with_validator(|x: &str| match x {
+            "c" | "x" => Ok(Validation::Valid),
+            _ => Ok(Validation::Invalid("Invalid input".into())),
+        })
+        .prompt()
+        .unwrap();
 
-            Ok(ContinueStatus::Continue)
+        match ans.as_str() {
+            "c" => {
+                // TODO: Prompt user for new policy path
+                println!("Generating new policy file");
+
+                policy.audit_trees = scan_effect_blocks
+                    .clone()
+                    .into_iter()
+                    .map(|x: &EffectBlock| {
+                        // TODO: for now we assume that all EffectBlocks include an EffectInstance,
+                        //       this isn't true, but we have to get caller location into
+                        //       EffectBocks before we can do this correctly
+                        let effect_instance = x.effects().first().unwrap();
+                        (
+                            x.clone(),
+                            EffectTree::Leaf(
+                                EffectInfo::from_instance(effect_instance),
+                                SafetyAnnotation::Skipped,
+                            ),
+                        )
+                    })
+                    .collect::<HashMap<_, _>>();
+                policy.hash = hash_dir(policy.base_dir.clone())?;
+
+                let mut policy_string = policy_path
+                    .as_path()
+                    .to_str()
+                    .ok_or_else(|| anyhow!("Couldn't convert OS Path to str"))?
+                    .to_string();
+                policy_string.push_str(".new");
+                println!("New policy file name: {}", &policy_string);
+                *policy_path = PathBuf::from(policy_string);
+
+                Ok(ContinueStatus::Continue)
+            }
+            "x" => {
+                println!("Exiting policy tool");
+                Ok(ContinueStatus::ExitNow)
+            }
+            _ => Err(anyhow!("Invalid policy handle selection")),
         }
-        "x" => {
-            println!("Exiting policy tool");
-            Ok(ContinueStatus::ExitNow)
-        }
-        _ => Err(anyhow!("Invalid policy handle selection")),
     }
 }
 
@@ -437,6 +472,7 @@ fn audit_leaf<'a>(
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
+    pub_caller_checked: &mut HashSet<Path>,
     config: &Config,
 ) -> Result<AuditStatus> {
     let curr_effect = match effect_tree {
@@ -469,8 +505,15 @@ fn audit_leaf<'a>(
         }
     };
 
-    // TODO: Handle no call sites
     if status == SafetyAnnotation::CallerChecked {
+        // If the caller is public, add to set of public caller-checked
+        if scan_res
+            .pub_fns
+            .contains(&CanonicalPath::from_path(curr_effect.caller_path.clone()))
+        {
+            pub_caller_checked.insert(curr_effect.caller_path.clone());
+        }
+
         // Add all call locations as parents of this effect
         let new_check_locs = scan_res
             .get_callers(&curr_effect.caller_path)
@@ -482,8 +525,21 @@ fn audit_leaf<'a>(
                 )
             })
             .collect::<Vec<_>>();
-        *effect_tree = EffectTree::Branch(curr_effect, new_check_locs);
-        audit_branch(orig_effect, effect_tree, effect_history, scan_res, config)
+
+        if new_check_locs.is_empty() {
+            effect_tree.set_annotation(status);
+            Ok(AuditStatus::ContinueAudit)
+        } else {
+            *effect_tree = EffectTree::Branch(curr_effect, new_check_locs);
+            audit_branch(
+                orig_effect,
+                effect_tree,
+                effect_history,
+                scan_res,
+                pub_caller_checked,
+                config,
+            )
+        }
     } else {
         effect_tree.set_annotation(status).ok_or_else(|| {
             anyhow!("Tried to set the EffectTree annotation, but was a branch node")
@@ -497,6 +553,7 @@ fn audit_branch<'a>(
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
+    pub_caller_checked: &mut HashSet<Path>,
     config: &Config,
 ) -> Result<AuditStatus> {
     if let EffectTree::Branch(curr_effect, effects) = effect_tree {
@@ -506,15 +563,27 @@ fn audit_branch<'a>(
             // TODO: Early exit
             match e {
                 next_e @ EffectTree::Branch(..) => {
-                    if audit_branch(orig_effect, next_e, &next_history, scan_res, config)?
-                        == AuditStatus::EarlyExit
+                    if audit_branch(
+                        orig_effect,
+                        next_e,
+                        &next_history,
+                        scan_res,
+                        pub_caller_checked,
+                        config,
+                    )? == AuditStatus::EarlyExit
                     {
                         return Ok(AuditStatus::EarlyExit);
                     }
                 }
                 next_e @ EffectTree::Leaf(..) => {
-                    if audit_leaf(orig_effect, next_e, &next_history, scan_res, config)?
-                        == AuditStatus::EarlyExit
+                    if audit_leaf(
+                        orig_effect,
+                        next_e,
+                        &next_history,
+                        scan_res,
+                        pub_caller_checked,
+                        config,
+                    )? == AuditStatus::EarlyExit
                     {
                         return Ok(AuditStatus::EarlyExit);
                     }
@@ -531,15 +600,21 @@ fn audit_effect_tree(
     orig_effect: &EffectBlock,
     effect_tree: &mut EffectTree,
     scan_res: &ScanResults,
+    pub_caller_checked: &mut HashSet<Path>,
     config: &Config,
 ) -> Result<AuditStatus> {
     match effect_tree {
         e @ EffectTree::Leaf(..) => {
-            audit_leaf(orig_effect, e, &Vec::new(), scan_res, config)
+            audit_leaf(orig_effect, e, &Vec::new(), scan_res, pub_caller_checked, config)
         }
-        e @ EffectTree::Branch(..) => {
-            audit_branch(orig_effect, e, &Vec::new(), scan_res, config)
-        }
+        e @ EffectTree::Branch(..) => audit_branch(
+            orig_effect,
+            e,
+            &Vec::new(),
+            scan_res,
+            pub_caller_checked,
+            config,
+        ),
     }
 }
 
@@ -562,6 +637,7 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
                     &mut pf,
                     &mut policy_path,
                     &scan_effect_blocks,
+                    args.overwrite_policy,
                 ) {
                     Ok(ContinueStatus::Continue) => (),
                     Ok(ContinueStatus::ExitNow) => return Ok(()),
@@ -576,20 +652,8 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
             File::create(policy_path.clone())?;
 
             // Return an empty PolicyFile, we'll add effects to it later
-            let mut pf = PolicyFile::new(args.crate_path.clone())?;
-            pf.audit_trees = scan_effect_blocks
-                .clone()
-                .into_iter()
-                .map(|x| {
-                    (
-                        x.clone(),
-                        EffectTree::Leaf(
-                            EffectInfo::from_block(x),
-                            SafetyAnnotation::Skipped,
-                        ),
-                    )
-                })
-                .collect::<HashMap<_, _>>();
+            let mut pf = PolicyFile::empty(args.crate_path.clone())?;
+            pf.set_base_audit_trees(scan_effect_blocks);
             pf
         }
     };
@@ -598,16 +662,26 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     for (e, t) in policy_file.audit_trees.iter_mut() {
         match t.get_leaf_annotation() {
             Some(SafetyAnnotation::Skipped) => {
-                if audit_effect_tree(e, t, &scan_res, &args.config)?
-                    == AuditStatus::EarlyExit
+                if audit_effect_tree(
+                    e,
+                    t,
+                    &scan_res,
+                    &mut policy_file.pub_caller_checked,
+                    &args.config,
+                )? == AuditStatus::EarlyExit
                 {
                     break;
                 }
             }
             Some(_) => (),
             None => {
-                if audit_effect_tree(e, t, &scan_res, &args.config)?
-                    == AuditStatus::EarlyExit
+                if audit_effect_tree(
+                    e,
+                    t,
+                    &scan_res,
+                    &mut policy_file.pub_caller_checked,
+                    &args.config,
+                )? == AuditStatus::EarlyExit
                 {
                     break;
                 }

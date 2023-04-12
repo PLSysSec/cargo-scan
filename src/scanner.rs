@@ -1,14 +1,12 @@
-/*
-    Scanner to parse a Rust source file and find all function call locations.
-*/
+//! Scanner to parse a Rust source file or crate and find all function call locations.
 
 use crate::effect::BlockType;
 
 use super::effect::{
     EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
 };
-use super::ident::{CanonicalPath, Ident, Path};
-use super::util::infer;
+use super::ident::{CanonicalPath, Path};
+use super::resolve::{RAResolver, Resolve};
 
 use anyhow::{anyhow, Result};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -31,7 +29,7 @@ pub struct ScanResults {
     pub unsafe_impls: Vec<TraitImpl>,
 
     pub fn_locs: HashMap<Path, SrcLoc>,
-    pub pub_fns: Vec<CanonicalPath>,
+    pub pub_fns: HashSet<CanonicalPath>,
 
     pub call_graph: DiGraph<Path, SrcLoc>,
 
@@ -47,7 +45,7 @@ impl ScanResults {
             unsafe_traits: Vec::new(),
             unsafe_impls: Vec::new(),
             fn_locs: HashMap::new(),
-            pub_fns: Vec::new(),
+            pub_fns: HashSet::new(),
             call_graph: DiGraph::new(),
             skipped_macros: 0,
             skipped_fn_calls: 0,
@@ -72,7 +70,7 @@ impl ScanResults {
         self.unsafe_traits.append(o_unsafe_traits);
         self.unsafe_impls.append(o_unsafe_impls);
         self.fn_locs.extend(o_fn_locs.drain());
-        self.pub_fns.append(o_pub_fns);
+        self.pub_fns.extend(o_pub_fns.drain());
         self.skipped_macros += *o_skipped_macros;
         self.skipped_fn_calls += *o_skipped_fn_calls;
     }
@@ -168,62 +166,52 @@ impl ScanData {
 
 /// Stateful object to scan Rust source code for effects (fn calls of interest)
 #[derive(Debug)]
-pub struct Scanner<'a> {
-    // filepath that the scanner is being run on
+pub struct Scanner<'a, R: Resolve<'a> + 'a> {
+    /// filepath that the scanner is being run on
     filepath: &'a FilePath,
 
-    // crate+module which the current filepath implements (e.g. mycrate::fs)
-    modpath: CanonicalPath,
+    /// Name resolution resolver
+    resolver: &'a mut R,
 
-    // stack-based scopes (always empty at top level)
-    scope_mods: Vec<&'a syn::Ident>,
-    scope_use: Vec<&'a syn::Ident>,
-    scope_fun: Vec<&'a syn::Ident>,
+    /// Stack-based scope to save effects under
+    /// (always empty at top level)
     scope_effect_blocks: Vec<EffectBlock>,
 
-    // Number of unsafe keywords the current scope is nested inside
-    // (always 0 at top level)
-    // (includes only unsafe blocks and fn decls -- not traits and trait impls)
+    /// Number of unsafe keywords the current scope is nested inside
+    /// (always 0 at top level)
+    /// (includes only unsafe blocks and fn decls -- not traits and trait impls)
     scope_unsafe: usize,
 
-    // name lookup scopes (not necessarily empty)
-    use_names: HashMap<&'a syn::Ident, Vec<&'a syn::Ident>>,
-    use_globs: Vec<Vec<&'a syn::Ident>>,
-    ffi_decls: HashMap<&'a syn::Ident, CanonicalPath>,
+    /// Functions inside
+    scope_fns: Vec<CanonicalPath>,
 
-    // Target to accumulate scan results
+    /// Target to accumulate scan results
     data: &'a mut ScanData,
 }
 
-impl<'a> Scanner<'a> {
+impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
     /*
         Main public API
     */
-    /// Create a new scanner tied to a filepath
-    pub fn new(filepath: &'a FilePath, data: &'a mut ScanData) -> Self {
-        // TBD: incomplete, replace with name resolution
-        let modpath = CanonicalPath::new_owned(infer::fully_qualified_prefix(filepath));
-
+    /// Create a new scanner tied to a crate and file
+    pub fn new(
+        filepath: &'a FilePath,
+        resolver: &'a mut R,
+        data: &'a mut ScanData,
+    ) -> Self {
         Self {
             filepath,
-            modpath,
-            ffi_decls: HashMap::new(),
-            scope_mods: Vec::new(),
-            scope_use: Vec::new(),
-            scope_fun: Vec::new(),
+            resolver,
             scope_effect_blocks: Vec::new(),
             scope_unsafe: 0,
-            use_names: HashMap::new(),
-            use_globs: Vec::new(),
+            scope_fns: Vec::new(),
             data,
         }
     }
 
     /// Top-level invariant -- called before consuming results
     pub fn assert_top_level_invariant(&self) {
-        debug_assert!(self.scope_mods.is_empty());
-        debug_assert!(self.scope_use.is_empty());
-        debug_assert!(self.scope_fun.is_empty());
+        self.resolver.assert_top_level_invariant();
         debug_assert!(self.scope_effect_blocks.is_empty());
         debug_assert_eq!(self.scope_unsafe, 0);
     }
@@ -244,7 +232,9 @@ impl<'a> Scanner<'a> {
     pub fn scan_item(&mut self, i: &'a syn::Item) {
         match i {
             syn::Item::Mod(m) => self.scan_mod(m),
-            syn::Item::Use(u) => self.scan_use(u),
+            syn::Item::Use(u) => {
+                self.resolver.scan_use(u);
+            }
             syn::Item::Impl(imp) => self.scan_impl(imp),
             syn::Item::Fn(fun) => self.scan_fn_decl(fun),
             syn::Item::Trait(t) => self.scan_trait(t),
@@ -263,32 +253,17 @@ impl<'a> Scanner<'a> {
     pub fn scan_mod(&mut self, m: &'a syn::ItemMod) {
         // TBD: reset use state; handle super keywords
         if let Some((_, items)) = &m.content {
-            // modules can exist inside of functions apparently
-            // handling that in what seems to be the most straightforward way
-            let n = self.scope_fun.len();
-            self.scope_mods.append(&mut self.scope_fun);
-            debug_assert!(self.scope_fun.is_empty());
-
-            self.scope_mods.push(&m.ident);
+            self.resolver.push_mod(&m.ident);
             for i in items {
                 self.scan_item(i);
             }
-            self.scope_mods.pop();
-
-            // restore scope_fun state
-            for _ in 0..n {
-                self.scope_fun.push(self.scope_mods.pop().unwrap());
-            }
+            self.resolver.pop_mod();
         }
     }
 
     /*
-        Reusable warning loggers
+        Reusable warning logger
     */
-
-    fn warning(&self, msg: &str) {
-        eprintln!("Warning: {}", msg)
-    }
 
     fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
         let file = self.filepath.to_string_lossy();
@@ -311,7 +286,7 @@ impl<'a> Scanner<'a> {
 
     fn scan_foreign_item(&mut self, i: &'a syn::ForeignItem) {
         match i {
-            syn::ForeignItem::Fn(f) => self.scan_foreign_fn(f),
+            syn::ForeignItem::Fn(f) => self.resolver.scan_foreign_fn(f),
             syn::ForeignItem::Macro(_) => {
                 self.data.skipped_macros += 1;
             }
@@ -321,153 +296,9 @@ impl<'a> Scanner<'a> {
         // https://docs.rs/syn/latest/syn/enum.ForeignItem.html
     }
 
-    fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn) {
-        let fn_name = &f.sig.ident;
-        let fn_path = self.lookup_ident_canonical(fn_name);
-        self.ffi_decls.insert(fn_name, fn_path);
-    }
-
-    /*
-        Use statements
-    */
-    fn scope_use_snapshot(&self) -> Vec<&'a syn::Ident> {
-        self.scope_use.clone()
-    }
-    fn save_scope_use_under(&mut self, lookup_key: &'a syn::Ident) {
-        // save the use scope under an identifier/lookup key
-        let v_new = self.scope_use_snapshot();
-        if cfg!(debug) && self.use_names.contains_key(lookup_key) {
-            let v_old = self.use_names.get(lookup_key).unwrap();
-            if *v_old != v_new {
-                let msg = format!(
-                    "Name conflict found in use scope: {:?} (old: {:?} new: {:?})",
-                    lookup_key, v_old, v_new
-                );
-                self.warning(&msg);
-            }
-        }
-        self.use_names.insert(lookup_key, v_new);
-    }
-    fn scan_use(&mut self, u: &'a syn::ItemUse) {
-        // TBD: may need to do something special here if already inside a fn
-        // (scope_fun is nonempty)
-        self.scan_use_tree(&u.tree);
-    }
-    fn scan_use_tree(&mut self, u: &'a syn::UseTree) {
-        match u {
-            syn::UseTree::Path(p) => self.scan_use_path(p),
-            syn::UseTree::Name(n) => self.scan_use_name(n),
-            syn::UseTree::Rename(r) => self.scan_use_rename(r),
-            syn::UseTree::Glob(g) => self.scan_use_glob(g),
-            syn::UseTree::Group(g) => self.scan_use_group(g),
-        }
-    }
-    fn scan_use_path(&mut self, p: &'a syn::UsePath) {
-        self.scope_use.push(&p.ident);
-        self.scan_use_tree(&p.tree);
-        self.scope_use.pop();
-    }
-    fn scan_use_name(&mut self, n: &'a syn::UseName) {
-        self.scope_use.push(&n.ident);
-        self.save_scope_use_under(&n.ident);
-        self.scope_use.pop();
-    }
-    fn scan_use_rename(&mut self, r: &'a syn::UseRename) {
-        self.scope_use.push(&r.ident);
-        self.save_scope_use_under(&r.rename);
-        self.scope_use.pop();
-    }
-
-    fn scan_use_glob(&mut self, _g: &'a syn::UseGlob) {
-        self.use_globs.push(self.scope_use_snapshot());
-    }
-
-    fn scan_use_group(&mut self, g: &'a syn::UseGroup) {
-        for t in g.items.iter() {
-            self.scan_use_tree(t);
-        }
-    }
-
     /*
         Name resolution methods
     */
-
-    // weird signature: need a double reference on i because i is owned by cur function
-    // all hail the borrow checker for catching this error
-    fn lookup_ident_vec<'c>(&'c self, i: &'c &'a syn::Ident) -> &'c [&'a syn::Ident]
-    where
-        'a: 'c,
-    {
-        self.use_names
-            .get(i)
-            .map(|v| v.as_slice())
-            .unwrap_or_else(|| std::slice::from_ref(i))
-    }
-
-    // this one creates a new path, so it has to return a Vec anyway
-    // precond: input path must be nonempty
-    // return: nonempty Vec of identifiers in the full path
-    fn lookup_path_vec(&self, p: &'a syn::Path) -> Vec<&'a syn::Ident> {
-        let mut result = Vec::new();
-        let mut it = p.segments.iter().map(|seg| &seg.ident);
-
-        // first part of the path based on lookup
-        let fst: &'a syn::Ident = it.next().unwrap();
-        result.extend(self.lookup_ident_vec(&fst));
-        // second part of the path based on any additional sub-scoping
-        result.extend(it);
-
-        result
-    }
-
-    fn syn_to_ident(i: &syn::Ident) -> Ident {
-        Ident::new_owned(i.to_string())
-    }
-
-    fn syn_to_path(i: &syn::Ident) -> Path {
-        Path::from_ident(Self::syn_to_ident(i))
-    }
-
-    fn aggregate_path(p: &[&'a syn::Ident]) -> Path {
-        let mut result = Path::new_empty();
-        for &i in p {
-            result.push_ident(&Self::syn_to_ident(i));
-        }
-        result
-    }
-
-    fn lookup_ident(&self, i: &'a syn::Ident) -> Path {
-        Self::aggregate_path(self.lookup_ident_vec(&i))
-    }
-
-    fn lookup_path(&self, p: &'a syn::Path) -> Path {
-        Self::aggregate_path(&self.lookup_path_vec(p))
-    }
-
-    fn lookup_ident_canonical(&self, i: &'a syn::Ident) -> CanonicalPath {
-        let mut result = self.modpath.clone();
-        result.append_path(&self.lookup_ident(i));
-        result
-    }
-
-    // fn lookup_path_canonical(&self, p: &'a syn::Path) -> CanonicalPath {
-    //     let mut result = self.modpath.clone();
-    //     result.append_path(&self.lookup_path(p));
-    //     result
-    // }
-
-    fn get_mod_scope(&self) -> Path {
-        Path::from_idents(self.scope_mods.iter().map(|&i| Self::syn_to_ident(i)))
-    }
-
-    fn get_fun_scope(&self) -> Option<Ident> {
-        self.scope_fun.last().cloned().map(Self::syn_to_ident)
-    }
-
-    fn lookup_ffi(&self, ffi: &syn::Ident) -> Option<CanonicalPath> {
-        // TBD: incomplete, replace with name resolution
-        self.ffi_decls.get(ffi).cloned()
-    }
 
     fn lookup_method(&self, i: &syn::Ident) -> Path {
         // TBD: incomplete, replace with name resolution
@@ -484,24 +315,11 @@ impl<'a> Scanner<'a> {
         Path::new_owned(format!("[FIELD]::{}", idx.index))
     }
 
-    fn lookup_caller(&self) -> CanonicalPath {
-        // Hacky inferences
-        let mut result = self.modpath.clone();
-
-        // Push current mod scope [ "mod1", "mod2", ...]
-        result.append_path(&self.get_mod_scope());
-
-        // Push current function
-        result.push_ident(&self.get_fun_scope().expect("not inside a function!"));
-
-        result
-    }
-
     /*
-        Trait declarations
+        Trait declarations and impl blocks
     */
     fn scan_trait(&mut self, t: &'a syn::ItemTrait) {
-        let t_name = Self::syn_to_path(&t.ident);
+        let t_name = self.resolver.resolve_def(&t.ident);
         let t_unsafety = t.unsafety;
         if t_unsafety.is_some() {
             // we found an `unsafe trait` declaration
@@ -510,20 +328,13 @@ impl<'a> Scanner<'a> {
         // TBD: handle trait block, e.g. default implementations
     }
 
-    /*
-        Impl blocks
-    */
     fn scan_impl(&mut self, imp: &'a syn::ItemImpl) {
-        // push the impl block scope to scope_mods
-        let scope_adds = if let Some((_, tr, _)) = &imp.trait_ {
-            // scope trait impls under trait name
-            self.scan_impl_trait_path(tr, imp)
-        } else {
-            // scope type impls under type name
-            self.scan_impl_type(&imp.self_ty)
-        };
+        self.resolver.push_impl(imp);
 
-        // scan the impl block
+        if let Some((_, tr, _)) = &imp.trait_ {
+            self.scan_impl_trait_path(tr, imp);
+        }
+
         for item in &imp.items {
             match item {
                 syn::ImplItem::Fn(m) => {
@@ -539,76 +350,15 @@ impl<'a> Scanner<'a> {
             }
         }
 
-        // Drop additional scope adds
-        for _ in 0..scope_adds {
-            self.scope_mods.pop();
-        }
+        self.resolver.pop_impl();
     }
-    fn scan_impl_type(&mut self, ty: &'a syn::Type) -> usize {
-        // return: the number of items added to scope_mods
-        match ty {
-            syn::Type::Group(x) => self.scan_impl_type(&x.elem),
-            syn::Type::Paren(x) => self.scan_impl_type(&x.elem),
-            syn::Type::Path(x) => self.scan_impl_type_path(&x.path),
-            syn::Type::Macro(_) => {
-                self.data.skipped_macros += 1;
-                0
-            }
-            syn::Type::TraitObject(x) => {
-                self.syn_warning("skipping 'impl dyn Trait' block", x);
-                0
-            }
-            syn::Type::Verbatim(v) => {
-                self.syn_warning("skipping Verbatim expression", v);
-                0
-            }
-            _ => {
-                self.syn_warning("unexpected impl block type (ignoring)", ty);
-                0
-            }
-        }
-        // other cases -- mostly built-ins, so shouldn't really occur in
-        // impl blocks; only in impl Trait for blocks, which we should handle
-        // separately
-        // Array(x) => {}
-        // BareFn(x) => {}
-        // ImplTrait(x) => {}
-        // Infer(x) => {}
-        // Never(x) => {}
-        // Ptr(x) => {}
-        // Reference(x) => {}
-        // Slice(x) => {}
-        // TraitObject(x) => {}
-        // Tuple(x) => {}
-    }
-    fn scan_impl_type_path(&mut self, ty: &'a syn::Path) -> usize {
-        // return: the number of items added to scope_mods
-        let fullpath = self.lookup_path_vec(ty);
-        self.scope_mods.extend(&fullpath);
-        if fullpath.is_empty() {
-            self.syn_warning("unexpected empty impl type path", ty);
-        }
-        fullpath.len()
-    }
-    fn scan_impl_trait_path(
-        &mut self,
-        tr: &'a syn::Path,
-        imp: &'a syn::ItemImpl,
-    ) -> usize {
-        // return: the number of items added to scope_mods
 
+    fn scan_impl_trait_path(&mut self, tr: &'a syn::Path, imp: &'a syn::ItemImpl) {
         if imp.unsafety.is_some() {
             // we found an `unsafe impl` declaration
-            let tr_name = self.lookup_path(tr);
+            let tr_name = self.resolver.resolve_path(tr);
             self.data.unsafe_impls.push(TraitImpl::new(imp, self.filepath, tr_name));
         }
-
-        let fullpath = self.lookup_path_vec(tr);
-        self.scope_mods.extend(&fullpath);
-        if fullpath.is_empty() {
-            self.syn_warning("unexpected empty trait name path", tr);
-        }
-        fullpath.len()
     }
 
     /*
@@ -630,10 +380,11 @@ impl<'a> Scanner<'a> {
         vis: &'a syn::Visibility,
     ) {
         let f_ident = &f_sig.ident;
-        self.scope_fun.push(f_ident);
+        let f_name = self.resolver.resolve_def(f_ident);
 
-        // let f_name = Self::syn_to_ident(f_ident);
-        let f_name = self.lookup_caller();
+        self.scope_fns.push(f_name.clone());
+        self.resolver.push_fn(f_ident);
+
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
 
         let fn_dec = FnDec::new(self.filepath, f_sig, f_name.clone(), vis);
@@ -657,7 +408,9 @@ impl<'a> Scanner<'a> {
             self.scan_fn_statement(s);
         }
 
-        self.scope_fun.pop();
+        self.scope_fns.pop();
+        self.resolver.pop_fn();
+
         self.data.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
         if f_unsafety.is_some() {
             debug_assert!(self.scope_unsafe >= 1);
@@ -913,7 +666,7 @@ impl<'a> Scanner<'a> {
     ) where
         S: Debug + Spanned,
     {
-        let caller = self.lookup_caller();
+        let caller = self.scope_fns.last().expect("not inside a function!");
 
         // TBD: unwraps were causing `make test` to crash
         if let Some(caller_node_idx) = self.data.node_idxs.get(caller.as_path()) {
@@ -928,7 +681,7 @@ impl<'a> Scanner<'a> {
 
         let eff = EffectInstance::new_call(
             self.filepath,
-            caller,
+            caller.clone(),
             callee,
             &callee_span,
             self.scope_unsafe > 0,
@@ -948,10 +701,9 @@ impl<'a> Scanner<'a> {
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
         match f {
             syn::Expr::Path(p) => {
-                let span = &p.path.segments.last().unwrap().ident;
-                let callee = self.lookup_path(&p.path);
-                let ffi = self.lookup_ffi(span);
-                self.push_callsite(span, callee, ffi);
+                let callee = self.resolver.resolve_path(&p.path);
+                let ffi = self.resolver.resolve_ffi(&p.path);
+                self.push_callsite(p, callee, ffi);
             }
             syn::Expr::Paren(x) => {
                 // e.g. (my_struct.f)(x)
@@ -985,12 +737,16 @@ impl<'a> Scanner<'a> {
     }
 
     fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
-        self.push_callsite(i, self.lookup_method(i), self.lookup_ffi(i));
+        self.push_callsite(i, self.lookup_method(i), None);
     }
 }
 
 /// Load the Rust file at the filepath and scan it
-pub fn load_and_scan(filepath: &FilePath, scan_data: &mut ScanData) -> Result<()> {
+pub fn load_and_scan(
+    filepath: &FilePath,
+    resolver: &mut RAResolver,
+    scan_data: &mut ScanData,
+) -> Result<()> {
     // based on example at https://docs.rs/syn/latest/syn/struct.File.html
     let mut file = File::open(filepath)?;
 
@@ -999,7 +755,14 @@ pub fn load_and_scan(filepath: &FilePath, scan_data: &mut ScanData) -> Result<()
 
     let syntax_tree = syn::parse_file(&src)?;
 
-    let mut scanner = Scanner::new(filepath, scan_data);
+    // Uncomment for old hacky resolver
+    // let mut hacky_resolver =
+    //     HackyResolver::new(filepath).context("failed to create resolver")?;
+    // let mut scanner = Scanner::new(filepath, &mut hacky_resolver, scan_data);
+
+    resolver.set_file(filepath);
+    let mut scanner = Scanner::new(filepath, resolver, scan_data);
+
     scanner.scan_file(&syntax_tree);
 
     Ok(())
@@ -1018,6 +781,8 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
         return Err(anyhow!("Path is not a crate; missing Cargo.toml: {:?}", crate_path));
     }
 
+    let mut resolver = RAResolver::new(crate_path)?;
+
     let mut scan_data = ScanData::new();
 
     // TODO: For now, only walking through the src dir, but might want to
@@ -1034,7 +799,7 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
             _ => false,
         })
     {
-        load_and_scan(FilePath::new(entry?.path()), &mut scan_data)?;
+        load_and_scan(FilePath::new(entry?.path()), &mut resolver, &mut scan_data)?;
     }
 
     Ok(scan_data.into())

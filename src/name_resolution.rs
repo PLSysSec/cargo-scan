@@ -1,18 +1,18 @@
 #![allow(unused_variables)]
 
 use std::fs::canonicalize;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 
-use crate::ident::CanonicalPath;
 use anyhow::{anyhow, Result};
+use ra_ap_hir_expand::name::AsName;
 use ra_ap_ide_db::base_db::SourceDatabase;
 use ra_ap_ide_db::FxHashMap;
 use ra_ap_syntax::ast::HasName;
 
 use super::effect::SrcLoc;
-use super::ident::{Ident, Path as IdentPath};
-use ra_ap_hir::{AsAssocItem, Module, Semantics};
-use ra_ap_hir_expand::name::AsName;
+use super::ident::{CanonicalPath, Ident, Path as IdentPath};
+
+use ra_ap_hir::{AsAssocItem, Semantics, Module};
 use ra_ap_ide::{AnalysisHost, FileId, LineCol, RootDatabase, TextSize};
 use ra_ap_ide_db::defs::{Definition, IdentClass};
 use ra_ap_paths::AbsPathBuf;
@@ -20,8 +20,8 @@ use ra_ap_project_model::{
     CargoConfig, CargoFeatures, InvocationLocation, InvocationStrategy, ProjectManifest,
     ProjectWorkspace, RustcSource, UnsetTestCrates,
 };
-use ra_ap_rust_analyzer::cli::load_cargo::{load_workspace, LoadCargoConfig};
 
+use ra_ap_rust_analyzer::cli::load_cargo::{load_workspace, LoadCargoConfig};
 use ra_ap_syntax::{AstNode, SourceFile, SyntaxToken, TokenAtOffset};
 use ra_ap_vfs::{Vfs, VfsPath};
 
@@ -59,6 +59,7 @@ pub fn resolve_path(s: SrcLoc, p: IdentPath) -> CanonicalPath {
     todo!()
 }
 
+#[derive(Debug)]
 pub struct Resolver {
     host: AnalysisHost,
     vfs: Vfs,
@@ -106,7 +107,9 @@ impl Resolver {
         }
     }
 
-    pub fn new(crate_path: &PathBuf) -> Result<Resolver> {
+    pub fn new(crate_path: &Path) -> Result<Resolver> {
+        // eprintln!("Creating resolver with path {:?}", crate_path);
+
         let canon_path = canonicalize(crate_path).unwrap();
         let abs_path = AbsPathBuf::assert(canon_path);
         // Make sure the path is a crate
@@ -135,6 +138,8 @@ impl Resolver {
         // TODO: make db and sems fields of the Resolver
         // let db = host.raw_database();
         // let sems = Semantics::new(db);
+
+        // eprintln!("...created");
 
         Ok(Resolver { host, vfs })
     }
@@ -313,6 +318,8 @@ impl Resolver {
     }
 
     pub fn resolve_ident(&self, s: SrcLoc, i: Ident) -> Result<CanonicalPath> {
+        // eprintln!("Resolving: {:?} {}", s, i);
+
         let db = self.get_db();
         let sems = self.get_semantics();
 
