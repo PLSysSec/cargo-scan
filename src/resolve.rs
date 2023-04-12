@@ -20,9 +20,11 @@ pub trait Resolve<'a>: Sized {
     fn push_fn(&mut self, fn_ident: &'a syn::Ident);
     fn pop_fn(&mut self);
     fn scan_use(&mut self, use_stmt: &'a syn::ItemUse);
+    fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn);
     fn resolve_ident(&self, i: &'a syn::Ident) -> Path;
     fn resolve_path(&self, p: &'a syn::Path) -> Path;
     fn resolve_ident_canonical(&self, i: &'a syn::Ident) -> CanonicalPath;
     fn resolve_path_canonical(&self, i: &'a syn::Path) -> CanonicalPath;
     fn resolve_current_caller(&self) -> CanonicalPath;
+    fn resolve_ffi(&self, ffi: &syn::Ident) -> Option<CanonicalPath>;
 }

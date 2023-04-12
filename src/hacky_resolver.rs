@@ -69,6 +69,9 @@ pub struct HackyResolver<'a> {
 
     // use name lookups
     use_names: HashMap<&'a syn::Ident, Vec<&'a syn::Ident>>,
+    ffi_decls: HashMap<&'a syn::Ident, CanonicalPath>,
+
+    // TBD: unused
     use_globs: Vec<Vec<&'a syn::Ident>>,
 }
 
@@ -85,6 +88,7 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
             scope_fun_lens: Vec::new(),
             scope_impl_adds: Vec::new(),
             use_names: HashMap::new(),
+            ffi_decls: HashMap::new(),
             use_globs: Vec::new(),
         })
     }
@@ -147,6 +151,12 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         self.scan_use_tree(&use_path.tree);
     }
 
+    fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn) {
+        let fn_name = &f.sig.ident;
+        let fn_path = self.resolve_ident_canonical(fn_name);
+        self.ffi_decls.insert(fn_name, fn_path);
+    }
+
     fn resolve_ident(&self, i: &'a syn::Ident) -> Path {
         Self::aggregate_path(self.lookup_ident_vec(&i))
     }
@@ -175,6 +185,10 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         result.push_ident(&self.get_fun_scope().expect("not inside a function!"));
 
         result
+    }
+
+    fn resolve_ffi(&self, ffi: &syn::Ident) -> Option<CanonicalPath> {
+        self.ffi_decls.get(ffi).cloned()
     }
 }
 

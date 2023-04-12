@@ -175,16 +175,14 @@ pub struct Scanner<'a, R: Resolve<'a> + 'a> {
     #[allow(dead_code)]
     resolver: &'a mut R,
 
-    // stack-based scopes (always empty at top level)
+    // Stack-based scope to save effects under
+    // (always empty at top level)
     scope_effect_blocks: Vec<EffectBlock>,
 
     // Number of unsafe keywords the current scope is nested inside
     // (always 0 at top level)
     // (includes only unsafe blocks and fn decls -- not traits and trait impls)
     scope_unsafe: usize,
-
-    // name lookup scopes (not necessarily empty)
-    ffi_decls: HashMap<&'a syn::Ident, CanonicalPath>,
 
     // Target to accumulate scan results
     data: &'a mut ScanData,
@@ -203,7 +201,6 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
         Self {
             filepath,
             resolver,
-            ffi_decls: HashMap::new(),
             scope_effect_blocks: Vec::new(),
             scope_unsafe: 0,
             data,
@@ -287,7 +284,7 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
 
     fn scan_foreign_item(&mut self, i: &'a syn::ForeignItem) {
         match i {
-            syn::ForeignItem::Fn(f) => self.scan_foreign_fn(f),
+            syn::ForeignItem::Fn(f) => self.resolver.scan_foreign_fn(f),
             syn::ForeignItem::Macro(_) => {
                 self.data.skipped_macros += 1;
             }
@@ -295,12 +292,6 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
         }
         // Ignored: Static, Type, Macro, Verbatim
         // https://docs.rs/syn/latest/syn/enum.ForeignItem.html
-    }
-
-    fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn) {
-        let fn_name = &f.sig.ident;
-        let fn_path = self.resolver.resolve_ident_canonical(fn_name);
-        self.ffi_decls.insert(fn_name, fn_path);
     }
 
     /*
@@ -314,11 +305,6 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
 
     fn syn_to_path(i: &syn::Ident) -> Path {
         Path::from_ident(Self::syn_to_ident(i))
-    }
-
-    fn lookup_ffi(&self, ffi: &syn::Ident) -> Option<CanonicalPath> {
-        // TBD: incomplete, replace with name resolution
-        self.ffi_decls.get(ffi).cloned()
     }
 
     fn lookup_method(&self, i: &syn::Ident) -> Path {
@@ -723,7 +709,7 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
             syn::Expr::Path(p) => {
                 let span = &p.path.segments.last().unwrap().ident;
                 let callee = self.resolver.resolve_path(&p.path);
-                let ffi = self.lookup_ffi(span);
+                let ffi = self.resolver.resolve_ffi(span);
                 self.push_callsite(span, callee, ffi);
             }
             syn::Expr::Paren(x) => {
@@ -758,7 +744,7 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
     }
 
     fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
-        self.push_callsite(i, self.lookup_method(i), self.lookup_ffi(i));
+        self.push_callsite(i, self.lookup_method(i), self.resolver.resolve_ffi(i));
     }
 }
 
