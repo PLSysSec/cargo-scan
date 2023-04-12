@@ -119,6 +119,7 @@ pub struct PolicyFile {
     // TODO: Serde doesn't like this hashmap for some reason (?)
     #[serde_as(as = "Vec<(_, _)>")]
     pub audit_trees: HashMap<EffectBlock, EffectTree>,
+    pub pub_caller_checked: HashSet<Path>,
     // TODO: Make the base_dir a crate instead
     pub base_dir: PathBuf,
     pub hash: [u8; 32],
@@ -127,7 +128,12 @@ pub struct PolicyFile {
 impl PolicyFile {
     pub fn empty(p: PathBuf) -> Result<Self> {
         let hash = hash_dir(p.clone())?;
-        Ok(PolicyFile { audit_trees: HashMap::new(), base_dir: p, hash })
+        Ok(PolicyFile {
+            audit_trees: HashMap::new(),
+            pub_caller_checked: HashSet::new(),
+            base_dir: p,
+            hash,
+        })
     }
 
     pub fn set_base_audit_trees(&mut self, effect_blocks: HashSet<&EffectBlock>) {
@@ -178,7 +184,7 @@ impl PolicyFile {
 
     fn mark_caller_checked(
         tree: &mut EffectTree,
-        pub_caller_checked: &mut Vec<Path>,
+        pub_caller_checked: &mut HashSet<Path>,
         scan_res: &ScanResults,
     ) {
         if let EffectTree::Leaf(effect_info, annotation) = tree {
@@ -187,7 +193,7 @@ impl PolicyFile {
                 .pub_fns
                 .contains(&CanonicalPath::from_path(effect_info.caller_path.clone()))
             {
-                pub_caller_checked.push(effect_info.caller_path.clone());
+                pub_caller_checked.insert(effect_info.caller_path.clone());
             }
 
             let mut callers = scan_res
@@ -214,12 +220,14 @@ impl PolicyFile {
     pub fn new_caller_checked_default(crate_path: PathBuf) -> Result<PolicyFile> {
         let mut policy = PolicyFile::empty(crate_path.clone())?;
         let scan_res = scanner::scan_crate(crate_path.as_path())?;
-        let mut pub_caller_checked = Vec::new();
+        let mut pub_caller_checked = HashSet::new();
         policy.set_base_audit_trees(scan_res.unsafe_effect_blocks_set());
 
         for (_, t) in policy.audit_trees.iter_mut() {
             PolicyFile::mark_caller_checked(t, &mut pub_caller_checked, &scan_res);
         }
+
+        policy.pub_caller_checked = pub_caller_checked;
 
         Ok(policy)
     }
