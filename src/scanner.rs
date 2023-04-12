@@ -758,9 +758,9 @@ pub fn load_and_scan(
     // Uncomment for old hacky resolver
     // let mut hacky_resolver =
     //     HackyResolver::new(filepath).context("failed to create resolver")?;
-    // resolver.set_file(filepath);
     // let mut scanner = Scanner::new(filepath, &mut hacky_resolver, scan_data);
 
+    resolver.set_file(filepath);
     let mut scanner = Scanner::new(filepath, resolver, scan_data);
 
     scanner.scan_file(&syntax_tree);
@@ -781,9 +781,7 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
         return Err(anyhow!("Path is not a crate; missing Cargo.toml: {:?}", crate_path));
     }
 
-    eprint!("creating resolver...");
     let mut resolver = RAResolver::new(crate_path)?;
-    eprintln!("created");
 
     let mut scan_data = ScanData::new();
 

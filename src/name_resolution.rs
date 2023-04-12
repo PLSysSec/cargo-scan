@@ -104,6 +104,8 @@ impl Resolver {
     }
 
     pub fn new(crate_path: &Path) -> Result<Resolver> {
+        eprintln!("Creating resolver with path {:?}", crate_path);
+
         let canon_path = canonicalize(crate_path).unwrap();
         let abs_path = AbsPathBuf::assert(canon_path);
         // Make sure the path is a crate
@@ -132,6 +134,8 @@ impl Resolver {
         // TODO: make db and sems fields of the Resolver
         // let db = host.raw_database();
         // let sems = Semantics::new(db);
+
+        eprintln!("...created");
 
         Ok(Resolver { host, vfs })
     }
@@ -280,6 +284,8 @@ impl Resolver {
     }
 
     pub fn resolve_ident(&self, s: SrcLoc, i: Ident) -> Result<CanonicalPath> {
+        eprintln!("Resolving: {:?} {}", s, i);
+
         let db = self.get_db();
         let sems = self.get_semantics();
 

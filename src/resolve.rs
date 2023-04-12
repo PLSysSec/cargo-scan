@@ -50,16 +50,17 @@ pub struct RAResolver {
 
 impl RAResolver {
     pub fn new(crt: &FilePath) -> Result<Self> {
-        // eprintln!("creating with crate: {:?}", crt);
         let inner = Resolver::new(crt)?;
         let filepath = crt.to_owned();
         Ok(Self { inner, filepath })
     }
     pub fn set_file(&mut self, new_file: &FilePath) {
+        eprintln!("setting file: {:?}", new_file);
         self.filepath = new_file.to_owned();
     }
-    fn resolve_core<'a>(&self, i: &'a syn::Ident) -> CanonicalPath {
-        let s = SrcLoc::from_span(&self.filepath, i);
+    fn resolve_core(&self, i: &syn::Ident) -> CanonicalPath {
+        let mut s = SrcLoc::from_span(&self.filepath, i);
+        s.add1();
         let i = Ident::from_syn(i);
         self.inner.resolve_ident(s.clone(), i.clone()).unwrap_or_else(|err| {
             panic!("Resolution failed: {:?} {} ({:?})", s, i, err);

@@ -70,6 +70,10 @@ impl SrcLoc {
         res
     }
 
+    pub fn add1(&mut self) {
+        self.start_col += 1;
+    }
+
     pub fn csv_header() -> &'static str {
         "dir, file, line, col"
     }
