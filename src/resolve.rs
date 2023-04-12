@@ -12,14 +12,17 @@ use syn;
 
 pub trait Resolve<'a>: Sized {
     fn new(crt: &FilePath) -> Result<Self>;
-    fn assert_invariant(&self);
-    fn push_scope(&mut self);
-    fn pop_scope(&mut self);
+    fn assert_top_level_invariant(&self);
+    fn push_mod(&mut self, mod_ident: &'a syn::Ident);
+    fn pop_mod(&mut self);
+    fn push_impl(&mut self, impl_stmt: &'a syn::ItemImpl);
+    fn pop_impl(&mut self);
+    fn push_fn(&mut self, fn_ident: &'a syn::Ident);
+    fn pop_fn(&mut self);
     fn scan_use(&mut self, use_stmt: &'a syn::ItemUse);
     fn resolve_ident(&self, i: &'a syn::Ident) -> Path;
     fn resolve_path(&self, p: &'a syn::Path) -> Path;
     fn resolve_ident_canonical(&self, i: &'a syn::Ident) -> CanonicalPath;
     fn resolve_path_canonical(&self, i: &'a syn::Path) -> CanonicalPath;
-    fn get_modpath(&self) -> CanonicalPath;
-    fn lookup_path_vec(&self, p: &'a syn::Path) -> Vec<&'a syn::Ident>;
+    fn resolve_current_caller(&self) -> CanonicalPath;
 }

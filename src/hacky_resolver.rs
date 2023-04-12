@@ -5,9 +5,11 @@ use super::resolve::Resolve;
 
 use anyhow::Result;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::path::Path as FilePath;
-use syn;
+use syn::{self, spanned::Spanned};
 
+// Incorrectly infer mods from filepath
 mod infer {
     use std::path::Path;
 
@@ -55,12 +57,15 @@ mod infer {
 
 #[derive(Debug)]
 pub struct HackyResolver<'a> {
-    // crate+module which the current filepath implements (e.g. mycrate::fs)
+    // crate+module which the current filepath implements (e.g. my_crate::fs)
     modpath: CanonicalPath,
 
     // stack-based scope
-    scope: usize,
     scope_use: Vec<&'a syn::Ident>,
+    scope_mods: Vec<&'a syn::Ident>,
+    scope_fun: Vec<&'a syn::Ident>,
+    scope_fun_lens: Vec<usize>,
+    scope_impl_adds: Vec<usize>,
 
     // use name lookups
     use_names: HashMap<&'a syn::Ident, Vec<&'a syn::Ident>>,
@@ -74,25 +79,66 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
 
         Ok(Self {
             modpath,
-            scope: 0,
             scope_use: Vec::new(),
+            scope_mods: Vec::new(),
+            scope_fun: Vec::new(),
+            scope_fun_lens: Vec::new(),
+            scope_impl_adds: Vec::new(),
             use_names: HashMap::new(),
             use_globs: Vec::new(),
         })
     }
 
-    fn assert_invariant(&self) {
-        if self.scope == 0 {
-            debug_assert!(self.scope_use.is_empty());
+    fn assert_top_level_invariant(&self) {
+        debug_assert!(self.scope_use.is_empty());
+        debug_assert!(self.scope_mods.is_empty());
+        debug_assert!(self.scope_fun.is_empty());
+        debug_assert!(self.scope_fun_lens.is_empty());
+        debug_assert!(self.scope_impl_adds.is_empty());
+    }
+
+    fn push_mod(&mut self, mod_ident: &'a syn::Ident) {
+        // modules can exist inside of functions apparently
+        // handling that in what seems to be the most straightforward way
+        self.scope_fun_lens.push(self.scope_fun.len());
+        self.scope_mods.append(&mut self.scope_fun);
+        debug_assert!(self.scope_fun.is_empty());
+        self.scope_mods.push(mod_ident);
+    }
+
+    fn pop_mod(&mut self) {
+        self.scope_mods.pop();
+        // restore scope_fun state
+        let n = self.scope_fun_lens.pop().unwrap();
+        for _ in 0..n {
+            self.scope_fun.push(self.scope_mods.pop().unwrap());
         }
     }
 
-    fn push_scope(&mut self) {
-        self.scope += 1;
+    fn push_impl(&mut self, impl_stmt: &'a syn::ItemImpl) {
+        if let Some((_, tr, _)) = &impl_stmt.trait_ {
+            // scope trait impls under trait name
+            let scope_adds = self.scan_impl_trait_path(tr);
+            self.scope_impl_adds.push(scope_adds);
+        } else {
+            // scope type impls under type name
+            let scope_adds = self.scan_impl_type(&impl_stmt.self_ty);
+            self.scope_impl_adds.push(scope_adds);
+        };
     }
 
-    fn pop_scope(&mut self) {
-        self.scope = self.scope.saturating_sub(1);
+    fn pop_impl(&mut self) {
+        let scope_adds = self.scope_impl_adds.pop().unwrap();
+        for _ in 0..scope_adds {
+            self.scope_mods.pop();
+        }
+    }
+
+    fn push_fn(&mut self, fn_ident: &'a syn::Ident) {
+        self.scope_fun.push(fn_ident);
+    }
+    fn pop_fn(&mut self) {
+        self.scope_fun.pop();
     }
 
     fn scan_use(&mut self, use_path: &'a syn::ItemUse) {
@@ -119,16 +165,30 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         todo!()
     }
 
-    fn get_modpath(&self) -> CanonicalPath {
-        self.modpath.clone()
-    }
+    fn resolve_current_caller(&self) -> CanonicalPath {
+        let mut result = self.modpath.clone();
 
-    fn lookup_path_vec(&self, p: &'a syn::Path) -> Vec<&'a syn::Ident> {
-        self.lookup_path_vec_core(p)
+        // Push current mod scope [ "mod1", "mod2", ...]
+        result.append_path(&self.get_mod_scope());
+
+        // Push current function
+        result.push_ident(&self.get_fun_scope().expect("not inside a function!"));
+
+        result
     }
 }
 
 impl<'a> HackyResolver<'a> {
+    /*
+        Reusable warning logger
+    */
+
+    fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
+        let line = syn_node.span().start().line;
+        let col = syn_node.span().start().column;
+        eprintln!("Warning (Resolver): {} ({:?}) ({}:{})", msg, syn_node, line, col);
+    }
+
     /*
         Use statements
     */
@@ -191,12 +251,72 @@ impl<'a> HackyResolver<'a> {
     }
 
     /*
+        Impl blocks
+    */
+    fn scan_impl_type(&mut self, ty: &'a syn::Type) -> usize {
+        // return: the number of items added to scope_mods
+        match ty {
+            syn::Type::Group(x) => self.scan_impl_type(&x.elem),
+            syn::Type::Paren(x) => self.scan_impl_type(&x.elem),
+            syn::Type::Path(x) => self.scan_impl_type_path(&x.path),
+            syn::Type::TraitObject(x) => {
+                self.syn_warning("skipping 'impl dyn Trait' block", x);
+                0
+            }
+            syn::Type::Verbatim(v) => {
+                self.syn_warning("skipping Verbatim expression", v);
+                0
+            }
+            // TBD
+            // syn::Type::Macro(_) => {
+            //     self.data.skipped_macros += 1;
+            //     0
+            // }
+            _ => {
+                self.syn_warning("unexpected impl block type (ignoring)", ty);
+                0
+            }
+        }
+        // other cases -- mostly built-ins, so shouldn't really occur in
+        // impl blocks; only in impl Trait for blocks, which we should handle
+        // separately
+        // Array(x) => {}
+        // BareFn(x) => {}
+        // ImplTrait(x) => {}
+        // Infer(x) => {}
+        // Never(x) => {}
+        // Ptr(x) => {}
+        // Reference(x) => {}
+        // Slice(x) => {}
+        // TraitObject(x) => {}
+        // Tuple(x) => {}
+    }
+    fn scan_impl_type_path(&mut self, ty: &'a syn::Path) -> usize {
+        // return: the number of items added to scope_mods
+        let fullpath = self.lookup_path_vec(ty);
+        self.scope_mods.extend(&fullpath);
+        if fullpath.is_empty() {
+            self.syn_warning("unexpected empty impl type path", ty);
+        }
+        fullpath.len()
+    }
+    fn scan_impl_trait_path(&mut self, tr: &'a syn::Path) -> usize {
+        // return: the number of items added to scope_mods
+        let fullpath = self.lookup_path_vec(tr);
+        self.scope_mods.extend(&fullpath);
+        if fullpath.is_empty() {
+            self.syn_warning("unexpected empty trait name path", tr);
+        }
+        fullpath.len()
+    }
+
+    /*
         Name resolution methods
     */
 
     // weird signature: need a double reference on i because i is owned by cur function
     // all hail the borrow checker for catching this error
-    pub fn lookup_ident_vec<'c>(&'c self, i: &'c &'a syn::Ident) -> &'c [&'a syn::Ident]
+    fn lookup_ident_vec<'c>(&'c self, i: &'c &'a syn::Ident) -> &'c [&'a syn::Ident]
     where
         'a: 'c,
     {
@@ -209,7 +329,7 @@ impl<'a> HackyResolver<'a> {
     // this one creates a new path, so it has to return a Vec anyway
     // precond: input path must be nonempty
     // return: nonempty Vec of identifiers in the full path
-    pub fn lookup_path_vec_core(&self, p: &'a syn::Path) -> Vec<&'a syn::Ident> {
+    fn lookup_path_vec(&self, p: &'a syn::Path) -> Vec<&'a syn::Ident> {
         let mut result = Vec::new();
         let mut it = p.segments.iter().map(|seg| &seg.ident);
 
@@ -224,6 +344,14 @@ impl<'a> HackyResolver<'a> {
 
     fn syn_to_ident(i: &syn::Ident) -> Ident {
         Ident::new_owned(i.to_string())
+    }
+
+    fn get_mod_scope(&self) -> Path {
+        Path::from_idents(self.scope_mods.iter().map(|&i| Self::syn_to_ident(i)))
+    }
+
+    fn get_fun_scope(&self) -> Option<Ident> {
+        self.scope_fun.last().cloned().map(Self::syn_to_ident)
     }
 
     fn aggregate_path(p: &[&'a syn::Ident]) -> Path {

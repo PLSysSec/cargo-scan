@@ -176,8 +176,6 @@ pub struct Scanner<'a, R: Resolve<'a> + 'a> {
     resolver: &'a mut R,
 
     // stack-based scopes (always empty at top level)
-    scope_mods: Vec<&'a syn::Ident>,
-    scope_fun: Vec<&'a syn::Ident>,
     scope_effect_blocks: Vec<EffectBlock>,
 
     // Number of unsafe keywords the current scope is nested inside
@@ -206,8 +204,6 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
             filepath,
             resolver,
             ffi_decls: HashMap::new(),
-            scope_mods: Vec::new(),
-            scope_fun: Vec::new(),
             scope_effect_blocks: Vec::new(),
             scope_unsafe: 0,
             data,
@@ -216,9 +212,7 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
 
     /// Top-level invariant -- called before consuming results
     pub fn assert_top_level_invariant(&self) {
-        self.resolver.assert_invariant();
-        debug_assert!(self.scope_mods.is_empty());
-        debug_assert!(self.scope_fun.is_empty());
+        self.resolver.assert_top_level_invariant();
         debug_assert!(self.scope_effect_blocks.is_empty());
         debug_assert_eq!(self.scope_unsafe, 0);
     }
@@ -260,22 +254,11 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
     pub fn scan_mod(&mut self, m: &'a syn::ItemMod) {
         // TBD: reset use state; handle super keywords
         if let Some((_, items)) = &m.content {
-            // modules can exist inside of functions apparently
-            // handling that in what seems to be the most straightforward way
-            let n = self.scope_fun.len();
-            self.scope_mods.append(&mut self.scope_fun);
-            debug_assert!(self.scope_fun.is_empty());
-
-            self.scope_mods.push(&m.ident);
+            self.resolver.push_mod(&m.ident);
             for i in items {
                 self.scan_item(i);
             }
-            self.scope_mods.pop();
-
-            // restore scope_fun state
-            for _ in 0..n {
-                self.scope_fun.push(self.scope_mods.pop().unwrap());
-            }
+            self.resolver.pop_mod();
         }
     }
 
@@ -333,14 +316,6 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
         Path::from_ident(Self::syn_to_ident(i))
     }
 
-    fn get_mod_scope(&self) -> Path {
-        Path::from_idents(self.scope_mods.iter().map(|&i| Self::syn_to_ident(i)))
-    }
-
-    fn get_fun_scope(&self) -> Option<Ident> {
-        self.scope_fun.last().cloned().map(Self::syn_to_ident)
-    }
-
     fn lookup_ffi(&self, ffi: &syn::Ident) -> Option<CanonicalPath> {
         // TBD: incomplete, replace with name resolution
         self.ffi_decls.get(ffi).cloned()
@@ -361,20 +336,8 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
         Path::new_owned(format!("[FIELD]::{}", idx.index))
     }
 
-    fn lookup_caller(&self) -> CanonicalPath {
-        let mut result = self.resolver.get_modpath();
-
-        // Push current mod scope [ "mod1", "mod2", ...]
-        result.append_path(&self.get_mod_scope());
-
-        // Push current function
-        result.push_ident(&self.get_fun_scope().expect("not inside a function!"));
-
-        result
-    }
-
     /*
-        Trait declarations
+        Trait declarations and impl blocks
     */
     fn scan_trait(&mut self, t: &'a syn::ItemTrait) {
         let t_name = Self::syn_to_path(&t.ident);
@@ -386,20 +349,13 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
         // TBD: handle trait block, e.g. default implementations
     }
 
-    /*
-        Impl blocks
-    */
     fn scan_impl(&mut self, imp: &'a syn::ItemImpl) {
-        // push the impl block scope to scope_mods
-        let scope_adds = if let Some((_, tr, _)) = &imp.trait_ {
-            // scope trait impls under trait name
-            self.scan_impl_trait_path(tr, imp)
-        } else {
-            // scope type impls under type name
-            self.scan_impl_type(&imp.self_ty)
-        };
+        self.resolver.push_impl(imp);
 
-        // scan the impl block
+        if let Some((_, tr, _)) = &imp.trait_ {
+            self.scan_impl_trait_path(tr, imp);
+        }
+
         for item in &imp.items {
             match item {
                 syn::ImplItem::Fn(m) => {
@@ -415,76 +371,15 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
             }
         }
 
-        // Drop additional scope adds
-        for _ in 0..scope_adds {
-            self.scope_mods.pop();
-        }
+        self.resolver.pop_impl();
     }
-    fn scan_impl_type(&mut self, ty: &'a syn::Type) -> usize {
-        // return: the number of items added to scope_mods
-        match ty {
-            syn::Type::Group(x) => self.scan_impl_type(&x.elem),
-            syn::Type::Paren(x) => self.scan_impl_type(&x.elem),
-            syn::Type::Path(x) => self.scan_impl_type_path(&x.path),
-            syn::Type::Macro(_) => {
-                self.data.skipped_macros += 1;
-                0
-            }
-            syn::Type::TraitObject(x) => {
-                self.syn_warning("skipping 'impl dyn Trait' block", x);
-                0
-            }
-            syn::Type::Verbatim(v) => {
-                self.syn_warning("skipping Verbatim expression", v);
-                0
-            }
-            _ => {
-                self.syn_warning("unexpected impl block type (ignoring)", ty);
-                0
-            }
-        }
-        // other cases -- mostly built-ins, so shouldn't really occur in
-        // impl blocks; only in impl Trait for blocks, which we should handle
-        // separately
-        // Array(x) => {}
-        // BareFn(x) => {}
-        // ImplTrait(x) => {}
-        // Infer(x) => {}
-        // Never(x) => {}
-        // Ptr(x) => {}
-        // Reference(x) => {}
-        // Slice(x) => {}
-        // TraitObject(x) => {}
-        // Tuple(x) => {}
-    }
-    fn scan_impl_type_path(&mut self, ty: &'a syn::Path) -> usize {
-        // return: the number of items added to scope_mods
-        let fullpath = self.resolver.lookup_path_vec(ty);
-        self.scope_mods.extend(&fullpath);
-        if fullpath.is_empty() {
-            self.syn_warning("unexpected empty impl type path", ty);
-        }
-        fullpath.len()
-    }
-    fn scan_impl_trait_path(
-        &mut self,
-        tr: &'a syn::Path,
-        imp: &'a syn::ItemImpl,
-    ) -> usize {
-        // return: the number of items added to scope_mods
 
+    fn scan_impl_trait_path(&mut self, tr: &'a syn::Path, imp: &'a syn::ItemImpl) {
         if imp.unsafety.is_some() {
             // we found an `unsafe impl` declaration
             let tr_name = self.resolver.resolve_path(tr);
             self.data.unsafe_impls.push(TraitImpl::new(imp, self.filepath, tr_name));
         }
-
-        let fullpath = self.resolver.lookup_path_vec(tr);
-        self.scope_mods.extend(&fullpath);
-        if fullpath.is_empty() {
-            self.syn_warning("unexpected empty trait name path", tr);
-        }
-        fullpath.len()
     }
 
     /*
@@ -506,10 +401,11 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
         vis: &'a syn::Visibility,
     ) {
         let f_ident = &f_sig.ident;
-        self.scope_fun.push(f_ident);
+
+        self.resolver.push_fn(f_ident);
 
         // let f_name = Self::syn_to_ident(f_ident);
-        let f_name = self.lookup_caller();
+        let f_name = self.resolver.resolve_current_caller();
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
 
         let fn_dec = FnDec::new(self.filepath, f_sig, f_name.clone(), vis);
@@ -533,7 +429,8 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
             self.scan_fn_statement(s);
         }
 
-        self.scope_fun.pop();
+        self.resolver.pop_fn();
+
         self.data.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
         if f_unsafety.is_some() {
             debug_assert!(self.scope_unsafe >= 1);
@@ -789,7 +686,7 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
     ) where
         S: Debug + Spanned,
     {
-        let caller = self.lookup_caller();
+        let caller = self.resolver.resolve_current_caller();
 
         // TBD: unwraps were causing `make test` to crash
         if let Some(caller_node_idx) = self.data.node_idxs.get(caller.as_path()) {
