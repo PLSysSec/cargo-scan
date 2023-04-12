@@ -14,6 +14,9 @@ struct Args {
     line: usize,
     col: usize,
     name: String,
+
+    #[arg(short, long, default_value = "src/main.rs")]
+    file: PathBuf,
 }
 
 pub fn main() -> Result<()> {
@@ -22,7 +25,7 @@ pub fn main() -> Result<()> {
     // let cargo_config = CargoConfig::
     let res = Resolver::new(&args.crate_path).unwrap();
     let mut filepath = std::path::PathBuf::from(&args.crate_path);
-    filepath.push("src/main.rs");
+    filepath.push(&args.file);
 
     let s = SrcLoc::new(filepath.as_path(), args.line, args.col, args.line, args.col);
     let i = Ident::new(&args.name);
