@@ -141,6 +141,7 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
     fn push_fn(&mut self, fn_ident: &'a syn::Ident) {
         self.scope_fun.push(fn_ident);
     }
+
     fn pop_fn(&mut self) {
         self.scope_fun.pop();
     }
@@ -153,38 +154,35 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
 
     fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn) {
         let fn_name = &f.sig.ident;
-        let fn_path = self.resolve_ident_canonical(fn_name);
+        let fn_path = self.resolve_def(fn_name);
         self.ffi_decls.insert(fn_name, fn_path);
     }
 
     fn resolve_ident(&self, i: &'a syn::Ident) -> Path {
+        // TODO make CanonicalPath
         Self::aggregate_path(self.lookup_ident_vec(&i))
     }
 
     fn resolve_path(&self, p: &'a syn::Path) -> Path {
+        // TODO make CanonicalPath
         Self::aggregate_path(&self.lookup_path_vec(p))
     }
 
-    fn resolve_ident_canonical(&self, i: &'a syn::Ident) -> CanonicalPath {
-        let mut result = self.modpath.clone();
-        result.append_path(&self.resolve_ident(i));
-        result
-    }
-
-    fn resolve_path_canonical(&self, _i: &'a syn::Path) -> CanonicalPath {
-        todo!()
-    }
-
-    fn resolve_current_caller(&self) -> CanonicalPath {
+    fn resolve_def(&self, i: &'a syn::Ident) -> CanonicalPath {
         let mut result = self.modpath.clone();
 
         // Push current mod scope [ "mod1", "mod2", ...]
         result.append_path(&self.get_mod_scope());
 
-        // Push current function
-        result.push_ident(&self.get_fun_scope().expect("not inside a function!"));
+        // Push definition ident
+        result.push_ident(&Self::syn_to_ident(i));
 
         result
+    }
+
+    fn resolve_current_caller(&self) -> CanonicalPath {
+        let last_fn = self.get_fun_scope().expect("not inside a function!");
+        self.resolve_def(last_fn)
     }
 
     fn resolve_ffi(&self, ffi: &syn::Ident) -> Option<CanonicalPath> {
@@ -364,8 +362,8 @@ impl<'a> HackyResolver<'a> {
         Path::from_idents(self.scope_mods.iter().map(|&i| Self::syn_to_ident(i)))
     }
 
-    fn get_fun_scope(&self) -> Option<Ident> {
-        self.scope_fun.last().cloned().map(Self::syn_to_ident)
+    fn get_fun_scope(&self) -> Option<&'a syn::Ident> {
+        self.scope_fun.last().cloned()
     }
 
     fn aggregate_path(p: &[&'a syn::Ident]) -> Path {

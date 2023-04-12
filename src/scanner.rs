@@ -6,7 +6,7 @@ use super::effect::{
     EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
 };
 use super::hacky_resolver::HackyResolver;
-use super::ident::{CanonicalPath, Ident, Path};
+use super::ident::{CanonicalPath, Path};
 use super::resolve::Resolve;
 
 use anyhow::{anyhow, Context, Result};
@@ -172,7 +172,6 @@ pub struct Scanner<'a, R: Resolve<'a> + 'a> {
     filepath: &'a FilePath,
 
     // Name resolution resolver
-    #[allow(dead_code)]
     resolver: &'a mut R,
 
     // Stack-based scope to save effects under
@@ -298,15 +297,6 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
         Name resolution methods
     */
 
-    // TBD: duplicated in HackyResolver
-    fn syn_to_ident(i: &syn::Ident) -> Ident {
-        Ident::new_owned(i.to_string())
-    }
-
-    fn syn_to_path(i: &syn::Ident) -> Path {
-        Path::from_ident(Self::syn_to_ident(i))
-    }
-
     fn lookup_method(&self, i: &syn::Ident) -> Path {
         // TBD: incomplete, replace with name resolution
         Path::new_owned(format!("[METHOD]::{}", i))
@@ -326,7 +316,7 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
         Trait declarations and impl blocks
     */
     fn scan_trait(&mut self, t: &'a syn::ItemTrait) {
-        let t_name = Self::syn_to_path(&t.ident);
+        let t_name = self.resolver.resolve_def(&t.ident);
         let t_unsafety = t.unsafety;
         if t_unsafety.is_some() {
             // we found an `unsafe trait` declaration
@@ -390,7 +380,6 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
 
         self.resolver.push_fn(f_ident);
 
-        // let f_name = Self::syn_to_ident(f_ident);
         let f_name = self.resolver.resolve_current_caller();
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
 
@@ -744,7 +733,7 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
     }
 
     fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
-        self.push_callsite(i, self.lookup_method(i), self.resolver.resolve_ffi(i));
+        self.push_callsite(i, self.lookup_method(i), None);
     }
 }
 

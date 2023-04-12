@@ -430,10 +430,10 @@ impl TraitImpl {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct TraitDec {
     src_loc: SrcLoc,
-    tr_name: Path,
+    tr_name: CanonicalPath,
 }
 impl TraitDec {
-    pub fn new<S>(trait_span: &S, filepath: &FilePath, tr_name: Path) -> Self
+    pub fn new<S>(trait_span: &S, filepath: &FilePath, tr_name: CanonicalPath) -> Self
     where
         S: Spanned,
     {
