@@ -1,7 +1,7 @@
 #![allow(unused_variables)]
 
 use std::fs::canonicalize;
-use std::path::{Path};
+use std::path::Path;
 
 use anyhow::{anyhow, Result};
 use ra_ap_hir_expand::name::AsName;
@@ -12,7 +12,7 @@ use ra_ap_syntax::ast::HasName;
 use super::effect::SrcLoc;
 use super::ident::{CanonicalPath, Ident, Path as IdentPath};
 
-use ra_ap_hir::{AsAssocItem, Semantics, Module};
+use ra_ap_hir::{AsAssocItem, Module, Semantics};
 use ra_ap_ide::{AnalysisHost, FileId, LineCol, RootDatabase, TextSize};
 use ra_ap_ide_db::defs::{Definition, IdentClass};
 use ra_ap_paths::AbsPathBuf;
