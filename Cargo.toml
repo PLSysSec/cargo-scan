@@ -33,3 +33,5 @@ syn = { version = "2.0", features = ["full", "extra-traits"] }
 toml = "0.5.9"
 walkdir = "2.3.2"
 itertools = {version = "0.10.5"}
+ra_ap_hir_expand = "0.0.149"
+ra_ap_hir_def = "0.0.149"

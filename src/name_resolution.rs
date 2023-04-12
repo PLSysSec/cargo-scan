@@ -5,19 +5,21 @@ use std::path::{Path, PathBuf};
 
 use crate::ident::CanonicalPath;
 use anyhow::{anyhow, Result};
-use ra_ap_hir::db::{HirDatabase};
+use ra_ap_ide_db::base_db::SourceDatabase;
 use ra_ap_ide_db::FxHashMap;
-use ra_ap_ide_db::base_db::{SourceDatabase};
+use ra_ap_syntax::ast::HasName;
 
 use super::effect::SrcLoc;
 use super::ident::{Ident, Path as IdentPath};
-use ra_ap_hir::{AsAssocItem, Semantics};
-use ra_ap_ide::{
-    AnalysisHost, FileId, LineCol, RootDatabase, TextSize,
-};
+use ra_ap_hir::{AsAssocItem, Module, Semantics};
+use ra_ap_hir_expand::name::AsName;
+use ra_ap_ide::{AnalysisHost, FileId, LineCol, RootDatabase, TextSize};
 use ra_ap_ide_db::defs::{Definition, IdentClass};
 use ra_ap_paths::AbsPathBuf;
-use ra_ap_project_model::{CargoConfig, ProjectManifest, ProjectWorkspace, RustcSource, CargoFeatures, InvocationStrategy, UnsetTestCrates, InvocationLocation};
+use ra_ap_project_model::{
+    CargoConfig, CargoFeatures, InvocationLocation, InvocationStrategy, ProjectManifest,
+    ProjectWorkspace, RustcSource, UnsetTestCrates,
+};
 use ra_ap_rust_analyzer::cli::load_cargo::{load_workspace, LoadCargoConfig};
 
 use ra_ap_syntax::{AstNode, SourceFile, SyntaxToken, TokenAtOffset};
@@ -66,30 +68,30 @@ impl Resolver {
     fn cargo_config() -> CargoConfig {
         // List of features to activate (or deactivate).
         let features = CargoFeatures::default();
-    
+
         // Target triple
         let target = None;
-    
+
         // Whether to load sysroot crates (`std`, `core` & friends).
         let sysroot = Some(RustcSource::Discover);
-    
+
         // rustc private crate source
         let rustc_source = None;
-    
+
         // crates to disable `#[cfg(test)]` on
         let unset_test_crates = UnsetTestCrates::All;
-    
+
         // Setup RUSTC_WRAPPER to point to `rust-analyzer` binary itself.
         let wrap_rustc_in_build_scripts = true;
-    
+
         let run_build_script_command = None;
-    
+
         // Support extra environment variables via CLI:
         let extra_env = FxHashMap::default();
-    
+
         let invocation_strategy = InvocationStrategy::PerWorkspace;
         let invocation_location = InvocationLocation::Workspace;
-    
+
         CargoConfig {
             features,
             target,
@@ -103,7 +105,7 @@ impl Resolver {
             invocation_location,
         }
     }
-    
+
     pub fn new(crate_path: &PathBuf) -> Result<Resolver> {
         let canon_path = canonicalize(crate_path).unwrap();
         let abs_path = AbsPathBuf::assert(canon_path);
@@ -224,23 +226,16 @@ impl Resolver {
                 let defs = ident.definitions();
                 let def = defs[0];
 
+                //TODO: make that recursive - might be many containers encapsulated
                 let container = Self::get_container_name(db, def);
                 let def_name = def.name(db).map(|name| name.to_string());
                 let module = def.module(db).unwrap();
-                
-                //TODO: this is not working properly yet
-                //try to exclude modules that are just block expressions,
-                //that should not produce canonical paths
-                if module.name(db).is_none() && !module.is_mod_rs(db) {
-                    println!("There should be no canonical path for {:?}", def.name(db));
-                }
 
                 let crate_name = db.crate_graph()[module.krate().into()]
                     .display_name
                     .as_ref()
                     .map(|it| it.to_string());
-                let module_path = module
-                    .path_to_root(db)
+                let module_path = Self::build_path_to_root(module, db)
                     .into_iter()
                     .rev()
                     .flat_map(|it| it.name(db).map(|name| name.to_string()));
@@ -258,7 +253,24 @@ impl Resolver {
         }
     }
 
-    fn get_container_name(db: &dyn HirDatabase, def: Definition) -> Option<String> {
+    fn build_path_to_root(module: Module, db: &RootDatabase) -> Vec<Module> {
+        let mut path = vec![module];
+        let mut curr = module;
+        while let Some(next) = curr.parent(db) {
+            path.push(next);
+            curr = next
+        }
+
+        if let Some(module_id) = ra_ap_hir_def::ModuleId::from(curr).containing_module(db)
+        {
+            let mut parent_path = Self::build_path_to_root(Module::from(module_id), db);
+            path.append(&mut parent_path);
+        }
+
+        path
+    }
+
+    fn get_container_name(db: &RootDatabase, def: Definition) -> Option<String> {
         match def {
             Definition::Field(f) => Some(f.parent_def(db).name(db)),
             Definition::Local(l) => l.parent(db).name(db),
@@ -271,11 +283,31 @@ impl Resolver {
                         }
                     }
                 } else {
-                    None
+                    match f.module(db).definition_source(db).value {
+                        // If the function is defined inside a function body,
+                        // get the name of the containing function
+                        ra_ap_hir::ModuleSource::BlockExpr(bl_expr) => {
+                            bl_expr.syntax().parent().and_then(|parent| {
+                                ra_ap_syntax::ast::Fn::cast(parent)
+                                    .and_then(|function| Some(function.name()?.as_name()))
+                            })
+                        }
+                        _ => None,
+                    }
                 }
             }
             Definition::Variant(e) => Some(e.parent_enum(db).name(db)),
-            _ => None,
+            _ => match def.module(db)?.definition_source(db).value {
+                // If the definition exists inside a function body,
+                // get the name of the containing function
+                ra_ap_hir::ModuleSource::BlockExpr(bl_expr) => {
+                    bl_expr.syntax().parent().and_then(|parent| {
+                        ra_ap_syntax::ast::Fn::cast(parent)
+                            .and_then(|function| Some(function.name()?.as_name()))
+                    })
+                }
+                _ => None,
+            },
         }
         .map(|name| name.to_string())
     }
