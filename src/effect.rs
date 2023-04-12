@@ -1,12 +1,10 @@
-/*
-    This module defines the core data model for Effects.
-
-    The main types are:
-    - Effect, which represents an abstract effect
-    - EffectInstance, which represents an instance of an effect in source code
-    - EffectBlock, which represents a block of source code which may contain
-      zero or more effects (such as an unsafe block).
-*/
+//! This module defines the core data model for Effects.
+//!
+//! The main types are:
+//! - Effect, which represents an abstract effect
+//! - EffectInstance, which represents an instance of an effect in source code
+//! - EffectBlock, which represents a block of source code which may contain
+//!     zero or more effects (such as an unsafe block).
 
 use super::ident::{CanonicalPath, Path};
 use super::sink::Sink;
@@ -432,10 +430,10 @@ impl TraitImpl {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct TraitDec {
     src_loc: SrcLoc,
-    tr_name: Path,
+    tr_name: CanonicalPath,
 }
 impl TraitDec {
-    pub fn new<S>(trait_span: &S, filepath: &FilePath, tr_name: Path) -> Self
+    pub fn new<S>(trait_span: &S, filepath: &FilePath, tr_name: CanonicalPath) -> Self
     where
         S: Spanned,
     {

@@ -1,14 +1,13 @@
-/*
-    Rust identifiers, paths, and patterns
-
-    Ident: std, fs, File
-    Path: std, std::fs, fs::File, super::fs::File, std::fs::File
-    CanonicalPath: crate::fs::File
-    Pattern: std::fs, std::fs::*
-*/
+//! Rust identifiers, paths, and patterns.
+//!
+//! Ident: std, fs, File
+//! Path: std, std::fs, fs::File, super::fs::File, std::fs::File
+//! CanonicalPath: crate::fs::File
+//! Pattern: std::fs, std::fs::*
 
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display};
+use syn;
 
 use super::util::iter::FreshIter;
 
@@ -67,6 +66,10 @@ impl Ident {
         replace_hyphens(&mut result.0);
         result.check_invariant();
         result
+    }
+
+    pub fn from_syn(i: &syn::Ident) -> Self {
+        Self::new_owned(i.to_string())
     }
 
     pub fn as_str(&self) -> &str {
