@@ -175,7 +175,7 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         result.append_path(&self.get_mod_scope());
 
         // Push definition ident
-        result.push_ident(&Self::syn_to_ident(i));
+        result.push_ident(&Ident::from_syn(i));
 
         result
     }
@@ -349,18 +349,14 @@ impl<'a> HackyResolver<'a> {
         result
     }
 
-    fn syn_to_ident(i: &syn::Ident) -> Ident {
-        Ident::new_owned(i.to_string())
-    }
-
     fn get_mod_scope(&self) -> Path {
-        Path::from_idents(self.scope_mods.iter().map(|&i| Self::syn_to_ident(i)))
+        Path::from_idents(self.scope_mods.iter().cloned().map(Ident::from_syn))
     }
 
     fn aggregate_path(p: &[&'a syn::Ident]) -> Path {
         let mut result = Path::new_empty();
         for &i in p {
-            result.push_ident(&Self::syn_to_ident(i));
+            result.push_ident(&Ident::from_syn(i));
         }
         result
     }
