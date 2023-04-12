@@ -55,15 +55,18 @@ impl RAResolver {
         Ok(Self { inner, filepath })
     }
     pub fn set_file(&mut self, new_file: &FilePath) {
-        eprintln!("setting file: {:?}", new_file);
+        // eprintln!("setting file: {:?}", new_file);
         self.filepath = new_file.to_owned();
     }
     fn resolve_core(&self, i: &syn::Ident) -> CanonicalPath {
         let mut s = SrcLoc::from_span(&self.filepath, i);
+        // TODO Lydia remove
         s.add1();
         let i = Ident::from_syn(i);
         self.inner.resolve_ident(s.clone(), i.clone()).unwrap_or_else(|err| {
-            panic!("Resolution failed: {:?} {} ({:?})", s, i, err);
+            eprintln!("Resolution failed: {:?} {} ({:?})", s, i, err);
+            eprintln!("Returning a default value");
+            CanonicalPath::from_path(Path::from_ident(i))
         })
     }
 }
@@ -82,6 +85,7 @@ impl<'a> Resolve<'a> for RAResolver {
         self.resolve_core(i).to_path()
     }
     fn resolve_def(&self, i: &'a syn::Ident) -> CanonicalPath {
+        // eprintln!("resolving def: {:?} ({:?})", i, SrcLoc::from_span(&self.filepath, i));
         self.resolve_core(i)
     }
     fn resolve_ffi(&self, _p: &syn::Path) -> Option<CanonicalPath> {
