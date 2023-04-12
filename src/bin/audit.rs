@@ -1,5 +1,5 @@
 use cargo_scan::effect::{Effect, EffectBlock, SrcLoc};
-use cargo_scan::ident::Path;
+use cargo_scan::ident::{CanonicalPath, Path};
 use cargo_scan::policy::*;
 use cargo_scan::scanner;
 use cargo_scan::scanner::ScanResults;
@@ -437,6 +437,7 @@ fn audit_leaf<'a>(
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
+    pub_caller_checked: &mut HashSet<Path>,
     config: &Config,
 ) -> Result<AuditStatus> {
     let curr_effect = match effect_tree {
@@ -470,6 +471,14 @@ fn audit_leaf<'a>(
     };
 
     if status == SafetyAnnotation::CallerChecked {
+        // If the caller is public, add to set of public caller-checked
+        if scan_res
+            .pub_fns
+            .contains(&CanonicalPath::from_path(curr_effect.caller_path.clone()))
+        {
+            pub_caller_checked.insert(curr_effect.caller_path.clone());
+        }
+
         // Add all call locations as parents of this effect
         let new_check_locs = scan_res
             .get_callers(&curr_effect.caller_path)
@@ -492,6 +501,7 @@ fn audit_leaf<'a>(
                 effect_tree,
                 effect_history,
                 scan_res,
+                pub_caller_checked,
                 config,
             )
         }
@@ -508,6 +518,7 @@ fn audit_branch<'a>(
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
+    pub_caller_checked: &mut HashSet<Path>,
     config: &Config,
 ) -> Result<AuditStatus> {
     if let EffectTree::Branch(curr_effect, effects) = effect_tree {
@@ -517,15 +528,27 @@ fn audit_branch<'a>(
             // TODO: Early exit
             match e {
                 next_e @ EffectTree::Branch(..) => {
-                    if audit_branch(orig_effect, next_e, &next_history, scan_res, config)?
-                        == AuditStatus::EarlyExit
+                    if audit_branch(
+                        orig_effect,
+                        next_e,
+                        &next_history,
+                        scan_res,
+                        pub_caller_checked,
+                        config,
+                    )? == AuditStatus::EarlyExit
                     {
                         return Ok(AuditStatus::EarlyExit);
                     }
                 }
                 next_e @ EffectTree::Leaf(..) => {
-                    if audit_leaf(orig_effect, next_e, &next_history, scan_res, config)?
-                        == AuditStatus::EarlyExit
+                    if audit_leaf(
+                        orig_effect,
+                        next_e,
+                        &next_history,
+                        scan_res,
+                        pub_caller_checked,
+                        config,
+                    )? == AuditStatus::EarlyExit
                     {
                         return Ok(AuditStatus::EarlyExit);
                     }
@@ -542,15 +565,21 @@ fn audit_effect_tree(
     orig_effect: &EffectBlock,
     effect_tree: &mut EffectTree,
     scan_res: &ScanResults,
+    pub_caller_checked: &mut HashSet<Path>,
     config: &Config,
 ) -> Result<AuditStatus> {
     match effect_tree {
         e @ EffectTree::Leaf(..) => {
-            audit_leaf(orig_effect, e, &Vec::new(), scan_res, config)
+            audit_leaf(orig_effect, e, &Vec::new(), scan_res, pub_caller_checked, config)
         }
-        e @ EffectTree::Branch(..) => {
-            audit_branch(orig_effect, e, &Vec::new(), scan_res, config)
-        }
+        e @ EffectTree::Branch(..) => audit_branch(
+            orig_effect,
+            e,
+            &Vec::new(),
+            scan_res,
+            pub_caller_checked,
+            config,
+        ),
     }
 }
 
@@ -597,16 +626,26 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     for (e, t) in policy_file.audit_trees.iter_mut() {
         match t.get_leaf_annotation() {
             Some(SafetyAnnotation::Skipped) => {
-                if audit_effect_tree(e, t, &scan_res, &args.config)?
-                    == AuditStatus::EarlyExit
+                if audit_effect_tree(
+                    e,
+                    t,
+                    &scan_res,
+                    &mut policy_file.pub_caller_checked,
+                    &args.config,
+                )? == AuditStatus::EarlyExit
                 {
                     break;
                 }
             }
             Some(_) => (),
             None => {
-                if audit_effect_tree(e, t, &scan_res, &args.config)?
-                    == AuditStatus::EarlyExit
+                if audit_effect_tree(
+                    e,
+                    t,
+                    &scan_res,
+                    &mut policy_file.pub_caller_checked,
+                    &args.config,
+                )? == AuditStatus::EarlyExit
                 {
                     break;
                 }
