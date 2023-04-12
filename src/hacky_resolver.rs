@@ -180,21 +180,16 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         result
     }
 
-    fn resolve_current_caller(&self) -> CanonicalPath {
-        let last_fn = self.get_fun_scope().expect("not inside a function!");
-        self.resolve_def(last_fn)
-    }
+    fn resolve_ffi(&self, ffi: &syn::Path) -> Option<CanonicalPath> {
+        // TBD lookup
+        let span = &ffi.segments.last().unwrap().ident;
 
-    fn resolve_ffi(&self, ffi: &syn::Ident) -> Option<CanonicalPath> {
-        self.ffi_decls.get(ffi).cloned()
+        self.ffi_decls.get(span).cloned()
     }
 }
 
 impl<'a> HackyResolver<'a> {
-    /*
-        Reusable warning logger
-    */
-
+    /// Reusable warning logger
     fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
         let line = syn_node.span().start().line;
         let col = syn_node.span().start().column;
@@ -360,10 +355,6 @@ impl<'a> HackyResolver<'a> {
 
     fn get_mod_scope(&self) -> Path {
         Path::from_idents(self.scope_mods.iter().map(|&i| Self::syn_to_ident(i)))
-    }
-
-    fn get_fun_scope(&self) -> Option<&'a syn::Ident> {
-        self.scope_fun.last().cloned()
     }
 
     fn aggregate_path(p: &[&'a syn::Ident]) -> Path {

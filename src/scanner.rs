@@ -168,22 +168,25 @@ impl ScanData {
 /// Stateful object to scan Rust source code for effects (fn calls of interest)
 #[derive(Debug)]
 pub struct Scanner<'a, R: Resolve<'a> + 'a> {
-    // filepath that the scanner is being run on
+    /// filepath that the scanner is being run on
     filepath: &'a FilePath,
 
-    // Name resolution resolver
+    /// Name resolution resolver
     resolver: &'a mut R,
 
-    // Stack-based scope to save effects under
-    // (always empty at top level)
+    /// Stack-based scope to save effects under
+    /// (always empty at top level)
     scope_effect_blocks: Vec<EffectBlock>,
 
-    // Number of unsafe keywords the current scope is nested inside
-    // (always 0 at top level)
-    // (includes only unsafe blocks and fn decls -- not traits and trait impls)
+    /// Number of unsafe keywords the current scope is nested inside
+    /// (always 0 at top level)
+    /// (includes only unsafe blocks and fn decls -- not traits and trait impls)
     scope_unsafe: usize,
 
-    // Target to accumulate scan results
+    /// Functions inside
+    scope_fns: Vec<CanonicalPath>,
+
+    /// Target to accumulate scan results
     data: &'a mut ScanData,
 }
 
@@ -202,6 +205,7 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
             resolver,
             scope_effect_blocks: Vec::new(),
             scope_unsafe: 0,
+            scope_fns: Vec::new(),
             data,
         }
     }
@@ -377,10 +381,11 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
         vis: &'a syn::Visibility,
     ) {
         let f_ident = &f_sig.ident;
+        let f_name = self.resolver.resolve_def(f_ident);
 
+        self.scope_fns.push(f_name.clone());
         self.resolver.push_fn(f_ident);
 
-        let f_name = self.resolver.resolve_current_caller();
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
 
         let fn_dec = FnDec::new(self.filepath, f_sig, f_name.clone(), vis);
@@ -404,6 +409,7 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
             self.scan_fn_statement(s);
         }
 
+        self.scope_fns.pop();
         self.resolver.pop_fn();
 
         self.data.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
@@ -661,7 +667,7 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
     ) where
         S: Debug + Spanned,
     {
-        let caller = self.resolver.resolve_current_caller();
+        let caller = self.scope_fns.last().expect("not inside a function!");
 
         // TBD: unwraps were causing `make test` to crash
         if let Some(caller_node_idx) = self.data.node_idxs.get(caller.as_path()) {
@@ -676,7 +682,7 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
 
         let eff = EffectInstance::new_call(
             self.filepath,
-            caller,
+            caller.clone(),
             callee,
             &callee_span,
             self.scope_unsafe > 0,
@@ -696,10 +702,9 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
         match f {
             syn::Expr::Path(p) => {
-                let span = &p.path.segments.last().unwrap().ident;
                 let callee = self.resolver.resolve_path(&p.path);
-                let ffi = self.resolver.resolve_ffi(span);
-                self.push_callsite(span, callee, ffi);
+                let ffi = self.resolver.resolve_ffi(&p.path);
+                self.push_callsite(p, callee, ffi);
             }
             syn::Expr::Paren(x) => {
                 // e.g. (my_struct.f)(x)
