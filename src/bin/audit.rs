@@ -340,62 +340,97 @@ fn handle_invalid_policy(
     policy: &mut PolicyFile,
     policy_path: &mut PathBuf,
     scan_effect_blocks: &HashSet<&EffectBlock>,
+    overwrite_policy: bool,
 ) -> Result<ContinueStatus> {
     // TODO: Colorize
     println!("Crate has changed from last policy audit");
 
-    let ans = Text::new(
-        r#"Would you like to:
-  (c)ontinue with a new policy file, e(x)it tool w/o changes
-"#,
-    )
-    .with_validator(|x: &str| match x {
-        "c" | "x" => Ok(Validation::Valid),
-        _ => Ok(Validation::Invalid("Invalid input".into())),
-    })
-    .prompt()
-    .unwrap();
+    if overwrite_policy {
+        println!("Generating new policy file");
 
-    match ans.as_str() {
-        "c" => {
-            // TODO: Prompt user for new policy path
-            println!("Generating new policy file");
+        policy.audit_trees = scan_effect_blocks
+            .clone()
+            .into_iter()
+            .map(|x: &EffectBlock| {
+                // TODO: for now we assume that all EffectBlocks include an EffectInstance,
+                //       this isn't true, but we have to get caller location into
+                //       EffectBocks before we can do this correctly
+                let effect_instance = x.effects().first().unwrap();
+                (
+                    x.clone(),
+                    EffectTree::Leaf(
+                        EffectInfo::from_instance(effect_instance),
+                        SafetyAnnotation::Skipped,
+                    ),
+                )
+            })
+            .collect::<HashMap<_, _>>();
+        policy.hash = hash_dir(policy.base_dir.clone())?;
 
-            policy.audit_trees = scan_effect_blocks
-                .clone()
-                .into_iter()
-                .map(|x: &EffectBlock| {
-                    // TODO: for now we assume that all EffectBlocks include an EffectInstance,
-                    //       this isn't true, but we have to get caller location into
-                    //       EffectBocks before we can do this correctly
-                    let effect_instance = x.effects().first().unwrap();
-                    (
-                        x.clone(),
-                        EffectTree::Leaf(
-                            EffectInfo::from_instance(effect_instance),
-                            SafetyAnnotation::Skipped,
-                        ),
-                    )
-                })
-                .collect::<HashMap<_, _>>();
-            policy.hash = hash_dir(policy.base_dir.clone())?;
+        let mut policy_string = policy_path
+            .as_path()
+            .to_str()
+            .ok_or_else(|| anyhow!("Couldn't convert OS Path to str"))?
+            .to_string();
+        policy_string.push_str(".new");
+        println!("New policy file name: {}", &policy_string);
+        *policy_path = PathBuf::from(policy_string);
 
-            let mut policy_string = policy_path
-                .as_path()
-                .to_str()
-                .ok_or_else(|| anyhow!("Couldn't convert OS Path to str"))?
-                .to_string();
-            policy_string.push_str(".new");
-            println!("New policy file name: {}", &policy_string);
-            *policy_path = PathBuf::from(policy_string);
+        Ok(ContinueStatus::Continue)
+    } else {
+        let ans = Text::new(
+            r#"Would you like to:
+    (c)ontinue with a new policy file, e(x)it tool w/o changes
+    "#,
+        )
+        .with_validator(|x: &str| match x {
+            "c" | "x" => Ok(Validation::Valid),
+            _ => Ok(Validation::Invalid("Invalid input".into())),
+        })
+        .prompt()
+        .unwrap();
 
-            Ok(ContinueStatus::Continue)
+        match ans.as_str() {
+            "c" => {
+                // TODO: Prompt user for new policy path
+                println!("Generating new policy file");
+
+                policy.audit_trees = scan_effect_blocks
+                    .clone()
+                    .into_iter()
+                    .map(|x: &EffectBlock| {
+                        // TODO: for now we assume that all EffectBlocks include an EffectInstance,
+                        //       this isn't true, but we have to get caller location into
+                        //       EffectBocks before we can do this correctly
+                        let effect_instance = x.effects().first().unwrap();
+                        (
+                            x.clone(),
+                            EffectTree::Leaf(
+                                EffectInfo::from_instance(effect_instance),
+                                SafetyAnnotation::Skipped,
+                            ),
+                        )
+                    })
+                    .collect::<HashMap<_, _>>();
+                policy.hash = hash_dir(policy.base_dir.clone())?;
+
+                let mut policy_string = policy_path
+                    .as_path()
+                    .to_str()
+                    .ok_or_else(|| anyhow!("Couldn't convert OS Path to str"))?
+                    .to_string();
+                policy_string.push_str(".new");
+                println!("New policy file name: {}", &policy_string);
+                *policy_path = PathBuf::from(policy_string);
+
+                Ok(ContinueStatus::Continue)
+            }
+            "x" => {
+                println!("Exiting policy tool");
+                Ok(ContinueStatus::ExitNow)
+            }
+            _ => Err(anyhow!("Invalid policy handle selection")),
         }
-        "x" => {
-            println!("Exiting policy tool");
-            Ok(ContinueStatus::ExitNow)
-        }
-        _ => Err(anyhow!("Invalid policy handle selection")),
     }
 }
 
@@ -602,6 +637,7 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
                     &mut pf,
                     &mut policy_path,
                     &scan_effect_blocks,
+                    args.overwrite_policy,
                 ) {
                     Ok(ContinueStatus::Continue) => (),
                     Ok(ContinueStatus::ExitNow) => return Ok(()),
