@@ -9,6 +9,7 @@ use std::fmt;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::PathBuf;
+use std::path::Path as FilePath;
 
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
@@ -217,9 +218,9 @@ impl PolicyFile {
         }
     }
 
-    pub fn new_caller_checked_default(crate_path: PathBuf) -> Result<PolicyFile> {
-        let mut policy = PolicyFile::empty(crate_path.clone())?;
-        let scan_res = scanner::scan_crate(crate_path.as_path())?;
+    pub fn new_caller_checked_default(crate_path: &FilePath) -> Result<PolicyFile> {
+        let mut policy = PolicyFile::empty(crate_path.to_path_buf())?;
+        let scan_res = scanner::scan_crate(crate_path)?;
         let mut pub_caller_checked = HashSet::new();
         policy.set_base_audit_trees(scan_res.unsafe_effect_blocks_set());
 
