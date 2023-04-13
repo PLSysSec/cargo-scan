@@ -5,7 +5,7 @@
 
 use super::ident::{CanonicalPath, Path};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use std::path::Path as FilePath;
 use syn;
 
@@ -63,10 +63,7 @@ impl<'a> FileResolver<'a> {
         // TODO Lydia remove
         s.add1();
         let i = Ident::from_syn(i);
-        let result = self
-            .resolver
-            .resolve_ident(s.clone(), i.clone())
-            .with_context(|| format!("{:?} {}", s, i))?;
+        let result = self.resolver.resolve_ident(s, i)?;
         Ok(result)
     }
 
@@ -78,8 +75,8 @@ impl<'a> FileResolver<'a> {
         match self.resolve_core(i) {
             Ok(res) => f(res),
             Err(err) => {
-                eprintln!("Resolution failed for: {}; ", err);
-                eprintln!("Falling back to backup resolver");
+                let s = SrcLoc::from_span(self.filepath, i);
+                eprintln!("Resolution failed (using fallback) for: {} ({:?}) ({})", i, s, err);
                 g()
             }
         }
