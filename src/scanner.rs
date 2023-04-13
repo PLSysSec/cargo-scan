@@ -1,12 +1,11 @@
 //! Scanner to parse a Rust source file or crate and find all function call locations.
 
-use crate::effect::BlockType;
-
 use super::effect::{
-    EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
+    BlockType, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
+    Visibility,
 };
 use super::ident::{CanonicalPath, Path};
-use super::resolve::{RAResolver, Resolve};
+use super::resolve::{FileResolver, Resolve, Resolver};
 
 use anyhow::{anyhow, Result};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -166,12 +165,12 @@ impl ScanData {
 
 /// Stateful object to scan Rust source code for effects (fn calls of interest)
 #[derive(Debug)]
-pub struct Scanner<'a, R: Resolve<'a> + 'a> {
+pub struct Scanner<'a> {
     /// filepath that the scanner is being run on
     filepath: &'a FilePath,
 
     /// Name resolution resolver
-    resolver: &'a mut R,
+    resolver: FileResolver<'a>,
 
     /// Stack-based scope to save effects under
     /// (always empty at top level)
@@ -189,14 +188,14 @@ pub struct Scanner<'a, R: Resolve<'a> + 'a> {
     data: &'a mut ScanData,
 }
 
-impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
+impl<'a> Scanner<'a> {
     /*
         Main public API
     */
     /// Create a new scanner tied to a crate and file
     pub fn new(
         filepath: &'a FilePath,
-        resolver: &'a mut R,
+        resolver: FileResolver<'a>,
         data: &'a mut ScanData,
     ) -> Self {
         Self {
@@ -744,7 +743,7 @@ impl<'a, R: Resolve<'a> + 'a> Scanner<'a, R> {
 /// Load the Rust file at the filepath and scan it
 pub fn load_and_scan(
     filepath: &FilePath,
-    resolver: &mut RAResolver,
+    resolver: &Resolver,
     scan_data: &mut ScanData,
 ) -> Result<()> {
     // based on example at https://docs.rs/syn/latest/syn/struct.File.html
@@ -755,13 +754,9 @@ pub fn load_and_scan(
 
     let syntax_tree = syn::parse_file(&src)?;
 
-    // Uncomment for old hacky resolver
-    // let mut hacky_resolver =
-    //     HackyResolver::new(filepath).context("failed to create resolver")?;
-    // let mut scanner = Scanner::new(filepath, &mut hacky_resolver, scan_data);
+    let file_resolver = FileResolver::new(resolver, filepath)?;
 
-    resolver.set_file(filepath);
-    let mut scanner = Scanner::new(filepath, resolver, scan_data);
+    let mut scanner = Scanner::new(filepath, file_resolver, scan_data);
 
     scanner.scan_file(&syntax_tree);
 
@@ -781,7 +776,7 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
         return Err(anyhow!("Path is not a crate; missing Cargo.toml: {:?}", crate_path));
     }
 
-    let mut resolver = RAResolver::new(crate_path)?;
+    let resolver = Resolver::new(crate_path)?;
 
     let mut scan_data = ScanData::new();
 
@@ -799,7 +794,7 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
             _ => false,
         })
     {
-        load_and_scan(FilePath::new(entry?.path()), &mut resolver, &mut scan_data)?;
+        load_and_scan(FilePath::new(entry?.path()), &resolver, &mut scan_data)?;
     }
 
     Ok(scan_data.into())
