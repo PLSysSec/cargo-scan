@@ -12,7 +12,7 @@ use ra_ap_syntax::ast::HasName;
 use super::effect::SrcLoc;
 use super::ident::{CanonicalPath, Ident, Path as IdentPath};
 
-use ra_ap_hir::{AsAssocItem, Module, Semantics};
+use ra_ap_hir::{Adt, AsAssocItem, Module, Semantics};
 use ra_ap_ide::{AnalysisHost, FileId, LineCol, RootDatabase, TextSize};
 use ra_ap_ide_db::defs::{Definition, IdentClass};
 use ra_ap_paths::AbsPathBuf;
@@ -232,7 +232,7 @@ impl Resolver {
                 let def = defs[0];
 
                 //TODO: make that recursive - might be many containers encapsulated
-                let container = Self::get_container_name(db, def);
+                let container = Self::get_container_name(sems, db, def);
                 let def_name = def.name(db).map(|name| name.to_string());
                 let module = def.module(db).unwrap();
 
@@ -275,16 +275,70 @@ impl Resolver {
         path
     }
 
-    fn get_container_name(db: &RootDatabase, def: Definition) -> Option<String> {
+    fn get_container_name(
+        sems: &Semantics<RootDatabase>,
+        db: &RootDatabase,
+        def: Definition,
+    ) -> Vec<String> {
+        let mut container_names = vec![];
+
         match def {
-            Definition::Field(f) => Some(f.parent_def(db).name(db)),
-            Definition::Local(l) => l.parent(db).name(db),
+            Definition::Field(f) => {
+                let parent = f.parent_def(db);
+                container_names.append(&mut match parent {
+                    ra_ap_hir::VariantDef::Variant(v) => {
+                        Self::get_container_name(sems, db, Definition::from(v))
+                    }
+                    ra_ap_hir::VariantDef::Struct(s) => {
+                        Self::get_container_name(sems, db, Definition::from(Adt::from(s)))
+                    }
+                    ra_ap_hir::VariantDef::Union(u) => {
+                        Self::get_container_name(sems, db, Definition::from(Adt::from(u)))
+                    }
+                });
+                container_names.push(parent.name(db).to_string())
+            }
+            Definition::Local(l) => {
+                let parent = l.parent(db);
+                let parent_def = match parent {
+                    ra_ap_hir::DefWithBody::Function(f) => Definition::from(f),
+                    ra_ap_hir::DefWithBody::Static(s) => Definition::from(s),
+                    ra_ap_hir::DefWithBody::Const(c) => Definition::from(c),
+                    ra_ap_hir::DefWithBody::Variant(v) => Definition::from(v),
+                };
+                container_names
+                    .append(&mut Self::get_container_name(sems, db, parent_def));
+                container_names.push(
+                    parent
+                        .name(db)
+                        .map(|name| name.to_string())
+                        .unwrap_or_else(|| String::from("")),
+                )
+            }
             Definition::Function(f) => {
                 if let Some(item) = f.as_assoc_item(db) {
                     match item.container(db) {
-                        ra_ap_hir::AssocItemContainer::Trait(t) => Some(t.name(db)),
+                        ra_ap_hir::AssocItemContainer::Trait(t) => {
+                            container_names.append(&mut Self::get_container_name(
+                                sems,
+                                db,
+                                t.into(),
+                            ));
+                            container_names.push(t.name(db).to_string())
+                        }
                         ra_ap_hir::AssocItemContainer::Impl(i) => {
-                            i.self_ty(db).as_adt().map(|adt| adt.name(db))
+                            container_names.append(&mut Self::get_container_name(
+                                sems,
+                                db,
+                                i.into(),
+                            ));
+                            container_names.push(
+                                i.self_ty(db)
+                                    .as_adt()
+                                    .map(|adt| adt.name(db))
+                                    .map(|name| name.to_string())
+                                    .unwrap_or_else(|| String::from("")),
+                            )
                         }
                     }
                 } else {
@@ -292,29 +346,61 @@ impl Resolver {
                         // If the function is defined inside a function body,
                         // get the name of the containing function
                         ra_ap_hir::ModuleSource::BlockExpr(bl_expr) => {
-                            bl_expr.syntax().parent().and_then(|parent| {
-                                ra_ap_syntax::ast::Fn::cast(parent)
-                                    .and_then(|function| Some(function.name()?.as_name()))
-                            })
+                            let str = bl_expr
+                                .syntax()
+                                .parent()
+                                .and_then(|parent| {
+                                    ra_ap_syntax::ast::Fn::cast(parent).and_then(
+                                        |function| {
+                                            let parent_def = Definition::from(
+                                                sems.to_def(&function).unwrap(),
+                                            );
+                                            container_names.append(
+                                                &mut Self::get_container_name(
+                                                    sems, db, parent_def,
+                                                ),
+                                            );
+                                            Some(function.name()?.as_name())
+                                        },
+                                    )
+                                })
+                                .map(|name| name.to_string())
+                                .unwrap_or_else(|| String::from(""));
+                            container_names.push(str)
                         }
-                        _ => None,
+                        _ => container_names.push(String::from("")),
                     }
                 }
             }
-            Definition::Variant(e) => Some(e.parent_enum(db).name(db)),
-            _ => match def.module(db)?.definition_source(db).value {
+            Definition::Variant(e) => {
+                container_names.push(e.parent_enum(db).name(db).to_string())
+            }
+
+            _ => match def.module(db).unwrap().definition_source(db).value {
                 // If the definition exists inside a function body,
                 // get the name of the containing function
                 ra_ap_hir::ModuleSource::BlockExpr(bl_expr) => {
-                    bl_expr.syntax().parent().and_then(|parent| {
-                        ra_ap_syntax::ast::Fn::cast(parent)
-                            .and_then(|function| Some(function.name()?.as_name()))
-                    })
+                    let str = bl_expr
+                        .syntax()
+                        .parent()
+                        .and_then(|parent| {
+                            ra_ap_syntax::ast::Fn::cast(parent).and_then(|function| {
+                                let parent_def =
+                                    Definition::from(sems.to_def(&function).unwrap());
+                                container_names.append(&mut Self::get_container_name(
+                                    sems, db, parent_def,
+                                ));
+                                Some(function.name()?.as_name())
+                            })
+                        })
+                        .map(|name| name.to_string())
+                        .unwrap_or_else(|| String::from(""));
+                    container_names.push(str)
                 }
-                _ => None,
+                _ => container_names.push(String::from("")),
             },
         }
-        .map(|name| name.to_string())
+        container_names
     }
 
     pub fn resolve_ident(&self, s: SrcLoc, i: Ident) -> Result<CanonicalPath> {
