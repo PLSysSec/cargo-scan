@@ -5,8 +5,8 @@ syn: 25
 rand: 18
 proc-macro2: 12
 autocfg: 11
+serde: 4
 rand_core: 2
-serde: 2
 ===== Crate Totals =====
 7 crates with 1 or more dangerous imports
 3 crates with 0 dangerous imports

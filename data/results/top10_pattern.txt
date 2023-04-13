@@ -3,7 +3,7 @@ Total instances of each import pattern:
 [Unsafe]: 126
 [FFI]: 18
 std::env: 8
-std::path: 2
+std::path: 4
 std::process: 2
 libc: 1
 std::fs: 0
