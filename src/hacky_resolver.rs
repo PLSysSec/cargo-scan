@@ -141,13 +141,11 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         self.ffi_decls.insert(fn_name, fn_path);
     }
 
-    fn resolve_ident(&self, i: &'a syn::Ident) -> Path {
-        // TODO make CanonicalPath
+    fn resolve_ident(&self, i: &'a syn::Ident) -> CanonicalPath {
         Self::aggregate_path(self.lookup_ident_vec(&i))
     }
 
-    fn resolve_path(&self, p: &'a syn::Path) -> Path {
-        // TODO make CanonicalPath
+    fn resolve_path(&self, p: &'a syn::Path) -> CanonicalPath {
         Self::aggregate_path(&self.lookup_path_vec(p))
     }
 
@@ -353,11 +351,11 @@ impl<'a> HackyResolver<'a> {
         Path::from_idents(self.scope_mods.iter().cloned().map(Ident::from_syn))
     }
 
-    fn aggregate_path(p: &[&'a syn::Ident]) -> Path {
+    fn aggregate_path(p: &[&'a syn::Ident]) -> CanonicalPath {
         let mut result = Path::new_empty();
         for &i in p {
             result.push_ident(&Ident::from_syn(i));
         }
-        result
+        CanonicalPath::from_path(result)
     }
 }

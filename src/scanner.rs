@@ -700,7 +700,7 @@ impl<'a> Scanner<'a> {
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
         match f {
             syn::Expr::Path(p) => {
-                let callee = self.resolver.resolve_path(&p.path);
+                let callee = self.resolver.resolve_path(&p.path).to_path();
                 let ffi = self.resolver.resolve_ffi(&p.path);
                 self.push_callsite(p, callee, ffi);
             }

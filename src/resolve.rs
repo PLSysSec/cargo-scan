@@ -3,7 +3,11 @@
 //! The type FileResolver is a wrapper around Resolver from name_resolution.rs
 //! with the needed functionality.
 
-use super::ident::{CanonicalPath, Path};
+pub use super::name_resolution::Resolver;
+
+use super::effect::SrcLoc;
+use super::hacky_resolver::HackyResolver;
+use super::ident::{CanonicalPath, Ident};
 
 use anyhow::Result;
 use std::path::Path as FilePath;
@@ -21,8 +25,8 @@ pub trait Resolve<'a>: Sized {
     /*
         Resolution functions
     */
-    fn resolve_ident(&self, i: &'a syn::Ident) -> Path;
-    fn resolve_path(&self, p: &'a syn::Path) -> Path;
+    fn resolve_ident(&self, i: &'a syn::Ident) -> CanonicalPath;
+    fn resolve_path(&self, p: &'a syn::Path) -> CanonicalPath;
     fn resolve_def(&self, i: &'a syn::Ident) -> CanonicalPath;
     fn resolve_ffi(&self, p: &syn::Path) -> Option<CanonicalPath>;
 
@@ -38,12 +42,6 @@ pub trait Resolve<'a>: Sized {
     fn scan_use(&mut self, use_stmt: &'a syn::ItemUse);
     fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn);
 }
-
-use super::effect::SrcLoc;
-use super::hacky_resolver::HackyResolver;
-use super::ident::Ident;
-
-pub use super::name_resolution::Resolver;
 
 #[derive(Debug)]
 pub struct FileResolver<'a> {
@@ -67,17 +65,19 @@ impl<'a> FileResolver<'a> {
         Ok(result)
     }
 
-    fn resolve_or_else<F, G, U>(&self, i: &syn::Ident, f: F, g: G) -> U
+    fn resolve_or_else<F>(&self, i: &syn::Ident, fallback: F) -> CanonicalPath
     where
-        F: FnOnce(CanonicalPath) -> U,
-        G: FnOnce() -> U,
+        F: FnOnce() -> CanonicalPath,
     {
         match self.resolve_core(i) {
-            Ok(res) => f(res),
+            Ok(res) => res,
             Err(err) => {
                 let s = SrcLoc::from_span(self.filepath, i);
-                eprintln!("Resolution failed (using fallback) for: {} ({:?}) ({})", i, s, err);
-                g()
+                eprintln!(
+                    "Resolution failed (using fallback) for: {} ({:?}) ({})",
+                    i, s, err
+                );
+                fallback()
             }
         }
     }
@@ -88,18 +88,18 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
         self.backup.assert_top_level_invariant();
     }
 
-    fn resolve_ident(&self, i: &'a syn::Ident) -> Path {
-        self.resolve_or_else(i, CanonicalPath::to_path, || self.backup.resolve_ident(i))
+    fn resolve_ident(&self, i: &'a syn::Ident) -> CanonicalPath {
+        self.resolve_or_else(i, || self.backup.resolve_ident(i))
     }
 
-    fn resolve_path(&self, p: &'a syn::Path) -> Path {
+    fn resolve_path(&self, p: &'a syn::Path) -> CanonicalPath {
         let i = &p.segments.last().unwrap().ident;
-        self.resolve_or_else(i, CanonicalPath::to_path, || self.backup.resolve_path(p))
+        self.resolve_or_else(i, || self.backup.resolve_path(p))
     }
 
     fn resolve_def(&self, i: &'a syn::Ident) -> CanonicalPath {
         // eprintln!("resolving def: {:?} ({:?})", i, SrcLoc::from_span(&self.filepath, i));
-        self.resolve_or_else(i, |p| p, || self.backup.resolve_def(i))
+        self.resolve_or_else(i, || self.backup.resolve_def(i))
     }
 
     fn resolve_ffi(&self, p: &syn::Path) -> Option<CanonicalPath> {

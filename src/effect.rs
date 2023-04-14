@@ -416,10 +416,10 @@ impl EffectBlock {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct TraitImpl {
     src_loc: SrcLoc,
-    tr_name: Path,
+    tr_name: CanonicalPath,
 }
 impl TraitImpl {
-    pub fn new<S>(impl_span: &S, filepath: &FilePath, tr_name: Path) -> Self
+    pub fn new<S>(impl_span: &S, filepath: &FilePath, tr_name: CanonicalPath) -> Self
     where
         S: Spanned,
     {
