@@ -271,6 +271,10 @@ impl CanonicalPath {
         self.check_invariant();
     }
 
+    pub fn replace_empty_idents(&mut self) {
+        self.0 .0 = self.0 .0.replace("::::", "::");
+    }
+
     pub fn crate_name(&self) -> Ident {
         self.0.idents().next().unwrap()
     }

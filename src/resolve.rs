@@ -61,7 +61,9 @@ impl<'a> FileResolver<'a> {
         // TODO Lydia remove
         s.add1();
         let i = Ident::from_syn(i);
-        let result = self.resolver.resolve_ident(s, i)?;
+        let mut result = self.resolver.resolve_ident(s, i)?;
+        // TODO Lydia remove
+        result.replace_empty_idents();
         Ok(result)
     }
 
