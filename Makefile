@@ -4,7 +4,7 @@
 SCAN_PY = ./scripts/scan.py
 
 install:
-	cargo install cargo-download
+	- cargo install cargo-download
 	cargo build && cargo build --release
 
 install-mirai: install
