@@ -4,3 +4,4 @@ target
 *.~undo-tree~
 *.swp
 *.policy
+.vscode
