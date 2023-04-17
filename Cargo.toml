@@ -12,7 +12,6 @@ readme = "README.md"
 [profile.dev.package."*"]
 opt-level = 3
 debug = false
-split-debuginfo = '...'  # Platform-specific.
 debug-assertions = false
 overflow-checks = false
 incremental = false
