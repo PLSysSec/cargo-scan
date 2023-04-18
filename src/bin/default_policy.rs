@@ -28,7 +28,7 @@ fn runner(args: Args) -> Result<()> {
         return Err(anyhow!("Policy file already exists"));
     }
 
-    // We can correclty create and save the policy file now
+    // We can correctly create and save the policy file now
     let policy = PolicyFile::new_caller_checked_default(&args.crate_path)?;
 
     policy.save_to_file(args.policy_path)?;
