@@ -5,3 +5,5 @@ target
 *.swp
 *.policy
 .vscode
+*.audit_crates
+*.audit_policies
