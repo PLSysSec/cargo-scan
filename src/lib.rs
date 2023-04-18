@@ -5,6 +5,7 @@ pub mod policy;
 pub mod scanner;
 pub mod sink;
 pub mod util;
+pub mod download_crate;
 
 // Name resolution
 pub mod hacky_resolver;
