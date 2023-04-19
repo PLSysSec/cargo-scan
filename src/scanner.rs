@@ -776,6 +776,7 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
         return Err(anyhow!("Path is not a crate; missing Cargo.toml: {:?}", crate_path));
     }
 
+    // eprintln!("DEBUG: Creating Resolver for crate: {:?}", crate_path);
     let resolver = Resolver::new(crate_path)?;
 
     let mut scan_data = ScanData::new();

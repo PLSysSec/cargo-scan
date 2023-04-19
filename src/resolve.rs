@@ -52,11 +52,13 @@ pub struct FileResolver<'a> {
 
 impl<'a> FileResolver<'a> {
     pub fn new(resolver: &'a Resolver, filepath: &'a FilePath) -> Result<Self> {
+        // eprintln!("DEBUG: Creating FileResolver for file: {:?}", filepath);
         let backup = HackyResolver::new(filepath)?;
         Ok(Self { filepath, resolver, backup })
     }
 
     fn resolve_core(&self, i: &syn::Ident) -> Result<CanonicalPath> {
+        // eprintln!("DEBUG: Resolving: {} ({:?}..{:?})", i, i.span().start(), i.span().end());
         let mut s = SrcLoc::from_span(self.filepath, i);
         // TODO Lydia remove
         s.add1();
