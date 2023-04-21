@@ -24,12 +24,19 @@ pub trait Resolve<'a>: Sized {
     fn assert_top_level_invariant(&self);
 
     /*
-        Resolution functions
+        Function resolution functions
     */
     fn resolve_ident(&self, i: &'a syn::Ident) -> CanonicalPath;
+    fn resolve_method(&self, i: &'a syn::Ident) -> CanonicalPath;
     fn resolve_path(&self, p: &'a syn::Path) -> CanonicalPath;
     fn resolve_def(&self, i: &'a syn::Ident) -> CanonicalPath;
-    fn resolve_ffi(&self, p: &syn::Path) -> Option<CanonicalPath>;
+    fn resolve_ffi(&self, p: &'a syn::Path) -> Option<CanonicalPath>;
+
+    /*
+        Type resolution functions
+    */
+    fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath;
+    fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath;
 
     /*
         Optional helper functions to inform the resolver of the scope
@@ -135,5 +142,22 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
 
     fn scan_foreign_fn(&mut self, f: &'a syn::ForeignItemFn) {
         self.backup.scan_foreign_fn(f)
+    }
+
+    fn resolve_method(&self, i: &'a syn::Ident) -> CanonicalPath {
+        self.resolve_or_else(i, || self.backup.resolve_method(i))
+    }
+
+    fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath {
+        self.resolve_or_else(i, || self.backup.resolve_field(i))
+    }
+
+    fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath {
+        let s = SrcLoc::from_span(self.filepath, idx);
+        warn!(
+            "Skipping function call on a field index (using fallback) for {:?} ({})",
+            idx, s
+        );
+        self.backup.resolve_field_index(idx)
     }
 }

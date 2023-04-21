@@ -171,6 +171,18 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
 
         self.ffi_decls.get(span).cloned()
     }
+
+    fn resolve_method(&self, i: &'a syn::Ident) -> CanonicalPath {
+        CanonicalPath::new_owned(format!("[METHOD]::{}", i))
+    }
+
+    fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath {
+        CanonicalPath::new_owned(format!("[FIELD]::{}", i))
+    }
+
+    fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath {
+        CanonicalPath::new_owned(format!("[FIELD]::{}", idx.index))
+    }
 }
 
 impl<'a> HackyResolver<'a> {

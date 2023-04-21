@@ -65,7 +65,6 @@ impl ScanResults {
     pub fn get_callers<'a>(&'a self, callee: &Path) -> HashSet<&'a EffectInstance> {
         let mut callers = HashSet::new();
         for e in &self.effects {
-            // TODO: Update this when we get more intelligent name resolution
             let effect_callee = e.callee();
             if effect_callee == callee {
                 callers.insert(e);
@@ -220,25 +219,6 @@ impl<'a> Scanner<'a> {
         }
         // Ignored: Static, Type, Macro, Verbatim
         // https://docs.rs/syn/latest/syn/enum.ForeignItem.html
-    }
-
-    /*
-        Name resolution methods
-    */
-
-    fn lookup_method(&self, i: &syn::Ident) -> Path {
-        // TBD: incomplete, replace with name resolution
-        Path::new_owned(format!("[METHOD]::{}", i))
-    }
-
-    fn lookup_field(&self, i: &syn::Ident) -> Path {
-        // TBD: incomplete, replace with name resolution
-        Path::new_owned(format!("[FIELD]::{}", i))
-    }
-
-    fn lookup_field_index(&self, idx: &syn::Index) -> Path {
-        // TBD: incomplete, replace with name resolution
-        Path::new_owned(format!("[FIELD]::{}", idx.index))
     }
 
     /*
@@ -597,16 +577,15 @@ impl<'a> Scanner<'a> {
     fn push_callsite<S>(
         &mut self,
         callee_span: S,
-        callee: Path,
+        callee: CanonicalPath,
         ffi: Option<CanonicalPath>,
     ) where
         S: Debug + Spanned,
     {
         let caller = &self.scope_fns.last().expect("not inside a function!").fn_name;
 
-        // TBD: unwraps were causing `make test` to crash
         if let Some(caller_node_idx) = self.data.node_idxs.get(caller.as_path()) {
-            if let Some(callee_node_idx) = self.data.node_idxs.get(&callee) {
+            if let Some(callee_node_idx) = self.data.node_idxs.get(callee.as_path()) {
                 self.data.call_graph.add_edge(
                     *caller_node_idx,
                     *callee_node_idx,
@@ -618,7 +597,7 @@ impl<'a> Scanner<'a> {
         let eff = EffectInstance::new_call(
             self.filepath,
             caller.clone(),
-            callee,
+            callee.to_path(),
             &callee_span,
             self.scope_unsafe > 0,
             ffi,
@@ -637,7 +616,7 @@ impl<'a> Scanner<'a> {
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
         match f {
             syn::Expr::Path(p) => {
-                let callee = self.resolver.resolve_path(&p.path).to_path();
+                let callee = self.resolver.resolve_path(&p.path);
                 let ffi = self.resolver.resolve_ffi(&p.path);
                 self.push_callsite(p, callee, ffi);
             }
@@ -664,16 +643,16 @@ impl<'a> Scanner<'a> {
     fn scan_expr_call_field(&mut self, m: &'a syn::Member) {
         match m {
             syn::Member::Named(i) => {
-                self.push_callsite(i, self.lookup_field(i), None);
+                self.push_callsite(i, self.resolver.resolve_field(i), None);
             }
             syn::Member::Unnamed(idx) => {
-                self.push_callsite(idx, self.lookup_field_index(idx), None);
+                self.push_callsite(idx, self.resolver.resolve_field_index(idx), None);
             }
         }
     }
 
     fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
-        self.push_callsite(i, self.lookup_method(i), None);
+        self.push_callsite(i, self.resolver.resolve_method(i), None);
     }
 }
 
