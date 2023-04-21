@@ -10,6 +10,7 @@ use super::hacky_resolver::HackyResolver;
 use super::ident::{CanonicalPath, Ident};
 
 use anyhow::Result;
+use log::{debug, warn};
 use std::path::Path as FilePath;
 use syn;
 
@@ -52,14 +53,14 @@ pub struct FileResolver<'a> {
 
 impl<'a> FileResolver<'a> {
     pub fn new(resolver: &'a Resolver, filepath: &'a FilePath) -> Result<Self> {
-        // eprintln!("DEBUG: Creating FileResolver for file: {:?}", filepath);
+        debug!("Creating FileResolver for file: {:?}", filepath);
         let backup = HackyResolver::new(filepath)?;
         Ok(Self { filepath, resolver, backup })
     }
 
     fn resolve_core(&self, i: &syn::Ident) -> Result<CanonicalPath> {
-        // eprintln!("DEBUG: Resolving: {} ({:?}..{:?})", i, i.span().start(), i.span().end());
         let mut s = SrcLoc::from_span(self.filepath, i);
+        debug!("Resolving: {} ({})", i, s);
         // TODO Lydia remove
         s.add1();
         let i = Ident::from_syn(i);
@@ -74,10 +75,7 @@ impl<'a> FileResolver<'a> {
             Ok(res) => res,
             Err(err) => {
                 let s = SrcLoc::from_span(self.filepath, i);
-                eprintln!(
-                    "Resolution failed (using fallback) for: {} ({}) ({})",
-                    i, s, err
-                );
+                warn!("Resolution failed (using fallback) for: {} ({}) ({})", i, s, err);
                 fallback()
             }
         }
@@ -99,7 +97,6 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
     }
 
     fn resolve_def(&self, i: &'a syn::Ident) -> CanonicalPath {
-        // eprintln!("resolving def: {:?} ({:?})", i, SrcLoc::from_span(&self.filepath, i));
         self.resolve_or_else(i, || self.backup.resolve_def(i))
     }
 

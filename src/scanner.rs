@@ -12,6 +12,7 @@ use super::resolve::{FileResolver, Resolve, Resolver};
 use super::util;
 
 use anyhow::{anyhow, Result};
+use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -194,7 +195,7 @@ impl<'a> Scanner<'a> {
 
     fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
         let loc = SrcLoc::from_span(self.filepath, &syn_node);
-        eprintln!("Warning: {} ({}) ({:?})", msg, loc, syn_node);
+        warn!("Scanner: {} ({}) ({:?})", msg, loc, syn_node);
     }
 
     /*
@@ -626,7 +627,7 @@ impl<'a> Scanner<'a> {
             effect_block.push_effect(eff.clone())
         } else {
             self.syn_warning(
-                "Unexpected function call site found outside an effect block",
+                "unexpected function call site found outside an effect block",
                 callee_span,
             );
         }
@@ -677,23 +678,24 @@ impl<'a> Scanner<'a> {
 }
 
 /// Load the Rust file at the filepath and scan it
-pub fn load_and_scan(
+pub fn scan_file(
     filepath: &FilePath,
     resolver: &Resolver,
     scan_results: &mut ScanResults,
 ) -> Result<()> {
-    // based on example at https://docs.rs/syn/latest/syn/struct.File.html
-    let mut file = File::open(filepath)?;
+    debug!("Scanning file: {:?}", filepath);
 
+    // Load file contents
+    let mut file = File::open(filepath)?;
     let mut src = String::new();
     file.read_to_string(&mut src)?;
-
     let syntax_tree = syn::parse_file(&src)?;
 
+    // Initialize data structures
     let file_resolver = FileResolver::new(resolver, filepath)?;
-
     let mut scanner = Scanner::new(filepath, file_resolver, scan_results);
 
+    // Scan file contents
     scanner.scan_file(&syntax_tree);
 
     Ok(())
@@ -701,6 +703,8 @@ pub fn load_and_scan(
 
 /// Scan the supplied crate
 pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
+    info!("Scanning crate: {:?}", crate_path);
+
     // Make sure the path is a crate
     if !crate_path.is_dir() {
         return Err(anyhow!("Path is not a crate; not a directory: {:?}", crate_path));
@@ -712,7 +716,6 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
         return Err(anyhow!("Path is not a crate; missing Cargo.toml: {:?}", crate_path));
     }
 
-    // eprintln!("DEBUG: Creating Resolver for crate: {:?}", crate_path);
     let resolver = Resolver::new(crate_path)?;
 
     let mut scan_results = ScanResults::new();
@@ -721,7 +724,7 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
     //       include others (e.g. might codegen in other dirs)
     let src_dir = crate_path.join(FilePath::new("src"));
     for entry in util::fs::walk_files_with_extension(&src_dir, "rs") {
-        load_and_scan(entry.as_path(), &resolver, &mut scan_results)?;
+        scan_file(entry.as_path(), &resolver, &mut scan_results)?;
     }
 
     Ok(scan_results)

@@ -22,7 +22,9 @@ anyhow = "1.0.69"
 clap = { version = "4.0.29", features = ["derive"] }
 codespan-reporting = "0.11.1"
 colored = "2.0.0"
+env_logger = "0.10.0"
 inquire = "0.5.3"
+log = "0.4.17"
 petgraph = "0.6.3"
 proc-macro2 = { version = "1.0.47", features = ["span-locations"] }
 ra_ap_hir = "0.0.149"

@@ -4,56 +4,60 @@ use super::ident::{CanonicalPath, Ident, Path};
 use super::resolve::Resolve;
 
 use anyhow::Result;
+use log::{debug, warn};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::path::Path as FilePath;
 use syn::{self, spanned::Spanned};
 
-// Incorrectly infer mods from filepath
-mod infer {
-    use std::path::Path;
+/*
+    Hacky functions to (incorrectly) infer modules from filepath
+*/
 
-    fn infer_crate(filepath: &Path) -> String {
-        let crate_src: Vec<String> = filepath
-            .iter()
-            .map(|x| {
-                x.to_str().unwrap_or_else(|| {
-                    panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
-                })
+fn infer_crate(filepath: &FilePath) -> String {
+    let crate_src: Vec<String> = filepath
+        .iter()
+        .map(|x| {
+            x.to_str().unwrap_or_else(|| {
+                panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
             })
-            .take_while(|&x| x != "src")
-            .map(|x| x.to_string())
-            .collect();
-        let crate_string = crate_src.last().cloned().unwrap_or_else(|| {
-            eprintln!("warning: unable to infer crate from path: {:?}", filepath);
-            "".to_string()
-        });
-        crate_string
-    }
-
-    fn infer_module(filepath: &Path) -> Vec<String> {
-        let post_src: Vec<String> = filepath
-            .iter()
-            .map(|x| {
-                x.to_str().unwrap_or_else(|| {
-                    panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
-                })
-            })
-            .skip_while(|&x| x != "src")
-            .skip(1)
-            .filter(|&x| x != "main.rs" && x != "lib.rs")
-            .map(|x| x.replace(".rs", ""))
-            .collect();
-        post_src
-    }
-
-    pub fn fully_qualified_prefix(filepath: &Path) -> String {
-        let mut prefix_vec = vec![infer_crate(filepath)];
-        let mut mod_vec = infer_module(filepath);
-        prefix_vec.append(&mut mod_vec);
-        prefix_vec.join("::")
-    }
+        })
+        .take_while(|&x| x != "src")
+        .map(|x| x.to_string())
+        .collect();
+    let crate_string = crate_src.last().cloned().unwrap_or_else(|| {
+        warn!("unable to infer crate from path: {:?}", filepath);
+        "".to_string()
+    });
+    crate_string
 }
+
+fn infer_module(filepath: &FilePath) -> Vec<String> {
+    let post_src: Vec<String> = filepath
+        .iter()
+        .map(|x| {
+            x.to_str().unwrap_or_else(|| {
+                panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
+            })
+        })
+        .skip_while(|&x| x != "src")
+        .skip(1)
+        .filter(|&x| x != "main.rs" && x != "lib.rs")
+        .map(|x| x.replace(".rs", ""))
+        .collect();
+    post_src
+}
+
+fn infer_fully_qualified_prefix(filepath: &FilePath) -> String {
+    let mut prefix_vec = vec![infer_crate(filepath)];
+    let mut mod_vec = infer_module(filepath);
+    prefix_vec.append(&mut mod_vec);
+    prefix_vec.join("::")
+}
+
+/*
+    Main resolver
+*/
 
 #[derive(Debug)]
 pub struct HackyResolver<'a> {
@@ -171,8 +175,9 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
 
 impl<'a> HackyResolver<'a> {
     pub fn new(filepath: &FilePath) -> Result<Self> {
-        // TBD: incomplete, replace with name resolution
-        let modpath = CanonicalPath::new_owned(infer::fully_qualified_prefix(filepath));
+        debug!("Creating new HackyResolver for {:?}", filepath);
+
+        let modpath = CanonicalPath::new_owned(infer_fully_qualified_prefix(filepath));
 
         Ok(Self {
             modpath,
@@ -191,7 +196,7 @@ impl<'a> HackyResolver<'a> {
     fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
         let line = syn_node.span().start().line;
         let col = syn_node.span().start().column;
-        eprintln!("Warning (Resolver): {} ({:?}) ({}:{})", msg, syn_node, line, col);
+        warn!("HackyResolver: {} ({:?}) ({}:{})", msg, syn_node, line, col);
     }
 
     /*
@@ -208,7 +213,7 @@ impl<'a> HackyResolver<'a> {
         if cfg!(debug) && self.use_names.contains_key(lookup_key) {
             let v_old = self.use_names.get(lookup_key).unwrap();
             if *v_old != v_new {
-                eprintln!(
+                warn!(
                     "Name conflict found in use scope: {:?} (old: {:?} new: {:?})",
                     lookup_key, v_old, v_new
                 );

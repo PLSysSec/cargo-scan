@@ -2,6 +2,7 @@
 
 use super::ident::{Path, Pattern};
 
+use log::warn;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display};
 
@@ -50,7 +51,7 @@ impl Sink {
             let pat = Pattern::new(pat_raw);
             if callee.matches(&pat) {
                 if let Some(x) = result {
-                    eprintln!(
+                    warn!(
                     "Found multiple patterns of interest for {} (overwriting {} with {})",
                     callee, x, pat
                 );

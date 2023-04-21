@@ -10,6 +10,7 @@ use super::ident::{CanonicalPath, Path};
 use super::sink::Sink;
 use super::util::csv;
 
+use log::warn;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::{Path as FilePath, PathBuf as FilePathBuf};
@@ -206,8 +207,8 @@ impl EffectInstance {
         let eff_type = if let Some(pat) = Sink::new_match(&callee) {
             // TODO bug
             if ffi.is_some() {
-                eprintln!(
-                    "Warning: found sink stdlib pattern also \
+                warn!(
+                    "found sink stdlib pattern also \
                      matching an FFI call: {} {:?}",
                     callee, ffi
                 );

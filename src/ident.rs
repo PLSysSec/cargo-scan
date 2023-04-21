@@ -5,6 +5,7 @@
 //! CanonicalPath: crate::fs::File
 //! Pattern: std::fs, std::fs::*
 
+use log::warn;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display};
 use syn;
@@ -53,7 +54,7 @@ impl Ident {
 
     pub fn check_invariant(&self) {
         if !self.invariant() {
-            eprintln!("Warning: failed invariant! on Ident {}", self);
+            warn!("failed invariant! on Ident {}", self);
         }
     }
 
@@ -102,7 +103,7 @@ impl Path {
 
     pub fn check_invariant(&self) {
         if !self.invariant() {
-            eprintln!("Warning: failed invariant! on Path {}", self);
+            warn!("failed invariant! on Path {}", self);
         }
     }
 
@@ -237,7 +238,7 @@ impl CanonicalPath {
 
     pub fn check_invariant(&self) {
         if !self.invariant() {
-            eprintln!("Warning: failed invariant! on CanonicalPath {}", self);
+            warn!("failed invariant! on CanonicalPath {}", self);
         }
     }
 
@@ -307,7 +308,7 @@ impl Pattern {
 
     pub fn check_invariant(&self) {
         if !self.invariant() {
-            eprintln!("Warning: failed invariant! on Pattern {}", self);
+            warn!("failed invariant! on Pattern {}", self);
         }
     }
 

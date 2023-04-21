@@ -2,11 +2,12 @@
 
 /// CSV utility functions
 pub mod csv {
+    use log::warn;
     use std::path::Path;
 
     pub fn sanitize_comma(s: &str) -> String {
         if s.contains(',') {
-            eprintln!("Warning: ignoring unexpected comma when generating CSV: {s}");
+            warn!("Warning: ignoring unexpected comma when generating CSV: {s}");
         }
         s.replace(',', "")
     }
@@ -14,7 +15,7 @@ pub mod csv {
         match p.to_str() {
             Some(s) => sanitize_comma(s),
             None => {
-                eprintln!("Warning: path is invalid unicode: {:?}", p);
+                warn!("Warning: path is invalid unicode: {:?}", p);
                 sanitize_comma(&p.to_string_lossy())
             }
         }
@@ -23,6 +24,7 @@ pub mod csv {
 
 /// Iterator util
 pub mod iter {
+    use log::warn;
     use std::fmt::Display;
     use std::vec;
 
@@ -30,7 +32,7 @@ pub mod iter {
     /// useful with iter::filter_map: `my_iter.filter_map(warn_ok)`
     pub fn warn_ok<T, E: Display>(x: Result<T, E>) -> Option<T> {
         if let Some(e) = x.as_ref().err() {
-            eprintln!("Warning: discarding error {}", e);
+            warn!("Warning: discarding error {}", e);
         }
         x.ok()
     }
