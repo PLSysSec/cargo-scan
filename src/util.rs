@@ -1,5 +1,15 @@
 //! Utility functions
 
+/// Logging
+/// Using simplelog for now, could switch to env_logger for more
+/// configurability later
+pub fn init_logging() {
+    use env_logger::Builder;
+    use log::LevelFilter;
+
+    Builder::new().filter_module("cargo_scan", LevelFilter::Warn).init();
+}
+
 /// CSV utility functions
 pub mod csv {
     use log::warn;

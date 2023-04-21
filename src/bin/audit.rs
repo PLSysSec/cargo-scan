@@ -708,6 +708,7 @@ fn runner(args: Args) -> Result<()> {
 }
 
 fn main() {
+    cargo_scan::util::init_logging();
     let args = Args::parse();
 
     match runner(args) {

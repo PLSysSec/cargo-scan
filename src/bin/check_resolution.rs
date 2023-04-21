@@ -20,6 +20,7 @@ struct Args {
 }
 
 pub fn main() -> Result<()> {
+    cargo_scan::util::init_logging();
     let args = Args::parse();
 
     // let cargo_config = CargoConfig::

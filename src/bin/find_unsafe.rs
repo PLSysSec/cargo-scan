@@ -22,6 +22,7 @@ struct Args {
 }
 
 fn main() -> Result<()> {
+    cargo_scan::util::init_logging();
     let args = Args::parse();
 
     let results = scanner::scan_crate(&args.crate_path)?;
