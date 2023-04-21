@@ -1,4 +1,7 @@
-//! Scanner to parse a Rust source file or crate and find all function call locations.
+//! Scanner API
+//!
+//! Parse a Rust crate or source file and collect effect blocks, function calls, and
+//! various other information.
 
 use super::effect::{
     BlockType, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
@@ -19,7 +22,10 @@ use syn::spanned::Spanned;
 use walkdir::WalkDir;
 
 /// Results of a scan
-#[derive(Debug)]
+///
+/// Holds the intermediate state between scans which doesn't hold references
+/// to file data
+#[derive(Debug, Default)]
 pub struct ScanResults {
     pub effects: Vec<EffectInstance>,
     pub effect_blocks: Vec<EffectBlock>,
@@ -27,55 +33,22 @@ pub struct ScanResults {
     pub unsafe_traits: Vec<TraitDec>,
     pub unsafe_impls: Vec<TraitImpl>,
 
-    pub fn_locs: HashMap<Path, SrcLoc>,
+    // Saved function declarations
+    // TODO replace with call graph info
     pub pub_fns: HashSet<CanonicalPath>,
+    pub fn_locs: HashMap<Path, SrcLoc>,
 
-    pub call_graph: DiGraph<Path, SrcLoc>,
+    // TODO currently unused
+    call_graph: DiGraph<Path, SrcLoc>,
+    node_idxs: HashMap<Path, NodeIndex>,
 
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
 }
 
 impl ScanResults {
-    fn _new() -> Self {
-        ScanResults {
-            effects: Vec::new(),
-            effect_blocks: Vec::new(),
-            unsafe_traits: Vec::new(),
-            unsafe_impls: Vec::new(),
-            fn_locs: HashMap::new(),
-            pub_fns: HashSet::new(),
-            call_graph: DiGraph::new(),
-            skipped_macros: 0,
-            skipped_fn_calls: 0,
-        }
-    }
-
-    fn _combine_results(&mut self, other: &mut Self) {
-        let ScanResults {
-            effects: o_effects,
-            effect_blocks: o_effect_blocks,
-            unsafe_traits: o_unsafe_traits,
-            unsafe_impls: o_unsafe_impls,
-            fn_locs: o_fn_locs,
-            pub_fns: o_pub_fns,
-            call_graph: _o_call_graph,
-            skipped_macros: o_skipped_macros,
-            skipped_fn_calls: o_skipped_fn_calls,
-        } = other;
-
-        self.effects.append(o_effects);
-        self.effect_blocks.append(o_effect_blocks);
-        self.unsafe_traits.append(o_unsafe_traits);
-        self.unsafe_impls.append(o_unsafe_impls);
-        self.fn_locs.extend(o_fn_locs.drain());
-        self.pub_fns.extend(o_pub_fns.drain());
-        self.skipped_macros += *o_skipped_macros;
-        self.skipped_fn_calls += *o_skipped_fn_calls;
-    }
-
-    pub fn dangerous_effects(&self) -> HashSet<&EffectInstance> {
-        self.effects.iter().filter(|x| x.pattern().is_some()).collect::<HashSet<_>>()
+    pub fn new() -> Self {
+        Default::default()
     }
 
     pub fn unsafe_effect_blocks_set(&self) -> HashSet<&EffectBlock> {
@@ -100,66 +73,19 @@ impl ScanResults {
 
         callers
     }
-}
 
-impl From<ScanData> for ScanResults {
-    fn from(data: ScanData) -> Self {
-        ScanResults {
-            effects: data.effects,
-            effect_blocks: data.effect_blocks,
-            unsafe_traits: data.unsafe_traits,
-            unsafe_impls: data.unsafe_impls,
-            pub_fns: data
-                .fn_decls
-                .iter()
-                .filter_map(|fun| match fun.vis {
-                    Visibility::Public => Some(fun.fn_name.clone()),
-                    Visibility::Private => None,
-                })
-                .collect(),
-            fn_locs: data
-                .fn_decls
-                .into_iter()
-                .map(|FnDec { src_loc, fn_name, vis: _ }| (fn_name.to_path(), src_loc))
-                .collect::<HashMap<_, _>>(),
-            call_graph: data.call_graph,
-            skipped_macros: data.skipped_macros,
-            skipped_fn_calls: data.skipped_fn_calls,
+    pub fn add_fn_dec(&mut self, f: FnDec) {
+        let fn_name = f.fn_name;
+
+        // Update call graph
+        let node_idx = self.call_graph.add_node(fn_name.as_path().clone());
+        self.node_idxs.insert(fn_name.as_path().clone(), node_idx);
+
+        // Save function info
+        if let Visibility::Public = f.vis {
+            self.pub_fns.insert(fn_name.clone());
         }
-    }
-}
-
-/// Holds the intermediate state between scans which doesn't hold references
-/// to file data
-#[derive(Debug, Default)]
-pub struct ScanData {
-    effects: Vec<EffectInstance>,
-    effect_blocks: Vec<EffectBlock>,
-    unsafe_traits: Vec<TraitDec>,
-    unsafe_impls: Vec<TraitImpl>,
-    // Saved function declarations
-    fn_decls: Vec<FnDec>,
-
-    call_graph: DiGraph<Path, SrcLoc>,
-    node_idxs: HashMap<Path, NodeIndex>,
-    // info about skipped nodes
-    skipped_macros: usize,
-    skipped_fn_calls: usize,
-}
-
-impl ScanData {
-    pub fn new() -> Self {
-        ScanData {
-            effects: Vec::new(),
-            effect_blocks: Vec::new(),
-            unsafe_traits: Vec::new(),
-            unsafe_impls: Vec::new(),
-            fn_decls: Vec::new(),
-            call_graph: DiGraph::new(),
-            node_idxs: HashMap::new(),
-            skipped_macros: 0,
-            skipped_fn_calls: 0,
-        }
+        self.fn_locs.insert(fn_name.to_path(), f.src_loc);
     }
 }
 
@@ -182,21 +108,22 @@ pub struct Scanner<'a> {
     scope_unsafe: usize,
 
     /// Functions inside
-    scope_fns: Vec<CanonicalPath>,
+    scope_fns: Vec<FnDec>,
 
     /// Target to accumulate scan results
-    data: &'a mut ScanData,
+    data: &'a mut ScanResults,
 }
 
 impl<'a> Scanner<'a> {
     /*
         Main public API
     */
+
     /// Create a new scanner tied to a crate and file
     pub fn new(
         filepath: &'a FilePath,
         resolver: FileResolver<'a>,
-        data: &'a mut ScanData,
+        data: &'a mut ScanResults,
     ) -> Self {
         Self {
             filepath,
@@ -221,6 +148,7 @@ impl<'a> Scanner<'a> {
         These are public, with the caveat that the Scanner currently assumes
         they are all run on syntax within the same file.
     */
+
     pub fn scan_file(&mut self, f: &'a syn::File) {
         // scan the file and return a list of all calls in it
         for i in &f.items {
@@ -317,6 +245,7 @@ impl<'a> Scanner<'a> {
     /*
         Trait declarations and impl blocks
     */
+
     fn scan_trait(&mut self, t: &'a syn::ItemTrait) {
         let t_name = self.resolver.resolve_def(&t.ident);
         let t_unsafety = t.unsafety;
@@ -363,6 +292,7 @@ impl<'a> Scanner<'a> {
     /*
         Function and method declarations
     */
+
     fn scan_fn_decl(&mut self, f: &'a syn::ItemFn) {
         self.scan_fn(&f.sig, &f.block, &f.vis);
     }
@@ -378,44 +308,49 @@ impl<'a> Scanner<'a> {
         body: &'a syn::Block,
         vis: &'a syn::Visibility,
     ) {
+        // Create fn decl
         let f_ident = &f_sig.ident;
         let f_name = self.resolver.resolve_def(f_ident);
+        let fn_dec = FnDec::new(self.filepath, f_sig, f_name.clone(), vis);
 
-        self.scope_fns.push(f_name.clone());
+        // Always push the new function declaration before scanning the
+        // body so we have access to the function its in for unsafe blocks
+        self.scope_fns.push(fn_dec.clone());
+
+        // Notify resolver
         self.resolver.push_fn(f_ident);
 
+        // Notify ScanResults
+        self.data.add_fn_dec(fn_dec);
+
+        // Update effect blocks
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
-
-        let fn_dec = FnDec::new(self.filepath, f_sig, f_name.clone(), vis);
-        let node_idx = self.data.call_graph.add_node(f_name.as_path().clone());
-        self.data.node_idxs.insert(f_name.as_path().clone(), node_idx);
-        // NOTE: always push the new function declaration before scanning the
-        //       body so we have access to the function its in for unsafe blocks
-        self.data.fn_decls.push(fn_dec);
-
         let effect_block = if f_unsafety.is_some() {
-            // we found an `unsafe fn` declaration
+            // `unsafe fn` declaration
             self.scope_unsafe += 1;
-
             EffectBlock::new_unsafe_fn(self.filepath, body, f_name, vis)
         } else {
             EffectBlock::new_fn(self.filepath, body, f_name, vis)
         };
         self.scope_effect_blocks.push(effect_block);
 
+        // ***** Scan body *****
         for s in &body.stmts {
             self.scan_fn_statement(s);
         }
 
+        // Reset state
         self.scope_fns.pop();
         self.resolver.pop_fn();
 
+        // Save effect block
         self.data.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
         if f_unsafety.is_some() {
             debug_assert!(self.scope_unsafe >= 1);
             self.scope_unsafe -= 1;
         }
     }
+
     fn scan_fn_statement(&mut self, s: &'a syn::Stmt) {
         match s {
             syn::Stmt::Local(l) => self.scan_fn_local(l),
@@ -426,10 +361,12 @@ impl<'a> Scanner<'a> {
             }
         }
     }
+
     fn scan_item_in_fn(&mut self, i: &'a syn::Item) {
         // TBD: may need to track additional state here
         self.scan_item(i);
     }
+
     fn scan_fn_local(&mut self, l: &'a syn::Local) {
         if let Some(let_expr) = &l.init {
             self.scan_expr(&let_expr.expr);
@@ -443,6 +380,7 @@ impl<'a> Scanner<'a> {
         Expressions
         These have the most cases (currently, 40)
     */
+
     fn scan_expr(&mut self, e: &'a syn::Expr) {
         match e {
             syn::Expr::Array(x) => {
@@ -633,7 +571,7 @@ impl<'a> Scanner<'a> {
         let effect_block = EffectBlock::new_unsafe_expr(
             self.filepath,
             &x.block,
-            self.data.fn_decls.last().unwrap().clone(),
+            self.scope_fns.last().unwrap().clone(),
         );
         self.scope_effect_blocks.push(effect_block);
         for s in &x.block.stmts {
@@ -665,7 +603,7 @@ impl<'a> Scanner<'a> {
     ) where
         S: Debug + Spanned,
     {
-        let caller = self.scope_fns.last().expect("not inside a function!");
+        let caller = &self.scope_fns.last().expect("not inside a function!").fn_name;
 
         // TBD: unwraps were causing `make test` to crash
         if let Some(caller_node_idx) = self.data.node_idxs.get(caller.as_path()) {
@@ -744,7 +682,7 @@ impl<'a> Scanner<'a> {
 pub fn load_and_scan(
     filepath: &FilePath,
     resolver: &Resolver,
-    scan_data: &mut ScanData,
+    scan_results: &mut ScanResults,
 ) -> Result<()> {
     // based on example at https://docs.rs/syn/latest/syn/struct.File.html
     let mut file = File::open(filepath)?;
@@ -756,7 +694,7 @@ pub fn load_and_scan(
 
     let file_resolver = FileResolver::new(resolver, filepath)?;
 
-    let mut scanner = Scanner::new(filepath, file_resolver, scan_data);
+    let mut scanner = Scanner::new(filepath, file_resolver, scan_results);
 
     scanner.scan_file(&syntax_tree);
 
@@ -779,7 +717,7 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
     // eprintln!("DEBUG: Creating Resolver for crate: {:?}", crate_path);
     let resolver = Resolver::new(crate_path)?;
 
-    let mut scan_data = ScanData::new();
+    let mut scan_results = ScanResults::new();
 
     // TODO: For now, only walking through the src dir, but might want to
     //       include others (e.g. might codegen in other dirs)
@@ -795,8 +733,8 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
             _ => false,
         })
     {
-        load_and_scan(FilePath::new(entry?.path()), &resolver, &mut scan_data)?;
+        load_and_scan(FilePath::new(entry?.path()), &resolver, &mut scan_results)?;
     }
 
-    Ok(scan_data.into())
+    Ok(scan_results)
 }
