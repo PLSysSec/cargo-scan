@@ -3,7 +3,7 @@
 `cargo scan` is a supply chain auditing tool for Cargo (Rust) dependencies using static analysis.
 It can also be used in tandem with [cargo vet](https://mozilla.github.io/cargo-vet/).
 
-`cargo scan` is under active development and all interfaces should be assumed to be unstable.
+**⚠️ `cargo scan` is under active development. All interfaces are currently unstable.**
 
 ## Installation
 
@@ -18,10 +18,10 @@ Installation has been tested on Mac OS (Monterey) and Linux (Arch Linux).
 
 To use Cargo Scan you first need a crate.
 You can either:
-- Fetch an existing crate from [crates.io](crates.io) by running:
-```
-cargo download -x <crate name>
-```
+- Fetch an existing crate from [crates.io](crates.io):
+  ```
+  cargo download -x <crate name>
+  ```
 - Use one of the provided test crates in `data/test-crates`
 - Provide your own (given the directory to the source files)
 
