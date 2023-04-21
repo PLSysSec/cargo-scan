@@ -411,6 +411,8 @@ impl Resolver {
                 _ => container_names.push(String::from("")),
             },
         }
+        container_names.retain(|s| !s.is_empty());
+
         container_names
     }
 
