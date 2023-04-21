@@ -3,9 +3,9 @@ Number of dangerous imports by crate:
 toy-crates: 14
 caller-checked: 13
 libc-ex: 8
-num_cpus_minimal: 4
 permissions-ex: 3
 unsafe-test: 2
+num_cpus_minimal: 1
 ===== Crate Totals =====
 6 crates with 1 or more dangerous imports
 4 crates with 0 dangerous imports

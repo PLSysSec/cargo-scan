@@ -18,11 +18,7 @@ pub struct AuditChain {
 
 impl AuditChain {
     pub fn new(manifest_path: PathBuf, crate_path: PathBuf) -> AuditChain {
-        AuditChain {
-            manifest_path,
-            crate_path,
-            crate_policies: HashMap::new(),
-        }
+        AuditChain { manifest_path, crate_path, crate_policies: HashMap::new() }
     }
 
     pub fn read_audit_chain(path: PathBuf) -> Result<Option<AuditChain>> {

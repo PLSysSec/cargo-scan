@@ -1,7 +1,7 @@
 ===== Patterns =====
 Total instances of each import pattern:
-[Unsafe]: 28
-libc: 9
+[Unsafe]: 26
+libc: 8
 std::fs: 2
 std::process: 2
 std::env: 1

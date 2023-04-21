@@ -106,7 +106,8 @@ fn create_new_audit_chain(args: Create) -> Result<AuditChain> {
 
     let toml_string =
         read_to_string(PathBuf::from(format!("{}/Cargo.toml", args.crate_path)))?;
-    let cargo_toml = toml::from_str::<Table>(&toml_string).context("Couldn't parse Cargo.toml")?;
+    let cargo_toml =
+        toml::from_str::<Table>(&toml_string).context("Couldn't parse Cargo.toml")?;
     let root_name = cargo_toml
         .get("package")
         .context("No package in Cargo.toml")?
