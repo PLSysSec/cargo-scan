@@ -5,7 +5,7 @@ use cargo_scan::policy::PolicyFile;
 use anyhow::{anyhow, Context, Result};
 use cargo_lock::{Lockfile, Package};
 use clap::{Args as ClapArgs, Parser, Subcommand};
-use std::fs::{create_dir_all, read_to_string};
+use std::fs::{create_dir_all, read_to_string, remove_file};
 use std::path::PathBuf;
 use toml::{self, value::Table};
 
@@ -38,6 +38,9 @@ struct Create {
     /// Default policy folder
     #[clap(short = 'p', long = "policy-path", default_value = ".audit_policies")]
     policy_path: String,
+
+    #[clap(short = 'f', long, default_value_t = false)]
+    force_overwrite: bool,
 }
 
 #[derive(Clone, ClapArgs, Debug)]
@@ -71,7 +74,11 @@ fn make_new_policy(package: &Package, root_name: &str, args: &Create) -> Result<
         return Err(anyhow!("Policy path is a directory"));
     }
     if policy_path.is_file() {
-        return Err(anyhow!("Policy file already exists"));
+        if args.force_overwrite {
+            remove_file(policy_path.clone())?;
+        } else {
+            return Err(anyhow!("Policy file already exists"));
+        }
     }
 
     let policy = PolicyFile::new_caller_checked_default(package_path.as_path())?;
