@@ -1,13 +1,20 @@
 //! Utility functions
 
-/// Logging
-/// Using simplelog for now, could switch to env_logger for more
-/// configurability later
+/// Initialize logging for all of cargo_scan
+///
+/// To change the log level, run with e.g.:
+/// RUST_LOG=debug cargo run --bin scan ...
+/// RUST_LOG=info cargo run --bin scan ...
 pub fn init_logging() {
     use env_logger::Builder;
-    use log::LevelFilter;
+    use std::env;
 
-    Builder::new().filter_module("cargo_scan", LevelFilter::Warn).init();
+    // wish there was a nicer way to do this, env_logger doesn't make it easy
+    // to disable non-cargo_scan logging
+    let filters = "warn,cargo_scan=".to_string()
+        + env::var("RUST_LOG").as_deref().unwrap_or("warn");
+
+    Builder::new().parse_filters(&filters).init();
 }
 
 /// CSV utility functions
