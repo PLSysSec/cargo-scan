@@ -68,7 +68,7 @@ pub struct Resolver {
 impl Resolver {
     fn cargo_config() -> CargoConfig {
         // List of features to activate (or deactivate).
-        let features = CargoFeatures::default();
+        let features = CargoFeatures::All;
 
         // Target triple
         let target = None;
@@ -80,7 +80,7 @@ impl Resolver {
         let rustc_source = None;
 
         // crates to disable `#[cfg(test)]` on
-        let unset_test_crates = UnsetTestCrates::All;
+        let unset_test_crates = UnsetTestCrates::Only(vec![String::from("core")]);
 
         // Setup RUSTC_WRAPPER to point to `rust-analyzer` binary itself.
         let wrap_rustc_in_build_scripts = true;
