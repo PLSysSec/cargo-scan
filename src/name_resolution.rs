@@ -226,36 +226,48 @@ impl Resolver {
         let src_file = Self::get_src_file(file_id, sems);
         let token = Self::get_token(src_file, offset, ident)?;
 
-        match IdentClass::classify_token(sems, &token) {
-            Some(ident) => {
-                let defs = ident.definitions();
-                let def = defs[0];
+        let descended = sems.descend_into_macros(token.clone());
 
-                //TODO: make that recursive - might be many containers encapsulated
-                let container = Self::get_container_name(sems, db, def);
-                let def_name = def.name(db).map(|name| name.to_string());
-                let module = def.module(db).unwrap();
+        let def = descended
+            .iter()
+            .filter_map(|t| {
+                let ident = IdentClass::classify_token(sems, t)?;
 
-                let crate_name = db.crate_graph()[module.krate().into()]
-                    .display_name
-                    .as_ref()
-                    .map(|it| it.to_string());
-                let module_path = Self::build_path_to_root(module, db)
-                    .into_iter()
-                    .rev()
-                    .flat_map(|it| it.name(db).map(|name| name.to_string()));
+                Some(ident.definitions()[0])
+            })
+            .filter_map(|def| Self::canonical_path(sems, db, def))
+            .exactly_one()
+            .or(Err(anyhow!("Could not classify token {:?}", token)));
 
-                let cp = crate_name
-                    .into_iter()
-                    .chain(module_path)
-                    .chain(container)
-                    .chain(def_name)
-                    .join("::");
+        def
+    }
 
-                Ok(CanonicalPath::new_owned(cp))
-            }
-            None => Err(anyhow!("Could not classify token {:?}", token)),
-        }
+    fn canonical_path(
+        sems: &Semantics<RootDatabase>,
+        db: &RootDatabase,
+        def: Definition,
+    ) -> Option<CanonicalPath> {
+        let container = Self::get_container_name(sems, db, def);
+        let def_name = def.name(db).map(|name| name.to_string());
+        let module = def.module(db)?;
+
+        let crate_name = db.crate_graph()[module.krate().into()]
+            .display_name
+            .as_ref()
+            .map(|it| it.to_string());
+        let module_path = Self::build_path_to_root(module, db)
+            .into_iter()
+            .rev()
+            .flat_map(|it| it.name(db).map(|name| name.to_string()));
+
+        let cp = crate_name
+            .into_iter()
+            .chain(module_path)
+            .chain(container)
+            .chain(def_name)
+            .join("::");
+
+        Some(CanonicalPath::new_owned(cp))
     }
 
     fn build_path_to_root(module: Module, db: &RootDatabase) -> Vec<Module> {
@@ -366,7 +378,6 @@ impl Resolver {
                                 })
                                 .map(|name| name.to_string())
                                 .unwrap_or_else(|| String::from(""));
-                            container_names.push(str)
                         }
                         _ => container_names.push(String::from("")),
                     }
