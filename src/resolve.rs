@@ -75,7 +75,7 @@ impl<'a> FileResolver<'a> {
             Err(err) => {
                 let s = SrcLoc::from_span(self.filepath, i);
                 eprintln!(
-                    "Resolution failed (using fallback) for: {} ({:?}) ({})",
+                    "Resolution failed (using fallback) for: {} ({}) ({})",
                     i, s, err
                 );
                 fallback()

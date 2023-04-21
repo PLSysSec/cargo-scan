@@ -11,6 +11,7 @@ use super::sink::Sink;
 use super::util::csv;
 
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 use syn;
 use syn::spanned::Spanned;
@@ -106,6 +107,24 @@ impl SrcLoc {
 
     pub fn end_col(&self) -> usize {
         self.end_col
+    }
+
+    pub fn filepath_string(&self) -> String {
+        self.dir.join(&self.file).to_string_lossy().to_string()
+    }
+}
+
+impl fmt::Display for SrcLoc {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}:{}:{}..{}:{}",
+            self.filepath_string(),
+            self.start_line,
+            self.start_col,
+            self.end_line,
+            self.end_col
+        )
     }
 }
 

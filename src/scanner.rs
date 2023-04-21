@@ -193,10 +193,8 @@ impl<'a> Scanner<'a> {
     */
 
     fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
-        let file = self.filepath.to_string_lossy();
-        let line = syn_node.span().start().line;
-        let col = syn_node.span().start().column;
-        eprintln!("Warning: {} ({:?}) ({}:{}:{})", msg, syn_node, file, line, col);
+        let loc = SrcLoc::from_span(self.filepath, &syn_node);
+        eprintln!("Warning: {} ({}) ({:?})", msg, loc, syn_node);
     }
 
     /*
