@@ -1,4 +1,4 @@
-use std::fs::{remove_file, File};
+use std::fs::{create_dir_all, remove_file, File};
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -31,7 +31,6 @@ pub fn download_crate(package: &Package, download_dir: &str) -> Result<PathBuf> 
         None => get_crates_io_url(package),
     };
 
-    dbg!(&url);
     let mut dst = Vec::new();
     let mut easy = Easy::new();
     easy.follow_location(true)?;
@@ -46,23 +45,25 @@ pub fn download_crate(package: &Package, download_dir: &str) -> Result<PathBuf> 
         transfer.perform()?;
     }
 
-    let tarball_name = format!("{}-{}.tar.gz", package.name.as_str(), package.version);
+    let package_dir_name = format!("{}-{}", package.name.as_str(), package.version);
+    let tarball_name = format!("{}.tar.gz", package_dir_name);
     let mut download_dir = PathBuf::from(download_dir);
     download_dir.push(tarball_name.clone());
-    dbg!(&download_dir);
 
     {
         let tarball_file = File::open(download_dir.clone())?;
         let tar = GzDecoder::new(tarball_file);
         let mut archive = Archive::new(tar);
         download_dir.pop();
+        create_dir_all(download_dir.clone())?;
         archive.unpack(download_dir.clone())?;
     }
 
-    remove_file(tarball_name)?;
+    download_dir.push(tarball_name);
+    remove_file(download_dir.clone())?;
 
     download_dir.pop();
-    download_dir.push(format!("{}-{}", package.name.as_str(), package.version));
+    download_dir.push(package_dir_name);
 
     Ok(download_dir)
 }
