@@ -9,6 +9,7 @@ use super::effect::{
 };
 use super::ident::{CanonicalPath, Path};
 use super::resolve::{FileResolver, Resolve, Resolver};
+use super::util;
 
 use anyhow::{anyhow, Result};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -19,7 +20,6 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path as FilePath;
 use syn::spanned::Spanned;
-use walkdir::WalkDir;
 
 /// Results of a scan
 ///
@@ -721,19 +721,9 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
 
     // TODO: For now, only walking through the src dir, but might want to
     //       include others (e.g. might codegen in other dirs)
-    // We have a valid crate, so iterate through all the rust src
-    for entry in WalkDir::new(crate_path.join(FilePath::new("src")))
-        .sort_by_file_name()
-        .into_iter()
-        .filter(|e| match e {
-            Ok(ne) if ne.path().is_file() => {
-                let fname = FilePath::new(ne.file_name());
-                fname.to_str().map_or(false, |x| x.ends_with(".rs"))
-            }
-            _ => false,
-        })
-    {
-        load_and_scan(FilePath::new(entry?.path()), &resolver, &mut scan_results)?;
+    let src_dir = crate_path.join(FilePath::new("src"));
+    for entry in util::fs::walk_files_with_extension(&src_dir, "rs") {
+        load_and_scan(entry.as_path(), &resolver, &mut scan_results)?;
     }
 
     Ok(scan_results)

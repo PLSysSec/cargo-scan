@@ -64,6 +64,15 @@ pub mod fs {
             .map(DirEntry::into_path)
     }
 
+    pub fn walk_files_with_extension<'a>(
+        p: &'a PathBuf,
+        ext: &'a str,
+    ) -> impl Iterator<Item = PathBuf> + 'a {
+        walk_files(p)
+            .filter(|entry| entry.is_file())
+            .filter(|entry| entry.extension().map_or(false, |x| x.to_str() == Some(ext)))
+    }
+
     pub fn file_lines(p: &PathBuf) -> impl Iterator<Item = String> {
         let file = File::open(p).unwrap();
         let reader = BufReader::new(file).lines();
