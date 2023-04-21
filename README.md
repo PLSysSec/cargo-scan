@@ -16,15 +16,14 @@ Installation has been tested on Mac OS (Monterey) and Linux (Arch Linux).
 
 ### Obtaining a crate
 
-To use Cargo Scan you first need a crate. You can either:
-- use our script to download one automatically:
+To use Cargo Scan you first need a crate.
+You can either:
+- Fetch an existing crate from [crates.io](crates.io) by running:
 ```
-./scripts/scan.py -c <crate name>
+cargo download -x <crate name>
 ```
-- use one of the test crates in `data/test-crates`, or
-- download your own Rust crate and put it in a folder somewhere.
-
-The `scan.py` script simply calls `cargo download` on the crate and puts it in `data/packages`, so you can also run `cargo download` yourself.
+- Use one of the provided test crates in `data/test-crates`
+- Provide your own (given the directory to the source files)
 
 ## Running a scan
 
