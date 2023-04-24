@@ -91,9 +91,7 @@ impl Display for Path {
 
 impl Path {
     fn char_ok(c: char) -> bool {
-        // Path currently allows [] to specify some cases we don't handle,
-        // like [METHOD]::foo, [FIELD]::foo, etc.
-        c.is_ascii_alphanumeric() || c == '_' || c == '[' || c == ']' || c == ':'
+        c.is_ascii_alphanumeric() || c == '_' || c == ':'
     }
 
     pub fn invariant(&self) -> bool {
@@ -227,13 +225,8 @@ impl Display for CanonicalPath {
 }
 
 impl CanonicalPath {
-    fn char_ok(c: char) -> bool {
-        // CanonicalPath does not allow []
-        c.is_ascii_alphanumeric() || c == '_' || c == ':'
-    }
-
     pub fn invariant(&self) -> bool {
-        self.0 .0.chars().all(Self::char_ok) && !self.0.is_empty()
+        self.0.invariant() && !self.0.is_empty()
     }
 
     pub fn check_invariant(&self) {

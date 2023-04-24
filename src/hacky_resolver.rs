@@ -173,15 +173,15 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
     }
 
     fn resolve_method(&self, i: &'a syn::Ident) -> CanonicalPath {
-        CanonicalPath::new_owned(format!("[METHOD]::{}", i))
+        CanonicalPath::new_owned(format!("UNKNOWN_METHOD::{}", i))
     }
 
     fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath {
-        CanonicalPath::new_owned(format!("[FIELD]::{}", i))
+        CanonicalPath::new_owned(format!("UNKNOWN_FIELD::{}", i))
     }
 
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath {
-        CanonicalPath::new_owned(format!("[FIELD]::{}", idx.index))
+        CanonicalPath::new_owned(format!("UNKNOWN_FIELD::{}", idx.index))
     }
 }
 
