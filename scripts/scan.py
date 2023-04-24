@@ -53,7 +53,7 @@ OPEN = ["open"]
 # ===== Additional constants =====
 
 # Number of progress tracking messages to display
-PROGRESS_INCS = 5
+PROGRESS_INCS = 10
 
 CRATES_DIR = "data/packages"
 TEST_CRATES_DIR = "data/test-packages"
