@@ -41,11 +41,11 @@ mozilla: install
 	$(SCAN_PY) -i data/crate-lists/mozilla-exempt.csv -o mozilla-exempt
 	$(SCAN_PY) -i data/crate-lists/mozilla-audits.csv -o mozilla-audits
 
-small: test-results top10 top100
+small: test-results top10
 
-medium: small mozilla
+medium: top100 mozilla
 
-large: medium top1000 top10000
+large: top1000 top10000
 
 clean:
 	# Warning: this deletes all downloaded packages and experiment results not under version control!
