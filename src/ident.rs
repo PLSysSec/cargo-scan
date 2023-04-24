@@ -45,11 +45,16 @@ impl Display for Ident {
 
 impl Ident {
     fn char_ok(c: char) -> bool {
-        c.is_ascii_alphanumeric() || c == '_' || c == '[' || c == ']'
+        c.is_ascii_alphanumeric() || c == '_'
+    }
+
+    fn str_ok(s: &str) -> bool {
+        let skips = if s.starts_with("r#") { 2 } else { 0 };
+        s.chars().skip(skips).all(Self::char_ok) && !s.is_empty()
     }
 
     pub fn invariant(&self) -> bool {
-        self.0.chars().all(Self::char_ok) && !self.0.is_empty()
+        Self::str_ok(&self.0)
     }
 
     pub fn check_invariant(&self) {
@@ -90,13 +95,8 @@ impl Display for Path {
 }
 
 impl Path {
-    fn char_ok(c: char) -> bool {
-        c.is_ascii_alphanumeric() || c == '_' || c == ':'
-    }
-
     pub fn invariant(&self) -> bool {
-        self.0.chars().all(Self::char_ok)
-        // TBD check :: are adjacent
+        self.0.is_empty() || self.0.split("::").all(Ident::str_ok)
     }
 
     pub fn check_invariant(&self) {
