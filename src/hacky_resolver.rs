@@ -1,6 +1,7 @@
 //! A hacky in-house resolver for Rust identifiers
 
 use super::ident::{CanonicalPath, Ident, IdentPath};
+use super::effect::SrcLoc;
 use super::resolve::Resolve;
 
 use anyhow::Result;
@@ -61,6 +62,9 @@ fn infer_fully_qualified_prefix(filepath: &FilePath) -> String {
 
 #[derive(Debug)]
 pub struct HackyResolver<'a> {
+    // source file
+    filepath: &'a FilePath,
+
     // crate+module which the current filepath implements (e.g. my_crate::fs)
     modpath: CanonicalPath,
 
@@ -186,12 +190,13 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
 }
 
 impl<'a> HackyResolver<'a> {
-    pub fn new(filepath: &FilePath) -> Result<Self> {
+    pub fn new(filepath: &'a FilePath) -> Result<Self> {
         debug!("Creating new HackyResolver for {:?}", filepath);
 
         let modpath = CanonicalPath::new_owned(infer_fully_qualified_prefix(filepath));
 
         Ok(Self {
+            filepath,
             modpath,
             scope_use: Vec::new(),
             scope_mods: Vec::new(),
@@ -206,9 +211,8 @@ impl<'a> HackyResolver<'a> {
 
     /// Reusable warning logger
     fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
-        let line = syn_node.span().start().line;
-        let col = syn_node.span().start().column;
-        warn!("HackyResolver: {} ({:?}) ({}:{})", msg, syn_node, line, col);
+        let loc = SrcLoc::from_span(self.filepath, &syn_node);
+        warn!("HackyResolver: {} ({})", msg, loc)
     }
 
     /*
