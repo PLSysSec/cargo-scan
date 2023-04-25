@@ -1,4 +1,4 @@
-.PHONY: install install-mirai checks test top10 top100 top1000 top10000 mozilla small medium large clean
+.PHONY: install install-mirai checks test test-results top10 top100 top1000 top10000 mozilla small medium large clean
 .DEFAULT_GOAL := install
 
 SCAN_PY = ./scripts/scan.py
@@ -13,12 +13,16 @@ install-mirai: install
 	git submodule update
 	cd mirai/MIRAI && cargo install --locked --path ./checker
 
-test: install
+checks:
 	cargo test
 	cargo clippy
 	cargo fmt
+
+test-results: install
 	$(SCAN_PY) -t -i data/crate-lists/test-crates.csv -o test -vvv
-	- git diff --word-diff data/results
+
+test: checks test-results
+	- git diff --word-diff data/results/test_all.csv
 
 top10: install
 	$(SCAN_PY) -i data/crate-lists/top10.csv -o top10
@@ -37,11 +41,11 @@ mozilla: install
 	$(SCAN_PY) -i data/crate-lists/mozilla-exempt.csv -o mozilla-exempt
 	$(SCAN_PY) -i data/crate-lists/mozilla-audits.csv -o mozilla-audits
 
-small: test top10 top100
+small: test-results top10
 
-medium: small mozilla
+medium: top100 mozilla
 
-large: medium top1000 top10000
+large: top1000 top10000
 
 clean:
 	# Warning: this deletes all downloaded packages and experiment results not under version control!
