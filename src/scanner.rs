@@ -611,7 +611,7 @@ impl<'a> Scanner<'a> {
             &callee_span,
             self.scope_unsafe > 0,
             ffi,
-            &self.sinks
+            &self.sinks,
         );
         if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
             effect_block.push_effect(eff.clone())
@@ -713,8 +713,22 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
     // TODO: For now, only walking through the src dir, but might want to
     //       include others (e.g. might codegen in other dirs)
     let src_dir = crate_path.join(FilePath::new("src"));
-    for entry in util::fs::walk_files_with_extension(&src_dir, "rs") {
-        scan_file(entry.as_path(), &resolver, &mut scan_results)?;
+    if src_dir.is_dir() {
+        for entry in util::fs::walk_files_with_extension(&src_dir, "rs") {
+            scan_file(entry.as_path(), &resolver, &mut scan_results)?;
+        }
+    } else {
+        info!("crate has no src dir; looking for a single lib.rs file instead");
+        let lib_file = crate_path.join(FilePath::new("lib.rs"));
+        if lib_file.is_file() {
+            scan_file(lib_file.as_path(), &resolver, &mut scan_results)?;
+        } else {
+            warn!(
+                "unable to find src dir or lib.rs file; \
+                no files scanned! In crate {:?}",
+                crate_path
+            );
+        }
     }
 
     Ok(scan_results)

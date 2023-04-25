@@ -4,7 +4,10 @@ use super::ident::{IdentPath, Pattern};
 
 use log::warn;
 use serde::{Deserialize, Serialize};
-use std::{fmt::{self, Display}, collections::HashSet};
+use std::{
+    collections::HashSet,
+    fmt::{self, Display},
+};
 
 /// Hard-coded list of sink patterns
 const SINK_PATTERNS: &[&str] = &[

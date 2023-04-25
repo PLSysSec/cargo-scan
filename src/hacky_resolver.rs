@@ -23,7 +23,7 @@ fn infer_crate(filepath: &FilePath) -> String {
                 panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
             })
         })
-        .take_while(|&x| x != "src")
+        .take_while(|&x| x != "src" && x != "lib.rs")
         .map(|x| x.to_string())
         .collect();
     let crate_string = crate_src.last().cloned().unwrap_or_else(|| {
@@ -41,7 +41,7 @@ fn infer_module(filepath: &FilePath) -> Vec<String> {
                 panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
             })
         })
-        .skip_while(|&x| x != "src")
+        .skip_while(|&x| x != "src" && x != "lib.rs")
         .skip(1)
         .filter(|&x| x != "main.rs" && x != "lib.rs")
         .map(|x| x.replace(".rs", ""))
