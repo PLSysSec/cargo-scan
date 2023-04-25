@@ -1,7 +1,7 @@
 //! Rust identifiers, paths, and patterns.
 //!
 //! Ident: std, fs, File
-//! Path: std, std::fs, fs::File, super::fs::File, std::fs::File
+//! IdentPath: std, std::fs, fs::File, super::fs::File, std::fs::File
 //! CanonicalPath: crate::fs::File
 //! Pattern: std::fs, std::fs::*
 
@@ -87,21 +87,21 @@ impl Ident {
 /// E.g.: std::env::var_os
 /// Semantically a (possibly empty) sequence of Idents
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct Path(String);
-impl Display for Path {
+pub struct IdentPath(String);
+impl Display for IdentPath {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-impl Path {
+impl IdentPath {
     pub fn invariant(&self) -> bool {
         self.0.is_empty() || self.0.split("::").all(Ident::str_ok)
     }
 
     pub fn check_invariant(&self) {
         if !self.invariant() {
-            warn!("failed invariant! on Path {}", self);
+            warn!("failed invariant! on IdentPath {}", self);
         }
     }
 
@@ -207,17 +207,17 @@ impl Path {
     }
 }
 
-impl Default for Path {
+impl Default for IdentPath {
     fn default() -> Self {
         Self::new_empty()
     }
 }
 
-/// Type representing a *canonical* Path identifier,
+/// Type representing a *canonical* path of Rust idents.
 /// i.e. from the root
 /// Should not be empty.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct CanonicalPath(Path);
+pub struct CanonicalPath(IdentPath);
 impl Display for CanonicalPath {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
@@ -236,14 +236,14 @@ impl CanonicalPath {
     }
 
     pub fn new(s: &str) -> Self {
-        Self::from_path(Path::new(s))
+        Self::from_path(IdentPath::new(s))
     }
 
     pub fn new_owned(s: String) -> Self {
-        Self::from_path(Path::new_owned(s))
+        Self::from_path(IdentPath::new_owned(s))
     }
 
-    pub fn from_path(p: Path) -> Self {
+    pub fn from_path(p: IdentPath) -> Self {
         let result = Self(p);
         result.check_invariant();
         result
@@ -260,7 +260,7 @@ impl CanonicalPath {
         result
     }
 
-    pub fn append_path(&mut self, other: &Path) {
+    pub fn append_path(&mut self, other: &IdentPath) {
         self.0.append(other);
         self.check_invariant();
     }
@@ -269,11 +269,11 @@ impl CanonicalPath {
         self.0.idents().next().unwrap()
     }
 
-    pub fn to_path(self) -> Path {
+    pub fn to_path(self) -> IdentPath {
         self.0
     }
 
-    pub fn as_path(&self) -> &Path {
+    pub fn as_path(&self) -> &IdentPath {
         &self.0
     }
 
@@ -282,13 +282,13 @@ impl CanonicalPath {
     }
 }
 
-/// Type representing a pattern over Paths
+/// Type representing a pattern over paths
 ///
 /// Currently supported: only patterns of the form
 /// <path>::* (includes <path> itself)
 /// The ::* is left implicit and should not be provided
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct Pattern(Path);
+pub struct Pattern(IdentPath);
 impl Display for Pattern {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
@@ -306,18 +306,18 @@ impl Pattern {
     }
 
     pub fn new(s: &str) -> Self {
-        Self::from_path(Path::new(s))
+        Self::from_path(IdentPath::new(s))
     }
 
     pub fn new_owned(s: String) -> Self {
-        Self::from_path(Path::new_owned(s))
+        Self::from_path(IdentPath::new_owned(s))
     }
 
     pub fn from_ident(i: Ident) -> Self {
-        Self::from_path(Path::from_ident(i))
+        Self::from_path(IdentPath::from_ident(i))
     }
 
-    pub fn from_path(p: Path) -> Self {
+    pub fn from_path(p: IdentPath) -> Self {
         let result = Self(p);
         result.check_invariant();
         result
@@ -346,7 +346,7 @@ mod tests {
 
     #[test]
     fn test_path_patterns() {
-        let p = Path::new("std::fs");
+        let p = IdentPath::new("std::fs");
         let pats: Vec<Pattern> = p.patterns().collect();
         let pat1 = Pattern::new("std");
         let pat2 = Pattern::new("std::fs");
@@ -355,7 +355,7 @@ mod tests {
 
     #[test]
     fn test_path_matches() {
-        let p = Path::new("std::fs");
+        let p = IdentPath::new("std::fs");
         let pat1 = Pattern::new("std");
         let pat2 = Pattern::new("std::fs");
         let pat3 = Pattern::new("std::fs::File");

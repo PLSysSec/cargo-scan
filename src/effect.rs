@@ -6,7 +6,7 @@
 //! - EffectBlock, which represents a block of source code which may contain
 //!     zero or more effects (such as an unsafe block).
 
-use super::ident::{CanonicalPath, Path};
+use super::ident::{CanonicalPath, IdentPath};
 use super::sink::Sink;
 use super::util::csv;
 
@@ -185,7 +185,7 @@ pub struct EffectInstance {
     call_loc: SrcLoc,
 
     /// Callee (effect) function, e.g. libc::sched_getaffinity
-    callee: Path,
+    callee: IdentPath,
 
     /// EffectInstance type
     /// If Sink, this includes the effect pattern -- prefix of callee (effect), e.g. libc.
@@ -196,7 +196,7 @@ impl EffectInstance {
     pub fn new_call<S>(
         filepath: &FilePath,
         caller: CanonicalPath,
-        callee: Path,
+        callee: IdentPath,
         callsite: &S,
         is_unsafe: bool,
         ffi: Option<CanonicalPath>,
@@ -234,7 +234,7 @@ impl EffectInstance {
         self.caller.as_str()
     }
 
-    pub fn callee(&self) -> &Path {
+    pub fn callee(&self) -> &IdentPath {
         &self.callee
     }
 

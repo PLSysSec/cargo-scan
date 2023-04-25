@@ -7,7 +7,7 @@ use super::effect::{
     BlockType, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
     Visibility,
 };
-use super::ident::{CanonicalPath, Path};
+use super::ident::{CanonicalPath, IdentPath};
 use super::resolve::{FileResolver, Resolve, Resolver};
 use super::util;
 
@@ -37,11 +37,11 @@ pub struct ScanResults {
     // Saved function declarations
     // TODO replace with call graph info
     pub pub_fns: HashSet<CanonicalPath>,
-    pub fn_locs: HashMap<Path, SrcLoc>,
+    pub fn_locs: HashMap<IdentPath, SrcLoc>,
 
     // TODO currently unused
-    call_graph: DiGraph<Path, SrcLoc>,
-    node_idxs: HashMap<Path, NodeIndex>,
+    call_graph: DiGraph<IdentPath, SrcLoc>,
+    node_idxs: HashMap<IdentPath, NodeIndex>,
 
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
@@ -62,7 +62,7 @@ impl ScanResults {
             .collect::<HashSet<_>>()
     }
 
-    pub fn get_callers<'a>(&'a self, callee: &Path) -> HashSet<&'a EffectInstance> {
+    pub fn get_callers<'a>(&'a self, callee: &IdentPath) -> HashSet<&'a EffectInstance> {
         let mut callers = HashSet::new();
         for e in &self.effects {
             let effect_callee = e.callee();

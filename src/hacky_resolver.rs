@@ -1,6 +1,6 @@
 //! A hacky in-house resolver for Rust identifiers
 
-use super::ident::{CanonicalPath, Ident, Path};
+use super::ident::{CanonicalPath, Ident, IdentPath};
 use super::resolve::Resolve;
 
 use anyhow::Result;
@@ -364,12 +364,12 @@ impl<'a> HackyResolver<'a> {
         result
     }
 
-    fn get_mod_scope(&self) -> Path {
-        Path::from_idents(self.scope_mods.iter().cloned().map(Ident::from_syn))
+    fn get_mod_scope(&self) -> IdentPath {
+        IdentPath::from_idents(self.scope_mods.iter().cloned().map(Ident::from_syn))
     }
 
     fn aggregate_path(p: &[&'a syn::Ident]) -> CanonicalPath {
-        let mut result = Path::new_empty();
+        let mut result = IdentPath::new_empty();
         for &i in p {
             result.push_ident(&Ident::from_syn(i));
         }

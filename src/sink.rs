@@ -1,6 +1,6 @@
 //! Hard-coded list of function patterns of interest, a.k.a. sinks.
 
-use super::ident::{Path, Pattern};
+use super::ident::{IdentPath, Pattern};
 
 use log::warn;
 use serde::{Deserialize, Serialize};
@@ -45,7 +45,7 @@ impl Sink {
     // TODO: allocating new Patterns every time this is called is inefficient.
     // Use lazy_static! to create the list of pattern strings only once.
     // (Or even better, compile the patterns to a Trie or similar)
-    pub fn new_match(callee: &Path) -> Option<Self> {
+    pub fn new_match(callee: &IdentPath) -> Option<Self> {
         let mut result = None;
         for &pat_raw in SINK_PATTERNS {
             let pat = Pattern::new(pat_raw);
