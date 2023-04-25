@@ -1,7 +1,7 @@
 //! A hacky in-house resolver for Rust identifiers
 
-use super::ident::{CanonicalPath, Ident, IdentPath};
 use super::effect::SrcLoc;
+use super::ident::{CanonicalPath, Ident, IdentPath};
 use super::resolve::Resolve;
 
 use anyhow::Result;
@@ -285,10 +285,7 @@ impl<'a> HackyResolver<'a> {
             syn::Type::Group(x) => self.scan_impl_type(&x.elem),
             syn::Type::Paren(x) => self.scan_impl_type(&x.elem),
             syn::Type::Path(x) => self.scan_impl_type_path(&x.path),
-            syn::Type::TraitObject(x) => {
-                self.syn_warning("skipping 'impl dyn Trait' block", x);
-                0
-            }
+            syn::Type::TraitObject(x) => self.scan_impl_trait_object(x),
             syn::Type::Verbatim(v) => {
                 self.syn_warning("skipping Verbatim expression", v);
                 0
@@ -317,6 +314,7 @@ impl<'a> HackyResolver<'a> {
         // TraitObject(x) => {}
         // Tuple(x) => {}
     }
+
     fn scan_impl_type_path(&mut self, ty: &'a syn::Path) -> usize {
         // return: the number of items added to scope_mods
         let fullpath = self.lookup_path_vec(ty);
@@ -326,6 +324,7 @@ impl<'a> HackyResolver<'a> {
         }
         fullpath.len()
     }
+
     fn scan_impl_trait_path(&mut self, tr: &'a syn::Path) -> usize {
         // return: the number of items added to scope_mods
         let fullpath = self.lookup_path_vec(tr);
@@ -334,6 +333,21 @@ impl<'a> HackyResolver<'a> {
             self.syn_warning("unexpected empty trait name path", tr);
         }
         fullpath.len()
+    }
+
+    fn scan_impl_trait_object(&mut self, tr_obj: &'a syn::TypeTraitObject) -> usize {
+        // return: the number of items added to scope_mods
+        // for dyn trait objects, we just scope under the first found trait name and ignore the others
+        for bd in tr_obj.bounds.iter() {
+            if let syn::TypeParamBound::Trait(tr) = bd {
+                return self.scan_impl_trait_path(&tr.path);
+            }
+        }
+        self.syn_warning(
+            "failed to extract any trait name for 'impl dyn Trait' syntax; skipping",
+            tr_obj,
+        );
+        0
     }
 
     /*
