@@ -1,6 +1,7 @@
 name
 caller-checked
 dummy
+fnv_minimal
 inline-ex
 libc-ex
 num_cpus_minimal
