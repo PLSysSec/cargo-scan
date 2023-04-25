@@ -691,6 +691,17 @@ pub fn scan_file(
     Ok(())
 }
 
+/// Try to run scan_file, reporting any errors back to the user
+pub fn try_scan_file(
+    filepath: &FilePath,
+    resolver: &Resolver,
+    scan_results: &mut ScanResults,
+) {
+    scan_file(filepath, resolver, scan_results).unwrap_or_else(|err| {
+        warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
+    });
+}
+
 /// Scan the supplied crate
 pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
     info!("Scanning crate: {:?}", crate_path);
@@ -715,13 +726,13 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
     let src_dir = crate_path.join(FilePath::new("src"));
     if src_dir.is_dir() {
         for entry in util::fs::walk_files_with_extension(&src_dir, "rs") {
-            scan_file(entry.as_path(), &resolver, &mut scan_results)?;
+            try_scan_file(entry.as_path(), &resolver, &mut scan_results);
         }
     } else {
         info!("crate has no src dir; looking for a single lib.rs file instead");
         let lib_file = crate_path.join(FilePath::new("lib.rs"));
         if lib_file.is_file() {
-            scan_file(lib_file.as_path(), &resolver, &mut scan_results)?;
+            try_scan_file(lib_file.as_path(), &resolver, &mut scan_results);
         } else {
             warn!(
                 "unable to find src dir or lib.rs file; \
