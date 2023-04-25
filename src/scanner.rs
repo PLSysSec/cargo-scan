@@ -3,11 +3,13 @@
 //! Parse a Rust crate or source file and collect effect blocks, function calls, and
 //! various other information.
 
+use crate::sink::Sink;
+
 use super::effect::{
     BlockType, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
     Visibility,
 };
-use super::ident::{CanonicalPath, Path};
+use super::ident::{CanonicalPath, IdentPath};
 use super::resolve::{FileResolver, Resolve, Resolver};
 use super::util;
 
@@ -37,11 +39,11 @@ pub struct ScanResults {
     // Saved function declarations
     // TODO replace with call graph info
     pub pub_fns: HashSet<CanonicalPath>,
-    pub fn_locs: HashMap<Path, SrcLoc>,
+    pub fn_locs: HashMap<IdentPath, SrcLoc>,
 
     // TODO currently unused
-    call_graph: DiGraph<Path, SrcLoc>,
-    node_idxs: HashMap<Path, NodeIndex>,
+    call_graph: DiGraph<IdentPath, SrcLoc>,
+    node_idxs: HashMap<IdentPath, NodeIndex>,
 
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
@@ -62,7 +64,7 @@ impl ScanResults {
             .collect::<HashSet<_>>()
     }
 
-    pub fn get_callers<'a>(&'a self, callee: &Path) -> HashSet<&'a EffectInstance> {
+    pub fn get_callers<'a>(&'a self, callee: &IdentPath) -> HashSet<&'a EffectInstance> {
         let mut callers = HashSet::new();
         for e in &self.effects {
             let effect_callee = e.callee();
@@ -112,6 +114,9 @@ pub struct Scanner<'a> {
 
     /// Target to accumulate scan results
     data: &'a mut ScanResults,
+
+    /// The list of sinks to look for
+    sinks: HashSet<IdentPath>,
 }
 
 impl<'a> Scanner<'a> {
@@ -132,6 +137,7 @@ impl<'a> Scanner<'a> {
             scope_unsafe: 0,
             scope_fns: Vec::new(),
             data,
+            sinks: Sink::default_sinks(),
         }
     }
 
@@ -140,6 +146,10 @@ impl<'a> Scanner<'a> {
         self.resolver.assert_top_level_invariant();
         debug_assert!(self.scope_effect_blocks.is_empty());
         debug_assert_eq!(self.scope_unsafe, 0);
+    }
+
+    pub fn add_sinks(&mut self, new_sinks: HashSet<IdentPath>) {
+        self.sinks.extend(new_sinks);
     }
 
     /*
@@ -601,6 +611,7 @@ impl<'a> Scanner<'a> {
             &callee_span,
             self.scope_unsafe > 0,
             ffi,
+            &self.sinks,
         );
         if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
             effect_block.push_effect(eff.clone())
@@ -680,6 +691,17 @@ pub fn scan_file(
     Ok(())
 }
 
+/// Try to run scan_file, reporting any errors back to the user
+pub fn try_scan_file(
+    filepath: &FilePath,
+    resolver: &Resolver,
+    scan_results: &mut ScanResults,
+) {
+    scan_file(filepath, resolver, scan_results).unwrap_or_else(|err| {
+        warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
+    });
+}
+
 /// Scan the supplied crate
 pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
     info!("Scanning crate: {:?}", crate_path);
@@ -702,8 +724,22 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
     // TODO: For now, only walking through the src dir, but might want to
     //       include others (e.g. might codegen in other dirs)
     let src_dir = crate_path.join(FilePath::new("src"));
-    for entry in util::fs::walk_files_with_extension(&src_dir, "rs") {
-        scan_file(entry.as_path(), &resolver, &mut scan_results)?;
+    if src_dir.is_dir() {
+        for entry in util::fs::walk_files_with_extension(&src_dir, "rs") {
+            try_scan_file(entry.as_path(), &resolver, &mut scan_results);
+        }
+    } else {
+        info!("crate has no src dir; looking for a single lib.rs file instead");
+        let lib_file = crate_path.join(FilePath::new("lib.rs"));
+        if lib_file.is_file() {
+            try_scan_file(lib_file.as_path(), &resolver, &mut scan_results);
+        } else {
+            warn!(
+                "unable to find src dir or lib.rs file; \
+                no files scanned! In crate {:?}",
+                crate_path
+            );
+        }
     }
 
     Ok(scan_results)

@@ -11,7 +11,7 @@ use ra_ap_ide_db::FxHashMap;
 use ra_ap_syntax::ast::HasName;
 
 use super::effect::SrcLoc;
-use super::ident::{CanonicalPath, Ident, Path as IdentPath};
+use super::ident::{CanonicalPath, Ident, IdentPath};
 
 use ra_ap_hir::{Adt, AsAssocItem, Module, Semantics};
 use ra_ap_ide::{AnalysisHost, FileId, LineCol, RootDatabase, TextSize};

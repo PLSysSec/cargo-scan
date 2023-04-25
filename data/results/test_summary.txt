@@ -5,7 +5,7 @@ caller-checked: 13
 libc-ex: 8
 permissions-ex: 6
 num_cpus_minimal: 4
-unsafe-test: 2
+unsafe-test: 3
 ===== Crate Totals =====
 6 crates with 1 or more dangerous imports
-4 crates with 0 dangerous imports
+6 crates with 0 dangerous imports
