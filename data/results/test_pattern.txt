@@ -5,8 +5,8 @@ libc: 9
 std::process: 7
 std::fs: 2
 std::net: 2
+[FFI]: 2
 std::env: 1
-[FFI]: 1
 std::os: 0
 std::path: 0
 winapi: 0

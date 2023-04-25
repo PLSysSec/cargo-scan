@@ -10,7 +10,7 @@ use super::ident::{CanonicalPath, IdentPath};
 use super::sink::Sink;
 use super::util::csv;
 
-use log::warn;
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::{Path as FilePath, PathBuf as FilePathBuf};
@@ -204,25 +204,35 @@ impl EffectInstance {
     where
         S: Spanned,
     {
+        let call_loc = SrcLoc::from_span(filepath, callsite);
         let eff_type = if let Some(pat) = Sink::new_match(&callee) {
-            // TODO bug
             if ffi.is_some() {
+                // This case should generally not occur, though it might
+                // if we add custom sink patterns
                 warn!(
-                    "found sink stdlib pattern also \
-                     matching an FFI call: {} {:?}",
-                    callee, ffi
+                    "found sink stdlib pattern also matching an FFI call: \
+                    {} ({}) (FFI {:?})",
+                    callee, call_loc, ffi
                 );
             }
             Effect::SinkCall(pat)
         } else if let Some(ffi) = ffi {
-            debug_assert!(is_unsafe);
+            if !is_unsafe {
+                // This case can occur in certain contexts, e.g. with
+                // the wasm_bindgen attribute
+                info!(
+                    "found call to an FFI function call that wasn't marked \
+                    unsafe; assuming unsafe anyway: \
+                    {} ({}) (FFI {:?})",
+                    callee, call_loc, ffi
+                );
+            }
             Effect::FFICall(ffi)
         } else if is_unsafe {
             Effect::UnsafeOp
         } else {
             Effect::OtherCall
         };
-        let call_loc = SrcLoc::from_span(filepath, callsite);
         Self { caller, call_loc, callee, eff_type }
     }
 
