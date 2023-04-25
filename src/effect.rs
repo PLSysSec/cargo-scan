@@ -12,6 +12,7 @@ use super::util::csv;
 
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::fmt;
 use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 use syn;
@@ -200,12 +201,13 @@ impl EffectInstance {
         callsite: &S,
         is_unsafe: bool,
         ffi: Option<CanonicalPath>,
+        sinks: &HashSet<IdentPath>,
     ) -> Self
     where
         S: Spanned,
     {
         let call_loc = SrcLoc::from_span(filepath, callsite);
-        let eff_type = if let Some(pat) = Sink::new_match(&callee) {
+        let eff_type = if let Some(pat) = Sink::new_match(&callee, sinks) {
             if ffi.is_some() {
                 // This case should generally not occur, though it might
                 // if we add custom sink patterns

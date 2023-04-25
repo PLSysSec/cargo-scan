@@ -4,7 +4,7 @@ use super::ident::{IdentPath, Pattern};
 
 use log::warn;
 use serde::{Deserialize, Serialize};
-use std::fmt::{self, Display};
+use std::{fmt::{self, Display}, collections::HashSet};
 
 /// Hard-coded list of sink patterns
 const SINK_PATTERNS: &[&str] = &[
@@ -45,10 +45,10 @@ impl Sink {
     // TODO: allocating new Patterns every time this is called is inefficient.
     // Use lazy_static! to create the list of pattern strings only once.
     // (Or even better, compile the patterns to a Trie or similar)
-    pub fn new_match(callee: &IdentPath) -> Option<Self> {
+    pub fn new_match(callee: &IdentPath, sinks: &HashSet<IdentPath>) -> Option<Self> {
         let mut result = None;
-        for &pat_raw in SINK_PATTERNS {
-            let pat = Pattern::new(pat_raw);
+        for pat_raw in sinks {
+            let pat = Pattern::new(pat_raw.as_str());
             if callee.matches(&pat) {
                 if let Some(x) = result {
                     warn!(
@@ -65,5 +65,9 @@ impl Sink {
     /// convert to str
     pub fn as_str(&self) -> &str {
         self.0.as_str()
+    }
+
+    pub fn default_sinks() -> HashSet<IdentPath> {
+        SINK_PATTERNS.iter().map(|x| IdentPath::new(x)).collect::<HashSet<_>>()
     }
 }

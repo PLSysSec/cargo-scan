@@ -3,6 +3,8 @@
 //! Parse a Rust crate or source file and collect effect blocks, function calls, and
 //! various other information.
 
+use crate::sink::Sink;
+
 use super::effect::{
     BlockType, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
     Visibility,
@@ -112,6 +114,9 @@ pub struct Scanner<'a> {
 
     /// Target to accumulate scan results
     data: &'a mut ScanResults,
+
+    /// The list of sinks to look for
+    sinks: HashSet<IdentPath>,
 }
 
 impl<'a> Scanner<'a> {
@@ -132,6 +137,7 @@ impl<'a> Scanner<'a> {
             scope_unsafe: 0,
             scope_fns: Vec::new(),
             data,
+            sinks: Sink::default_sinks(),
         }
     }
 
@@ -140,6 +146,10 @@ impl<'a> Scanner<'a> {
         self.resolver.assert_top_level_invariant();
         debug_assert!(self.scope_effect_blocks.is_empty());
         debug_assert_eq!(self.scope_unsafe, 0);
+    }
+
+    pub fn add_sinks(&mut self, new_sinks: HashSet<IdentPath>) {
+        self.sinks.extend(new_sinks);
     }
 
     /*
@@ -601,6 +611,7 @@ impl<'a> Scanner<'a> {
             &callee_span,
             self.scope_unsafe > 0,
             ffi,
+            &self.sinks
         );
         if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
             effect_block.push_effect(eff.clone())
