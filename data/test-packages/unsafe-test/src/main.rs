@@ -1,3 +1,4 @@
+pub mod wasm_bindgen_ex;
 
 unsafe fn my_unsafe_fn() {
     println!("I am unsafe");
