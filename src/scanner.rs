@@ -37,11 +37,9 @@ pub struct ScanResults {
     pub unsafe_impls: Vec<TraitImpl>,
 
     // Saved function declarations
-    // TODO replace with call graph info
     pub pub_fns: HashSet<CanonicalPath>,
     pub fn_locs: HashMap<IdentPath, SrcLoc>,
 
-    // TODO currently unused
     call_graph: DiGraph<IdentPath, SrcLoc>,
     node_idxs: HashMap<IdentPath, NodeIndex>,
 
@@ -672,6 +670,7 @@ pub fn scan_file(
     filepath: &FilePath,
     resolver: &Resolver,
     scan_results: &mut ScanResults,
+    sinks: HashSet<IdentPath>
 ) -> Result<()> {
     debug!("Scanning file: {:?}", filepath);
 
@@ -684,6 +683,7 @@ pub fn scan_file(
     // Initialize data structures
     let file_resolver = FileResolver::new(resolver, filepath)?;
     let mut scanner = Scanner::new(filepath, file_resolver, scan_results);
+    scanner.add_sinks(sinks);
 
     // Scan file contents
     scanner.scan_file(&syntax_tree);
@@ -696,14 +696,18 @@ pub fn try_scan_file(
     filepath: &FilePath,
     resolver: &Resolver,
     scan_results: &mut ScanResults,
+    sinks: HashSet<IdentPath>,
 ) {
-    scan_file(filepath, resolver, scan_results).unwrap_or_else(|err| {
+    scan_file(filepath, resolver, scan_results, sinks).unwrap_or_else(|err| {
         warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
     });
 }
 
-/// Scan the supplied crate
-pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
+/// Scan the supplied crate with an additional list of sinks
+pub fn scan_crate_with_sinks(
+    crate_path: &FilePath,
+    sinks: HashSet<IdentPath>,
+) -> Result<ScanResults> {
     info!("Scanning crate: {:?}", crate_path);
 
     // Make sure the path is a crate
@@ -726,13 +730,13 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
     let src_dir = crate_path.join(FilePath::new("src"));
     if src_dir.is_dir() {
         for entry in util::fs::walk_files_with_extension(&src_dir, "rs") {
-            try_scan_file(entry.as_path(), &resolver, &mut scan_results);
+            try_scan_file(entry.as_path(), &resolver, &mut scan_results, sinks.clone());
         }
     } else {
         info!("crate has no src dir; looking for a single lib.rs file instead");
         let lib_file = crate_path.join(FilePath::new("lib.rs"));
         if lib_file.is_file() {
-            try_scan_file(lib_file.as_path(), &resolver, &mut scan_results);
+            try_scan_file(lib_file.as_path(), &resolver, &mut scan_results, sinks);
         } else {
             warn!(
                 "unable to find src dir or lib.rs file; \
@@ -743,4 +747,9 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
     }
 
     Ok(scan_results)
+}
+
+/// Scan the supplied crate
+pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
+    scan_crate_with_sinks(crate_path, HashSet::new())
 }

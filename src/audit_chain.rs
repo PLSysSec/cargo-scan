@@ -8,6 +8,8 @@ use std::mem;
 use std::path::PathBuf;
 use toml;
 
+use crate::policy::PolicyFile;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuditChain {
     #[serde(skip)]
@@ -45,5 +47,10 @@ impl AuditChain {
     pub fn add_crate_policy(&mut self, package: &Package, policy_loc: PathBuf) {
         let package_id = format!("{}-{}", package.name.as_str(), package.version);
         self.crate_policies.insert(package_id, policy_loc);
+    }
+
+    pub fn read_policy(&self, package: &str) -> Option<PolicyFile> {
+        let policy_path = self.crate_policies.get(package)?;
+        PolicyFile::read_policy(policy_path.clone()).ok()?
     }
 }

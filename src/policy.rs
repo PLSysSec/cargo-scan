@@ -219,8 +219,15 @@ impl PolicyFile {
     }
 
     pub fn new_caller_checked_default(crate_path: &FilePath) -> Result<PolicyFile> {
+        Self::new_caller_checked_default_with_sinks(crate_path, HashSet::new())
+    }
+
+    pub fn new_caller_checked_default_with_sinks(
+        crate_path: &FilePath,
+        sinks: HashSet<IdentPath>,
+    ) -> Result<PolicyFile> {
         let mut policy = PolicyFile::empty(crate_path.to_path_buf())?;
-        let scan_res = scanner::scan_crate(crate_path)?;
+        let scan_res = scanner::scan_crate_with_sinks(crate_path, sinks)?;
         let mut pub_caller_checked = HashSet::new();
         policy.set_base_audit_trees(scan_res.unsafe_effect_blocks_set());
 
