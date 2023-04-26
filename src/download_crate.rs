@@ -1,4 +1,4 @@
-use std::fs::{create_dir_all, remove_file, File};
+use std::fs::{create_dir_all, remove_file, File, write};
 use std::path::PathBuf;
 
 use anyhow::Result;
@@ -48,6 +48,7 @@ pub fn download_crate(package: &Package, download_dir: &str) -> Result<PathBuf> 
     let tarball_name = format!("{}.tar.gz", package_dir_name);
     let mut download_dir = PathBuf::from(download_dir);
     download_dir.push(tarball_name.clone());
+    write(&download_dir, dst)?;
 
     {
         let tarball_file = File::open(download_dir.clone())?;
