@@ -9,8 +9,9 @@ use clap::{Args as ClapArgs, Parser, Subcommand};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::DfsPostOrder;
 use std::collections::{HashMap, HashSet};
-use std::fs::{create_dir_all, remove_file};
+use std::fs::{create_dir_all, remove_file, read_to_string};
 use std::path::PathBuf;
+use toml::{self, value::Table};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -165,14 +166,27 @@ fn create_new_audit_chain(args: Create) -> Result<AuditChain> {
 
     let lockfile = Lockfile::load(format!("{}/Cargo.lock", args.crate_path))?;
 
-    // TODO: Read crate root from Cargo.toml file?
-    /*
     let toml_string =
         read_to_string(PathBuf::from(format!("{}/Cargo.toml", args.crate_path)))?;
     let cargo_toml =
         toml::from_str::<Table>(&toml_string).context("Couldn't parse Cargo.toml")?;
-    */
-    let root_name = lockfile.root.unwrap().name.as_str().to_string();
+    let root_toml_table = cargo_toml
+        .get("package")
+        .context("No package in Cargo.toml")?
+        .as_table()
+        .context("Package field is not a table")?;
+    let root_package_name = root_toml_table
+        .get("name")
+        .context("No name for the root package in Cargo.toml")?
+        .as_str()
+        .context("name field in package is not a string")?;
+    let root_version = root_toml_table
+        .get("version")
+        .context("No version for the root package in Cargo.toml")?
+        .as_str()
+        .context("version field in package couldn't be interpreted as a string")?;
+
+    let root_name = format!("{}-{}", root_package_name, root_version);
 
     let (graph, package_map, root_node) =
         make_dependency_graph(&lockfile.packages, &root_name);
