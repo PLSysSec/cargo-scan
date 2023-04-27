@@ -10,7 +10,7 @@ use super::hacky_resolver::HackyResolver;
 use super::ident::{CanonicalPath, Ident};
 
 use anyhow::Result;
-use log::{debug, warn};
+use log::{debug, info, warn};
 use std::path::Path as FilePath;
 use syn;
 
@@ -86,7 +86,9 @@ impl<'a> FileResolver<'a> {
             Ok(res) => res,
             Err(err) => {
                 let s = SrcLoc::from_span(self.filepath, i);
-                warn!("Resolution failed (using fallback) for: {} ({}) ({})", i, s, err);
+                // Temporarily suppressing this warning.
+                // TODO: Bump this back up to warn! once a fix is pushed
+                info!("Resolution failed (using fallback) for: {} ({}) ({})", i, s, err);
                 fallback()
             }
         }
