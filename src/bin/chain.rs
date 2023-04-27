@@ -5,6 +5,7 @@ use cargo_scan::policy::PolicyFile;
 use cargo_scan::util::load_cargo_toml;
 
 use anyhow::{anyhow, Context, Result};
+use cargo::{core::Workspace, ops::generate_lockfile, util::config};
 use cargo_lock::{Dependency, Lockfile, Package};
 use clap::{Args as ClapArgs, Parser, Subcommand};
 use log::info;
@@ -12,7 +13,7 @@ use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::DfsPostOrder;
 use std::collections::{HashMap, HashSet};
 use std::fs::{create_dir_all, remove_file};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -172,7 +173,16 @@ fn create_new_audit_chain(args: Create) -> Result<AuditChain> {
     create_audit_chain_dirs(&args)?;
 
     info!("Loading audit package lockfile");
-    let lockfile = Lockfile::load(format!("{}/Cargo.lock", args.crate_path))?;
+    // If the lockfile doesn't exist, generate it
+    let lockfile = if let Ok(l) = Lockfile::load(format!("{}/Cargo.lock", args.crate_path)) {
+        l
+    } else {
+        info!("Lockfile missing: generating new lockfile");
+        let config = config::Config::default()?;
+        let workspace = Workspace::new(Path::new(&args.crate_path), &config)?;
+        generate_lockfile(&workspace)?;
+        Lockfile::load(format!("{}/Cargo.lock", args.crate_path))?
+    };
 
     let crate_data = load_cargo_toml(&PathBuf::from(&args.crate_path))?;
 
