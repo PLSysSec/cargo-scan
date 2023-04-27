@@ -2,6 +2,7 @@ use cargo_scan::audit_chain::AuditChain;
 use cargo_scan::download_crate;
 use cargo_scan::ident::IdentPath;
 use cargo_scan::policy::PolicyFile;
+use cargo_scan::util::load_cargo_toml;
 
 use anyhow::{anyhow, Context, Result};
 use cargo_lock::{Dependency, Lockfile, Package};
@@ -9,9 +10,8 @@ use clap::{Args as ClapArgs, Parser, Subcommand};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::DfsPostOrder;
 use std::collections::{HashMap, HashSet};
-use std::fs::{create_dir_all, remove_file, read_to_string};
+use std::fs::{create_dir_all, remove_file};
 use std::path::PathBuf;
-use toml::{self, value::Table};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -56,7 +56,12 @@ struct Audit {
 // TODO: Different default policies
 /// Creates a new default policy for the given package and returns the path to
 /// the saved policy file
-fn make_new_policy(chain: &AuditChain, package: &Package, root_name: &str, args: &Create) -> Result<PathBuf> {
+fn make_new_policy(
+    chain: &AuditChain,
+    package: &Package,
+    root_name: &str,
+    args: &Create,
+) -> Result<PathBuf> {
     let policy_path = PathBuf::from(format!(
         "{}/{}-{}.policy",
         args.policy_path,
@@ -166,27 +171,9 @@ fn create_new_audit_chain(args: Create) -> Result<AuditChain> {
 
     let lockfile = Lockfile::load(format!("{}/Cargo.lock", args.crate_path))?;
 
-    let toml_string =
-        read_to_string(PathBuf::from(format!("{}/Cargo.toml", args.crate_path)))?;
-    let cargo_toml =
-        toml::from_str::<Table>(&toml_string).context("Couldn't parse Cargo.toml")?;
-    let root_toml_table = cargo_toml
-        .get("package")
-        .context("No package in Cargo.toml")?
-        .as_table()
-        .context("Package field is not a table")?;
-    let root_package_name = root_toml_table
-        .get("name")
-        .context("No name for the root package in Cargo.toml")?
-        .as_str()
-        .context("name field in package is not a string")?;
-    let root_version = root_toml_table
-        .get("version")
-        .context("No version for the root package in Cargo.toml")?
-        .as_str()
-        .context("version field in package couldn't be interpreted as a string")?;
+    let crate_data = load_cargo_toml(&PathBuf::from(&args.crate_path))?;
 
-    let root_name = format!("{}-{}", root_package_name, root_version);
+    let root_name = format!("{}-{}", crate_data.name, crate_data.version);
 
     let (graph, package_map, root_node) =
         make_dependency_graph(&lockfile.packages, &root_name);

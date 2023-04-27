@@ -670,7 +670,7 @@ pub fn scan_file(
     filepath: &FilePath,
     resolver: &Resolver,
     scan_results: &mut ScanResults,
-    sinks: HashSet<IdentPath>
+    sinks: HashSet<IdentPath>,
 ) -> Result<()> {
     debug!("Scanning file: {:?}", filepath);
 
