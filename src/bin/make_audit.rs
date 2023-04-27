@@ -70,7 +70,7 @@ fn make_new_policy(
     ));
 
     // download the new policy
-    let package_path = if package.name.as_str() == root_name {
+    let package_path = if format!("{}-{}", package.name, package.version) == root_name {
         // We are creating a policy for the root crate
         PathBuf::from(args.crate_path.clone())
     } else {
