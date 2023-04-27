@@ -15,24 +15,6 @@ use syn::{self, spanned::Spanned};
     Hacky functions to (incorrectly) infer modules from filepath
 */
 
-fn infer_crate(filepath: &FilePath) -> String {
-    let crate_src: Vec<String> = filepath
-        .iter()
-        .map(|x| {
-            x.to_str().unwrap_or_else(|| {
-                panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
-            })
-        })
-        .take_while(|&x| x != "src" && x != "lib.rs")
-        .map(|x| x.to_string())
-        .collect();
-    let crate_string = crate_src.last().cloned().unwrap_or_else(|| {
-        warn!("unable to infer crate from path: {:?}", filepath);
-        "".to_string()
-    });
-    crate_string
-}
-
 fn infer_module(filepath: &FilePath) -> Vec<String> {
     let post_src: Vec<String> = filepath
         .iter()
@@ -49,8 +31,8 @@ fn infer_module(filepath: &FilePath) -> Vec<String> {
     post_src
 }
 
-fn infer_fully_qualified_prefix(filepath: &FilePath) -> String {
-    let mut prefix_vec = vec![infer_crate(filepath)];
+fn infer_fully_qualified_prefix(crate_name: &str, filepath: &FilePath) -> String {
+    let mut prefix_vec = vec![crate_name.to_string()];
     let mut mod_vec = infer_module(filepath);
     prefix_vec.append(&mut mod_vec);
     prefix_vec.join("::")
@@ -190,10 +172,11 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
 }
 
 impl<'a> HackyResolver<'a> {
-    pub fn new(filepath: &'a FilePath) -> Result<Self> {
+    pub fn new(crate_name: &'a str, filepath: &'a FilePath) -> Result<Self> {
         debug!("Creating new HackyResolver for {:?}", filepath);
 
-        let modpath = CanonicalPath::new_owned(infer_fully_qualified_prefix(filepath));
+        let modpath =
+            CanonicalPath::new_owned(infer_fully_qualified_prefix(crate_name, filepath));
 
         Ok(Self {
             filepath,

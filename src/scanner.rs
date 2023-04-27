@@ -3,14 +3,13 @@
 //! Parse a Rust crate or source file and collect effect blocks, function calls, and
 //! various other information.
 
-use crate::sink::Sink;
-
 use super::effect::{
     BlockType, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
     Visibility,
 };
 use super::ident::{CanonicalPath, IdentPath};
 use super::resolve::{FileResolver, Resolve, Resolver};
+use super::sink::Sink;
 use super::util;
 
 use anyhow::{anyhow, Result};
@@ -667,6 +666,7 @@ impl<'a> Scanner<'a> {
 
 /// Load the Rust file at the filepath and scan it
 pub fn scan_file(
+    crate_name: &str,
     filepath: &FilePath,
     resolver: &Resolver,
     scan_results: &mut ScanResults,
@@ -681,7 +681,7 @@ pub fn scan_file(
     let syntax_tree = syn::parse_file(&src)?;
 
     // Initialize data structures
-    let file_resolver = FileResolver::new(resolver, filepath)?;
+    let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
     let mut scanner = Scanner::new(filepath, file_resolver, scan_results);
     scanner.add_sinks(sinks);
 
@@ -693,14 +693,17 @@ pub fn scan_file(
 
 /// Try to run scan_file, reporting any errors back to the user
 pub fn try_scan_file(
+    crate_name: &str,
     filepath: &FilePath,
     resolver: &Resolver,
     scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
 ) {
-    scan_file(filepath, resolver, scan_results, sinks).unwrap_or_else(|err| {
-        warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
-    });
+    scan_file(crate_name, filepath, resolver, scan_results, sinks).unwrap_or_else(
+        |err| {
+            warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
+        },
+    );
 }
 
 /// Scan the supplied crate with an additional list of sinks
@@ -721,6 +724,8 @@ pub fn scan_crate_with_sinks(
         return Err(anyhow!("Path is not a crate; missing Cargo.toml: {:?}", crate_path));
     }
 
+    let crate_name = util::load_cargo_toml(crate_path)?.name;
+
     let resolver = Resolver::new(crate_path)?;
 
     let mut scan_results = ScanResults::new();
@@ -730,13 +735,25 @@ pub fn scan_crate_with_sinks(
     let src_dir = crate_path.join(FilePath::new("src"));
     if src_dir.is_dir() {
         for entry in util::fs::walk_files_with_extension(&src_dir, "rs") {
-            try_scan_file(entry.as_path(), &resolver, &mut scan_results, sinks.clone());
+            try_scan_file(
+                &crate_name,
+                entry.as_path(),
+                &resolver,
+                &mut scan_results,
+                sinks.clone(),
+            );
         }
     } else {
         info!("crate has no src dir; looking for a single lib.rs file instead");
         let lib_file = crate_path.join(FilePath::new("lib.rs"));
         if lib_file.is_file() {
-            try_scan_file(lib_file.as_path(), &resolver, &mut scan_results, sinks);
+            try_scan_file(
+                &crate_name,
+                lib_file.as_path(),
+                &resolver,
+                &mut scan_results,
+                sinks,
+            );
         } else {
             warn!(
                 "unable to find src dir or lib.rs file; \

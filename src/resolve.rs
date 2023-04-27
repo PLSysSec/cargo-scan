@@ -59,9 +59,13 @@ pub struct FileResolver<'a> {
 }
 
 impl<'a> FileResolver<'a> {
-    pub fn new(resolver: &'a Resolver, filepath: &'a FilePath) -> Result<Self> {
+    pub fn new(
+        crate_name: &'a str,
+        resolver: &'a Resolver,
+        filepath: &'a FilePath,
+    ) -> Result<Self> {
         debug!("Creating FileResolver for file: {:?}", filepath);
-        let backup = HackyResolver::new(filepath)?;
+        let backup = HackyResolver::new(crate_name, filepath)?;
         Ok(Self { filepath, resolver, backup })
     }
 
