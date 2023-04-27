@@ -7,6 +7,7 @@ use cargo_scan::util::load_cargo_toml;
 use anyhow::{anyhow, Context, Result};
 use cargo_lock::{Dependency, Lockfile, Package};
 use clap::{Args as ClapArgs, Parser, Subcommand};
+use log::info;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::DfsPostOrder;
 use std::collections::{HashMap, HashSet};
@@ -162,6 +163,7 @@ fn collect_dependency_sinks(
 }
 
 fn create_new_audit_chain(args: Create) -> Result<AuditChain> {
+    info!("Creating audit chain");
     let mut chain = AuditChain::new(
         PathBuf::from(&args.manifest_path),
         PathBuf::from(&args.crate_path),
@@ -169,17 +171,20 @@ fn create_new_audit_chain(args: Create) -> Result<AuditChain> {
 
     create_audit_chain_dirs(&args)?;
 
+    info!("Loading audit package lockfile");
     let lockfile = Lockfile::load(format!("{}/Cargo.lock", args.crate_path))?;
 
     let crate_data = load_cargo_toml(&PathBuf::from(&args.crate_path))?;
 
     let root_name = format!("{}-{}", crate_data.name, crate_data.version);
 
+    info!("Creating dependency graph");
     let (graph, package_map, root_node) =
         make_dependency_graph(&lockfile.packages, &root_name);
     let mut traverse = DfsPostOrder::new(&graph, root_node);
     while let Some(node) = traverse.next(&graph) {
         let package = package_map.get(&node).unwrap();
+        info!("Making default policy for {} v{}", package.name, package.version);
         match make_new_policy(&chain, package, &root_name, &args) {
             Ok(policy_path) => {
                 chain.add_crate_policy(package, policy_path);
@@ -188,6 +193,7 @@ fn create_new_audit_chain(args: Create) -> Result<AuditChain> {
         };
     }
 
+    info!("Finished creating policy chain");
     Ok(chain)
 }
 
