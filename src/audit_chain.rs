@@ -39,7 +39,7 @@ impl AuditChain {
     pub fn save_to_file(mut self) -> Result<()> {
         let path = mem::take(&mut self.manifest_path);
         let mut f = File::create(path)?;
-        let toml = serde_json::to_string(&self)?;
+        let toml = toml::to_string(&self)?;
         f.write_all(toml.as_bytes())?;
         Ok(())
     }
