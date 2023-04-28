@@ -5,6 +5,7 @@ use anyhow::Result;
 use cargo_lock::Package;
 use curl::easy::Easy;
 use flate2::read::GzDecoder;
+use log::info;
 use tar::Archive;
 
 fn get_crates_io_url(package: &Package) -> String {
@@ -55,6 +56,16 @@ pub fn download_crate(package: &Package, download_dir: &str) -> Result<PathBuf> 
         let tar = GzDecoder::new(tarball_file);
         let mut archive = Archive::new(tar);
         download_dir.pop();
+
+        // if the directory already exists, delete it and use the new version;
+        // we redownload to make sure that e.g. non-crates.io versions with the
+        // same semver are still downloaded
+        if download_dir.exists() {
+            info!(
+                "Another innstance of this crate already exists, downloading new version"
+            );
+            std::fs::remove_dir_all(download_dir.clone())?;
+        }
         create_dir_all(download_dir.clone())?;
         archive.unpack(download_dir.clone())?;
     }
