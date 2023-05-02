@@ -282,6 +282,78 @@ impl CanonicalPath {
     }
 }
 
+/// Type representing a type identifier.
+/// Should not be empty.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+pub struct CanonicalType {
+    ty: String,
+    trait_bounds: Vec<CanonicalPath>,
+    is_raw_ptr: bool,
+}
+impl Display for CanonicalType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.ty.fmt(f)
+    }
+}
+
+impl CanonicalType {
+    fn char_ok(c: char) -> bool {
+        c.is_ascii_alphanumeric()
+            || c == '_'
+            || c == '-'
+            || c == ':'
+            || c == '<'
+            || c == '>'
+            || c == '&'
+            || c == '*'
+            || c == '('
+            || c == ')'
+            || c == '['
+            || c == ']'
+            || c == '|'
+            || c == ','
+            || c == '='
+            || c == ';'
+            || c == ' '
+    }
+
+    pub fn invariant(&self) -> bool {
+        self.ty.chars().all(Self::char_ok) && !self.ty.is_empty()
+    }
+
+    pub fn check_invariant(&self) {
+        if !self.invariant() {
+            warn!("failed invariant! on CanonicalType {}", self);
+        }
+    }
+
+    pub fn new(s: &str) -> Self {
+        Self::new_owned(s.to_string(), vec![], false)
+    }
+
+    pub fn new_owned(s: String, b: Vec<CanonicalPath>, is_raw: bool) -> Self {
+        let result = Self { ty: s, trait_bounds: b, is_raw_ptr: is_raw };
+        result.check_invariant();
+        result
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.ty.as_str()
+    }
+
+    pub fn add_trait_bound(&mut self, trait_bound: CanonicalPath) {
+        self.trait_bounds.push(trait_bound)
+    }
+
+    pub fn get_trait_bounds(&self) -> &Vec<CanonicalPath> {
+        &self.trait_bounds
+    }
+
+    pub fn is_raw_ptr(&self) -> bool {
+        self.is_raw_ptr
+    }
+}
+
 /// Type representing a pattern over Paths
 ///
 /// Currently supported: only patterns of the form
