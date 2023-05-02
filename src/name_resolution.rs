@@ -408,7 +408,7 @@ fn get_canonical_type(
             }
         }
     };
-    
+
     let ty = match def {
         Definition::Adt(it) => Some(it.ty(db)),
         Definition::Local(it) => Some(it.ty(db)),

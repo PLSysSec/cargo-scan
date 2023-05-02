@@ -1,6 +1,7 @@
 //! A hacky in-house resolver for Rust identifiers
 
-use super::ident::{CanonicalPath, Ident, Path};
+use super::effect::SrcLoc;
+use super::ident::{CanonicalPath, Ident, IdentPath};
 use super::resolve::Resolve;
 
 use anyhow::Result;
@@ -14,24 +15,6 @@ use syn::{self, spanned::Spanned};
     Hacky functions to (incorrectly) infer modules from filepath
 */
 
-fn infer_crate(filepath: &FilePath) -> String {
-    let crate_src: Vec<String> = filepath
-        .iter()
-        .map(|x| {
-            x.to_str().unwrap_or_else(|| {
-                panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
-            })
-        })
-        .take_while(|&x| x != "src")
-        .map(|x| x.to_string())
-        .collect();
-    let crate_string = crate_src.last().cloned().unwrap_or_else(|| {
-        warn!("unable to infer crate from path: {:?}", filepath);
-        "".to_string()
-    });
-    crate_string
-}
-
 fn infer_module(filepath: &FilePath) -> Vec<String> {
     let post_src: Vec<String> = filepath
         .iter()
@@ -40,7 +23,7 @@ fn infer_module(filepath: &FilePath) -> Vec<String> {
                 panic!("found path that wasn't a valid UTF-8 string: {:?}", x)
             })
         })
-        .skip_while(|&x| x != "src")
+        .skip_while(|&x| x != "src" && x != "lib.rs")
         .skip(1)
         .filter(|&x| x != "main.rs" && x != "lib.rs")
         .map(|x| x.replace(".rs", ""))
@@ -48,8 +31,8 @@ fn infer_module(filepath: &FilePath) -> Vec<String> {
     post_src
 }
 
-fn infer_fully_qualified_prefix(filepath: &FilePath) -> String {
-    let mut prefix_vec = vec![infer_crate(filepath)];
+fn infer_fully_qualified_prefix(crate_name: &str, filepath: &FilePath) -> String {
+    let mut prefix_vec = vec![crate_name.to_string()];
     let mut mod_vec = infer_module(filepath);
     prefix_vec.append(&mut mod_vec);
     prefix_vec.join("::")
@@ -61,6 +44,9 @@ fn infer_fully_qualified_prefix(filepath: &FilePath) -> String {
 
 #[derive(Debug)]
 pub struct HackyResolver<'a> {
+    // source file
+    filepath: &'a FilePath,
+
     // crate+module which the current filepath implements (e.g. my_crate::fs)
     modpath: CanonicalPath,
 
@@ -186,12 +172,14 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
 }
 
 impl<'a> HackyResolver<'a> {
-    pub fn new(filepath: &FilePath) -> Result<Self> {
+    pub fn new(crate_name: &'a str, filepath: &'a FilePath) -> Result<Self> {
         debug!("Creating new HackyResolver for {:?}", filepath);
 
-        let modpath = CanonicalPath::new_owned(infer_fully_qualified_prefix(filepath));
+        let modpath =
+            CanonicalPath::new_owned(infer_fully_qualified_prefix(crate_name, filepath));
 
         Ok(Self {
+            filepath,
             modpath,
             scope_use: Vec::new(),
             scope_mods: Vec::new(),
@@ -206,9 +194,8 @@ impl<'a> HackyResolver<'a> {
 
     /// Reusable warning logger
     fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
-        let line = syn_node.span().start().line;
-        let col = syn_node.span().start().column;
-        warn!("HackyResolver: {} ({:?}) ({}:{})", msg, syn_node, line, col);
+        let loc = SrcLoc::from_span(self.filepath, &syn_node);
+        warn!("HackyResolver: {} ({})", msg, loc)
     }
 
     /*
@@ -281,10 +268,7 @@ impl<'a> HackyResolver<'a> {
             syn::Type::Group(x) => self.scan_impl_type(&x.elem),
             syn::Type::Paren(x) => self.scan_impl_type(&x.elem),
             syn::Type::Path(x) => self.scan_impl_type_path(&x.path),
-            syn::Type::TraitObject(x) => {
-                self.syn_warning("skipping 'impl dyn Trait' block", x);
-                0
-            }
+            syn::Type::TraitObject(x) => self.scan_impl_trait_object(x),
             syn::Type::Verbatim(v) => {
                 self.syn_warning("skipping Verbatim expression", v);
                 0
@@ -313,6 +297,7 @@ impl<'a> HackyResolver<'a> {
         // TraitObject(x) => {}
         // Tuple(x) => {}
     }
+
     fn scan_impl_type_path(&mut self, ty: &'a syn::Path) -> usize {
         // return: the number of items added to scope_mods
         let fullpath = self.lookup_path_vec(ty);
@@ -322,6 +307,7 @@ impl<'a> HackyResolver<'a> {
         }
         fullpath.len()
     }
+
     fn scan_impl_trait_path(&mut self, tr: &'a syn::Path) -> usize {
         // return: the number of items added to scope_mods
         let fullpath = self.lookup_path_vec(tr);
@@ -330,6 +316,21 @@ impl<'a> HackyResolver<'a> {
             self.syn_warning("unexpected empty trait name path", tr);
         }
         fullpath.len()
+    }
+
+    fn scan_impl_trait_object(&mut self, tr_obj: &'a syn::TypeTraitObject) -> usize {
+        // return: the number of items added to scope_mods
+        // for dyn trait objects, we just scope under the first found trait name and ignore the others
+        for bd in tr_obj.bounds.iter() {
+            if let syn::TypeParamBound::Trait(tr) = bd {
+                return self.scan_impl_trait_path(&tr.path);
+            }
+        }
+        self.syn_warning(
+            "failed to extract any trait name for 'impl dyn Trait' syntax; skipping",
+            tr_obj,
+        );
+        0
     }
 
     /*
@@ -364,12 +365,12 @@ impl<'a> HackyResolver<'a> {
         result
     }
 
-    fn get_mod_scope(&self) -> Path {
-        Path::from_idents(self.scope_mods.iter().cloned().map(Ident::from_syn))
+    fn get_mod_scope(&self) -> IdentPath {
+        IdentPath::from_idents(self.scope_mods.iter().cloned().map(Ident::from_syn))
     }
 
     fn aggregate_path(p: &[&'a syn::Ident]) -> CanonicalPath {
-        let mut result = Path::new_empty();
+        let mut result = IdentPath::new_empty();
         for &i in p {
             result.push_ident(&Ident::from_syn(i));
         }

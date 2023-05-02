@@ -10,7 +10,7 @@ use super::hacky_resolver::HackyResolver;
 use super::ident::{CanonicalPath, Ident};
 
 use anyhow::Result;
-use log::{debug, warn};
+use log::{debug, info, warn};
 use std::path::Path as FilePath;
 use syn;
 
@@ -59,9 +59,13 @@ pub struct FileResolver<'a> {
 }
 
 impl<'a> FileResolver<'a> {
-    pub fn new(resolver: &'a Resolver, filepath: &'a FilePath) -> Result<Self> {
+    pub fn new(
+        crate_name: &'a str,
+        resolver: &'a Resolver,
+        filepath: &'a FilePath,
+    ) -> Result<Self> {
         debug!("Creating FileResolver for file: {:?}", filepath);
-        let backup = HackyResolver::new(filepath)?;
+        let backup = HackyResolver::new(crate_name, filepath)?;
         Ok(Self { filepath, resolver, backup })
     }
 
@@ -82,7 +86,9 @@ impl<'a> FileResolver<'a> {
             Ok(res) => res,
             Err(err) => {
                 let s = SrcLoc::from_span(self.filepath, i);
-                warn!("Resolution failed (using fallback) for: {} ({}) ({})", i, s, err);
+                // Temporarily suppressing this warning.
+                // TODO: Bump this back up to warn! once a fix is pushed
+                info!("Resolution failed (using fallback) for: {} ({}) ({})", i, s, err);
                 fallback()
             }
         }

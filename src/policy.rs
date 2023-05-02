@@ -1,5 +1,5 @@
 use super::effect::{EffectBlock, EffectInstance, SrcLoc};
-use super::ident::Path;
+use super::ident::IdentPath;
 use crate::ident::CanonicalPath;
 use crate::scanner;
 use crate::scanner::ScanResults;
@@ -56,13 +56,13 @@ pub fn hash_dir(p: PathBuf) -> Result<[u8; 32]> {
 
 #[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
 pub struct EffectInfo {
-    pub caller_path: Path,
+    pub caller_path: IdentPath,
     pub callee_loc: SrcLoc,
     // TODO: callee_src_span: SrcSpan,
 }
 
 impl EffectInfo {
-    pub fn new(caller_path: Path, callee_loc: SrcLoc) -> Self {
+    pub fn new(caller_path: IdentPath, callee_loc: SrcLoc) -> Self {
         EffectInfo { caller_path, callee_loc }
     }
 
@@ -120,7 +120,7 @@ pub struct PolicyFile {
     // TODO: Serde doesn't like this hashmap for some reason (?)
     #[serde_as(as = "Vec<(_, _)>")]
     pub audit_trees: HashMap<EffectBlock, EffectTree>,
-    pub pub_caller_checked: HashSet<Path>,
+    pub pub_caller_checked: HashSet<IdentPath>,
     // TODO: Make the base_dir a crate instead
     pub base_dir: PathBuf,
     pub hash: [u8; 32],
@@ -185,7 +185,7 @@ impl PolicyFile {
 
     fn mark_caller_checked(
         tree: &mut EffectTree,
-        pub_caller_checked: &mut HashSet<Path>,
+        pub_caller_checked: &mut HashSet<IdentPath>,
         scan_res: &ScanResults,
     ) {
         if let EffectTree::Leaf(effect_info, annotation) = tree {
@@ -219,8 +219,15 @@ impl PolicyFile {
     }
 
     pub fn new_caller_checked_default(crate_path: &FilePath) -> Result<PolicyFile> {
+        Self::new_caller_checked_default_with_sinks(crate_path, HashSet::new())
+    }
+
+    pub fn new_caller_checked_default_with_sinks(
+        crate_path: &FilePath,
+        sinks: HashSet<IdentPath>,
+    ) -> Result<PolicyFile> {
         let mut policy = PolicyFile::empty(crate_path.to_path_buf())?;
-        let scan_res = scanner::scan_crate(crate_path)?;
+        let scan_res = scanner::scan_crate_with_sinks(crate_path, sinks)?;
         let mut pub_caller_checked = HashSet::new();
         policy.set_base_audit_trees(scan_res.unsafe_effect_blocks_set());
 

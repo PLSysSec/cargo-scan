@@ -5,6 +5,8 @@
     Example from rand::distributions::distribution.rs
 */
 
+pub mod serde_json_features_check;
+
 use rand::Rng;
 use rand::distributions::{Distribution, Uniform};
 

@@ -6,12 +6,13 @@
 //! - EffectBlock, which represents a block of source code which may contain
 //!     zero or more effects (such as an unsafe block).
 
-use super::ident::{CanonicalPath, Path};
+use super::ident::{CanonicalPath, IdentPath};
 use super::sink::Sink;
 use super::util::csv;
 
-use log::warn;
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::fmt;
 use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 use syn;
@@ -185,7 +186,7 @@ pub struct EffectInstance {
     call_loc: SrcLoc,
 
     /// Callee (effect) function, e.g. libc::sched_getaffinity
-    callee: Path,
+    callee: IdentPath,
 
     /// EffectInstance type
     /// If Sink, this includes the effect pattern -- prefix of callee (effect), e.g. libc.
@@ -196,33 +197,44 @@ impl EffectInstance {
     pub fn new_call<S>(
         filepath: &FilePath,
         caller: CanonicalPath,
-        callee: Path,
+        callee: IdentPath,
         callsite: &S,
         is_unsafe: bool,
         ffi: Option<CanonicalPath>,
+        sinks: &HashSet<IdentPath>,
     ) -> Self
     where
         S: Spanned,
     {
-        let eff_type = if let Some(pat) = Sink::new_match(&callee) {
-            // TODO bug
+        let call_loc = SrcLoc::from_span(filepath, callsite);
+        let eff_type = if let Some(pat) = Sink::new_match(&callee, sinks) {
             if ffi.is_some() {
+                // This case should generally not occur, though it might
+                // if we add custom sink patterns
                 warn!(
-                    "found sink stdlib pattern also \
-                     matching an FFI call: {} {:?}",
-                    callee, ffi
+                    "found sink stdlib pattern also matching an FFI call: \
+                    {} ({}) (FFI {:?})",
+                    callee, call_loc, ffi
                 );
             }
             Effect::SinkCall(pat)
         } else if let Some(ffi) = ffi {
-            debug_assert!(is_unsafe);
+            if !is_unsafe {
+                // This case can occur in certain contexts, e.g. with
+                // the wasm_bindgen attribute
+                info!(
+                    "found call to an FFI function call that wasn't marked \
+                    unsafe; assuming unsafe anyway: \
+                    {} ({}) (FFI {:?})",
+                    callee, call_loc, ffi
+                );
+            }
             Effect::FFICall(ffi)
         } else if is_unsafe {
             Effect::UnsafeOp
         } else {
             Effect::OtherCall
         };
-        let call_loc = SrcLoc::from_span(filepath, callsite);
         Self { caller, call_loc, callee, eff_type }
     }
 
@@ -234,7 +246,7 @@ impl EffectInstance {
         self.caller.as_str()
     }
 
-    pub fn callee(&self) -> &Path {
+    pub fn callee(&self) -> &IdentPath {
         &self.callee
     }
 

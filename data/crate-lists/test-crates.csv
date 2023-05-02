@@ -1,6 +1,7 @@
 name
 caller-checked
 dummy
+fnv_minimal
 inline-ex
 libc-ex
 num_cpus_minimal
@@ -8,4 +9,5 @@ parsing-ex
 permissions-ex
 resolution-ex
 toy-crates
+trait-ex
 unsafe-test

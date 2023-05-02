@@ -1,5 +1,5 @@
 use cargo_scan::effect::{Effect, EffectBlock, SrcLoc};
-use cargo_scan::ident::{CanonicalPath, Path};
+use cargo_scan::ident::{CanonicalPath, IdentPath};
 use cargo_scan::policy::*;
 use cargo_scan::scanner;
 use cargo_scan::scanner::ScanResults;
@@ -56,7 +56,7 @@ struct Args {
 fn print_effect_src(
     effect_origin: &EffectBlock,
     effect: &EffectInfo,
-    fn_locs: &HashMap<Path, SrcLoc>,
+    fn_locs: &HashMap<IdentPath, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
     // NOTE: The codespan lines are 0-indexed, but SrcLocs are 1-indexed
@@ -220,7 +220,7 @@ fn missing_fn_decl_info(effect_loc: &SrcLoc) -> CallStackInfo {
 fn print_call_stack(
     curr_effect: &EffectInfo,
     effect_history: &[&EffectInfo],
-    fn_locs: &HashMap<Path, SrcLoc>,
+    fn_locs: &HashMap<IdentPath, SrcLoc>,
 ) -> Result<()> {
     if !effect_history.is_empty() {
         let mut call_stack_infos = vec![];
@@ -250,7 +250,7 @@ fn review_effect_tree_info_helper(
     orig_effect: &EffectBlock,
     effect_tree: &EffectTree,
     effect_history: &[&EffectInfo],
-    fn_locs: &HashMap<Path, SrcLoc>,
+    fn_locs: &HashMap<IdentPath, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
     match effect_tree {
@@ -282,7 +282,7 @@ fn review_effect_tree_info_helper(
 fn review_effect_tree_info(
     effect: &EffectBlock,
     effect_tree: &EffectTree,
-    fn_locs: &HashMap<Path, SrcLoc>,
+    fn_locs: &HashMap<IdentPath, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
     review_effect_tree_info_helper(effect, effect_tree, &Vec::new(), fn_locs, config)
@@ -292,7 +292,7 @@ fn print_effect_info(
     orig_effect: &EffectBlock,
     curr_effect: &EffectInfo,
     effect_history: &[&EffectInfo],
-    fn_locs: &HashMap<Path, SrcLoc>,
+    fn_locs: &HashMap<IdentPath, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
     println!();
@@ -472,7 +472,7 @@ fn audit_leaf<'a>(
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
-    pub_caller_checked: &mut HashSet<Path>,
+    pub_caller_checked: &mut HashSet<IdentPath>,
     config: &Config,
 ) -> Result<AuditStatus> {
     let curr_effect = match effect_tree {
@@ -553,7 +553,7 @@ fn audit_branch<'a>(
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
-    pub_caller_checked: &mut HashSet<Path>,
+    pub_caller_checked: &mut HashSet<IdentPath>,
     config: &Config,
 ) -> Result<AuditStatus> {
     if let EffectTree::Branch(curr_effect, effects) = effect_tree {
@@ -600,7 +600,7 @@ fn audit_effect_tree(
     orig_effect: &EffectBlock,
     effect_tree: &mut EffectTree,
     scan_res: &ScanResults,
-    pub_caller_checked: &mut HashSet<Path>,
+    pub_caller_checked: &mut HashSet<IdentPath>,
     config: &Config,
 ) -> Result<AuditStatus> {
     match effect_tree {
