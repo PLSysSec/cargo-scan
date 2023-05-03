@@ -55,17 +55,24 @@ pub fn download_crate(package: &Package, download_dir: &str) -> Result<PathBuf> 
         let tarball_file = File::open(download_dir.clone())?;
         let tar = GzDecoder::new(tarball_file);
         let mut archive = Archive::new(tar);
+
+        // Set the download_dir to the expected crate download dir
         download_dir.pop();
+        download_dir.push(&package_dir_name);
 
         // if the directory already exists, delete it and use the new version;
         // we redownload to make sure that e.g. non-crates.io versions with the
         // same semver are still downloaded
         if download_dir.exists() {
             info!(
-                "Another innstance of this crate already exists, downloading new version"
+                "Another instance of this crate already exists, downloading new version"
             );
             std::fs::remove_dir_all(download_dir.clone())?;
         }
+
+        // pop the last folder because the extraction will include a new folder
+        // for the package
+        download_dir.pop();
         create_dir_all(download_dir.clone())?;
         archive.unpack(download_dir.clone())?;
     }
