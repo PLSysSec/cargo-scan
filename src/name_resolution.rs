@@ -5,8 +5,10 @@ use std::path::Path;
 
 use anyhow::{anyhow, Result};
 use log::debug;
+use ra_ap_hir_def::db::DefDatabase;
+use ra_ap_hir_def::{FunctionId, Lookup};
 use ra_ap_hir_expand::name::AsName;
-use ra_ap_ide_db::base_db::SourceDatabase;
+use ra_ap_ide_db::base_db::{SourceDatabase, Upcast};
 use ra_ap_ide_db::FxHashMap;
 use ra_ap_syntax::ast::HasName;
 
@@ -154,17 +156,25 @@ impl Resolver {
         }
     }
 
+    fn token(
+        &self,
+        sems: &Semantics<RootDatabase>,
+        s: SrcLoc,
+        i: Ident,
+    ) -> Result<SyntaxToken> {
+        let mut filepath = s.dir().clone();
+        filepath.push(s.file().as_path());
+        let file_id = self.get_file_id(&filepath, sems)?;
+        let offset = self.find_offset(file_id, s)?;
+        let src_file = sems.parse(file_id);
+
+        get_token(src_file, offset, i)
+    }
+
     pub fn resolve_ident(&self, s: SrcLoc, i: Ident) -> Result<CanonicalPath> {
         let db = self.get_db();
         let sems = self.get_semantics();
-
-        let mut filepath = s.dir().clone();
-        filepath.push(s.file().as_path());
-        let file_id = self.get_file_id(&filepath, &sems)?;
-        let offset = self.find_offset(file_id, s)?;
-        let src_file = sems.parse(file_id);
-        let token = get_token(src_file, offset, i)?;
-
+        let token = self.token(&sems, s, i)?;
         let def = find_def(token, &sems, db)?;
         canonical_path(&sems, db, &def)
             .ok_or_else(|| anyhow!("Could not construct canonical path for '{:?}'", def))
@@ -173,16 +183,30 @@ impl Resolver {
     pub fn resolve_type(&self, s: SrcLoc, i: Ident) -> Result<CanonicalType> {
         let db = self.get_db();
         let sems = self.get_semantics();
-
-        let mut filepath = s.dir().clone();
-        filepath.push(s.file().as_path());
-        let file_id = self.get_file_id(&filepath, &sems)?;
-        let offset = self.find_offset(file_id, s)?;
-        let src_file = sems.parse(file_id);
-        let token = get_token(src_file, offset, i)?;
-
+        let token = self.token(&sems, s, i)?;
         let def = find_def(token, &sems, db)?;
         get_canonical_type(&sems, db, &def)
+    }
+
+    pub fn is_ffi(&self, s: SrcLoc, i: Ident) -> Result<bool> {
+        let db = self.get_db();
+        let sems = self.get_semantics();
+        let token = self.token(&sems, s, i)?;
+        let def = find_def(token, &sems, db)?;
+
+        match def {
+            Definition::Function(function) => {
+                let func_id = FunctionId::from(function);
+                let data = db.function_data(func_id);
+
+                match func_id.lookup(db.upcast()).container {
+                    // Function is in an `extern` block.
+                    ra_ap_hir_def::ItemContainerId::ExternBlockId(_) => Ok(true),
+                    _ => Ok(false),
+                }
+            }
+            _ => Ok(false),
+        }
     }
 }
 
