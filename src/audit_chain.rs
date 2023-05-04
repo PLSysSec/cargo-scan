@@ -53,4 +53,20 @@ impl AuditChain {
         let policy_path = self.crate_policies.get(package)?;
         PolicyFile::read_policy(policy_path.clone()).ok()?
     }
+
+    pub fn read_policy_no_version(&self, package: &str) -> Result<Vec<(String, PolicyFile)>> {
+        let mut policies = Vec::new();
+        for (full_name, crate_policy_path) in self.crate_policies.iter() {
+            // trim the version number off the package and see if they match
+            if full_name.starts_with(package) {
+                let policy = PolicyFile::read_policy(crate_policy_path.clone())
+                    .map_err(|_| anyhow!("Error reading policy for crate {}", full_name))?
+                    .ok_or_else(|| {
+                        anyhow!("Policy listed for crate {} is missing", full_name)
+                    })?;
+                policies.push((full_name.to_string(), policy));
+            }
+        }
+        Ok(policies)
+    }
 }

@@ -446,6 +446,7 @@ fn is_policy_scan_valid(
     Ok(policy_effect_blocks == *scan_effect_blocks && policy.hash == hash)
 }
 
+// TODO: Abstract all this review stuff out
 fn review_policy(args: Args, policy: PolicyFile) -> Result<()> {
     let scan_res = scanner::scan_crate(&args.crate_path)?;
     let scan_effect_blocks = scan_res.unsafe_effect_blocks_set();

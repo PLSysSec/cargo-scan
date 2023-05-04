@@ -7,7 +7,7 @@ use cargo_scan::util::load_cargo_toml;
 use anyhow::{anyhow, Context, Result};
 use cargo::{core::Workspace, ops::generate_lockfile, util::config};
 use cargo_lock::{Dependency, Lockfile, Package};
-use clap::{Args as ClapArgs, Parser, Subcommand};
+use clap::{Args as ClapArgs, Parser, Subcommand, ValueEnum};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::DfsPostOrder;
 use std::collections::{HashMap, HashSet};
@@ -23,6 +23,7 @@ struct Args {
 #[derive(Subcommand, Debug)]
 enum Command {
     Create(Create),
+    Review(Review),
     Audit(Audit),
 }
 
@@ -46,6 +47,33 @@ struct Create {
 
     #[clap(short = 'f', long, default_value_t = false)]
     force_overwrite: bool,
+}
+
+#[derive(Clone, ClapArgs, Debug)]
+struct Review {
+    /// Path to chain manifest
+    chain_path: String,
+    /// Crate to review
+    crate_name: String,
+    /// What information to present in review
+    #[clap(short = 't', long, default_value_t = ReviewType::PubFuns)]
+    review_type: ReviewType,
+}
+
+#[derive(ValueEnum, Clone, Copy, Debug)]
+enum ReviewType {
+    PubFuns,
+    All,
+}
+
+impl std::fmt::Display for ReviewType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            ReviewType::PubFuns => "pub-funs",
+            ReviewType::All => "all",
+        };
+        write!(f, "{}", s)
+    }
 }
 
 #[derive(Clone, ClapArgs, Debug)]
@@ -173,15 +201,16 @@ fn create_new_audit_chain(args: Create) -> Result<AuditChain> {
 
     println!("Loading audit package lockfile");
     // If the lockfile doesn't exist, generate it
-    let lockfile = if let Ok(l) = Lockfile::load(format!("{}/Cargo.lock", args.crate_path)) {
-        l
-    } else {
-        println!("Lockfile missing: generating new lockfile");
-        let config = config::Config::default()?;
-        let workspace = Workspace::new(Path::new(&args.crate_path), &config)?;
-        generate_lockfile(&workspace)?;
-        Lockfile::load(format!("{}/Cargo.lock", args.crate_path))?
-    };
+    let lockfile =
+        if let Ok(l) = Lockfile::load(format!("{}/Cargo.lock", args.crate_path)) {
+            l
+        } else {
+            println!("Lockfile missing: generating new lockfile");
+            let config = config::Config::default()?;
+            let workspace = Workspace::new(Path::new(&args.crate_path), &config)?;
+            generate_lockfile(&workspace)?;
+            Lockfile::load(format!("{}/Cargo.lock", args.crate_path))?
+        };
 
     let crate_data = load_cargo_toml(&PathBuf::from(&args.crate_path))?;
 
@@ -206,6 +235,19 @@ fn create_new_audit_chain(args: Create) -> Result<AuditChain> {
     Ok(chain)
 }
 
+fn review_policy(policy: &PolicyFile, review_type: ReviewType) {
+    match review_type {
+        ReviewType::All => (),
+        ReviewType::PubFuns => {
+            println!("Public functions marked caller-checked:");
+            for pub_fn in policy.pub_caller_checked.iter() {
+                // TODO: Print more info
+                println!("{}", pub_fn);
+            }
+        }
+    }
+}
+
 fn runner(args: Args) -> Result<()> {
     match args.command {
         Command::Create(create) => {
@@ -214,6 +256,32 @@ fn runner(args: Args) -> Result<()> {
             Ok(())
         }
         Command::Audit(_audit) => Ok(()),
+        Command::Review(review) => {
+            println!("Reviewing crate: {}", review.crate_name);
+            match AuditChain::read_audit_chain(PathBuf::from(&review.chain_path)) {
+                Ok(Some(chain)) => {
+                    let policies = chain.read_policy_no_version(&review.crate_name)?;
+                    if policies.is_empty() {
+                        println!("No policies matching the crate {}", &review.chain_path);
+                        Ok(())
+                    } else if policies.len() > 1 {
+                        // TODO: Allow for reviewing more than one policy matching a crate
+                        println!("More than one policy for crate {}", &review.chain_path);
+                        Ok(())
+                    } else {
+                        let (full_crate_name, policy) = &policies[0];
+                        println!("Reviewing policy for {}", full_crate_name);
+                        review_policy(policy, review.review_type);
+                        Ok(())
+                    }
+                }
+                Ok(None) => Err(anyhow!(
+                    "Couldn't find audit chain manifest at {}",
+                    &review.chain_path
+                )),
+                Err(e) => Err(e),
+            }
+        }
     }
 }
 
