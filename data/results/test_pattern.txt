@@ -3,12 +3,12 @@ Total instances of each import pattern:
 [Unsafe]: 29
 libc: 9
 std::process: 7
-std::fs: 2
+std::fs: 4
 std::net: 2
 [FFI]: 2
 std::env: 1
+std::path: 1
 std::os: 0
-std::path: 0
 winapi: 0
 mio::net: 0
 mio::unix: 0

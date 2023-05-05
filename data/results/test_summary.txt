@@ -4,9 +4,9 @@ toy-crates: 17
 caller-checked: 13
 libc-ex: 8
 permissions-ex: 6
+fns-closures: 4
 num_cpus_minimal: 4
 unsafe-test: 3
-fns-closures: 1
 ===== Crate Totals =====
 7 crates with 1 or more dangerous imports
 6 crates with 0 dangerous imports
