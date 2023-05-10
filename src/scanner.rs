@@ -3,6 +3,8 @@
 //! Parse a Rust crate or source file and collect effect blocks, function calls, and
 //! various other information.
 
+use crate::effect::{Effect};
+
 use super::effect::{
     BlockType, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
     Visibility,
@@ -15,6 +17,8 @@ use super::util;
 use anyhow::{anyhow, Result};
 use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
+use proc_macro2::{TokenStream, TokenTree};
+use syn::__private::{ToTokens};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -524,7 +528,10 @@ impl<'a> Scanner<'a> {
             syn::Expr::Unary(x) => {
                 // TODO: Once we have type info, check to see if we deref a
                 //       pointer here
-                self.scan_expr(&x.expr);
+                match x.op {
+                    syn::UnOp::Deref(_) => self.scan_deref(&x.expr),
+                    _ => self.scan_expr(&x.expr)
+                }
             }
             syn::Expr::Unsafe(x) => {
                 // ***** THE THIRD IMPORTANT CASE *****
@@ -547,6 +554,24 @@ impl<'a> Scanner<'a> {
             }
             _ => self.syn_warning("encountered unknown expression", e),
         }
+    }
+
+    fn scan_deref(&mut self, x: &'a syn::Expr) {
+        let mut tokens: TokenStream = TokenStream::new();
+        x.to_tokens(&mut tokens);
+        tokens.into_iter().for_each(|tt|{
+            match tt {
+                TokenTree::Ident(i) => {
+                    let ty = self.resolver.resolve_field_type(&i);
+                    let p = self.resolver.resolve_field(&i);
+                    if ty.is_raw_ptr() {
+                        self.push_effect(x.span(), p.clone(), Effect::RawPointer(p));
+                    } 
+                },
+                _ => ()
+            };
+                       
+        });
     }
 
     fn scan_unsafe_block(&mut self, x: &'a syn::ExprUnsafe) {
@@ -578,6 +603,34 @@ impl<'a> Scanner<'a> {
         for y in a.iter() {
             self.scan_expr(y);
         }
+    }
+
+    fn push_effect<S>(
+        &mut self,
+        eff_span: S,
+        callee: CanonicalPath,
+        eff_type: Effect,
+    ) where
+        S: Debug + Spanned,
+    {
+        let caller = &self.scope_fns.last().expect("not inside a function!").fn_name;
+
+        let eff = EffectInstance::new_effect(
+            self.filepath,
+            caller.clone(),
+            callee.to_path(),
+            &eff_span,
+            eff_type,
+        );
+        if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
+            effect_block.push_effect(eff.clone())
+        } else {
+            self.syn_warning(
+                "unexpected effect found outside an effect block",
+                eff_span,
+            );
+        }
+        self.data.effects.push(eff);
     }
 
     /// push an Effect to the list of results based on this call site.

@@ -145,6 +145,14 @@ pub enum Effect {
     SinkCall(Sink),
     /// FFI call
     FFICall(CanonicalPath),
+    /// Unsafe function/method call
+    UnsafeCall(CanonicalPath),
+    /// Pointer dereference
+    RawPointer(CanonicalPath),
+    /// Reading a union field
+    UnionField(CanonicalPath),
+    /// Mutating a global variable
+    StaticMut(CanonicalPath),
     /// Unsafe operation, e.g. pointer deref
     /// see: https://doc.rust-lang.org/nomicon/what-unsafe-does.html
     UnsafeOp,
@@ -156,6 +164,10 @@ impl Effect {
         match self {
             Self::SinkCall(s) => Some(s),
             Self::FFICall(_) => None,
+            Self::UnsafeCall(_) => None,
+            Self::RawPointer(_) => None,
+            Self::UnionField(_) => None,
+            Self::StaticMut(_) => None,
             Self::UnsafeOp => None,
             Self::OtherCall => None,
         }
@@ -165,6 +177,10 @@ impl Effect {
         match self {
             Self::SinkCall(s) => s.as_str(),
             Self::FFICall(_) => "[FFI]",
+            Self::UnsafeCall(_) => "[Unsafe]",
+            Self::RawPointer(_) => "[PtrDeref]",
+            Self::UnionField(_) => "[UnionField]",
+            Self::StaticMut(_) => "[StaticMutVar]",
             Self::UnsafeOp => "[Unsafe]",
             Self::OtherCall => "[None]",
         }
@@ -238,6 +254,20 @@ impl EffectInstance {
         Self { caller, call_loc, callee, eff_type }
     }
 
+    pub fn new_effect<S>(
+        filepath: &FilePath,
+        caller: CanonicalPath,
+        callee: IdentPath,
+        eff_site: &S,
+        eff_type: Effect
+    ) -> Self
+    where 
+        S: Spanned,
+    {
+        let call_loc = SrcLoc::from_span(filepath, eff_site);
+        Self { caller, call_loc, callee, eff_type }
+    }
+
     pub fn caller(&self) -> &CanonicalPath {
         &self.caller
     }
@@ -285,8 +315,20 @@ impl EffectInstance {
         matches!(self.eff_type, Effect::FFICall(_))
     }
 
-    pub fn is_unsafe_op(&self) -> bool {
-        matches!(self.eff_type, Effect::UnsafeOp)
+    pub fn is_unsafe_call(&self) -> bool {
+        matches!(self.eff_type, Effect::UnsafeCall(_))
+    }
+
+    pub fn is_ptr_deref(&self) -> bool {
+        matches!(self.eff_type, Effect::RawPointer(_))
+    }
+
+    pub fn is_union_field_acc(&self) -> bool {
+        matches!(self.eff_type, Effect::UnionField(_))
+    }
+
+    pub fn is_mut_static(&self) -> bool {
+        matches!(self.eff_type, Effect::StaticMut(_))
     }
 
     pub fn is_dangerous(&self) -> bool {

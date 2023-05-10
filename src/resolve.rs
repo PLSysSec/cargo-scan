@@ -3,6 +3,8 @@
 //! The type FileResolver is a wrapper around Resolver from name_resolution.rs
 //! with the needed functionality.
 
+use crate::ident::CanonicalType;
+
 pub use super::name_resolution::Resolver;
 
 use super::effect::SrcLoc;
@@ -36,6 +38,7 @@ pub trait Resolve<'a>: Sized {
         Type resolution functions
     */
     fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath;
+    fn resolve_field_type(&self, i: &'a syn::Ident) -> CanonicalType;
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath;
 
     /*
@@ -78,11 +81,36 @@ impl<'a> FileResolver<'a> {
         self.resolver.resolve_ident(s, i)
     }
 
+    fn resolve_type_core(&self, i: &syn::Ident) -> Result<CanonicalType> {
+        let mut s = SrcLoc::from_span(self.filepath, i);
+        debug!("Resolving type: {} ({})", i, s);
+        // TODO Lydia remove
+        s.add1();
+        let i = Ident::from_syn(i);
+        self.resolver.resolve_type(s, i)
+    }
+
     fn resolve_or_else<F>(&self, i: &syn::Ident, fallback: F) -> CanonicalPath
     where
         F: FnOnce() -> CanonicalPath,
     {
         match self.resolve_core(i) {
+            Ok(res) => res,
+            Err(err) => {
+                let s = SrcLoc::from_span(self.filepath, i);
+                // Temporarily suppressing this warning.
+                // TODO: Bump this back up to warn! once a fix is pushed
+                info!("Resolution failed (using fallback) for: {} ({}) ({})", i, s, err);
+                fallback()
+            }
+        }
+    }
+
+    fn resolve_type_or_else<F>(&self, i: &syn::Ident, fallback: F) -> CanonicalType
+    where
+        F: FnOnce() -> CanonicalType,
+    {
+        match self.resolve_type_core(i) {
             Ok(res) => res,
             Err(err) => {
                 let s = SrcLoc::from_span(self.filepath, i);
@@ -156,6 +184,10 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
 
     fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath {
         self.resolve_or_else(i, || self.backup.resolve_field(i))
+    }
+
+    fn resolve_field_type(&self, i: &'a syn::Ident) -> CanonicalType {
+        self.resolve_type_or_else(i, || self.backup.resolve_field_type(i))
     }
 
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath {

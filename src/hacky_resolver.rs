@@ -1,5 +1,7 @@
 //! A hacky in-house resolver for Rust identifiers
 
+use crate::ident::CanonicalType;
+
 use super::effect::SrcLoc;
 use super::ident::{CanonicalPath, Ident, IdentPath};
 use super::resolve::Resolve;
@@ -164,6 +166,10 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
 
     fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath {
         CanonicalPath::new_owned(format!("UNKNOWN_FIELD::{}", i))
+    }
+
+    fn resolve_field_type(&self, i: &'a syn::Ident) -> CanonicalType {
+        CanonicalType::new(format!("UNKNOWN_FIELD::{}", i).as_str())
     }
 
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath {
