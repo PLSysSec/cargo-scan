@@ -3,11 +3,9 @@
 //! Parse a Rust crate or source file and collect effect blocks, function calls, and
 //! various other information.
 
-use crate::effect::Effect;
-
 use super::effect::{
-    BlockType, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
-    Visibility,
+    BlockType, Effect, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec,
+    TraitImpl, Visibility,
 };
 use super::ident::{CanonicalPath, IdentPath};
 use super::resolve::{FileResolver, Resolve, Resolver};
@@ -560,16 +558,13 @@ impl<'a> Scanner<'a> {
         let mut tokens: TokenStream = TokenStream::new();
         x.to_tokens(&mut tokens);
         tokens.into_iter().for_each(|tt| {
-            match tt {
-                TokenTree::Ident(i) => {
-                    let ty = self.resolver.resolve_field_type(&i);
-                    let p = self.resolver.resolve_field(&i);
-                    if ty.is_raw_ptr() {
-                        self.push_effect(x.span(), p.clone(), Effect::RawPointer(p));
-                    }
+            if let TokenTree::Ident(i) = tt {
+                let ty = self.resolver.resolve_field_type(&i);
+                let p = self.resolver.resolve_field(&i);
+                if ty.is_raw_ptr() {
+                    self.push_effect(x.span(), p.clone(), Effect::RawPointer(p));
                 }
-                _ => (),
-            };
+            }
         });
     }
 

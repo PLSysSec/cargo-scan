@@ -3,13 +3,11 @@
 //! The type FileResolver is a wrapper around Resolver from name_resolution.rs
 //! with the needed functionality.
 
-use crate::ident::CanonicalType;
-
 pub use super::name_resolution::Resolver;
 
 use super::effect::SrcLoc;
 use super::hacky_resolver::HackyResolver;
-use super::ident::{CanonicalPath, Ident};
+use super::ident::{CanonicalPath, CanonicalType, Ident};
 
 use anyhow::Result;
 use log::{debug, info, warn};
