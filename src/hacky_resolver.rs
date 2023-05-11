@@ -167,7 +167,7 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
     }
 
     fn resolve_field_type(&self, i: &'a syn::Ident) -> CanonicalType {
-        CanonicalType::new(format!("UNKNOWN_FIELD::{}", i).as_str())
+        CanonicalType::new_owned_string(format!("UNKNOWN_TYPE::{}", i))
     }
 
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath {

@@ -327,7 +327,11 @@ impl CanonicalType {
     }
 
     pub fn new(s: &str) -> Self {
-        Self::new_owned(s.to_string(), vec![], false)
+        Self::new_owned_string(s.to_string())
+    }
+
+    pub fn new_owned_string(s: String) -> Self {
+        Self::new_owned(s, vec![], false)
     }
 
     pub fn new_owned(s: String, b: Vec<CanonicalPath>, is_raw: bool) -> Self {
