@@ -291,14 +291,14 @@ pub enum TypeKind {
     #[default]
     // Default case. Types that we have fully resolved
     // and do not need extra information about.
-    Plain
+    Plain,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum CallableKind {
     Closure,
     FnPtr,
     FnOnce,
-    Other
+    Other,
 }
 
 /// Type representing a type identifier.
@@ -316,23 +316,7 @@ impl Display for CanonicalType {
 
 impl CanonicalType {
     fn char_ok(c: char) -> bool {
-        c.is_ascii_alphanumeric()
-            || c == '_'
-            || c == '-'
-            || c == ':'
-            || c == '<'
-            || c == '>'
-            || c == '&'
-            || c == '*'
-            || c == '('
-            || c == ')'
-            || c == '['
-            || c == ']'
-            || c == '|'
-            || c == ','
-            || c == '='
-            || c == ';'
-            || c == ' '
+        c.is_ascii_alphanumeric() || "_-&*+|!=,;:<>()[] ".contains(c)
     }
 
     pub fn invariant(&self) -> bool {
@@ -346,11 +330,15 @@ impl CanonicalType {
     }
 
     pub fn new(s: &str) -> Self {
-        Self::new_owned(s.to_string(), vec![], Default::default())
+        Self::new_owned_string(s.to_string())
+    }
+
+    pub fn new_owned_string(s: String) -> Self {
+        Self::new_owned(s, vec![], Default::default())
     }
 
     pub fn new_owned(s: String, b: Vec<CanonicalPath>, k: TypeKind) -> Self {
-        let result = Self { ty: s, trait_bounds: b, ty_kind: k};
+        let result = Self { ty: s, trait_bounds: b, ty_kind: k };
         result.check_invariant();
         result
     }
@@ -398,7 +386,7 @@ impl CanonicalType {
     pub fn get_callable_kind(&self) -> Option<CallableKind> {
         if let TypeKind::Callable(kind) = &self.ty_kind {
             return Some(kind.clone());
-        } 
+        }
         None
     }
 }

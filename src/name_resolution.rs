@@ -456,7 +456,7 @@ fn get_canonical_type(
             .and_then(|expr| sems.type_of_expr(&expr).map(|info| info.original())),
         _ => None,
     };
-    
+
     if ty.is_none() || (ty.is_some() && ty.clone().unwrap().contains_unknown()) {
         return Err(anyhow!("Could not resolve type for definition {:?}", def));
     }
@@ -468,8 +468,8 @@ fn get_canonical_type(
     } else if ty.impls_fnonce(db) {
         // impls_fnonce can be used to check if a type is callable.
         // FnOnce is a supertait of FnMut and Fn, so any callable type
-        // implements at least FnOnce. 
-        // TODO: More sophisticated checks are needed to precisely 
+        // implements at least FnOnce.
+        // TODO: More sophisticated checks are needed to precisely
         // determine which trait is actually implemented.
         TypeKind::Callable(crate::ident::CallableKind::FnOnce)
     } else if ty.is_raw_ptr() {

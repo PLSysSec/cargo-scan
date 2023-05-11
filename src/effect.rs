@@ -10,7 +10,7 @@ use super::ident::{CanonicalPath, IdentPath};
 use super::sink::Sink;
 use super::util::csv;
 
-use log::{info, warn};
+use log::info;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt;
@@ -225,9 +225,8 @@ impl EffectInstance {
         let call_loc = SrcLoc::from_span(filepath, callsite);
         let eff_type = if let Some(pat) = Sink::new_match(&callee, sinks) {
             if ffi.is_some() {
-                // This case should generally not occur, though it might
-                // if we add custom sink patterns
-                warn!(
+                // This case occurs for some libc calls
+                info!(
                     "found sink stdlib pattern also matching an FFI call: \
                     {} ({}) (FFI {:?})",
                     callee, call_loc, ffi
