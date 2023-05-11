@@ -524,12 +524,10 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Unary(x) => {
-                // TODO: Once we have type info, check to see if we deref a
-                //       pointer here
-                match x.op {
-                    syn::UnOp::Deref(_) => self.scan_deref(&x.expr),
-                    _ => self.scan_expr(&x.expr),
+                if let syn::UnOp::Deref(_) = x.op {
+                    self.scan_deref(&x.expr);
                 }
+                self.scan_expr(&x.expr);
             }
             syn::Expr::Unsafe(x) => {
                 // ***** THE THIRD IMPORTANT CASE *****
