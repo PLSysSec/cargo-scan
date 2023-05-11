@@ -73,7 +73,7 @@ impl<'a> FileResolver<'a> {
     fn resolve_core(&self, i: &syn::Ident) -> Result<CanonicalPath> {
         let mut s = SrcLoc::from_span(self.filepath, i);
         debug!("Resolving: {} ({})", i, s);
-        // TODO Lydia remove
+        // Add 1 to column to avoid weird off-by-one errors
         s.add1();
         let i = Ident::from_syn(i);
         self.resolver.resolve_ident(s, i)
@@ -82,7 +82,7 @@ impl<'a> FileResolver<'a> {
     fn resolve_type_core(&self, i: &syn::Ident) -> Result<CanonicalType> {
         let mut s = SrcLoc::from_span(self.filepath, i);
         debug!("Resolving type: {} ({})", i, s);
-        // TODO Lydia remove
+        // Add 1 to column to avoid weird off-by-one errors
         s.add1();
         let i = Ident::from_syn(i);
         self.resolver.resolve_type(s, i)
