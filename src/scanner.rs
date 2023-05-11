@@ -3,7 +3,7 @@
 //! Parse a Rust crate or source file and collect effect blocks, function calls, and
 //! various other information.
 
-use crate::effect::{Effect};
+use crate::effect::Effect;
 
 use super::effect::{
     BlockType, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
@@ -18,13 +18,13 @@ use anyhow::{anyhow, Result};
 use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
 use proc_macro2::{TokenStream, TokenTree};
-use syn::__private::{ToTokens};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path as FilePath;
+use syn::__private::ToTokens;
 use syn::spanned::Spanned;
 
 /// Results of a scan
@@ -530,7 +530,7 @@ impl<'a> Scanner<'a> {
                 //       pointer here
                 match x.op {
                     syn::UnOp::Deref(_) => self.scan_deref(&x.expr),
-                    _ => self.scan_expr(&x.expr)
+                    _ => self.scan_expr(&x.expr),
                 }
             }
             syn::Expr::Unsafe(x) => {
@@ -559,18 +559,17 @@ impl<'a> Scanner<'a> {
     fn scan_deref(&mut self, x: &'a syn::Expr) {
         let mut tokens: TokenStream = TokenStream::new();
         x.to_tokens(&mut tokens);
-        tokens.into_iter().for_each(|tt|{
+        tokens.into_iter().for_each(|tt| {
             match tt {
                 TokenTree::Ident(i) => {
                     let ty = self.resolver.resolve_field_type(&i);
                     let p = self.resolver.resolve_field(&i);
                     if ty.is_raw_ptr() {
                         self.push_effect(x.span(), p.clone(), Effect::RawPointer(p));
-                    } 
-                },
-                _ => ()
+                    }
+                }
+                _ => (),
             };
-                       
         });
     }
 
@@ -605,12 +604,8 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn push_effect<S>(
-        &mut self,
-        eff_span: S,
-        callee: CanonicalPath,
-        eff_type: Effect,
-    ) where
+    fn push_effect<S>(&mut self, eff_span: S, callee: CanonicalPath, eff_type: Effect)
+    where
         S: Debug + Spanned,
     {
         let caller = &self.scope_fns.last().expect("not inside a function!").fn_name;
@@ -625,10 +620,7 @@ impl<'a> Scanner<'a> {
         if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
             effect_block.push_effect(eff.clone())
         } else {
-            self.syn_warning(
-                "unexpected effect found outside an effect block",
-                eff_span,
-            );
+            self.syn_warning("unexpected effect found outside an effect block", eff_span);
         }
         self.data.effects.push(eff);
     }

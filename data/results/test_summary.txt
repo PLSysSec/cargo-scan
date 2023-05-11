@@ -1,12 +1,12 @@
 ===== Crate Summary =====
 Number of dangerous imports by crate:
-toy-crates: 17
-caller-checked: 13
+toy-crates: 18
+caller-checked: 14
 libc-ex: 8
 permissions-ex: 6
+unsafe-test: 5
 fns-closures: 4
 num_cpus_minimal: 4
-unsafe-test: 3
 ===== Crate Totals =====
 7 crates with 1 or more dangerous imports
 6 crates with 0 dangerous imports

@@ -1,5 +1,5 @@
-pub mod auditing;
 pub mod audit_chain;
+pub mod auditing;
 pub mod download_crate;
 pub mod effect;
 pub mod ident;

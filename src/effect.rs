@@ -259,9 +259,9 @@ impl EffectInstance {
         caller: CanonicalPath,
         callee: IdentPath,
         eff_site: &S,
-        eff_type: Effect
+        eff_type: Effect,
     ) -> Self
-    where 
+    where
         S: Spanned,
     {
         let call_loc = SrcLoc::from_span(filepath, eff_site);

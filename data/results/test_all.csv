@@ -4,6 +4,7 @@ caller_checked, caller_checked::local_effect, core::ptr::null_mut, [Unsafe], dat
 caller_checked, caller_checked::local_effect, core::ptr::null_mut, [Unsafe], data/test-packages/caller-checked/src, main.rs, 13, 12
 caller_checked, caller_checked::local_effect, core::ptr::null_mut, [Unsafe], data/test-packages/caller-checked/src, main.rs, 14, 12
 caller_checked, caller_checked::local_effect, libc::unix::bsd::apple::sysctl, libc, data/test-packages/caller-checked/src, main.rs, 9, 8
+caller_checked, caller_checked::unsafe_effect, caller_checked::unsafe_effect::x, [PtrDeref], data/test-packages/caller-checked/src, main.rs, 24, 9
 caller_checked, caller_checked::sub::effect, libc::unix::sysconf, libc, data/test-packages/caller-checked/src, sub.rs, 6, 8
 caller_checked, caller_checked::sub::effect, core::ffi::c_str::CStr::from_bytes_with_nul, [Unsafe], data/test-packages/caller-checked/src, sub.rs, 7, 29
 caller_checked, caller_checked::sub::effect, core::result::Result::unwrap, [Unsafe], data/test-packages/caller-checked/src, sub.rs, 7, 76
@@ -43,6 +44,7 @@ toy_crates, toy_crates::rustc_version::version_meta_for_command, std::process::C
 toy_crates, toy_crates::rustc_version::version_meta, std::env::var_os, std::env, data/test-packages/toy-crates/src, rustc_version.rs, 16, 14
 toy_crates, toy_crates::rustc_version::version_meta, std::process::Command::new, std::process, data/test-packages/toy-crates/src, rustc_version.rs, 17, 29
 toy_crates, toy_crates::syn::Cursor::create, core::marker::PhantomData::default, [Unsafe], data/test-packages/toy-crates/src, syn.rs, 39, 20
+toy_crates, toy_crates::syn::Cursor::entry, toy_crates::syn::Cursor::ptr, [PtrDeref], data/test-packages/toy-crates/src, syn.rs, 45, 19
 toy_crates, toy_crates::syn::Cursor::bump, core::ptr::const_ptr::offset, [Unsafe], data/test-packages/toy-crates/src, syn.rs, 52, 32
 toy_crates, toy_crates::syn::Cursor::bump, toy_crates::syn::Cursor::create, [Unsafe], data/test-packages/toy-crates/src, syn.rs, 52, 8
 toy_crates, toy_crates::syn::Cursor::ignore_none, toy_crates::syn::Cursor::create, [Unsafe], data/test-packages/toy-crates/src, syn.rs, 68, 28
@@ -51,6 +53,8 @@ toy_crates, toy_crates::syn::Cursor::skip, toy_crates::syn::Cursor::bump, [Unsaf
 toy_crates, toy_crates::syn::Cursor::skip, toy_crates::syn::Cursor::bump, [Unsafe], data/test-packages/toy-crates/src, syn.rs, 97, 36
 toy_crates, toy_crates::url_client::ping_example_com, std::net::tcp::TcpListener::bind, std::net, data/test-packages/toy-crates/src, url_client.rs, 13, 19
 toy_crates, toy_crates::url_client::ping_example_com, std::net::tcp::TcpListener::incoming, std::net, data/test-packages/toy-crates/src, url_client.rs, 14, 27
+unsafe_test, unsafe_test::my_unsafe_fn, unsafe_test::my_unsafe_fn::y, [PtrDeref], data/test-packages/unsafe-test/src, main.rs, 8, 5
+unsafe_test, unsafe_test::unsafe_block_ex, unsafe_test::unsafe_block_ex::y, [PtrDeref], data/test-packages/unsafe-test/src, main.rs, 17, 9
 unsafe_test, unsafe_test::main, unsafe_test::my_unsafe_fn, [Unsafe], data/test-packages/unsafe-test/src, main.rs, 28, 8
 unsafe_test, unsafe_test::main, unsafe_test::my_unsafe_c_ffi, [FFI], data/test-packages/unsafe-test/src, main.rs, 32, 8
 unsafe_test, unsafe_test::wasm_bindgen_ex::call_fn, unsafe_test::wasm_bindgen_ex::fetch_with_request, [FFI], data/test-packages/unsafe-test/src, wasm_bindgen_ex.rs, 23, 17
