@@ -282,12 +282,31 @@ impl CanonicalPath {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+pub enum TypeKind {
+    RawPointer,
+    Callable(CallableKind),
+    DynTrait,
+    Generic,
+    #[default]
+    // Default case. Types that we have fully resolved
+    // and do not need extra information about.
+    Plain
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum CallableKind {
+    Closure,
+    FnPtr,
+    FnOnce,
+    Other
+}
+
 /// Type representing a type identifier.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub struct CanonicalType {
     ty: String,
+    ty_kind: TypeKind,
     trait_bounds: Vec<CanonicalPath>,
-    is_raw_ptr: bool,
 }
 impl Display for CanonicalType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -327,11 +346,11 @@ impl CanonicalType {
     }
 
     pub fn new(s: &str) -> Self {
-        Self::new_owned(s.to_string(), vec![], false)
+        Self::new_owned(s.to_string(), vec![], Default::default())
     }
 
-    pub fn new_owned(s: String, b: Vec<CanonicalPath>, is_raw: bool) -> Self {
-        let result = Self { ty: s, trait_bounds: b, is_raw_ptr: is_raw };
+    pub fn new_owned(s: String, b: Vec<CanonicalPath>, k: TypeKind) -> Self {
+        let result = Self { ty: s, trait_bounds: b, ty_kind: k};
         result.check_invariant();
         result
     }
@@ -349,7 +368,38 @@ impl CanonicalType {
     }
 
     pub fn is_raw_ptr(&self) -> bool {
-        self.is_raw_ptr
+        if let TypeKind::RawPointer = self.ty_kind {
+            return true;
+        }
+        false
+    }
+
+    pub fn is_callable(&self) -> bool {
+        if let TypeKind::Callable(_) = self.ty_kind {
+            return true;
+        }
+        false
+    }
+
+    pub fn is_dyn_trait(&self) -> bool {
+        if let TypeKind::DynTrait = self.ty_kind {
+            return true;
+        }
+        false
+    }
+
+    pub fn is_generic(&self) -> bool {
+        if let TypeKind::Generic = self.ty_kind {
+            return true;
+        }
+        false
+    }
+
+    pub fn get_callable_kind(&self) -> Option<CallableKind> {
+        if let TypeKind::Callable(kind) = &self.ty_kind {
+            return Some(kind.clone());
+        } 
+        None
     }
 }
 

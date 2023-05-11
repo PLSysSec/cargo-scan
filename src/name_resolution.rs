@@ -12,6 +12,8 @@ use ra_ap_ide_db::base_db::{SourceDatabase, Upcast};
 use ra_ap_ide_db::FxHashMap;
 use ra_ap_syntax::ast::HasName;
 
+use crate::ident::TypeKind;
+
 use super::effect::SrcLoc;
 use super::ident::{CanonicalPath, CanonicalType, Ident};
 
@@ -184,6 +186,7 @@ impl Resolver {
         let db = self.get_db();
         let sems = self.get_semantics();
         let token = self.token(&sems, s, i)?;
+        debug!("token: {:?}", token);
         let def = find_def(token, &sems, db)?;
         get_canonical_type(&sems, db, &def)
     }
@@ -452,13 +455,32 @@ fn get_canonical_type(
             .value(db)
             .and_then(|expr| sems.type_of_expr(&expr).map(|info| info.original())),
         _ => None,
-    }
-    .expect("Definition should have a type");
-
-    if ty.contains_unknown() {
-        debug!("Resolving type: {:?}", ty);
+    };
+    
+    if ty.is_none() || (ty.is_some() && ty.clone().unwrap().contains_unknown()) {
         return Err(anyhow!("Could not resolve type for definition {:?}", def));
     }
+    let ty = ty.unwrap();
+    let ty_kind = if ty.is_closure() {
+        TypeKind::Callable(crate::ident::CallableKind::Closure)
+    } else if ty.is_fn() {
+        TypeKind::Callable(crate::ident::CallableKind::FnPtr)
+    } else if ty.impls_fnonce(db) {
+        // impls_fnonce can be used to check if a type is callable.
+        // FnOnce is a supertait of FnMut and Fn, so any callable type
+        // implements at least FnOnce. 
+        // TODO: More sophisticated checks are needed to precisely 
+        // determine which trait is actually implemented.
+        TypeKind::Callable(crate::ident::CallableKind::FnOnce)
+    } else if ty.is_raw_ptr() {
+        TypeKind::RawPointer
+    } else if ty.as_dyn_trait().is_some() {
+        TypeKind::DynTrait
+    } else if ty.as_type_param(db).is_some() {
+        TypeKind::Generic
+    } else {
+        TypeKind::Plain
+    };
 
     // Get the type as it is displayed by rust-analyzer
     type_ = ty.display(db).to_string();
@@ -488,5 +510,5 @@ fn get_canonical_type(
         })
     });
 
-    Ok(CanonicalType::new_owned(type_, trait_bounds, ty.is_raw_ptr()))
+    Ok(CanonicalType::new_owned(type_, trait_bounds, ty_kind))
 }
