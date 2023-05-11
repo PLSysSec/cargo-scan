@@ -28,6 +28,7 @@ inquire = "0.6.1"
 log = "0.4.17"
 petgraph = "0.6.3"
 proc-macro2 = { version = "1.0.56", features = ["span-locations"] }
+quote = "1.0.27"
 ra_ap_hir = "0.0.149"
 ra_ap_ide = "0.0.149"
 ra_ap_ide_db = "0.0.149"

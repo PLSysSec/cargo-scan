@@ -4,8 +4,8 @@
 //! various other information.
 
 use super::effect::{
-    BlockType, Effect, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec,
-    TraitImpl, Visibility,
+    BlockType, Effect, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
+    Visibility,
 };
 use super::ident::{CanonicalPath, IdentPath};
 use super::resolve::{FileResolver, Resolve, Resolver};
@@ -16,13 +16,13 @@ use anyhow::{anyhow, Result};
 use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
 use proc_macro2::{TokenStream, TokenTree};
+use quote::ToTokens;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path as FilePath;
-use syn::__private::ToTokens;
 use syn::spanned::Spanned;
 
 /// Results of a scan
