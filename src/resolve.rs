@@ -80,6 +80,19 @@ impl<'a> FileResolver<'a> {
         self.resolver.resolve_ident(s, i)
     }
 
+    fn resolve_ffi_core(&self, i: &syn::Ident) -> Result<Option<CanonicalPath>> {
+        let mut s = SrcLoc::from_span(self.filepath, i);
+        debug!("Resolving FFI: {} ({})", i, s);
+        // Add 1 to column to avoid weird off-by-one errors
+        s.add1();
+        let i_owned = Ident::from_syn(i);
+        if self.resolver.is_ffi(s, i_owned)? {
+            Ok(Some(self.resolve_core(i)?))
+        } else {
+            Ok(None)
+        }
+    }
+
     fn resolve_type_core(&self, i: &syn::Ident) -> Result<CanonicalType> {
         let mut s = SrcLoc::from_span(self.filepath, i);
         debug!("Resolving type: {} ({})", i, s);
@@ -138,8 +151,12 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
     }
 
     fn resolve_ffi(&self, p: &syn::Path) -> Option<CanonicalPath> {
-        // TODO: RA implementation
-        self.backup.resolve_ffi(p)
+        let i = &p.segments.last().unwrap().ident;
+        self.resolve_or_else(
+            i,
+            || self.resolve_ffi_core(i),
+            || self.backup.resolve_ffi(p),
+        )
     }
 
     fn push_mod(&mut self, mod_ident: &'a syn::Ident) {

@@ -49,9 +49,9 @@ syn, syn::buffer::Cursor::skip, syn::buffer::Cursor::bump, [Unsafe], data/packag
 syn, syn::buffer::Cursor::skip, syn::buffer::Cursor::bump, [Unsafe], data/packages/syn/src, buffer.rs, 400, 58
 syn, syn::buffer::Cursor::skip, syn::buffer::Cursor::bump, [Unsafe], data/packages/syn/src, buffer.rs, 404, 36
 syn, syn::parse::discouraged::ParseBuffer::advance_to, syn::parse::ParseBuffer::cursor, [Unsafe], data/packages/syn/src, discouraged.rs, 192, 73
-syn, syn::parse::discouraged::ParseBuffer::advance_to, core::intrinsics::transmute, [Unsafe], data/packages/syn/src, discouraged.rs, 192, 26
-syn, syn::parse::advance_step_cursor, core::intrinsics::transmute, [Unsafe], data/packages/syn/src, parse.rs, 384, 13
-syn, syn::parse::new_parse_buffer, core::intrinsics::transmute, [Unsafe], data/packages/syn/src, parse.rs, 395, 33
+syn, syn::parse::discouraged::ParseBuffer::advance_to, core::intrinsics::transmute, [FFI], data/packages/syn/src, discouraged.rs, 192, 26
+syn, syn::parse::advance_step_cursor, core::intrinsics::transmute, [FFI], data/packages/syn/src, parse.rs, 384, 13
+syn, syn::parse::new_parse_buffer, core::intrinsics::transmute, [FFI], data/packages/syn/src, parse.rs, 395, 33
 rand_core, rand_core::impls::as_byte_slice, core::slice::raw::from_raw_parts, [Unsafe], data/packages/rand_core/src, impls.rs, 70, 17
 rand_core, rand_core::impls::as_byte_slice, core::slice::raw::from_raw_parts, [Unsafe], data/packages/rand_core/src, impls.rs, 81, 17
 libc, libc::fuchsia::mod::__CMSG_NEXT, __CMSG_LEN, [Unsafe], data/packages/libc/src/fuchsia, mod.rs, 3333, 26

@@ -1,7 +1,7 @@
 ===== Patterns =====
 Total instances of each import pattern:
-[Unsafe]: 115
-[FFI]: 18
+[Unsafe]: 112
+[FFI]: 21
 std::process: 15
 [PtrDeref]: 10
 std::path: 9
