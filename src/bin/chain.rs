@@ -257,22 +257,28 @@ fn review_policy(policy: &PolicyFile, review_type: ReviewType) {
 fn runner(args: Args) -> Result<()> {
     match args.command {
         Command::Create(create) => {
-            let chain = create_new_audit_chain(create)?;
+            let chain = create_new_audit_chain(create, &args.crate_download_path)?;
             chain.save_to_file()?;
             Ok(())
         }
         Command::Audit(_audit) => Ok(()),
         Command::Review(review) => {
             println!("Reviewing crate: {}", review.crate_name);
-            match AuditChain::read_audit_chain(PathBuf::from(&review.chain_path)) {
+            match AuditChain::read_audit_chain(PathBuf::from(&review.manifest_path)) {
                 Ok(Some(chain)) => {
                     let policies = chain.read_policy_no_version(&review.crate_name)?;
                     if policies.is_empty() {
-                        println!("No policies matching the crate {}", &review.chain_path);
+                        println!(
+                            "No policies matching the crate {}",
+                            &review.manifest_path
+                        );
                         Ok(())
                     } else if policies.len() > 1 {
                         // TODO: Allow for reviewing more than one policy matching a crate
-                        println!("More than one policy for crate {}", &review.chain_path);
+                        println!(
+                            "More than one policy for crate {}",
+                            &review.manifest_path
+                        );
                         Ok(())
                     } else {
                         let (full_crate_name, policy) = &policies[0];
