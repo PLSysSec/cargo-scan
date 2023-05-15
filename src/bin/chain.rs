@@ -1,6 +1,7 @@
 use cargo_scan::audit_chain::AuditChain;
-use cargo_scan::download_crate;
-use cargo_scan::ident::IdentPath;
+use cargo_scan::auditing::audit::audit_policy;
+use cargo_scan::auditing::info::Config as AuditConfig;
+use cargo_scan::ident::CanonicalPath;
 use cargo_scan::policy::PolicyFile;
 use cargo_scan::util::load_cargo_toml;
 
@@ -177,7 +178,7 @@ fn make_dependency_graph(
 fn collect_dependency_sinks(
     chain: &AuditChain,
     deps: &Vec<Dependency>,
-) -> Result<HashSet<IdentPath>> {
+) -> Result<HashSet<CanonicalPath>> {
     let mut sinks = HashSet::new();
     for dep in deps {
         let dep_string = format!("{}-{}", dep.name, dep.version);

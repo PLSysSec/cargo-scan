@@ -1,6 +1,6 @@
 //! Hard-coded list of function patterns of interest, a.k.a. sinks.
 
-use super::ident::{IdentPath, Pattern};
+use super::ident::{CanonicalPath, IdentPath, Pattern};
 
 use log::warn;
 use serde::{Deserialize, Serialize};
@@ -9,6 +9,7 @@ use std::{
     fmt::{self, Display},
 };
 
+// TODO: Convert these examples to canonical paths
 /// Hard-coded list of sink patterns
 const SINK_PATTERNS: &[&str] = &[
     "std::env",
@@ -48,7 +49,7 @@ impl Sink {
     // TODO: allocating new Patterns every time this is called is inefficient.
     // Use lazy_static! to create the list of pattern strings only once.
     // (Or even better, compile the patterns to a Trie or similar)
-    pub fn new_match(callee: &IdentPath, sinks: &HashSet<IdentPath>) -> Option<Self> {
+    pub fn new_match(callee: &CanonicalPath, sinks: &HashSet<IdentPath>) -> Option<Self> {
         let mut result = None;
         for pat_raw in sinks {
             let pat = Pattern::new(pat_raw.as_str());

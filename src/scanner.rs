@@ -39,10 +39,10 @@ pub struct ScanResults {
 
     // Saved function declarations
     pub pub_fns: HashSet<CanonicalPath>,
-    pub fn_locs: HashMap<IdentPath, SrcLoc>,
+    pub fn_locs: HashMap<CanonicalPath, SrcLoc>,
 
-    call_graph: DiGraph<IdentPath, SrcLoc>,
-    node_idxs: HashMap<IdentPath, NodeIndex>,
+    call_graph: DiGraph<CanonicalPath, SrcLoc>,
+    node_idxs: HashMap<CanonicalPath, NodeIndex>,
 
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
@@ -63,7 +63,7 @@ impl ScanResults {
             .collect::<HashSet<_>>()
     }
 
-    pub fn get_callers<'a>(&'a self, callee: &IdentPath) -> HashSet<&'a EffectInstance> {
+    pub fn get_callers<'a>(&'a self, callee: &CanonicalPath) -> HashSet<&'a EffectInstance> {
         let mut callers = HashSet::new();
         for e in &self.effects {
             let effect_callee = e.callee();
@@ -79,14 +79,14 @@ impl ScanResults {
         let fn_name = f.fn_name;
 
         // Update call graph
-        let node_idx = self.call_graph.add_node(fn_name.as_path().clone());
-        self.node_idxs.insert(fn_name.as_path().clone(), node_idx);
+        let node_idx = self.call_graph.add_node(fn_name.clone());
+        self.node_idxs.insert(fn_name.clone(), node_idx);
 
         // Save function info
         if let Visibility::Public = f.vis {
             self.pub_fns.insert(fn_name.clone());
         }
-        self.fn_locs.insert(fn_name.to_path(), f.src_loc);
+        self.fn_locs.insert(fn_name, f.src_loc);
     }
 }
 
@@ -606,7 +606,7 @@ impl<'a> Scanner<'a> {
         let eff = EffectInstance::new_effect(
             self.filepath,
             caller.clone(),
-            callee.to_path(),
+            callee,
             &eff_span,
             eff_type,
         );
@@ -629,8 +629,8 @@ impl<'a> Scanner<'a> {
     {
         let caller = &self.scope_fns.last().expect("not inside a function!").fn_name;
 
-        if let Some(caller_node_idx) = self.data.node_idxs.get(caller.as_path()) {
-            if let Some(callee_node_idx) = self.data.node_idxs.get(callee.as_path()) {
+        if let Some(caller_node_idx) = self.data.node_idxs.get(caller) {
+            if let Some(callee_node_idx) = self.data.node_idxs.get(&callee) {
                 self.data.call_graph.add_edge(
                     *caller_node_idx,
                     *callee_node_idx,
@@ -642,7 +642,7 @@ impl<'a> Scanner<'a> {
         let eff = EffectInstance::new_call(
             self.filepath,
             caller.clone(),
-            callee.to_path(),
+            callee,
             &callee_span,
             self.scope_unsafe > 0,
             ffi,

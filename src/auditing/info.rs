@@ -7,9 +7,9 @@ use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 
+use crate::ident::CanonicalPath;
 use crate::{
     effect::{Effect, EffectBlock, SrcLoc},
-    ident::IdentPath,
     policy::EffectInfo,
 };
 
@@ -24,10 +24,19 @@ pub struct Config {
     lines_after_effect: u8,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            lines_before_effect: 4,
+            lines_after_effect: 1,
+        }
+    }
+}
+
 pub fn print_effect_src(
     effect_origin: &EffectBlock,
     effect: &EffectInfo,
-    fn_locs: &HashMap<IdentPath, SrcLoc>,
+    fn_locs: &HashMap<CanonicalPath, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
     // NOTE: The codespan lines are 0-indexed, but SrcLocs are 1-indexed
@@ -103,7 +112,7 @@ pub fn print_effect_src(
     };
 
     let label_msg =
-        if effect_origin.containing_fn().fn_name.as_path() == &effect.caller_path {
+        if effect_origin.containing_fn().fn_name == effect.caller_path {
             // We are in the original function, so print all the effects in the
             // EffectBlock
             effect_origin
@@ -191,7 +200,7 @@ fn print_call_stack_infos(stack: Vec<CallStackInfo>) {
 fn print_call_stack(
     curr_effect: &EffectInfo,
     effect_history: &[&EffectInfo],
-    fn_locs: &HashMap<IdentPath, SrcLoc>,
+    fn_locs: &HashMap<CanonicalPath, SrcLoc>,
 ) -> Result<()> {
     if !effect_history.is_empty() {
         let mut call_stack_infos = vec![];
@@ -221,7 +230,7 @@ pub fn print_effect_info(
     orig_effect: &EffectBlock,
     curr_effect: &EffectInfo,
     effect_history: &[&EffectInfo],
-    fn_locs: &HashMap<IdentPath, SrcLoc>,
+    fn_locs: &HashMap<CanonicalPath, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
     println!();

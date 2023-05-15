@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::auditing::info::*;
 use crate::effect::EffectBlock;
-use crate::ident::{CanonicalPath, IdentPath};
+use crate::ident::{CanonicalPath};
 use crate::policy::{EffectInfo, EffectTree};
 use crate::{
     policy::{PolicyFile, SafetyAnnotation},
@@ -47,7 +47,7 @@ fn audit_leaf<'a>(
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
-    pub_caller_checked: &mut HashSet<IdentPath>,
+    pub_caller_checked: &mut HashSet<CanonicalPath>,
     config: &Config,
 ) -> Result<AuditStatus> {
     let curr_effect = match effect_tree {
@@ -84,7 +84,7 @@ fn audit_leaf<'a>(
         // If the caller is public, add to set of public caller-checked
         if scan_res
             .pub_fns
-            .contains(&CanonicalPath::from_path(curr_effect.caller_path.clone()))
+            .contains(&curr_effect.caller_path)
         {
             pub_caller_checked.insert(curr_effect.caller_path.clone());
         }
@@ -128,7 +128,7 @@ fn audit_branch<'a>(
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
-    pub_caller_checked: &mut HashSet<IdentPath>,
+    pub_caller_checked: &mut HashSet<CanonicalPath>,
     config: &Config,
 ) -> Result<AuditStatus> {
     if let EffectTree::Branch(curr_effect, effects) = effect_tree {
@@ -175,7 +175,7 @@ fn audit_effect_tree(
     orig_effect: &EffectBlock,
     effect_tree: &mut EffectTree,
     scan_res: &ScanResults,
-    pub_caller_checked: &mut HashSet<IdentPath>,
+    pub_caller_checked: &mut HashSet<CanonicalPath>,
     config: &Config,
 ) -> Result<AuditStatus> {
     match effect_tree {
@@ -193,6 +193,7 @@ fn audit_effect_tree(
     }
 }
 
+// TODO: If auditing for caller-checked effects
 pub fn audit_policy(
     policy: &mut PolicyFile,
     scan_res: ScanResults,

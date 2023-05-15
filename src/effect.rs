@@ -202,7 +202,7 @@ pub struct EffectInstance {
     call_loc: SrcLoc,
 
     /// Callee (effect) function, e.g. libc::sched_getaffinity
-    callee: IdentPath,
+    callee: CanonicalPath,
 
     /// EffectInstance type
     /// If Sink, this includes the effect pattern -- prefix of callee (effect), e.g. libc.
@@ -213,7 +213,7 @@ impl EffectInstance {
     pub fn new_call<S>(
         filepath: &FilePath,
         caller: CanonicalPath,
-        callee: IdentPath,
+        callee: CanonicalPath,
         callsite: &S,
         is_unsafe: bool,
         ffi: Option<CanonicalPath>,
@@ -256,7 +256,7 @@ impl EffectInstance {
     pub fn new_effect<S>(
         filepath: &FilePath,
         caller: CanonicalPath,
-        callee: IdentPath,
+        callee: CanonicalPath,
         eff_site: &S,
         eff_type: Effect,
     ) -> Self
@@ -275,7 +275,7 @@ impl EffectInstance {
         self.caller.as_str()
     }
 
-    pub fn callee(&self) -> &IdentPath {
+    pub fn callee(&self) -> &CanonicalPath {
         &self.callee
     }
 

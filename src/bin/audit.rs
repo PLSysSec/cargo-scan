@@ -1,7 +1,7 @@
 use cargo_scan::auditing::audit::audit_policy;
 use cargo_scan::auditing::info::{print_effect_info, Config};
 use cargo_scan::effect::{EffectBlock, SrcLoc};
-use cargo_scan::ident::IdentPath;
+use cargo_scan::ident::CanonicalPath;
 use cargo_scan::policy::*;
 use cargo_scan::scanner;
 
@@ -43,7 +43,7 @@ fn review_effect_tree_info_helper(
     orig_effect: &EffectBlock,
     effect_tree: &EffectTree,
     effect_history: &[&EffectInfo],
-    fn_locs: &HashMap<IdentPath, SrcLoc>,
+    fn_locs: &HashMap<CanonicalPath, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
     match effect_tree {
@@ -75,7 +75,7 @@ fn review_effect_tree_info_helper(
 fn review_effect_tree_info(
     effect: &EffectBlock,
     effect_tree: &EffectTree,
-    fn_locs: &HashMap<IdentPath, SrcLoc>,
+    fn_locs: &HashMap<CanonicalPath, SrcLoc>,
     config: &Config,
 ) -> Result<()> {
     review_effect_tree_info_helper(effect, effect_tree, &Vec::new(), fn_locs, config)

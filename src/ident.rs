@@ -280,6 +280,12 @@ impl CanonicalPath {
     pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
+
+    // NOTE: The matches definition should align with whatever definition format
+    //       we use for our default sinks
+    pub fn matches(&self, pattern: &Pattern) -> bool {
+        self.0.matches(pattern)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
