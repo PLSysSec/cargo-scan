@@ -4,6 +4,7 @@ use cargo_scan::auditing::info::Config as AuditConfig;
 use cargo_scan::ident::CanonicalPath;
 use cargo_scan::policy::PolicyFile;
 use cargo_scan::util::load_cargo_toml;
+use cargo_scan::{download_crate, scanner};
 
 use anyhow::{anyhow, Context, Result};
 use cargo::{core::Workspace, ops::generate_lockfile, util::config};
@@ -17,6 +18,11 @@ use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
 struct Args {
+    // TODO: Can probably use the default rust build location
+    /// Path to download crates to for auditing
+    #[clap(short = 'd', long = "crate-download-path", default_value = ".audit_crates")]
+    crate_download_path: String,
+
     #[clap(subcommand)]
     command: Command,
 }
@@ -36,11 +42,6 @@ struct Create {
     /// Path to manifest
     manifest_path: String,
 
-    // TODO: Can probably use the default rust build location
-    /// Path to download crates to for auditing
-    #[clap(short = 'd', long = "crate-download-path", default_value = ".audit_crates")]
-    crate_download_path: String,
-
     // TODO: Check to make sure it meets the format (clap supports this?)
     /// Default policy folder
     #[clap(short = 'p', long = "policy-path", default_value = ".audit_policies")]
@@ -53,7 +54,7 @@ struct Create {
 #[derive(Clone, ClapArgs, Debug)]
 struct Review {
     /// Path to chain manifest
-    chain_path: String,
+    manifest_path: String,
     /// Crate to review
     crate_name: String,
     /// What information to present in review
@@ -81,6 +82,8 @@ impl std::fmt::Display for ReviewType {
 struct Audit {
     /// Path to manifest
     manifest_path: String,
+    /// Crate to review
+    crate_name: String,
 }
 
 // TODO: Different default policies
@@ -91,6 +94,7 @@ fn make_new_policy(
     package: &Package,
     root_name: &str,
     args: &Create,
+    crate_download_path: &str,
 ) -> Result<PathBuf> {
     let policy_path = PathBuf::from(format!(
         "{}/{}-{}.policy",
@@ -105,7 +109,7 @@ fn make_new_policy(
         PathBuf::from(args.crate_path.clone())
     } else {
         // TODO: Handle the case where we have a crate source not from crates.io
-        download_crate::download_crate(package, &args.crate_download_path)?
+        download_crate::download_crate(package, crate_download_path)?
     };
 
     // Try to create a new default policy
@@ -128,12 +132,12 @@ fn make_new_policy(
     Ok(policy_path)
 }
 
-fn create_audit_chain_dirs(args: &Create) -> Result<()> {
+fn create_audit_chain_dirs(args: &Create, crate_download_path: &str) -> Result<()> {
     let mut manifest_path = PathBuf::from(&args.manifest_path);
     manifest_path.pop();
     create_dir_all(manifest_path)?;
 
-    let crate_download_path = PathBuf::from(&args.crate_download_path);
+    let crate_download_path = PathBuf::from(crate_download_path);
     create_dir_all(crate_download_path)?;
 
     let policy_path = PathBuf::from(&args.policy_path);
@@ -191,14 +195,14 @@ fn collect_dependency_sinks(
     Ok(sinks)
 }
 
-fn create_new_audit_chain(args: Create) -> Result<AuditChain> {
+fn create_new_audit_chain(args: Create, crate_download_path: &str) -> Result<AuditChain> {
     println!("Creating audit chain");
     let mut chain = AuditChain::new(
         PathBuf::from(&args.manifest_path),
         PathBuf::from(&args.crate_path),
     );
 
-    create_audit_chain_dirs(&args)?;
+    create_audit_chain_dirs(&args, crate_download_path)?;
 
     println!("Loading audit package lockfile");
     // If the lockfile doesn't exist, generate it
@@ -224,7 +228,7 @@ fn create_new_audit_chain(args: Create) -> Result<AuditChain> {
     while let Some(node) = traverse.next(&graph) {
         let package = package_map.get(&node).unwrap();
         println!("Making default policy for {} v{}", package.name, package.version);
-        match make_new_policy(&chain, package, &root_name, &args) {
+        match make_new_policy(&chain, package, &root_name, &args, crate_download_path) {
             Ok(policy_path) => {
                 chain.add_crate_policy(package, policy_path);
             }
@@ -238,6 +242,7 @@ fn create_new_audit_chain(args: Create) -> Result<AuditChain> {
 
 fn review_policy(policy: &PolicyFile, review_type: ReviewType) {
     match review_type {
+        // TODO: Plug in to existing policy review
         ReviewType::All => (),
         ReviewType::PubFuns => {
             println!("Public functions marked caller-checked:");
@@ -278,7 +283,7 @@ fn runner(args: Args) -> Result<()> {
                 }
                 Ok(None) => Err(anyhow!(
                     "Couldn't find audit chain manifest at {}",
-                    &review.chain_path
+                    &review.manifest_path
                 )),
                 Err(e) => Err(e),
             }
