@@ -15,15 +15,25 @@ use std::collections::{HashMap, HashSet};
 use std::fs::{create_dir_all, remove_file};
 use std::path::PathBuf;
 
-#[derive(Parser, Debug)]
-struct Args {
+#[derive(Parser, Debug, Clone)]
+struct OuterArgs {
     // TODO: Can probably use the default rust build location
     /// Path to download crates to for auditing
     #[clap(short = 'd', long = "crate-download-path", default_value = ".audit_crates")]
     crate_download_path: String,
+}
+
+#[derive(Parser, Debug)]
+struct Args {
+    #[clap(flatten)]
+    outer_args: OuterArgs,
 
     #[clap(subcommand)]
     command: Command,
+}
+
+trait CommandRunner {
+    fn run_command(self, args: OuterArgs) -> Result<()>;
 }
 
 #[derive(Subcommand, Debug)]
@@ -31,6 +41,16 @@ enum Command {
     Create(Create),
     Review(Review),
     Audit(Audit),
+}
+
+impl CommandRunner for Command {
+    fn run_command(self, args: OuterArgs) -> Result<()> {
+        match self {
+            Self::Create(create) => create.run_command(args),
+            Self::Review(review) => review.run_command(args),
+            Self::Audit(audit) => audit.run_command(args),
+        }
+    }
 }
 
 // TODO: Add an argument for the default policy type
@@ -50,6 +70,14 @@ struct Create {
     force_overwrite: bool,
 }
 
+impl CommandRunner for Create {
+    fn run_command(self, args: OuterArgs) -> Result<()> {
+        let chain = create_new_audit_chain(self, &args.crate_download_path)?;
+        chain.save_to_file()?;
+        Ok(())
+    }
+}
+
 #[derive(Clone, ClapArgs, Debug)]
 struct Review {
     /// Path to chain manifest
@@ -65,6 +93,41 @@ struct Review {
 enum ReviewType {
     PubFuns,
     All,
+}
+
+impl CommandRunner for Review {
+    fn run_command(self, _args: OuterArgs) -> Result<()> {
+        println!("Reviewing crate: {}", self.crate_name);
+        match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path)) {
+            Ok(Some(chain)) => {
+                let policies = chain.read_policy_no_version(&self.crate_name)?;
+                if policies.is_empty() {
+                    println!(
+                        "No policies matching the crate {}",
+                        &self.manifest_path
+                    );
+                    Ok(())
+                } else if policies.len() > 1 {
+                    // TODO: Allow for reviewing more than one policy matching a crate
+                    println!(
+                        "More than one policy for crate {}",
+                        &self.manifest_path
+                    );
+                    Ok(())
+                } else {
+                    let (full_crate_name, policy) = &policies[0];
+                    println!("Reviewing policy for {}", full_crate_name);
+                    review_policy(policy, self.review_type);
+                    Ok(())
+                }
+            }
+            Ok(None) => Err(anyhow!(
+                "Couldn't find audit chain manifest at {}",
+                &self.manifest_path
+            )),
+            Err(e) => Err(e),
+        }
+    }
 }
 
 impl std::fmt::Display for ReviewType {
@@ -83,6 +146,56 @@ struct Audit {
     manifest_path: String,
     /// Crate to review
     crate_name: String,
+}
+
+impl CommandRunner for Audit {
+    fn run_command(self, args: OuterArgs) -> Result<()> {
+        println!("Auditing crate: {}", self.crate_name);
+        match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path)) {
+            Ok(Some(mut chain)) => {
+                let mut policies = chain.read_policy_no_version(&self.crate_name)?;
+                if policies.is_empty() {
+                    println!(
+                        "No policies matching the crate {}",
+                        &self.manifest_path
+                    );
+                    Ok(())
+                } else if policies.len() > 1 {
+                    // TODO: Allow for auditing more than one policy matching a crate
+                    println!(
+                        "More than one policy for crate {}",
+                        &self.manifest_path
+                    );
+                    Ok(())
+                } else {
+                    let (full_crate_name, orig_policy) = policies.pop().unwrap();
+                    let mut new_policy = orig_policy.clone();
+                    let mut crate_path = PathBuf::from(&args.crate_download_path);
+                    crate_path.push(&full_crate_name);
+                    let scan_res = scanner::scan_crate(&crate_path)?;
+                    let audit_config = AuditConfig::default();
+                    audit_policy(&mut new_policy, scan_res, &audit_config)?;
+
+                    // if any public function annotations have changed,
+                    // update parent packages
+                    let removed_fns = orig_policy
+                        .pub_caller_checked
+                        .difference(&new_policy.pub_caller_checked)
+                        .cloned()
+                        .collect::<HashSet<_>>();
+
+                    chain.remove_cross_crate_effects(removed_fns, &full_crate_name)?;
+
+                    Ok(())
+                }
+            }
+            Ok(None) => Err(anyhow!(
+                "Couldn't find audit chain manifest at {}",
+                &self.manifest_path
+            )),
+            Err(e) => Err(e),
+        }
+    }
 }
 
 // TODO: Different default policies
@@ -244,100 +357,11 @@ fn review_policy(policy: &PolicyFile, review_type: ReviewType) {
     }
 }
 
-fn runner(args: Args) -> Result<()> {
-    match args.command {
-        Command::Create(create) => {
-            let chain = create_new_audit_chain(create, &args.crate_download_path)?;
-            chain.save_to_file()?;
-            Ok(())
-        }
-        Command::Audit(audit) => {
-            println!("Auditing crate: {}", audit.crate_name);
-            match AuditChain::read_audit_chain(PathBuf::from(&audit.manifest_path)) {
-                Ok(Some(mut chain)) => {
-                    let mut policies = chain.read_policy_no_version(&audit.crate_name)?;
-                    if policies.is_empty() {
-                        println!(
-                            "No policies matching the crate {}",
-                            &audit.manifest_path
-                        );
-                        Ok(())
-                    } else if policies.len() > 1 {
-                        // TODO: Allow for auditing more than one policy matching a crate
-                        println!(
-                            "More than one policy for crate {}",
-                            &audit.manifest_path
-                        );
-                        Ok(())
-                    } else {
-                        let (full_crate_name, orig_policy) = policies.pop().unwrap();
-                        let mut new_policy = orig_policy.clone();
-                        let mut crate_path = PathBuf::from(&args.crate_download_path);
-                        crate_path.push(&full_crate_name);
-                        let scan_res = scanner::scan_crate(&crate_path)?;
-                        let audit_config = AuditConfig::default();
-                        audit_policy(&mut new_policy, scan_res, &audit_config)?;
-
-                        // if any public function annotations have changed,
-                        // update parent packages
-                        let removed_fns = orig_policy
-                            .pub_caller_checked
-                            .difference(&new_policy.pub_caller_checked)
-                            .cloned()
-                            .collect::<HashSet<_>>();
-
-                        chain.remove_cross_crate_effects(removed_fns, &full_crate_name)?;
-
-                        Ok(())
-                    }
-                }
-                Ok(None) => Err(anyhow!(
-                    "Couldn't find audit chain manifest at {}",
-                    &audit.manifest_path
-                )),
-                Err(e) => Err(e),
-            }
-        }
-        Command::Review(review) => {
-            println!("Reviewing crate: {}", review.crate_name);
-            match AuditChain::read_audit_chain(PathBuf::from(&review.manifest_path)) {
-                Ok(Some(chain)) => {
-                    let policies = chain.read_policy_no_version(&review.crate_name)?;
-                    if policies.is_empty() {
-                        println!(
-                            "No policies matching the crate {}",
-                            &review.manifest_path
-                        );
-                        Ok(())
-                    } else if policies.len() > 1 {
-                        // TODO: Allow for reviewing more than one policy matching a crate
-                        println!(
-                            "More than one policy for crate {}",
-                            &review.manifest_path
-                        );
-                        Ok(())
-                    } else {
-                        let (full_crate_name, policy) = &policies[0];
-                        println!("Reviewing policy for {}", full_crate_name);
-                        review_policy(policy, review.review_type);
-                        Ok(())
-                    }
-                }
-                Ok(None) => Err(anyhow!(
-                    "Couldn't find audit chain manifest at {}",
-                    &review.manifest_path
-                )),
-                Err(e) => Err(e),
-            }
-        }
-    }
-}
-
 fn main() {
     cargo_scan::util::init_logging();
     let args = Args::parse();
 
-    match runner(args) {
+    match args.command.run_command(args.outer_args) {
         Ok(()) => (),
         Err(e) => println!("Error running command: {}", e),
     }
