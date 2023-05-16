@@ -1,6 +1,7 @@
 use cargo_scan::audit_chain::AuditChain;
 use cargo_scan::auditing::audit::audit_policy;
 use cargo_scan::auditing::info::Config as AuditConfig;
+use cargo_scan::auditing::review::review_policy;
 use cargo_scan::ident::CanonicalPath;
 use cargo_scan::policy::PolicyFile;
 use cargo_scan::util::load_cargo_toml;
@@ -106,7 +107,7 @@ impl std::fmt::Display for ReviewInfo {
 }
 
 impl CommandRunner for Review {
-    fn run_command(self, _args: OuterArgs) -> Result<()> {
+    fn run_command(self, args: OuterArgs) -> Result<()> {
         let chain = match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path))
         {
             Ok(Some(chain)) => Ok(chain),
@@ -130,7 +131,9 @@ impl CommandRunner for Review {
                     review_crate
                 ))
             })?;
-            review_policy(&policy, self.review_info);
+            let mut crate_path = PathBuf::from(&args.crate_download_path);
+            crate_path.push(review_crate);
+            review_crate_policy(&policy, crate_path, self.review_info)?;
         }
         Ok(())
     }
@@ -333,16 +336,19 @@ fn create_new_audit_chain(args: Create, crate_download_path: &str) -> Result<Aud
     Ok(chain)
 }
 
-fn review_policy(policy: &PolicyFile, review_type: ReviewInfo) {
+fn review_crate_policy(policy: &PolicyFile, crate_path: PathBuf, review_type: ReviewInfo) -> Result<()> {
     match review_type {
         // TODO: Plug in to existing policy review
-        ReviewInfo::All => (),
+        ReviewInfo::All => {
+            review_policy(policy, &crate_path, &AuditConfig::default())
+        }
         ReviewInfo::PubFuns => {
             println!("Public functions marked caller-checked:");
             for pub_fn in policy.pub_caller_checked.iter() {
                 // TODO: Print more info
                 println!("  {}", pub_fn);
             }
+            Ok(())
         }
     }
 }

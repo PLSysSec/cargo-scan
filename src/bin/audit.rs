@@ -199,7 +199,7 @@ fn runner(args: Args) -> Result<()> {
     if args.review {
         match policy_file {
             None => Err(anyhow!("Policy file to review doesn't exist")),
-            Some(pf) => review_policy(pf, &args.crate_path, &args.config),
+            Some(pf) => review_policy(&pf, &args.crate_path, &args.config),
         }
     } else {
         audit_crate(args, policy_file)
