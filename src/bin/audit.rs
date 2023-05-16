@@ -1,7 +1,8 @@
 use cargo_scan::auditing::audit::audit_policy;
-use cargo_scan::auditing::info::{print_effect_info, Config};
-use cargo_scan::effect::{EffectBlock, SrcLoc};
-use cargo_scan::ident::CanonicalPath;
+use cargo_scan::auditing::info::Config;
+use cargo_scan::auditing::review::review_policy;
+use cargo_scan::auditing::util::{hash_dir, is_policy_scan_valid};
+use cargo_scan::effect::EffectBlock;
 use cargo_scan::policy::*;
 use cargo_scan::scanner;
 
@@ -37,48 +38,6 @@ struct Args {
     /// For debugging stuff
     #[clap(long, default_value_t = false)]
     debug: bool,
-}
-
-fn review_effect_tree_info_helper(
-    orig_effect: &EffectBlock,
-    effect_tree: &EffectTree,
-    effect_history: &[&EffectInfo],
-    fn_locs: &HashMap<CanonicalPath, SrcLoc>,
-    config: &Config,
-) -> Result<()> {
-    match effect_tree {
-        EffectTree::Leaf(new_e, a) => {
-            print_effect_info(orig_effect, new_e, effect_history, fn_locs, config)?;
-            // TODO: Colorize
-            println!("Policy annotation: {}", a);
-        }
-        EffectTree::Branch(new_e, es) => {
-            // TODO: Colorize
-            print_effect_info(orig_effect, new_e, effect_history, fn_locs, config)?;
-            println!("Policy annotation: {}", SafetyAnnotation::CallerChecked);
-            let mut new_history = effect_history.to_owned();
-            new_history.push(new_e);
-            for new_tree in es {
-                review_effect_tree_info_helper(
-                    orig_effect,
-                    new_tree,
-                    &new_history,
-                    fn_locs,
-                    config,
-                )?
-            }
-        }
-    }
-    Ok(())
-}
-
-fn review_effect_tree_info(
-    effect: &EffectBlock,
-    effect_tree: &EffectTree,
-    fn_locs: &HashMap<CanonicalPath, SrcLoc>,
-    config: &Config,
-) -> Result<()> {
-    review_effect_tree_info_helper(effect, effect_tree, &Vec::new(), fn_locs, config)
 }
 
 enum ContinueStatus {
@@ -187,34 +146,6 @@ fn handle_invalid_policy(
     }
 }
 
-fn is_policy_scan_valid(
-    policy: &PolicyFile,
-    scan_effect_blocks: &HashSet<&EffectBlock>,
-    crate_path: PathBuf,
-) -> Result<bool> {
-    let policy_effect_blocks = policy.audit_trees.keys().collect::<HashSet<_>>();
-    let hash = hash_dir(crate_path)?;
-    // NOTE: We're checking the hash in addition to the effect blocks for now
-    //       because we might have changed how we scan packages for effects.
-    Ok(policy_effect_blocks == *scan_effect_blocks && policy.hash == hash)
-}
-
-// TODO: Abstract all this review stuff out
-fn review_policy(args: Args, policy: PolicyFile) -> Result<()> {
-    let scan_res = scanner::scan_crate(&args.crate_path)?;
-    let scan_effect_blocks = scan_res.unsafe_effect_blocks_set();
-    if !is_policy_scan_valid(&policy, &scan_effect_blocks, args.crate_path.clone())? {
-        println!("Error: crate has changed since last policy scan.");
-        return Err(anyhow!("Invalid policy during review"));
-    }
-
-    for (e, a) in policy.audit_trees.iter() {
-        review_effect_tree_info(e, a, &scan_res.fn_locs, &args.config)?;
-    }
-
-    Ok(())
-}
-
 fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     let scan_res = scanner::scan_crate(&args.crate_path)?;
     let scan_effect_blocks = scan_res.unsafe_effect_blocks_set();
@@ -268,7 +199,7 @@ fn runner(args: Args) -> Result<()> {
     if args.review {
         match policy_file {
             None => Err(anyhow!("Policy file to review doesn't exist")),
-            Some(pf) => review_policy(args, pf),
+            Some(pf) => review_policy(pf, &args.crate_path, &args.config),
         }
     } else {
         audit_crate(args, policy_file)

@@ -1,5 +1,6 @@
 use super::effect::{EffectBlock, EffectInstance, SrcLoc};
 use crate::effect::Effect;
+use crate::auditing::util::hash_dir;
 use crate::ident::CanonicalPath;
 use crate::scanner;
 use crate::scanner::ScanResults;
@@ -7,15 +8,13 @@ use crate::scanner::ScanResults;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::Path as FilePath;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
-use sha2::{Digest, Sha256};
-use walkdir::WalkDir;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 pub enum SafetyAnnotation {
@@ -35,23 +34,6 @@ impl fmt::Display for SafetyAnnotation {
             SafetyAnnotation::CallerChecked => write!(f, "Caller-checked"),
         }
     }
-}
-
-pub fn hash_dir(p: PathBuf) -> Result<[u8; 32]> {
-    let mut hasher = Sha256::new();
-    for entry in WalkDir::new(p) {
-        match entry {
-            Ok(ne) if ne.path().is_file() => {
-                let mut file = File::open(ne.path())?;
-                let mut buf = Vec::new();
-                file.read_to_end(&mut buf)?;
-                hasher.update(buf);
-            }
-            _ => (),
-        }
-    }
-
-    Ok(hasher.finalize().into())
 }
 
 #[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
