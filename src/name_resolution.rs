@@ -385,23 +385,28 @@ fn get_container_name(
         _ => {
             // If the definition exists inside a function body,
             // get the name of the containing function
-            if let ModuleSource::BlockExpr(bl_expr) =
-                def.module(db).unwrap().definition_source(db).value
-            {
-                let str = bl_expr
-                    .syntax()
-                    .parent()
-                    .and_then(|parent| {
-                        ra_ap_syntax::ast::Fn::cast(parent).and_then(|function| {
-                            let parent_def = sems.to_def(&function)?.into();
-                            let mut name = get_container_name(sems, db, &parent_def);
-                            container_names.append(&mut name);
-                            Some(function.name()?.as_name())
+            if def.module(db).is_none() {
+                container_names.push(String::new());
+            }
+            else {
+                if let ModuleSource::BlockExpr(bl_expr) =
+                    def.module(db).unwrap().definition_source(db).value
+                {
+                    let str = bl_expr
+                        .syntax()
+                        .parent()
+                        .and_then(|parent| {
+                            ra_ap_syntax::ast::Fn::cast(parent).and_then(|function| {
+                                let parent_def = sems.to_def(&function)?.into();
+                                let mut name = get_container_name(sems, db, &parent_def);
+                                container_names.append(&mut name);
+                                Some(function.name()?.as_name())
+                            })
                         })
-                    })
-                    .map(|name| name.to_string())
-                    .unwrap_or_default();
-                container_names.push(str)
+                        .map(|name| name.to_string())
+                        .unwrap_or_default();
+                    container_names.push(str)
+                }
             }
         }
     }
