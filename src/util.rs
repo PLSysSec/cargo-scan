@@ -100,10 +100,11 @@ pub mod fs {
 }
 
 /// Parse Cargo TOML
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use log::debug;
 use std::fs::read_to_string;
 use std::path::Path;
+use std::str::FromStr;
 use toml::{self, value::Table};
 
 #[derive(Debug, Clone)]
@@ -139,4 +140,22 @@ pub fn load_cargo_toml(crate_path: &Path) -> Result<CrateData> {
     let result = CrateData { name, version };
     debug!("Loaded: {:?}", result);
     Ok(result)
+}
+
+/// Takes a fully-stringified crate name and gets the name and version from it
+/// e.g. "libc-0.4.8-pre18" will return "libc" and the version 0.4.8 with
+/// prerelease string "pre18"
+pub fn package_info_from_string(
+    package: &str,
+) -> Result<(cargo_lock::Name, cargo_lock::Version)> {
+    let split = package.split('-').collect::<Vec<_>>();
+    for i in (0..split.len()).rev() {
+        let test_str = split[i..].join("-");
+        if let Ok(version) = cargo_lock::Version::parse(&test_str) {
+            let name = split[..i].join("-");
+            return Ok((cargo_lock::Name::from_str(&name)?, version));
+        }
+    }
+
+    Err(anyhow!("Couldn't parse string as package"))
 }

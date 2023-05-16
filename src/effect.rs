@@ -478,6 +478,11 @@ impl EffectBlock {
         &self.effects
     }
 
+    pub fn filter_effects<F>(&mut self, f: F) where F: FnMut(&EffectInstance) -> bool {
+        let effects = std::mem::take(&mut self.effects);
+        self.effects = effects.into_iter().filter(f).collect::<Vec<_>>();
+    }
+
     pub fn containing_fn(&self) -> &FnDec {
         &self.containing_fn
     }

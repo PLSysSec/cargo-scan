@@ -1,4 +1,5 @@
 use super::effect::{EffectBlock, EffectInstance, SrcLoc};
+use crate::effect::Effect;
 use crate::ident::CanonicalPath;
 use crate::scanner;
 use crate::scanner::ScanResults;
@@ -244,7 +245,7 @@ impl PolicyFile {
     /// `pub_caller_checked` aligns with those in the effect tree.
     pub fn recalc_pub_caller_checked(&mut self, pub_fns: &HashSet<CanonicalPath>) {
         let mut pub_caller_checked = HashSet::new();
-        for (_, tree) in &self.audit_trees {
+        for tree in self.audit_trees.values() {
             PolicyFile::recalc_pub_caller_checked_tree(
                 tree,
                 &mut pub_caller_checked,
@@ -253,6 +254,32 @@ impl PolicyFile {
         }
 
         self.pub_caller_checked = pub_caller_checked;
+    }
+
+    /// Removes any effect trees which have the given sink as the root
+    pub fn remove_sinks_from_tree(&mut self, sinks_to_remove: &HashSet<CanonicalPath>) {
+        // Replace the audit tree with a temporary value so we can use a filter
+        // map to drop effects
+        let audit_trees = std::mem::take(&mut self.audit_trees);
+        let new_trees = audit_trees.into_iter().filter_map(|(mut block, tree)| {
+            // Remove all effects that match our sinks to remove
+            block.filter_effects(|e| {
+                if let Effect::SinkCall(s) = e.eff_type() {
+                    if sinks_to_remove.contains(&CanonicalPath::new(s.as_str())) {
+                        return false;
+                    }
+                }
+                true
+            });
+
+            // If there are no more effects, remove this effect tree
+            if block.effects().is_empty() {
+                None
+            } else {
+                Some((block, tree))
+            }
+        });
+        self.audit_trees = new_trees.collect::<HashMap<_, _>>();
     }
 
     pub fn new_caller_checked_default(crate_path: &FilePath) -> Result<PolicyFile> {

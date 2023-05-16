@@ -7,14 +7,13 @@ use cargo_scan::util::load_cargo_toml;
 use cargo_scan::{download_crate, scanner};
 
 use anyhow::{anyhow, Context, Result};
-use cargo::{core::Workspace, ops::generate_lockfile, util::config};
-use cargo_lock::{Dependency, Lockfile, Package};
+use cargo_lock::{Dependency, Package};
 use clap::{Args as ClapArgs, Parser, Subcommand, ValueEnum};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::DfsPostOrder;
 use std::collections::{HashMap, HashSet};
 use std::fs::{create_dir_all, remove_file};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -206,16 +205,7 @@ fn create_new_audit_chain(args: Create, crate_download_path: &str) -> Result<Aud
 
     println!("Loading audit package lockfile");
     // If the lockfile doesn't exist, generate it
-    let lockfile =
-        if let Ok(l) = Lockfile::load(format!("{}/Cargo.lock", args.crate_path)) {
-            l
-        } else {
-            println!("Lockfile missing: generating new lockfile");
-            let config = config::Config::default()?;
-            let workspace = Workspace::new(Path::new(&args.crate_path), &config)?;
-            generate_lockfile(&workspace)?;
-            Lockfile::load(format!("{}/Cargo.lock", args.crate_path))?
-        };
+    let lockfile = chain.load_lockfile()?;
 
     let crate_data = load_cargo_toml(&PathBuf::from(&args.crate_path))?;
 
@@ -261,7 +251,53 @@ fn runner(args: Args) -> Result<()> {
             chain.save_to_file()?;
             Ok(())
         }
-        Command::Audit(_audit) => Ok(()),
+        Command::Audit(audit) => {
+            println!("Auditing crate: {}", audit.crate_name);
+            match AuditChain::read_audit_chain(PathBuf::from(&audit.manifest_path)) {
+                Ok(Some(mut chain)) => {
+                    let mut policies = chain.read_policy_no_version(&audit.crate_name)?;
+                    if policies.is_empty() {
+                        println!(
+                            "No policies matching the crate {}",
+                            &audit.manifest_path
+                        );
+                        Ok(())
+                    } else if policies.len() > 1 {
+                        // TODO: Allow for auditing more than one policy matching a crate
+                        println!(
+                            "More than one policy for crate {}",
+                            &audit.manifest_path
+                        );
+                        Ok(())
+                    } else {
+                        let (full_crate_name, orig_policy) = policies.pop().unwrap();
+                        let mut new_policy = orig_policy.clone();
+                        let mut crate_path = PathBuf::from(&args.crate_download_path);
+                        crate_path.push(&full_crate_name);
+                        let scan_res = scanner::scan_crate(&crate_path)?;
+                        let audit_config = AuditConfig::default();
+                        audit_policy(&mut new_policy, scan_res, &audit_config)?;
+
+                        // if any public function annotations have changed,
+                        // update parent packages
+                        let removed_fns = orig_policy
+                            .pub_caller_checked
+                            .difference(&new_policy.pub_caller_checked)
+                            .cloned()
+                            .collect::<HashSet<_>>();
+
+                        chain.remove_cross_crate_effects(removed_fns, &full_crate_name)?;
+
+                        Ok(())
+                    }
+                }
+                Ok(None) => Err(anyhow!(
+                    "Couldn't find audit chain manifest at {}",
+                    &audit.manifest_path
+                )),
+                Err(e) => Err(e),
+            }
+        }
         Command::Review(review) => {
             println!("Reviewing crate: {}", review.crate_name);
             match AuditChain::read_audit_chain(PathBuf::from(&review.manifest_path)) {
