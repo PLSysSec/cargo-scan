@@ -82,61 +82,57 @@ impl CommandRunner for Create {
 struct Review {
     /// Path to chain manifest
     manifest_path: String,
-    /// Crate to review
-    crate_name: String,
-    /// What information to present in review
-    #[clap(short = 't', long, default_value_t = ReviewType::PubFuns)]
-    review_type: ReviewType,
+    /// What information to display
+    #[clap(short = 'i', long, default_value_t = ReviewInfo::PubFuns)]
+    review_info: ReviewInfo,
+    /// What crate to review, defaults to all crates.
+    review_target: Option<String>,
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
-enum ReviewType {
+enum ReviewInfo {
     PubFuns,
     All,
 }
 
+impl std::fmt::Display for ReviewInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            ReviewInfo::PubFuns => "pub-funs",
+            ReviewInfo::All => "all",
+        };
+        write!(f, "{}", s)
+    }
+}
+
 impl CommandRunner for Review {
     fn run_command(self, _args: OuterArgs) -> Result<()> {
-        println!("Reviewing crate: {}", self.crate_name);
-        match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path)) {
-            Ok(Some(chain)) => {
-                let policies = chain.read_policy_no_version(&self.crate_name)?;
-                if policies.is_empty() {
-                    println!(
-                        "No policies matching the crate {}",
-                        &self.manifest_path
-                    );
-                    Ok(())
-                } else if policies.len() > 1 {
-                    // TODO: Allow for reviewing more than one policy matching a crate
-                    println!(
-                        "More than one policy for crate {}",
-                        &self.manifest_path
-                    );
-                    Ok(())
-                } else {
-                    let (full_crate_name, policy) = &policies[0];
-                    println!("Reviewing policy for {}", full_crate_name);
-                    review_policy(policy, self.review_type);
-                    Ok(())
-                }
-            }
+        let chain = match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path))
+        {
+            Ok(Some(chain)) => Ok(chain),
             Ok(None) => Err(anyhow!(
                 "Couldn't find audit chain manifest at {}",
                 &self.manifest_path
             )),
             Err(e) => Err(e),
-        }
-    }
-}
+        }?;
 
-impl std::fmt::Display for ReviewType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            ReviewType::PubFuns => "pub-funs",
-            ReviewType::All => "all",
+        let crates_to_review = match self.review_target {
+            None => chain.all_crates(),
+            Some(crate_name) => chain.matching_crates_no_version(&crate_name),
         };
-        write!(f, "{}", s)
+
+        for review_crate in crates_to_review {
+            println!("Reviewing policy for {}", review_crate);
+            let policy = chain.read_policy(review_crate).ok_or_else(|| {
+                anyhow!(format!(
+                    "Couldn't find policy for crate {} in chain",
+                    review_crate
+                ))
+            })?;
+            review_policy(&policy, self.review_info);
+        }
+        Ok(())
     }
 }
 
@@ -155,17 +151,11 @@ impl CommandRunner for Audit {
             Ok(Some(mut chain)) => {
                 let mut policies = chain.read_policy_no_version(&self.crate_name)?;
                 if policies.is_empty() {
-                    println!(
-                        "No policies matching the crate {}",
-                        &self.manifest_path
-                    );
+                    println!("No policies matching the crate {}", &self.manifest_path);
                     Ok(())
                 } else if policies.len() > 1 {
                     // TODO: Allow for auditing more than one policy matching a crate
-                    println!(
-                        "More than one policy for crate {}",
-                        &self.manifest_path
-                    );
+                    println!("More than one policy for crate {}", &self.manifest_path);
                     Ok(())
                 } else {
                     let (full_crate_name, orig_policy) = policies.pop().unwrap();
@@ -343,15 +333,15 @@ fn create_new_audit_chain(args: Create, crate_download_path: &str) -> Result<Aud
     Ok(chain)
 }
 
-fn review_policy(policy: &PolicyFile, review_type: ReviewType) {
+fn review_policy(policy: &PolicyFile, review_type: ReviewInfo) {
     match review_type {
         // TODO: Plug in to existing policy review
-        ReviewType::All => (),
-        ReviewType::PubFuns => {
+        ReviewInfo::All => (),
+        ReviewInfo::PubFuns => {
             println!("Public functions marked caller-checked:");
             for pub_fn in policy.pub_caller_checked.iter() {
                 // TODO: Print more info
-                println!("{}", pub_fn);
+                println!("  {}", pub_fn);
             }
         }
     }

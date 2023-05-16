@@ -28,6 +28,17 @@ impl AuditChain {
         AuditChain { manifest_path, crate_path, crate_policies: HashMap::new() }
     }
 
+    pub fn all_crates(&self) -> Vec<&String> {
+        self.crate_policies.keys().collect::<Vec<_>>()
+    }
+
+    pub fn matching_crates_no_version<'a>(&'a self, crate_name: &str) -> Vec<&'a String> {
+        self.crate_policies
+            .keys()
+            .filter(|x| x.starts_with(crate_name))
+            .collect::<Vec<_>>()
+    }
+
     pub fn read_audit_chain(path: PathBuf) -> Result<Option<AuditChain>> {
         if path.is_dir() {
             Err(anyhow!("Manifest path is a directory"))
