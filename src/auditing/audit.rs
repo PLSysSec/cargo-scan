@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::auditing::info::*;
 use crate::effect::EffectBlock;
-use crate::ident::{CanonicalPath};
+use crate::ident::CanonicalPath;
 use crate::policy::{EffectInfo, EffectTree};
 use crate::{
     policy::{PolicyFile, SafetyAnnotation},
@@ -82,10 +82,7 @@ fn audit_leaf<'a>(
 
     if status == SafetyAnnotation::CallerChecked {
         // If the caller is public, add to set of public caller-checked
-        if scan_res
-            .pub_fns
-            .contains(&curr_effect.caller_path)
-        {
+        if scan_res.pub_fns.contains(&curr_effect.caller_path) {
             pub_caller_checked.insert(curr_effect.caller_path.clone());
         }
 

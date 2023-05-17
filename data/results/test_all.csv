@@ -13,8 +13,8 @@ caller_checked, caller_checked::sub::effect, core::ptr::null_mut, [Unsafe], data
 caller_checked, caller_checked::sub::effect, core::ptr::null_mut, [Unsafe], data/test-packages/caller-checked/src, sub.rs, 12, 12
 caller_checked, caller_checked::sub::effect, core::ptr::null_mut, [Unsafe], data/test-packages/caller-checked/src, sub.rs, 13, 12
 caller_checked, caller_checked::sub::effect, libc::unix::bsd::apple::sysctl, libc, data/test-packages/caller-checked/src, sub.rs, 8, 8
-fns_closures, fns_closures::closure_effects::return_file_reader_1, std::fs::read_to_string, std::fs, data/test-packages/fns-closures/src, closure_effects.rs, 5, 14
-fns_closures, fns_closures::closure_effects::return_file_reader_2, std::fs::read_to_string, std::fs, data/test-packages/fns-closures/src, closure_effects.rs, 9, 17
+CLOSURE, CLOSURE::data::test_packages::fns_closures::src::closure_effects::5::4, std::fs::read_to_string, std::fs, data/test-packages/fns-closures/src, closure_effects.rs, 5, 14
+CLOSURE, CLOSURE::data::test_packages::fns_closures::src::closure_effects::9::4, std::fs::read_to_string, std::fs, data/test-packages/fns-closures/src, closure_effects.rs, 9, 17
 fns_closures, fns_closures::closure_effects::main, std::path::Path::new, std::path, data/test-packages/fns-closures/src, closure_effects.rs, 14, 12
 fns_closures, fns_closures::unsafe_fn_pointers::test_fn_pointer, fns_closures::unsafe_fn_pointers::test_fn_pointer::f, [Unsafe], data/test-packages/fns-closures/src, unsafe_fn_pointers.rs, 18, 8
 libc_ex, libc_ex::main, libc::unix::sysconf, libc, data/test-packages/libc-ex/src, main.rs, 6, 8

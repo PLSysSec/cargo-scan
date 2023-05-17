@@ -10,7 +10,10 @@ use anyhow::Result;
 use sha2::{Digest, Sha256};
 use walkdir::WalkDir;
 
-pub fn hash_dir<P>(p: P) -> Result<[u8; 32]> where P: AsRef<Path> {
+pub fn hash_dir<P>(p: P) -> Result<[u8; 32]>
+where
+    P: AsRef<Path>,
+{
     let mut hasher = Sha256::new();
     for entry in WalkDir::new(&p) {
         match entry {
@@ -31,7 +34,10 @@ pub fn is_policy_scan_valid<P>(
     policy: &PolicyFile,
     scan_effect_blocks: &HashSet<&EffectBlock>,
     crate_path: P,
-) -> Result<bool> where P: AsRef<Path> {
+) -> Result<bool>
+where
+    P: AsRef<Path>,
+{
     let policy_effect_blocks = policy.audit_trees.keys().collect::<HashSet<_>>();
     let hash = hash_dir(crate_path)?;
     // NOTE: We're checking the hash in addition to the effect blocks for now

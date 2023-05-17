@@ -336,12 +336,14 @@ fn create_new_audit_chain(args: Create, crate_download_path: &str) -> Result<Aud
     Ok(chain)
 }
 
-fn review_crate_policy(policy: &PolicyFile, crate_path: PathBuf, review_type: ReviewInfo) -> Result<()> {
+fn review_crate_policy(
+    policy: &PolicyFile,
+    crate_path: PathBuf,
+    review_type: ReviewInfo,
+) -> Result<()> {
     match review_type {
         // TODO: Plug in to existing policy review
-        ReviewInfo::All => {
-            review_policy(policy, &crate_path, &AuditConfig::default())
-        }
+        ReviewInfo::All => review_policy(policy, &crate_path, &AuditConfig::default()),
         ReviewInfo::PubFuns => {
             println!("Public functions marked caller-checked:");
             for pub_fn in policy.pub_caller_checked.iter() {

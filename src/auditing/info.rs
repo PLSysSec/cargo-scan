@@ -26,10 +26,7 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        Config {
-            lines_before_effect: 4,
-            lines_after_effect: 1,
-        }
+        Config { lines_before_effect: 4, lines_after_effect: 1 }
     }
 }
 
@@ -111,23 +108,22 @@ pub fn print_effect_src(
         }
     };
 
-    let label_msg =
-        if effect_origin.containing_fn().fn_name == effect.caller_path {
-            // We are in the original function, so print all the effects in the
-            // EffectBlock
-            effect_origin
-                .effects()
-                .iter()
-                .filter_map(|x| match x.eff_type() {
-                    Effect::SinkCall(sink) => Some(format!("sink call: {}", sink)),
-                    Effect::FFICall(call) => Some(format!("ffi call: {}", call)),
-                    _ => None,
-                })
-                .collect::<Vec<_>>()
-                .join("\n")
-        } else {
-            "call safety marked as callee-checked".to_string()
-        };
+    let label_msg = if effect_origin.containing_fn().fn_name == effect.caller_path {
+        // We are in the original function, so print all the effects in the
+        // EffectBlock
+        effect_origin
+            .effects()
+            .iter()
+            .filter_map(|x| match x.eff_type() {
+                Effect::SinkCall(sink) => Some(format!("sink call: {}", sink)),
+                Effect::FFICall(call) => Some(format!("ffi call: {}", call)),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    } else {
+        "call safety marked as callee-checked".to_string()
+    };
     let l = labels.remove(0);
     labels.insert(0, l.with_message(label_msg));
 

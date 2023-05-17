@@ -1,6 +1,6 @@
 use super::effect::{EffectBlock, EffectInstance, SrcLoc};
-use crate::effect::Effect;
 use crate::auditing::util::hash_dir;
+use crate::effect::Effect;
 use crate::ident::CanonicalPath;
 use crate::scanner;
 use crate::scanner::ScanResults;
