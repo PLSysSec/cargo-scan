@@ -297,8 +297,6 @@ impl<'a> Scanner<'a> {
                 tr_name,
                 tr_type,
             ));
-
-            info!("trait impls: {:?}", self.data.unsafe_impls);
         }
     }
 
@@ -442,7 +440,7 @@ impl<'a> Scanner<'a> {
                 // Note that the body expression doesn't get evaluated yet,
                 // and may be evaluated somewhere else.
                 // May need to do something more special here.
-                self.scan_expr(&x.body);
+                self.scan_closure(x);
             }
             syn::Expr::Continue(_) => (),
             syn::Expr::Field(x) => {
@@ -577,6 +575,38 @@ impl<'a> Scanner<'a> {
         }
     }
 
+    fn scan_closure(&mut self, x: &'a syn::ExprClosure) {
+        // Create identifier for closure definition to handle it as any other function.
+        let ident = crate::ident::create_closure_ident(self.filepath, &x.span());
+        if ident.is_none() {
+            return;
+        }
+
+        let vis = syn::Visibility::Inherited;
+        let cl_name = CanonicalPath::new_owned(ident.unwrap());
+        let cl_dec = FnDec::new(self.filepath, &x.span(), cl_name.clone(), &vis);
+
+        // Always push the new closure declaration before scanning the
+        // body so we have access to the closure its in for unsafe blocks
+        self.scope_fns.push(cl_dec.clone());
+
+        // Notify ScanResults
+        self.data.add_fn_dec(cl_dec);
+
+        // Update effect blocks
+        let effect_block = EffectBlock::new_fn(self.filepath, &x.body, cl_name, &vis);
+        self.scope_effect_blocks.push(effect_block);
+
+        // ***** Scan body *****
+        self.scan_expr(&x.body);
+
+        // Reset state
+        self.scope_fns.pop();
+
+        // Save effect block
+        self.data.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
+    }
+
     fn scan_deref(&mut self, x: &'a syn::Expr) {
         let mut tokens: TokenStream = TokenStream::new();
         x.to_tokens(&mut tokens);
@@ -653,7 +683,6 @@ impl<'a> Scanner<'a> {
         S: Debug + Spanned,
     {
         let caller = &self.scope_fns.last().expect("not inside a function!").fn_name;
-
         if let Some(caller_node_idx) = self.data.node_idxs.get(caller) {
             if let Some(callee_node_idx) = self.data.node_idxs.get(&callee) {
                 self.data.call_graph.add_edge(

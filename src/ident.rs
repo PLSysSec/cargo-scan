@@ -5,10 +5,14 @@
 //! CanonicalPath: crate::fs::File
 //! Pattern: std::fs, std::fs::*
 
+use itertools::Itertools;
 use log::warn;
 use serde::{Deserialize, Serialize};
-use std::fmt::{self, Display};
-use syn;
+use std::{
+    fmt::{self, Display},
+    path::Path,
+};
+use syn::{self, spanned::Spanned};
 
 use super::util::iter::FreshIter;
 
@@ -389,6 +393,13 @@ impl CanonicalType {
         false
     }
 
+    pub fn is_closure(&self) -> bool {
+        if let TypeKind::Callable(CallableKind::Closure) = &self.ty_kind {
+            return true;
+        }
+        false
+    }
+
     pub fn get_callable_kind(&self) -> Option<CallableKind> {
         if let TypeKind::Callable(kind) = &self.ty_kind {
             return Some(kind.clone());
@@ -453,6 +464,30 @@ impl Pattern {
     pub fn superset(&self, other: &Self) -> bool {
         other.subset(self)
     }
+}
+
+// Create a pseudo-identifier for closure definitions
+// using their location in the source code
+pub fn create_closure_ident<S>(filepath: &Path, s: &S) -> Option<String>
+where
+    S: Spanned,
+{
+    let invariant = |s: &str| s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
+
+    let dir = filepath
+        .parent()?
+        .to_str()?
+        .replace('-', "_")
+        .split('/')
+        .into_iter()
+        .filter(|x| invariant(x))
+        .join("::");
+
+    let file = filepath.file_name()?.to_str()?.strip_suffix(".rs")?.to_string();
+    let start_line = s.span().start().line.to_string();
+    let start_col = s.span().start().column.to_string();
+
+    Some(format!("{}::{}::{}::{}::{}", "CLOSURE", dir, file, start_line, start_col))
 }
 
 #[cfg(test)]
