@@ -478,7 +478,10 @@ impl EffectBlock {
         &self.effects
     }
 
-    pub fn filter_effects<F>(&mut self, f: F) where F: FnMut(&EffectInstance) -> bool {
+    pub fn filter_effects<F>(&mut self, f: F)
+    where
+        F: FnMut(&EffectInstance) -> bool,
+    {
         let effects = std::mem::take(&mut self.effects);
         self.effects = effects.into_iter().filter(f).collect::<Vec<_>>();
     }
@@ -495,14 +498,20 @@ impl EffectBlock {
 pub struct TraitImpl {
     src_loc: SrcLoc,
     tr_name: CanonicalPath,
+    self_type: Option<CanonicalPath>,
 }
 impl TraitImpl {
-    pub fn new<S>(impl_span: &S, filepath: &FilePath, tr_name: CanonicalPath) -> Self
+    pub fn new<S>(
+        impl_span: &S,
+        filepath: &FilePath,
+        tr_name: CanonicalPath,
+        self_type: Option<CanonicalPath>,
+    ) -> Self
     where
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, impl_span);
-        Self { src_loc, tr_name }
+        Self { src_loc, tr_name, self_type }
     }
 }
 

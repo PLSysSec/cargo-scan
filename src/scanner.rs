@@ -63,7 +63,10 @@ impl ScanResults {
             .collect::<HashSet<_>>()
     }
 
-    pub fn get_callers<'a>(&'a self, callee: &CanonicalPath) -> HashSet<&'a EffectInstance> {
+    pub fn get_callers<'a>(
+        &'a self,
+        callee: &CanonicalPath,
+    ) -> HashSet<&'a EffectInstance> {
         let mut callers = HashSet::new();
         for e in &self.effects {
             let effect_callee = e.callee();
@@ -273,7 +276,29 @@ impl<'a> Scanner<'a> {
         if imp.unsafety.is_some() {
             // we found an `unsafe impl` declaration
             let tr_name = self.resolver.resolve_path(tr);
-            self.data.unsafe_impls.push(TraitImpl::new(imp, self.filepath, tr_name));
+            let self_ty = imp
+                .self_ty
+                .to_token_stream()
+                .into_iter()
+                .filter_map(|token| match token {
+                    TokenTree::Ident(i) => Some(i),
+                    _ => None,
+                })
+                .last();
+            // resolve the implementing type of the trait, if there is one
+            let tr_type = match &self_ty {
+                Some(ident) => Some(self.resolver.resolve_ident(ident)),
+                _ => None,
+            };
+
+            self.data.unsafe_impls.push(TraitImpl::new(
+                imp,
+                self.filepath,
+                tr_name,
+                tr_type,
+            ));
+
+            info!("trait impls: {:?}", self.data.unsafe_impls);
         }
     }
 
