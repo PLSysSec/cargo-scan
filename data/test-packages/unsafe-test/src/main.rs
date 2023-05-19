@@ -19,6 +19,7 @@ fn unsafe_block_ex() {
 }
 
 extern "C" {
+    static MY_EXTERN_STATIC: i32;
     pub fn my_unsafe_c_ffi();
 }
 
@@ -31,6 +32,8 @@ fn get_my_union(arg: i32) -> MyUnion {
     MyUnion{f1: arg}
 }
 pub struct MyEx (pub i32, MyUnion);
+
+static mut MY_STATIC_VAR: i32 = 0;
 
 fn main() {
     println!("Hello, world!");
@@ -53,5 +56,11 @@ fn main() {
             let arg = union_vec[0].f1 + 5;
             println!("{:?}", get_my_union(arg).f1);
         }       
+    }
+
+    // accessing static mutable/extern variables
+    unsafe { 
+        let ret = MY_EXTERN_STATIC;
+        MY_STATIC_VAR += 1;
     }
 }

@@ -299,6 +299,7 @@ pub enum TypeKind {
     DynTrait,
     Generic,
     UnionFld,
+    StaticMut,
     #[default]
     // Default case. Types that we have fully resolved
     // and do not need extra information about.
@@ -403,6 +404,13 @@ impl CanonicalType {
 
     pub fn is_union_field(&self) -> bool {
         if let TypeKind::UnionFld = self.ty_kind {
+            return true;
+        }
+        false
+    }
+
+    pub fn is_mut_static(&self) -> bool {
+        if let TypeKind::StaticMut = self.ty_kind {
             return true;
         }
         false

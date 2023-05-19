@@ -151,8 +151,10 @@ pub enum Effect {
     RawPointer(CanonicalPath),
     /// Reading a union field
     UnionField(CanonicalPath),
-    /// Mutating a global variable
+    /// Accessing a global mutable variable
     StaticMut(CanonicalPath),
+    /// Accessing an external mutable variable
+    StaticExt(CanonicalPath),
     /// Unsafe operation, e.g. pointer deref
     /// see: https://doc.rust-lang.org/nomicon/what-unsafe-does.html
     UnsafeOp,
@@ -168,6 +170,7 @@ impl Effect {
             Self::RawPointer(_) => None,
             Self::UnionField(_) => None,
             Self::StaticMut(_) => None,
+            Self::StaticExt(_) => None,
             Self::UnsafeOp => None,
             Self::OtherCall => None,
         }
@@ -181,6 +184,7 @@ impl Effect {
             Self::RawPointer(_) => "[PtrDeref]",
             Self::UnionField(_) => "[UnionField]",
             Self::StaticMut(_) => "[StaticMutVar]",
+            Self::StaticExt(_) => "[StaticExtVar]",
             Self::UnsafeOp => "[Unsafe]",
             Self::OtherCall => "[None]",
         }

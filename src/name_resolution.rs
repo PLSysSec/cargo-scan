@@ -207,6 +207,14 @@ impl Resolver {
                     _ => Ok(false),
                 }
             }
+            Definition::Static(st) => {
+                let static_id = ra_ap_hir_def::StaticId::from(st);
+                match static_id.lookup(db).container {
+                    // Static variable is in an 'extern' block
+                    ra_ap_hir_def::ItemContainerId::ExternBlockId(_) => Ok(true),
+                    _ => Ok(false),
+                }
+            }
             _ => Ok(false),
         }
     }
@@ -442,11 +450,16 @@ fn get_canonical_type(
         Definition::Adt(it) => Some(it.ty(db)),
         Definition::Local(it) => Some(it.ty(db)),
         Definition::Const(it) => Some(it.ty(db)),
-        Definition::Static(it) => Some(it.ty(db)),
         Definition::SelfType(it) => Some(it.self_ty(db)),
         Definition::TypeAlias(it) => Some(it.ty(db)),
         Definition::BuiltinType(it) => Some(it.ty(db)),
         Definition::Function(it) => Some(it.ret_type(db)),
+        Definition::Static(it) => {
+            if it.is_mut(db) {
+                ty_kind = TypeKind::StaticMut;
+            }
+            Some(it.ty(db))
+        }
         Definition::Field(it) => {
             if let VariantDef::Union(_) = &it.parent_def(db) {
                 ty_kind = TypeKind::UnionFld;
@@ -467,6 +480,7 @@ fn get_canonical_type(
     if ty.is_none() || (ty.is_some() && ty.clone().unwrap().contains_unknown()) {
         return Err(anyhow!("Could not resolve type for definition {:?}", def));
     }
+
     let ty = ty.unwrap();
     if ty.is_closure() {
         ty_kind = TypeKind::Callable(crate::ident::CallableKind::Closure)

@@ -139,6 +139,10 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         Self::aggregate_path(&self.lookup_path_vec(p))
     }
 
+    fn resolve_path_type(&self, p: &'a syn::Path) -> CanonicalType {
+        Self::aggregate_path_type(&self.lookup_path_vec(p))
+    }
+
     fn resolve_def(&self, i: &'a syn::Ident) -> CanonicalPath {
         let mut result = self.modpath.clone();
 
@@ -379,5 +383,13 @@ impl<'a> HackyResolver<'a> {
             result.push_ident(&Ident::from_syn(i));
         }
         CanonicalPath::from_path(result)
+    }
+
+    fn aggregate_path_type(p: &[&'a syn::Ident]) -> CanonicalType {
+        let mut result = IdentPath::new_empty();
+        for &i in p {
+            result.push_ident(&Ident::from_syn(i));
+        }
+        CanonicalType::new_owned_string(result.to_string())
     }
 }

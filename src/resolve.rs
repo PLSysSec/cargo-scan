@@ -37,6 +37,7 @@ pub trait Resolve<'a>: Sized {
         Type resolution functions
     */
     fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath;
+    fn resolve_path_type(&self, i: &'a syn::Path) -> CanonicalType;
     fn resolve_field_type(&self, i: &'a syn::Ident) -> CanonicalType;
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath;
 
@@ -144,6 +145,11 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
     fn resolve_path(&self, p: &'a syn::Path) -> CanonicalPath {
         let i = &p.segments.last().unwrap().ident;
         self.resolve_ident_or_else(i, || self.backup.resolve_path(p))
+    }
+
+    fn resolve_path_type(&self, p: &'a syn::Path) -> CanonicalType {
+        let i = &p.segments.last().unwrap().ident;
+        self.resolve_type_or_else(i, || self.backup.resolve_path_type(p))
     }
 
     fn resolve_def(&self, i: &'a syn::Ident) -> CanonicalPath {

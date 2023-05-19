@@ -511,8 +511,9 @@ impl<'a> Scanner<'a> {
             syn::Expr::Paren(x) => {
                 self.scan_expr(&x.expr);
             }
-            syn::Expr::Path(_) => {
+            syn::Expr::Path(x) => {
                 // typically a local variable
+                self.scan_path(&x.path);
             }
             syn::Expr::Range(x) => {
                 if let Some(y) = &x.start {
@@ -582,6 +583,20 @@ impl<'a> Scanner<'a> {
                 }
             }
             _ => self.syn_warning("encountered unknown expression", e),
+        }
+    }
+
+    fn scan_path(&mut self, x: &'a syn::Path) {
+        let ty = self.resolver.resolve_path_type(x);
+        // Accessing a mutable global variable
+        if ty.is_mut_static() {
+            let cp = self.resolver.resolve_path(x);
+            self.push_effect(x.span(), cp.clone(), Effect::StaticMut(cp));
+        }
+        // Accessing an external static variable
+        if self.resolver.resolve_ffi(x).is_some() {
+            let cp = self.resolver.resolve_path(x);
+            self.push_effect(x.span(), cp.clone(), Effect::StaticExt(cp));
         }
     }
 
