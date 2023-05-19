@@ -43,8 +43,10 @@ fn main() {
     }
 
     // examples of union field accesses
-    let my_union = MyUnion{f1: 5};
-    unsafe {
+    let mut my_union = MyUnion{f1: 5};
+    // assigning to a union field is a safe operation
+    my_union.f1 = 10;
+    unsafe {       
         let ex = MyEx(MyUnion{f1: 5}.f1, MyUnion{f2: false});
         if ex.1.f2 {
             let union_vec= vec![my_union]; 

@@ -111,6 +111,12 @@ pub struct Scanner<'a> {
     /// (includes only unsafe blocks and fn decls -- not traits and trait impls)
     scope_unsafe: usize,
 
+    /// Whether we are scaning an assignment expression.
+    /// Useful to check if a union field is accessed to
+    /// read its value, which is unsafe, or to write to it.
+    /// Accessing a union field to assign to it is safe.
+    scope_assign_lhs: bool,
+
     /// Functions inside
     scope_fns: Vec<FnDec>,
 
@@ -137,6 +143,7 @@ impl<'a> Scanner<'a> {
             resolver,
             scope_effect_blocks: Vec::new(),
             scope_unsafe: 0,
+            scope_assign_lhs: false,
             scope_fns: Vec::new(),
             data,
             sinks: Sink::default_sinks(),
@@ -400,7 +407,9 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Assign(x) => {
+                self.scope_assign_lhs = true;
                 self.scan_expr(&x.left);
+                self.scope_assign_lhs = false;
                 self.scan_expr(&x.right);
             }
             syn::Expr::Async(x) => {
@@ -626,7 +635,7 @@ impl<'a> Scanner<'a> {
     fn scan_field_access(&mut self, x: &'a syn::ExprField) {
         if let syn::Member::Named(i) = &x.member {
             let ty = self.resolver.resolve_field_type(i);
-            if !ty.is_union_field() {
+            if !ty.is_union_field() || self.scope_assign_lhs {
                 return;
             }
             let cp = self.resolver.resolve_field(i);
