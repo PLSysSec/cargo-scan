@@ -91,6 +91,13 @@ impl EffectTree {
     }
 }
 
+#[derive(Clone, Debug, Copy)]
+pub enum DefaultPolicyType {
+    Empty,
+    Safe,
+    CallerChecked,
+}
+
 // TODO: Include information about crate/version
 // TODO: We should include more information from the ScanResult
 #[serde_as]
@@ -286,5 +293,35 @@ impl PolicyFile {
         policy.pub_caller_checked = pub_caller_checked;
 
         Ok(policy)
+    }
+
+    pub fn new_empty_default_with_sinks(
+        crate_path: &FilePath,
+        sinks: HashSet<CanonicalPath>,
+    ) -> Result<PolicyFile> {
+        let mut policy = PolicyFile::empty(crate_path.to_path_buf())?;
+        let ident_sinks =
+            sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
+        let scan_res = scanner::scan_crate_with_sinks(crate_path, ident_sinks)?;
+        policy.set_base_audit_trees(scan_res.unsafe_effect_blocks_set());
+
+        Ok(policy)
+    }
+
+    pub fn new_default_with_sinks(
+        crate_path: &FilePath,
+        sinks: HashSet<CanonicalPath>,
+        policy_type: DefaultPolicyType,
+    ) -> Result<PolicyFile> {
+        match policy_type {
+            DefaultPolicyType::CallerChecked => {
+                Self::new_caller_checked_default_with_sinks(crate_path, sinks)
+            }
+            DefaultPolicyType::Empty => {
+                Self::new_empty_default_with_sinks(crate_path, sinks)
+            }
+            // TODO: belo
+            DefaultPolicyType::Safe => unimplemented!(),
+        }
     }
 }

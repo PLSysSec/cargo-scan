@@ -3,7 +3,7 @@ use cargo_scan::auditing::audit::audit_policy;
 use cargo_scan::auditing::info::Config as AuditConfig;
 use cargo_scan::auditing::review::review_policy;
 use cargo_scan::ident::CanonicalPath;
-use cargo_scan::policy::PolicyFile;
+use cargo_scan::policy::{DefaultPolicyType, PolicyFile};
 use cargo_scan::util::load_cargo_toml;
 use cargo_scan::{download_crate, scanner};
 
@@ -200,6 +200,7 @@ fn make_new_policy(
     root_name: &str,
     args: &Create,
     crate_download_path: &str,
+    policy_type: DefaultPolicyType,
 ) -> Result<PathBuf> {
     let policy_path = PathBuf::from(format!(
         "{}/{}-{}.policy",
@@ -231,7 +232,7 @@ fn make_new_policy(
 
     let sinks = collect_dependency_sinks(chain, &package.dependencies)?;
     let policy =
-        PolicyFile::new_caller_checked_default_with_sinks(package_path.as_path(), sinks)?;
+        PolicyFile::new_default_with_sinks(package_path.as_path(), sinks, policy_type)?;
     policy.save_to_file(policy_path.clone())?;
 
     Ok(policy_path)
@@ -324,7 +325,22 @@ fn create_new_audit_chain(args: Create, crate_download_path: &str) -> Result<Aud
     while let Some(node) = traverse.next(&graph) {
         let package = package_map.get(&node).unwrap();
         println!("Making default policy for {} v{}", package.name, package.version);
-        match make_new_policy(&chain, package, &root_name, &args, crate_download_path) {
+
+        let policy_type = if node == root_node {
+            DefaultPolicyType::Empty
+        } else {
+            DefaultPolicyType::CallerChecked
+        };
+
+        let res = make_new_policy(
+            &chain,
+            package,
+            &root_name,
+            &args,
+            crate_download_path,
+            policy_type,
+        );
+        match res {
             Ok(policy_path) => {
                 chain.add_crate_policy(package, policy_path);
             }

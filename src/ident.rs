@@ -495,7 +495,6 @@ where
         .to_str()?
         .replace('-', "_")
         .split('/')
-        .into_iter()
         .filter(|x| invariant(x))
         .join("::");
 
