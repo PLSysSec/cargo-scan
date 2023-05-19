@@ -186,7 +186,6 @@ impl Resolver {
         let db = self.get_db();
         let sems = self.get_semantics();
         let token = self.token(&sems, s, i)?;
-        debug!("token: {:?}", token);
         let def = find_def(token, &sems, db)?;
         get_canonical_type(&sems, db, &def)
     }
@@ -422,6 +421,7 @@ fn get_canonical_type(
 ) -> Result<CanonicalType> {
     let mut type_defs: Vec<Definition> = Vec::new();
     let mut trait_bounds: Vec<CanonicalPath> = Vec::new();
+    let mut ty_kind = TypeKind::Plain;
     let mut type_;
 
     let mut push = |d| {
@@ -441,13 +441,18 @@ fn get_canonical_type(
     let ty = match def {
         Definition::Adt(it) => Some(it.ty(db)),
         Definition::Local(it) => Some(it.ty(db)),
-        Definition::Field(it) => Some(it.ty(db)),
         Definition::Const(it) => Some(it.ty(db)),
         Definition::Static(it) => Some(it.ty(db)),
         Definition::SelfType(it) => Some(it.self_ty(db)),
         Definition::TypeAlias(it) => Some(it.ty(db)),
         Definition::BuiltinType(it) => Some(it.ty(db)),
         Definition::Function(it) => Some(it.ret_type(db)),
+        Definition::Field(it) => {
+            if let VariantDef::Union(_) = &it.parent_def(db) {
+                ty_kind = TypeKind::UnionFld;
+            }
+            Some(it.ty(db))
+        }
         Definition::GenericParam(GenericParam::TypeParam(it)) => {
             it.trait_bounds(db).into_iter().for_each(|it| resolve_bounds(it.into()));
             Some(it.ty(db))
@@ -463,26 +468,29 @@ fn get_canonical_type(
         return Err(anyhow!("Could not resolve type for definition {:?}", def));
     }
     let ty = ty.unwrap();
-    let ty_kind = if ty.is_closure() {
-        TypeKind::Callable(crate::ident::CallableKind::Closure)
-    } else if ty.is_fn() {
-        TypeKind::Callable(crate::ident::CallableKind::FnPtr)
-    } else if ty.impls_fnonce(db) {
-        // impls_fnonce can be used to check if a type is callable.
+    if ty.is_closure() {
+        ty_kind = TypeKind::Callable(crate::ident::CallableKind::Closure)
+    }
+    if ty.is_fn() {
+        ty_kind = TypeKind::Callable(crate::ident::CallableKind::FnPtr)
+    }
+    if ty.impls_fnonce(db) {
+        // impls_fnonce can be used in RA to check if a type is callable.
         // FnOnce is a supertait of FnMut and Fn, so any callable type
         // implements at least FnOnce.
         // TODO: More sophisticated checks are needed to precisely
         // determine which trait is actually implemented.
-        TypeKind::Callable(crate::ident::CallableKind::FnOnce)
-    } else if ty.is_raw_ptr() {
-        TypeKind::RawPointer
-    } else if ty.as_dyn_trait().is_some() {
-        TypeKind::DynTrait
-    } else if ty.as_type_param(db).is_some() {
-        TypeKind::Generic
-    } else {
-        TypeKind::Plain
-    };
+        ty_kind = TypeKind::Callable(crate::ident::CallableKind::FnOnce)
+    }
+    if ty.is_raw_ptr() {
+        ty_kind = TypeKind::RawPointer
+    }
+    if ty.as_dyn_trait().is_some() {
+        ty_kind = TypeKind::DynTrait
+    }
+    if ty.as_type_param(db).is_some() {
+        ty_kind = TypeKind::Generic
+    }
 
     // Get the type as it is displayed by rust-analyzer
     type_ = ty.display(db).to_string();

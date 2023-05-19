@@ -445,6 +445,7 @@ impl<'a> Scanner<'a> {
             syn::Expr::Continue(_) => (),
             syn::Expr::Field(x) => {
                 self.scan_expr(&x.base);
+                self.scan_field_access(x);
             }
             syn::Expr::ForLoop(x) => {
                 self.scan_expr(&x.expr);
@@ -619,6 +620,18 @@ impl<'a> Scanner<'a> {
                 }
             }
         });
+    }
+
+    // Check if the field being accessed is a Union field
+    fn scan_field_access(&mut self, x: &'a syn::ExprField) {
+        if let syn::Member::Named(i) = &x.member {
+            let ty = self.resolver.resolve_field_type(i);
+            if !ty.is_union_field() {
+                return;
+            }
+            let cp = self.resolver.resolve_field(i);
+            self.push_effect(x.span(), cp.clone(), Effect::UnionField(cp));
+        }
     }
 
     fn scan_unsafe_block(&mut self, x: &'a syn::ExprUnsafe) {
