@@ -38,7 +38,7 @@ pub fn is_policy_scan_valid<P>(
 where
     P: AsRef<Path>,
 {
-    let policy_effect_blocks = policy.audit_trees.keys().collect::<HashSet<_>>();
+    let policy_effect_blocks = policy.audit_trees.iter().map(|(x, _)| x).collect::<HashSet<_>>();
     let hash = hash_dir(crate_path)?;
     // NOTE: We're checking the hash in addition to the effect blocks for now
     //       because we might have changed how we scan packages for effects.
