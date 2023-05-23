@@ -30,6 +30,12 @@ impl Default for Config {
     }
 }
 
+impl Config {
+    pub fn new(lines_before: u8, lines_after: u8) -> Self {
+        Self { lines_before_effect: lines_before, lines_after_effect: lines_after }
+    }
+}
+
 pub fn print_effect_src(
     effect_origin: &EffectBlock,
     effect: &EffectInfo,

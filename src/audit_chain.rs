@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use cargo::{core::Workspace, ops::generate_lockfile, util::config};
 use cargo_lock::{Dependency, Lockfile, Package};
+use cargo_toml::Manifest;
 use clap::Args as ClapArgs;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::DfsPostOrder;
@@ -159,6 +160,18 @@ impl AuditChain {
 
         Ok(())
     }
+
+    /// Gets the root crate name with version
+    pub fn root_crate(&self) -> Result<String> {
+        let root_package = Manifest::from_path(format!(
+            "{}/Cargo.toml",
+            self.crate_path.to_string_lossy()
+        ))?
+        .package
+        .ok_or_else(|| anyhow!("Can't load root package for the root crate path"))?;
+
+        Ok(format!("{}-{}", root_package.name, root_package.version.get()?))
+    }
 }
 
 // TODO: Add an argument for the default policy type
@@ -176,6 +189,17 @@ pub struct Create {
 
     #[clap(short = 'f', long, default_value_t = false)]
     force_overwrite: bool,
+}
+
+impl Create {
+    pub fn new(
+        crate_path: String,
+        manifest_path: String,
+        policy_path: String,
+        force_overwrite: bool,
+    ) -> Self {
+        Self { crate_path, manifest_path, policy_path, force_overwrite }
+    }
 }
 
 fn create_audit_chain_dirs(args: &Create, crate_download_path: &str) -> Result<()> {
