@@ -301,6 +301,7 @@ dependencies = [
  "anyhow",
  "cargo",
  "cargo-lock",
+ "cargo_toml",
  "chalk-ir",
  "clap",
  "codespan-reporting",
@@ -369,6 +370,16 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "cargo_toml"
+version = "0.15.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f83bc2e401ed041b7057345ebc488c005efa0341d5541ce7004d30458d0090b"
+dependencies = [
+ "serde",
+ "toml",
 ]
 
 [[package]]
