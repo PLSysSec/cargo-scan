@@ -22,6 +22,8 @@ pub struct Config {
     #[clap(long = "lines-after", default_value_t = 1)]
     /// The number of lines after an effect to show
     lines_after_effect: u8,
+    // TODO: Add flag for if we can traverse to child packages (maybe always
+    //           can now that chains are our primary auditing mechanism?)
 }
 
 impl Default for Config {

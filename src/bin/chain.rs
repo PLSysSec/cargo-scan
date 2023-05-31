@@ -116,6 +116,7 @@ impl CommandRunner for Review {
     }
 }
 
+// TODO: Default to top-level package
 #[derive(Clone, ClapArgs, Debug)]
 struct Audit {
     /// Path to manifest
@@ -144,7 +145,14 @@ impl CommandRunner for Audit {
                     crate_path.push(&full_crate_name);
                     let scan_res = scanner::scan_crate(&crate_path)?;
                     let audit_config = AuditConfig::default();
-                    audit_policy(&mut new_policy, scan_res, &audit_config)?;
+
+                    // TODO: Mechanism for re-auditing the default policies
+                    if let Some(_dep_effect) =
+                        audit_policy(&mut new_policy, scan_res, &audit_config)?
+                    {
+                        // TODO: Audit child dependencies if we return
+                        unimplemented!()
+                    }
 
                     // if any public function annotations have changed,
                     // update parent packages

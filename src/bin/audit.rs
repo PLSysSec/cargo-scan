@@ -186,7 +186,11 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
         }
     };
 
-    audit_policy(&mut policy_file, scan_res, &args.config)?;
+    if audit_policy(&mut policy_file, scan_res, &args.config)?.is_some() {
+        // The user marked that they want to audit a child effect, but we aren't
+        // able to do so in this mode.
+        return Err(anyhow!("Can't audit dependency crate effects in this binary"));
+    }
 
     policy_file.save_to_file(policy_path)?;
 

@@ -42,7 +42,6 @@ impl fmt::Display for SafetyAnnotation {
 pub struct EffectInfo {
     pub caller_path: CanonicalPath,
     pub callee_loc: SrcLoc,
-    // TODO: callee_src_span: SrcSpan,
 }
 
 impl EffectInfo {
