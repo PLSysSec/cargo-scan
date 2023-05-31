@@ -6,7 +6,7 @@ use cargo_scan::effect::EffectBlock;
 use cargo_scan::policy::*;
 use cargo_scan::scanner;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::path::PathBuf;
 
@@ -76,7 +76,7 @@ fn handle_invalid_policy(
                     ),
                 )
             })
-            .collect::<Vec<_>>();
+            .collect::<HashMap<_, _>>();
         policy.hash = hash_dir(policy.base_dir.clone())?;
 
         let mut policy_string = policy_path
@@ -123,7 +123,7 @@ fn handle_invalid_policy(
                             ),
                         )
                     })
-                    .collect::<Vec<_>>();
+                    .collect::<HashMap<_, _>>();
                 policy.hash = hash_dir(policy.base_dir.clone())?;
 
                 let mut policy_string = policy_path

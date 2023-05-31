@@ -5,7 +5,7 @@ use crate::ident::CanonicalPath;
 use crate::scanner;
 use crate::scanner::ScanResults;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fs::File;
 use std::io::Write;
@@ -106,7 +106,8 @@ pub enum DefaultPolicyType {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PolicyFile {
     // TODO: Switch to EffectInstance once we have the full list
-    pub audit_trees: Vec<(EffectBlock, EffectTree)>,
+    #[serde_as(as = "Vec<(_, _)>")]
+    pub audit_trees: HashMap<EffectBlock, EffectTree>,
     pub pub_caller_checked: HashSet<CanonicalPath>,
     // TODO: Make the base_dir a crate instead
     pub base_dir: PathBuf,
@@ -117,7 +118,7 @@ impl PolicyFile {
     pub fn empty(p: PathBuf) -> Result<Self> {
         let hash = hash_dir(p.clone())?;
         Ok(PolicyFile {
-            audit_trees: Vec::new(),
+            audit_trees: HashMap::new(),
             pub_caller_checked: HashSet::new(),
             base_dir: p,
             hash,
@@ -137,7 +138,7 @@ impl PolicyFile {
                     ),
                 )
             })
-            .collect::<Vec<_>>();
+            .collect::<HashMap<_, _>>();
     }
 
     pub fn save_to_file(&self, p: PathBuf) -> Result<()> {
@@ -235,7 +236,7 @@ impl PolicyFile {
     /// `pub_caller_checked` aligns with those in the effect tree.
     pub fn recalc_pub_caller_checked(&mut self, pub_fns: &HashSet<CanonicalPath>) {
         let mut pub_caller_checked = HashSet::new();
-        for tree in self.audit_trees.iter().map(|(_, x)| x) {
+        for tree in self.audit_trees.values() {
             PolicyFile::recalc_pub_caller_checked_tree(
                 tree,
                 &mut pub_caller_checked,
@@ -269,7 +270,7 @@ impl PolicyFile {
                 Some((block, tree))
             }
         });
-        self.audit_trees = new_trees.collect::<Vec<_>>();
+        self.audit_trees = new_trees.collect::<HashMap<_, _>>();
     }
 
     pub fn new_caller_checked_default(crate_path: &FilePath) -> Result<PolicyFile> {
