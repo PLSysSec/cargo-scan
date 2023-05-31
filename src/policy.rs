@@ -16,6 +16,8 @@ use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
+/// SafetyAnnotation is really a lattice with `Skipped` as the top element, and
+/// `Unsafe` as the bottom element.
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 pub enum SafetyAnnotation {
     Skipped,

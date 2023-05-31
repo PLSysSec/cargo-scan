@@ -15,29 +15,32 @@ use inquire::{validator::Validation, Text};
 pub enum AuditStatus {
     EarlyExit,
     ContinueAudit,
+    AuditChildEffect,
 }
 
 // Returns Some SafetyAnnotation if the user selects one, None if the user
 // chooses to exit early, or an Error
-fn get_user_annotation() -> Result<Option<SafetyAnnotation>> {
+fn get_user_annotation() -> Result<(Option<SafetyAnnotation>, AuditStatus)> {
+    // TODO: Don't let user audit effect origin if we are at a sink
     let ans = Text::new(
         r#"Select how to mark this effect:
-  (s)afe, (u)nsafe, (c)aller checked, ask me (l)ater, e(x)it tool
+  (s)afe, (u)nsafe, (c)aller checked, audit (e)ffect origin, ask me (l)ater, e(x)it tool
 "#,
     )
     .with_validator(|x: &str| match x {
-        "s" | "u" | "c" | "l" | "x" => Ok(Validation::Valid),
+        "s" | "u" | "c" | "e" | "l" | "x" => Ok(Validation::Valid),
         _ => Ok(Validation::Invalid("Invalid input".into())),
     })
     .prompt()
     .unwrap();
 
     match ans.as_str() {
-        "s" => Ok(Some(SafetyAnnotation::Safe)),
-        "u" => Ok(Some(SafetyAnnotation::Unsafe)),
-        "c" => Ok(Some(SafetyAnnotation::CallerChecked)),
-        "l" => Ok(Some(SafetyAnnotation::Skipped)),
-        "x" => Ok(None),
+        "s" => Ok((Some(SafetyAnnotation::Safe), AuditStatus::ContinueAudit)),
+        "u" => Ok((Some(SafetyAnnotation::Unsafe), AuditStatus::ContinueAudit)),
+        "c" => Ok((Some(SafetyAnnotation::CallerChecked), AuditStatus::ContinueAudit)),
+        "l" => Ok((Some(SafetyAnnotation::Skipped), AuditStatus::ContinueAudit)),
+        "e" => Ok((None, AuditStatus::AuditChildEffect)),
+        "x" => Ok((None, AuditStatus::EarlyExit)),
         _ => Err(anyhow!("Invalid annotation selection")),
     }
 }
@@ -69,55 +72,15 @@ fn audit_leaf<'a>(
         println!("Error printing effect information. Trying to continue...");
     }
 
-    let status = match get_user_annotation() {
-        Ok(Some(s)) => s,
-        Ok(None) => {
-            return Ok(AuditStatus::EarlyExit);
-        }
-        Err(_) => {
-            println!("Error accepting user input. Attempting to continue...");
-            SafetyAnnotation::Skipped
-        }
-    };
-
-    if status == SafetyAnnotation::CallerChecked {
-        // If the caller is public, add to set of public caller-checked
-        if scan_res.pub_fns.contains(&curr_effect.caller_path) {
-            pub_caller_checked.insert(curr_effect.caller_path.clone());
-        }
-
-        // Add all call locations as parents of this effect
-        let new_check_locs = scan_res
-            .get_callers(&curr_effect.caller_path)
-            .into_iter()
-            .map(|x| {
-                EffectTree::Leaf(
-                    EffectInfo::from_instance(&x.clone()),
-                    SafetyAnnotation::Skipped,
-                )
-            })
-            .collect::<Vec<_>>();
-
-        if new_check_locs.is_empty() {
-            effect_tree.set_annotation(status);
-            Ok(AuditStatus::ContinueAudit)
-        } else {
-            *effect_tree = EffectTree::Branch(curr_effect, new_check_locs);
-            audit_branch(
-                orig_effect,
-                effect_tree,
-                effect_history,
-                scan_res,
-                pub_caller_checked,
-                config,
-            )
-        }
-    } else {
-        effect_tree.set_annotation(status).ok_or_else(|| {
-            anyhow!("Tried to set the EffectTree annotation, but was a branch node")
-        })?;
-        Ok(AuditStatus::ContinueAudit)
-    }
+    update_audit_from_input(
+        orig_effect,
+        scan_res,
+        effect_tree,
+        effect_history,
+        curr_effect,
+        pub_caller_checked,
+        config,
+    )
 }
 
 fn audit_branch<'a>(
@@ -190,7 +153,6 @@ fn audit_effect_tree(
     }
 }
 
-// TODO: If auditing for caller-checked effects
 pub fn audit_policy(
     policy: &mut PolicyFile,
     scan_res: ScanResults,
@@ -229,3 +191,75 @@ pub fn audit_policy(
 
     Ok(())
 }
+
+fn update_audit_from_input(
+    orig_effect: &EffectBlock,
+    scan_res: &ScanResults,
+    effect_tree: &mut EffectTree,
+    effect_history: &[&EffectInfo],
+    curr_effect: EffectInfo,
+    pub_caller_checked: &mut HashSet<CanonicalPath>,
+    config: &Config
+) -> Result<AuditStatus> {
+    let (annotation, status) = match get_user_annotation() {
+        Ok(x) => x,
+        Err(_) => {
+            println!("Error accepting user input. Attempting to continue...");
+            (Some(SafetyAnnotation::Skipped), AuditStatus::ContinueAudit)
+        }
+    };
+
+    if status != AuditStatus::ContinueAudit {
+        return Ok(status);
+    }
+    let annotation = annotation.ok_or_else(|| {
+        anyhow!("Should never return ContinueAudit if we don't have an annotation")
+    })?;
+
+    match annotation {
+        SafetyAnnotation::CallerChecked => {
+            // If the caller is public, add to set of public caller-checked
+            if scan_res.pub_fns.contains(&curr_effect.caller_path) {
+                pub_caller_checked.insert(curr_effect.caller_path.clone());
+            }
+
+            // Add all call locations as parents of this effect
+            let new_check_locs = scan_res
+                .get_callers(&curr_effect.caller_path)
+                .into_iter()
+                .map(|x| {
+                    EffectTree::Leaf(
+                        EffectInfo::from_instance(&x.clone()),
+                        SafetyAnnotation::Skipped,
+                    )
+                })
+                .collect::<Vec<_>>();
+
+            if new_check_locs.is_empty() {
+                effect_tree.set_annotation(annotation);
+                Ok(AuditStatus::ContinueAudit)
+            } else {
+                *effect_tree = EffectTree::Branch(curr_effect, new_check_locs);
+                audit_branch(
+                    orig_effect,
+                    effect_tree,
+                    effect_history,
+                    scan_res,
+                    pub_caller_checked,
+                    config,
+                )
+            }
+        }
+
+        s => {
+            effect_tree.set_annotation(s).ok_or_else(|| {
+                anyhow!("Tried to set the EffectTree annotation, but was a branch node")
+            })?;
+            Ok(AuditStatus::ContinueAudit)
+        }
+    }
+}
+
+// pub fn audit_pub_fn(
+//     policy: &mut PolicyFile,
+// )
