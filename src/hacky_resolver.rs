@@ -177,6 +177,22 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath {
         CanonicalPath::new_owned(format!("UNKNOWN_FIELD::{}", idx.index))
     }
+
+    fn resolve_unsafe_path(&self, _: &'a syn::Path) -> bool {
+        // If our Resolver can not resolve the path and conclude
+        // whether the function is declared as unsafe, HackyResolver
+        // will conservatively consider it unsafe, and Scanner will
+        // check if the call belongs inside an unsafe block.
+        true
+    }
+
+    fn resolve_unsafe_ident(&self, _: &'a syn::Ident) -> bool {
+        // If our Resolver can not resolve the path and conclude
+        // whether the function is declared as unsafe, HackyResolver
+        // will conservatively consider it unsafe, and Scanner will
+        // check if the call belongs inside an unsafe block.
+        true
+    }
 }
 
 impl<'a> HackyResolver<'a> {

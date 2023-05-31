@@ -716,6 +716,7 @@ impl<'a> Scanner<'a> {
         callee_span: S,
         callee: CanonicalPath,
         ffi: Option<CanonicalPath>,
+        is_unsafe: bool,
     ) where
         S: Debug + Spanned,
     {
@@ -735,7 +736,7 @@ impl<'a> Scanner<'a> {
             caller.clone(),
             callee,
             &callee_span,
-            self.scope_unsafe > 0,
+            is_unsafe,
             ffi,
             &self.sinks,
         );
@@ -755,7 +756,9 @@ impl<'a> Scanner<'a> {
             syn::Expr::Path(p) => {
                 let callee = self.resolver.resolve_path(&p.path);
                 let ffi = self.resolver.resolve_ffi(&p.path);
-                self.push_callsite(p, callee, ffi);
+                let is_unsafe =
+                    self.resolver.resolve_unsafe_path(&p.path) && self.scope_unsafe > 0;
+                self.push_callsite(p, callee, ffi, is_unsafe);
             }
             syn::Expr::Paren(x) => {
                 // e.g. (my_struct.f)(x)
@@ -780,16 +783,24 @@ impl<'a> Scanner<'a> {
     fn scan_expr_call_field(&mut self, m: &'a syn::Member) {
         match m {
             syn::Member::Named(i) => {
-                self.push_callsite(i, self.resolver.resolve_field(i), None);
+                let is_unsafe =
+                    self.resolver.resolve_unsafe_ident(i) && self.scope_unsafe > 0;
+                self.push_callsite(i, self.resolver.resolve_field(i), None, is_unsafe);
             }
             syn::Member::Unnamed(idx) => {
-                self.push_callsite(idx, self.resolver.resolve_field_index(idx), None);
+                self.push_callsite(
+                    idx,
+                    self.resolver.resolve_field_index(idx),
+                    None,
+                    self.scope_unsafe > 0,
+                );
             }
         }
     }
 
     fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
-        self.push_callsite(i, self.resolver.resolve_method(i), None);
+        let is_unsafe = self.resolver.resolve_unsafe_ident(i) && self.scope_unsafe > 0;
+        self.push_callsite(i, self.resolver.resolve_method(i), None, is_unsafe);
     }
 }
 

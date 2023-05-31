@@ -155,9 +155,6 @@ pub enum Effect {
     StaticMut(CanonicalPath),
     /// Accessing an external mutable variable
     StaticExt(CanonicalPath),
-    /// Unsafe operation, e.g. pointer deref
-    /// see: https://doc.rust-lang.org/nomicon/what-unsafe-does.html
-    UnsafeOp,
     /// Other function call -- not dangerous
     OtherCall,
 }
@@ -171,7 +168,6 @@ impl Effect {
             Self::UnionField(_) => None,
             Self::StaticMut(_) => None,
             Self::StaticExt(_) => None,
-            Self::UnsafeOp => None,
             Self::OtherCall => None,
         }
     }
@@ -180,12 +176,11 @@ impl Effect {
         match self {
             Self::SinkCall(s) => s.as_str(),
             Self::FFICall(_) => "[FFI]",
-            Self::UnsafeCall(_) => "[Unsafe]",
+            Self::UnsafeCall(_) => "[UnsafeCall]",
             Self::RawPointer(_) => "[PtrDeref]",
             Self::UnionField(_) => "[UnionField]",
             Self::StaticMut(_) => "[StaticMutVar]",
             Self::StaticExt(_) => "[StaticExtVar]",
-            Self::UnsafeOp => "[Unsafe]",
             Self::OtherCall => "[None]",
         }
     }
@@ -250,7 +245,7 @@ impl EffectInstance {
             }
             Effect::FFICall(ffi)
         } else if is_unsafe {
-            Effect::UnsafeOp
+            Effect::UnsafeCall(callee.clone())
         } else {
             Effect::OtherCall
         };

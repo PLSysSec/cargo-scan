@@ -6,8 +6,10 @@ use std::path::Path;
 use anyhow::{anyhow, Result};
 use log::debug;
 use ra_ap_hir_def::db::DefDatabase;
-use ra_ap_hir_def::{FunctionId, Lookup};
+use ra_ap_hir_def::{FunctionId, Lookup, TypeAliasId};
 use ra_ap_hir_expand::name::AsName;
+use ra_ap_hir_ty::db::HirDatabase;
+use ra_ap_hir_ty::{Interner, TyKind};
 use ra_ap_ide_db::base_db::{SourceDatabase, Upcast};
 use ra_ap_ide_db::FxHashMap;
 use ra_ap_syntax::ast::HasName;
@@ -19,7 +21,7 @@ use super::ident::{CanonicalPath, CanonicalType, Ident};
 
 use ra_ap_hir::{
     Adt, AsAssocItem, AssocItemContainer, DefWithBody, GenericParam, HirDisplay, Module,
-    ModuleSource, Semantics, VariantDef,
+    ModuleSource, Semantics, TypeRef, VariantDef,
 };
 use ra_ap_ide::{AnalysisHost, FileId, LineCol, RootDatabase, TextSize};
 use ra_ap_ide_db::defs::{Definition, IdentClass};
@@ -216,6 +218,21 @@ impl Resolver {
                 }
             }
             _ => Ok(false),
+        }
+    }
+
+    pub fn is_unsafe_call(&self, s: SrcLoc, i: Ident) -> Result<bool> {
+        let db = self.get_db();
+        let sems = self.get_semantics();
+        let token = self.token(&sems, s, i)?;
+        let def = find_def(token, &sems, db)?;
+
+        if let Definition::Function(f) = def {
+            let func_id = FunctionId::from(f);
+            let data = db.function_data(func_id);
+            Ok(data.has_unsafe_kw())
+        } else {
+            is_unsafe_callable_ty(def, db)
         }
     }
 }
@@ -477,8 +494,10 @@ fn get_canonical_type(
         _ => None,
     };
 
-    if ty.is_none() || (ty.is_some() && ty.clone().unwrap().contains_unknown()) {
-        return Err(anyhow!("Could not resolve type for definition {:?}", def));
+    if ty.is_none()
+    /*|| (ty.is_some() && ty.clone().unwrap().contains_unknown())*/
+    {
+        return Err(anyhow!("Could not resolve type for definition {:?}", def.name(db)));
     }
 
     let ty = ty.unwrap();
@@ -535,4 +554,111 @@ fn get_canonical_type(
     });
 
     Ok(CanonicalType::new_owned(type_, trait_bounds, ty_kind))
+}
+
+//Note: This is still under development
+fn is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
+    match def {
+        Definition::Const(c) => {
+            let data = db.const_data(c.into());
+            if let TypeRef::Fn(_, _, is_unsafe) = data.type_ref.as_ref() {
+                return Ok(*is_unsafe);
+            }
+        }
+        Definition::Static(s) => {
+            let data = db.static_data(s.into());
+            if let TypeRef::Fn(_, _, is_unsafe) = data.type_ref.as_ref() {
+                return Ok(*is_unsafe);
+            }
+        }
+        Definition::TypeAlias(alias) => {
+            let id = TypeAliasId::from(alias);
+            let ty = db.ty(id.into());
+            let data = db.type_alias_data(id);
+            let kind = ty.skip_binders().kind(Interner);
+
+            if let TyKind::Function(fn_ptr) = kind {
+                return Ok(matches!(fn_ptr.sig.safety, chalk_ir::Safety::Unsafe));
+            } else if let TyKind::Adt(
+                chalk_ir::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
+                substs,
+            ) = kind
+            {
+                return is_unsafe_callable_in_smart_ptr(substs);
+            }
+        }
+        Definition::Local(l) => {
+            let def = l.parent(db);
+            let infer = db.infer(def.into());
+
+            return infer
+                .type_of_pat
+                .iter()
+                .find(|(pat_id, ty)| l == ra_ap_hir::Local::from((def.into(), *pat_id)))
+                .map(|(_, ty)| {
+                    let kind = ty.kind(Interner);
+                    match kind {
+                        TyKind::Function(fn_pointer) => {
+                            Ok(matches!(fn_pointer.sig.safety, chalk_ir::Safety::Unsafe))
+                        }
+                        TyKind::Adt(
+                            chalk_ir::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
+                            substs,
+                        ) => {
+                            is_unsafe_callable_in_smart_ptr(substs)
+                        }
+                        _ => Ok(false),
+                    }
+                })
+                .unwrap_or_else(|| Ok(false));
+        }
+        Definition::Field(fld) => {
+            let var_id: ra_ap_hir_def::VariantId = fld.parent_def(db).into();
+            let fld_id = ra_ap_hir_def::FieldId::from(fld);
+
+            let generic_def_id = ra_ap_hir_def::GenericDefId::from(var_id.adt_id());
+            let substs = ra_ap_hir_ty::TyBuilder::placeholder_subst(db, generic_def_id);
+            let ty = db.field_types(var_id)[fld_id.local_id]
+                .clone()
+                .substitute(Interner, &substs);
+            let kind = ty.kind(Interner);
+
+            if let TyKind::Function(fn_pointer) = kind {
+                return Ok(matches!(fn_pointer.sig.safety, chalk_ir::Safety::Unsafe));
+            } else if let TyKind::Adt(
+                chalk_ir::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
+                substs,
+            ) = kind
+            {
+                return is_unsafe_callable_in_smart_ptr(substs);
+            }
+        }
+        _ => (),
+    }
+
+    Ok(false)
+}
+
+// This case is for callable items inside smart pointers, like 'Box<unsafe fn(i32, i32) -> i32>'
+fn is_unsafe_callable_in_smart_ptr(substs: &ra_ap_hir_ty::Substitution) -> Result<bool> {
+    substs
+        .iter(Interner)
+        .find(|subst| match subst.ty(Interner) {
+            Some(ty) => matches!(ty.kind(Interner), TyKind::Function(_)),
+            None => false,
+        })
+        .map(|subst| {
+            if let TyKind::Function(fn_pointer) =
+                subst.ty(Interner).unwrap().kind(Interner)
+            {
+                matches!(fn_pointer.sig.safety, chalk_ir::Safety::Unsafe)
+            } else {
+                false
+            }
+        })
+        .ok_or_else(|| {
+            anyhow!(
+                "Could not determine if it is an unsafe callable inside a smart pointer"
+            )
+        })
 }

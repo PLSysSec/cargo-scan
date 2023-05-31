@@ -32,6 +32,8 @@ pub trait Resolve<'a>: Sized {
     fn resolve_path(&self, p: &'a syn::Path) -> CanonicalPath;
     fn resolve_def(&self, i: &'a syn::Ident) -> CanonicalPath;
     fn resolve_ffi(&self, p: &'a syn::Path) -> Option<CanonicalPath>;
+    fn resolve_unsafe_path(&self, p: &'a syn::Path) -> bool;
+    fn resolve_unsafe_ident(&self, p: &'a syn::Ident) -> bool;
 
     /*
         Type resolution functions
@@ -91,6 +93,19 @@ impl<'a> FileResolver<'a> {
             Ok(Some(self.resolve_core(i)?))
         } else {
             Ok(None)
+        }
+    }
+
+    fn resolve_unsafe_core(&self, i: &syn::Ident) -> Result<bool> {
+        let mut s = SrcLoc::from_span(self.filepath, i);
+        debug!("Resolving Unsafe Call: {} ({})", i, s);
+        // Add 1 to column to avoid weird off-by-one errors
+        s.add1();
+        let i_owned = Ident::from_syn(i);
+        if self.resolver.is_unsafe_call(s, i_owned)? {
+            Ok(true)
+        } else {
+            Ok(false)
         }
     }
 
@@ -162,6 +177,23 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
             i,
             || self.resolve_ffi_core(i),
             || self.backup.resolve_ffi(p),
+        )
+    }
+
+    fn resolve_unsafe_path(&self, p: &syn::Path) -> bool {
+        let i = &p.segments.last().unwrap().ident;
+        self.resolve_or_else(
+            i,
+            || self.resolve_unsafe_core(i),
+            || self.backup.resolve_unsafe_path(p),
+        )
+    }
+
+    fn resolve_unsafe_ident(&self, i: &syn::Ident) -> bool {
+        self.resolve_or_else(
+            i,
+            || self.resolve_unsafe_core(i),
+            || self.backup.resolve_unsafe_ident(i),
         )
     }
 
