@@ -1,5 +1,7 @@
 //! Hard-coded list of function patterns of interest, a.k.a. sinks.
 
+use crate::ident::Ident;
+
 use super::ident::{CanonicalPath, IdentPath, Pattern};
 
 use log::warn;
@@ -64,6 +66,10 @@ impl Sink {
             }
         }
         Some(Self(result?))
+    }
+
+    pub fn first_ident(&self) -> Option<Ident> {
+        self.0.first_ident()
     }
 
     /// convert to str

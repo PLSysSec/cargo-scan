@@ -164,6 +164,11 @@ impl IdentPath {
         Some(Ident::new(i))
     }
 
+    pub fn first_ident(&self) -> Option<Ident> {
+        let (i, _) = self.0.split_once("::")?;
+        Some(Ident::new(i))
+    }
+
     pub fn append(&mut self, other: &Self) {
         if !other.is_empty() {
             if !self.is_empty() {
@@ -457,6 +462,10 @@ impl Pattern {
 
     pub fn from_ident(i: Ident) -> Self {
         Self::from_path(IdentPath::from_ident(i))
+    }
+
+    pub fn first_ident(&self) -> Option<Ident> {
+        self.0.first_ident()
     }
 
     pub fn from_path(p: IdentPath) -> Self {
