@@ -74,23 +74,39 @@ impl AuditChain {
         PolicyFile::read_policy(policy_path.clone()).ok()?
     }
 
-    pub fn read_policy_no_version(
-        &self,
-        package: &str,
-    ) -> Result<Vec<(String, PolicyFile)>> {
-        let mut policies = Vec::new();
-        for (full_name, crate_policy_path) in self.crate_policies.iter() {
+    /// Returns the full package name with version if there is exactly one
+    /// package matching the input, or none otherwise
+    pub fn resolve_policy(&self, crate_name: &str) -> Option<String> {
+        match &self.resolve_all_policies(crate_name)[..] {
+            [p] => Some(p.to_string()),
+            _ => None,
+        }
+    }
+
+    /// Returns all matching full package names with the version
+    pub fn resolve_all_policies(&self, crate_name: &str) -> Vec<String> {
+        let mut res = Vec::new();
+        for (full_name, _) in self.crate_policies.iter() {
             // trim the version number off the package and see if they match
-            if full_name.starts_with(package) {
-                let policy = PolicyFile::read_policy(crate_policy_path.clone())
-                    .map_err(|_| anyhow!("Error reading policy for crate {}", full_name))?
-                    .ok_or_else(|| {
-                        anyhow!("Policy listed for crate {} is missing", full_name)
-                    })?;
-                policies.push((full_name.to_string(), policy));
+            // TODO: Make sure the full non-version prefix matches (e.g.
+            //       searching "bin" would matching "binary-tree-0.3.1")
+            if full_name.starts_with(crate_name) {
+                res.push(crate_name.to_string());
             }
         }
-        Ok(policies)
+        res
+    }
+
+    pub fn read_policy_no_version(
+        &self,
+        crate_name: &str,
+    ) -> Option<(String, PolicyFile)> {
+        if let Some(full_name) = self.resolve_policy(crate_name) {
+            if let Some(policy) = self.read_policy(&full_name) {
+                return Some((full_name, policy));
+            }
+        }
+        None
     }
 
     /// Loads the lockfile for the given crate path. Will generate a new one

@@ -2,6 +2,7 @@ use cargo_scan::audit_chain::{create_new_audit_chain, AuditChain, Create};
 use cargo_scan::auditing::audit::audit_policy;
 use cargo_scan::auditing::info::Config as AuditConfig;
 use cargo_scan::auditing::review::review_policy;
+use cargo_scan::effect::Effect;
 use cargo_scan::policy::PolicyFile;
 use cargo_scan::scanner;
 
@@ -130,16 +131,10 @@ impl CommandRunner for Audit {
         println!("Auditing crate: {}", self.crate_name);
         match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path)) {
             Ok(Some(mut chain)) => {
-                let mut policies = chain.read_policy_no_version(&self.crate_name)?;
-                if policies.is_empty() {
-                    println!("No policies matching the crate {}", &self.manifest_path);
-                    Ok(())
-                } else if policies.len() > 1 {
-                    // TODO: Allow for auditing more than one policy matching a crate
-                    println!("More than one policy for crate {}", &self.manifest_path);
-                    Ok(())
-                } else {
-                    let (full_crate_name, orig_policy) = policies.pop().unwrap();
+                // TODO: Handle more than one policy matching a crate
+                if let Some((full_crate_name, orig_policy)) =
+                    chain.read_policy_no_version(&self.crate_name)
+                {
                     let mut new_policy = orig_policy.clone();
                     let mut crate_path = PathBuf::from(&args.crate_download_path);
                     crate_path.push(&full_crate_name);
@@ -147,11 +142,26 @@ impl CommandRunner for Audit {
                     let audit_config = AuditConfig::default();
 
                     // TODO: Mechanism for re-auditing the default policies
-                    if let Some(_dep_effect) =
+                    if let Some(dep_effect) =
                         audit_policy(&mut new_policy, scan_res, &audit_config)?
                     {
-                        // TODO: Audit child dependencies if we return
-                        unimplemented!()
+                        let effect = dep_effect.effects().get(0).ok_or_else(|| {
+                            anyhow!(
+                                "Missing an EffectInstance in the dependency EffectBlock"
+                            )
+                        })?;
+                        match effect.eff_type() {
+                            Effect::SinkCall(s) => {
+                                let _sink_crate = s.first_ident().ok_or_else(|| {
+                                    anyhow!("Missing leading identifier for pattern")
+                                })?;
+                            }
+                            _ => {
+                                return Err(anyhow!(
+                                    "Can only audit dependency effects for sinks"
+                                ))
+                            }
+                        }
                     }
 
                     // if any public function annotations have changed,
@@ -165,6 +175,8 @@ impl CommandRunner for Audit {
                     chain.remove_cross_crate_effects(removed_fns, &full_crate_name)?;
 
                     Ok(())
+                } else {
+                    Err(anyhow!("We require exactly one policy matching the crate name"))
                 }
             }
             Ok(None) => Err(anyhow!(
