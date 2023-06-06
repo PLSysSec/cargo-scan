@@ -519,9 +519,23 @@ fn get_canonical_type(
             Some(it.ty(db))
         }
         Definition::GenericParam(GenericParam::ConstParam(it)) => Some(it.ty(db)),
-        Definition::Variant(it) => it
-            .value(db)
-            .and_then(|expr| sems.type_of_expr(&expr).map(|info| info.original())),
+        Definition::Variant(it) => {
+            match canonical_path(sems, db, def) {
+                Some(cp) => {
+                    return Ok(CanonicalType::new_owned(
+                        cp.as_str().to_string(),
+                        vec![],
+                        ty_kind,
+                    ))
+                }
+                None => {
+                    return Err(anyhow!(
+                        "Could not resolve type for definition {:?}",
+                        def.name(db)
+                    ))
+                }
+            };
+        }
         _ => None,
     };
 
