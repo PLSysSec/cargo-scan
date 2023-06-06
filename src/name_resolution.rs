@@ -112,6 +112,8 @@ impl Resolver {
         };
 
         let (host, vfs, _) = load_workspace(ws, &cargo_config.extra_env, &load_config)?;
+        // let (host, vfs, _) =
+        // load_workspace_at(&crate_path, &cargo_config, &load_config, &|_| {})?;
 
         // TODO: make db and sems fields of the Resolver
         // let db = host.raw_database();
@@ -130,12 +132,10 @@ impl Resolver {
         Semantics::new(self.get_db())
     }
 
-    fn get_file_id(
-        &self,
-        filepath: &Path,
-        sems: &Semantics<RootDatabase>,
-    ) -> Result<FileId> {
-        let abs_path = canonicalize(filepath)?;
+    fn get_file_id(&self, s: &SrcLoc, sems: &Semantics<RootDatabase>) -> Result<FileId> {
+        let mut filepath = s.dir().clone();
+        filepath.push(s.file().as_path());
+        let abs_path = canonicalize(filepath.clone())?;
         let vfs_path = VfsPath::new_real_path(abs_path.display().to_string());
 
         match self.vfs.file_id(&vfs_path) {
@@ -163,12 +163,10 @@ impl Resolver {
     fn token(
         &self,
         sems: &Semantics<RootDatabase>,
-        s: SrcLoc,
+        file_id: FileId,
         i: Ident,
+        s: SrcLoc,
     ) -> Result<SyntaxToken> {
-        let mut filepath = s.dir().clone();
-        filepath.push(s.file().as_path());
-        let file_id = self.get_file_id(&filepath, sems)?;
         let offset = self.find_offset(file_id, s)?;
         let src_file = sems.parse(file_id);
 
@@ -178,8 +176,11 @@ impl Resolver {
     pub fn resolve_ident(&self, s: SrcLoc, i: Ident) -> Result<CanonicalPath> {
         let db = self.get_db();
         let sems = self.get_semantics();
-        let token = self.token(&sems, s, i)?;
-        let def = find_def(token, &sems, db)?;
+        let file_id = self.get_file_id(&s, &sems)?;
+        let token = self.token(&sems, file_id, i, s)?;
+        let diags = self.get_ra_diagnostics(file_id, &token);
+        let def = find_def(&token, &sems, db, diags)?;
+
         canonical_path(&sems, db, &def)
             .ok_or_else(|| anyhow!("Could not construct canonical path for '{:?}'", def))
     }
@@ -187,16 +188,21 @@ impl Resolver {
     pub fn resolve_type(&self, s: SrcLoc, i: Ident) -> Result<CanonicalType> {
         let db = self.get_db();
         let sems = self.get_semantics();
-        let token = self.token(&sems, s, i)?;
-        let def = find_def(token, &sems, db)?;
+        let file_id = self.get_file_id(&s, &sems)?;
+        let token = self.token(&sems, file_id, i, s)?;
+        let diags = self.get_ra_diagnostics(file_id, &token);
+        let def = find_def(&token, &sems, db, diags)?;
+
         get_canonical_type(&sems, db, &def)
     }
 
     pub fn is_ffi(&self, s: SrcLoc, i: Ident) -> Result<bool> {
         let db = self.get_db();
         let sems = self.get_semantics();
-        let token = self.token(&sems, s, i)?;
-        let def = find_def(token, &sems, db)?;
+        let file_id = self.get_file_id(&s, &sems)?;
+        let token = self.token(&sems, file_id, i, s)?;
+        let diags = self.get_ra_diagnostics(file_id, &token);
+        let def = find_def(&token, &sems, db, diags)?;
 
         match def {
             Definition::Function(function) => {
@@ -224,8 +230,10 @@ impl Resolver {
     pub fn is_unsafe_call(&self, s: SrcLoc, i: Ident) -> Result<bool> {
         let db = self.get_db();
         let sems = self.get_semantics();
-        let token = self.token(&sems, s, i)?;
-        let def = find_def(token, &sems, db)?;
+        let file_id = self.get_file_id(&s, &sems)?;
+        let token = self.token(&sems, file_id, i, s)?;
+        let diags = self.get_ra_diagnostics(file_id, &token);
+        let def = find_def(&token, &sems, db, diags)?;
 
         if let Definition::Function(f) = def {
             let func_id = FunctionId::from(f);
@@ -234,6 +242,24 @@ impl Resolver {
         } else {
             is_unsafe_callable_ty(def, db)
         }
+    }
+
+    fn get_ra_diagnostics(&self, file_id: FileId, token: &SyntaxToken) -> Vec<String> {
+        let diags = self.host.analysis().diagnostics(
+            &ra_ap_ide::DiagnosticsConfig::test_sample(),
+            ra_ap_ide::AssistResolveStrategy::None,
+            file_id,
+        );
+
+        diags
+            .unwrap_or(Vec::new())
+            .iter()
+            .filter(|d| {
+                d.range.contains_range(token.text_range())
+                    || d.code.as_str().eq_ignore_ascii_case("unlinked-file")
+            })
+            .map(|d| d.code.as_str().to_string())
+            .collect_vec()
     }
 }
 
@@ -266,9 +292,10 @@ fn pick_best_token(
 }
 
 fn find_def(
-    token: SyntaxToken,
+    token: &SyntaxToken,
     sems: &Semantics<RootDatabase>,
     db: &RootDatabase,
+    diagnostics: Vec<String>,
 ) -> Result<Definition> {
     sems.descend_into_macros(token.clone())
         .iter()
@@ -281,7 +308,11 @@ fn find_def(
             IdentClass::classify_token(sems, t)?.definitions().pop_at(0)
         })
         .exactly_one()
-        .or(Err(anyhow!("Could not classify token {:?}", token.to_string())))
+        .or(Err(anyhow!(
+            "Could not classify token {:?}. Diagnostics: {:?}",
+            token.to_string(),
+            diagnostics
+        )))
 }
 
 fn build_path_to_root(module: Module, db: &RootDatabase) -> Vec<Module> {
@@ -604,9 +635,7 @@ fn is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
                         TyKind::Adt(
                             chalk_ir::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
                             substs,
-                        ) => {
-                            is_unsafe_callable_in_smart_ptr(substs)
-                        }
+                        ) => is_unsafe_callable_in_smart_ptr(substs),
                         _ => Ok(false),
                     }
                 })
