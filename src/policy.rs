@@ -107,7 +107,9 @@ pub struct PolicyFile {
     // TODO: Switch to EffectInstance once we have the full list
     #[serde_as(as = "Vec<(_, _)>")]
     pub audit_trees: HashMap<EffectBlock, EffectTree>,
-    pub pub_caller_checked: HashSet<CanonicalPath>,
+    /// Contains a map from public functions marked caller-checked to a set of
+    /// all base EffectBlocks that flow into that function
+    pub pub_caller_checked: HashMap<CanonicalPath, HashSet<EffectBlock>>,
     // TODO: Make the base_dir a crate instead
     pub base_dir: PathBuf,
     pub hash: [u8; 32],
@@ -118,7 +120,7 @@ impl PolicyFile {
         let hash = hash_dir(p.clone())?;
         Ok(PolicyFile {
             audit_trees: HashMap::new(),
-            pub_caller_checked: HashSet::new(),
+            pub_caller_checked: HashMap::new(),
             base_dir: p,
             hash,
         })
@@ -172,14 +174,18 @@ impl PolicyFile {
 
     /// Mark all callers of functions in the effect tree to be caller-checked.
     fn mark_caller_checked(
+        base_effect: &EffectBlock,
         tree: &mut EffectTree,
-        pub_caller_checked: &mut HashSet<CanonicalPath>,
+        pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectBlock>>,
         scan_res: &ScanResults,
     ) {
         if let EffectTree::Leaf(effect_info, annotation) = tree {
             // Add the function to the list of sinks if it is public
             if scan_res.pub_fns.contains(&effect_info.caller_path) {
-                pub_caller_checked.insert(effect_info.caller_path.clone());
+                pub_caller_checked
+                    .entry(effect_info.caller_path.clone())
+                    .or_insert_with(HashSet::new)
+                    .insert(base_effect.clone());
             }
 
             let mut callers = scan_res
@@ -196,7 +202,12 @@ impl PolicyFile {
                 *annotation = SafetyAnnotation::CallerChecked;
             } else {
                 for eff in callers.iter_mut() {
-                    PolicyFile::mark_caller_checked(eff, pub_caller_checked, scan_res);
+                    PolicyFile::mark_caller_checked(
+                        base_effect,
+                        eff,
+                        pub_caller_checked,
+                        scan_res,
+                    );
                 }
                 *tree = EffectTree::Branch(effect_info.clone(), callers);
             }
@@ -204,22 +215,30 @@ impl PolicyFile {
     }
 
     fn recalc_pub_caller_checked_tree(
+        base_effect: &EffectBlock,
         tree: &EffectTree,
-        pub_caller_checked: &mut HashSet<CanonicalPath>,
+        pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectBlock>>,
         pub_fns: &HashSet<CanonicalPath>,
     ) {
         match tree {
             EffectTree::Leaf(info, _) => {
                 if pub_fns.contains(&info.caller_path) {
-                    pub_caller_checked.insert(info.caller_path.clone());
+                    pub_caller_checked
+                        .entry(info.caller_path.clone())
+                        .or_insert_with(HashSet::new)
+                        .insert(base_effect.clone());
                 }
             }
             EffectTree::Branch(info, next_trees) => {
                 if pub_fns.contains(&info.caller_path) {
-                    pub_caller_checked.insert(info.caller_path.clone());
+                    pub_caller_checked
+                        .entry(info.caller_path.clone())
+                        .or_insert_with(HashSet::new)
+                        .insert(base_effect.clone());
                 }
                 for t in next_trees {
                     PolicyFile::recalc_pub_caller_checked_tree(
+                        base_effect,
                         t,
                         pub_caller_checked,
                         pub_fns,
@@ -234,9 +253,10 @@ impl PolicyFile {
     /// disk, because it assumes the invariant that the list in
     /// `pub_caller_checked` aligns with those in the effect tree.
     pub fn recalc_pub_caller_checked(&mut self, pub_fns: &HashSet<CanonicalPath>) {
-        let mut pub_caller_checked = HashSet::new();
-        for tree in self.audit_trees.values() {
+        let mut pub_caller_checked = HashMap::new();
+        for (effect, tree) in self.audit_trees.iter() {
             PolicyFile::recalc_pub_caller_checked_tree(
+                effect,
                 tree,
                 &mut pub_caller_checked,
                 pub_fns,
@@ -284,11 +304,11 @@ impl PolicyFile {
         let ident_sinks =
             sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
         let scan_res = scanner::scan_crate_with_sinks(crate_path, ident_sinks)?;
-        let mut pub_caller_checked = HashSet::new();
+        let mut pub_caller_checked = HashMap::new();
         policy.set_base_audit_trees(scan_res.unsafe_effect_blocks_set());
 
-        for (_, t) in policy.audit_trees.iter_mut() {
-            PolicyFile::mark_caller_checked(t, &mut pub_caller_checked, &scan_res);
+        for (e, t) in policy.audit_trees.iter_mut() {
+            PolicyFile::mark_caller_checked(e, t, &mut pub_caller_checked, &scan_res);
         }
 
         policy.pub_caller_checked = pub_caller_checked;
@@ -324,5 +344,17 @@ impl PolicyFile {
             // TODO: belo
             DefaultPolicyType::Safe => unimplemented!(),
         }
+    }
+
+    /// Gets the difference between the public functions marked caller-checked
+    /// in `p1` and `p2`
+    pub fn pub_diff(p1: &PolicyFile, p2: &PolicyFile) -> HashSet<CanonicalPath> {
+        p1.pub_caller_checked
+            .keys()
+            .cloned()
+            .collect::<HashSet<_>>()
+            .difference(&p2.pub_caller_checked.keys().cloned().collect::<HashSet<_>>())
+            .cloned()
+            .collect::<HashSet<CanonicalPath>>()
     }
 }

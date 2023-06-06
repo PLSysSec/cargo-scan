@@ -1,9 +1,10 @@
-use std::collections::HashSet;
-
+use crate::audit_chain::AuditChain;
 use crate::auditing::info::*;
-use crate::effect::EffectBlock;
+use crate::effect::{Effect, EffectBlock};
 use crate::ident::CanonicalPath;
 use crate::policy::{EffectInfo, EffectTree};
+use crate::scanner::scan_crate;
+use crate::sink::Sink;
 use crate::{
     policy::{PolicyFile, SafetyAnnotation},
     scanner::ScanResults,
@@ -51,7 +52,6 @@ fn print_and_update_audit<'a>(
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
-    pub_caller_checked: &mut HashSet<CanonicalPath>,
     config: &Config,
 ) -> Result<AuditStatus> {
     let curr_effect = match effect_tree {
@@ -76,7 +76,6 @@ fn print_and_update_audit<'a>(
         effect_tree,
         effect_history,
         curr_effect,
-        pub_caller_checked,
         config,
     )
 }
@@ -86,17 +85,9 @@ fn audit_leaf<'a>(
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
-    pub_caller_checked: &mut HashSet<CanonicalPath>,
     config: &Config,
 ) -> Result<AuditStatus> {
-    print_and_update_audit(
-        orig_effect,
-        effect_tree,
-        effect_history,
-        scan_res,
-        pub_caller_checked,
-        config,
-    )
+    print_and_update_audit(orig_effect, effect_tree, effect_history, scan_res, config)
 }
 
 fn update_audit_child<'a>(
@@ -104,7 +95,6 @@ fn update_audit_child<'a>(
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
-    pub_caller_checked: &mut HashSet<CanonicalPath>,
     config: &Config,
 ) -> Result<AuditStatus> {
     let curr_effect = match effect_tree {
@@ -132,7 +122,6 @@ fn update_audit_child<'a>(
         effect_tree,
         effect_history,
         curr_effect,
-        pub_caller_checked,
         config,
     )
 }
@@ -142,7 +131,6 @@ fn audit_branch<'a>(
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
-    pub_caller_checked: &mut HashSet<CanonicalPath>,
     config: &Config,
 ) -> Result<AuditStatus> {
     if let EffectTree::Branch(curr_effect, effects) = effect_tree {
@@ -161,7 +149,6 @@ fn audit_branch<'a>(
                         next_e,
                         &next_history,
                         scan_res,
-                        pub_caller_checked,
                         config,
                     )? {
                         AuditStatus::EarlyExit => {
@@ -180,7 +167,6 @@ fn audit_branch<'a>(
                         next_e,
                         &next_history,
                         scan_res,
-                        pub_caller_checked,
                         config,
                     )? {
                         AuditStatus::EarlyExit => {
@@ -197,14 +183,7 @@ fn audit_branch<'a>(
         }
 
         if audit_child {
-            update_audit_child(
-                orig_effect,
-                effect_tree,
-                effect_history,
-                scan_res,
-                pub_caller_checked,
-                config,
-            )
+            update_audit_child(orig_effect, effect_tree, effect_history, scan_res, config)
         } else {
             Ok(AuditStatus::ContinueAudit)
         }
@@ -220,21 +199,15 @@ fn audit_effect_tree(
     orig_effect: &EffectBlock,
     effect_tree: &mut EffectTree,
     scan_res: &ScanResults,
-    pub_caller_checked: &mut HashSet<CanonicalPath>,
     config: &Config,
 ) -> Result<AuditStatus> {
     match effect_tree {
         e @ EffectTree::Leaf(..) => {
-            audit_leaf(orig_effect, e, &Vec::new(), scan_res, pub_caller_checked, config)
+            audit_leaf(orig_effect, e, &Vec::new(), scan_res, config)
         }
-        e @ EffectTree::Branch(..) => audit_branch(
-            orig_effect,
-            e,
-            &Vec::new(),
-            scan_res,
-            pub_caller_checked,
-            config,
-        ),
+        e @ EffectTree::Branch(..) => {
+            audit_branch(orig_effect, e, &Vec::new(), scan_res, config)
+        }
     }
 }
 
@@ -261,13 +234,7 @@ pub fn audit_policy(
     for (e, t) in policy.audit_trees.iter_mut() {
         match t.get_leaf_annotation() {
             Some(SafetyAnnotation::Skipped) => {
-                match audit_effect_tree(
-                    e,
-                    t,
-                    &scan_res,
-                    &mut policy.pub_caller_checked,
-                    config,
-                )? {
+                match audit_effect_tree(e, t, &scan_res, config)? {
                     AuditStatus::EarlyExit => {
                         break;
                     }
@@ -284,29 +251,26 @@ pub fn audit_policy(
 
             Some(_) => (),
 
-            None => {
-                match audit_effect_tree(
-                    e,
-                    t,
-                    &scan_res,
-                    &mut policy.pub_caller_checked,
-                    config,
-                )? {
-                    AuditStatus::EarlyExit => {
-                        break;
-                    }
-                    AuditStatus::AuditChildEffect => {
-                        dependency_audit_effect = Some(e.clone());
-                        break;
-                    }
-                    AuditStatus::AuditParentEffect => {
-                        return Err(anyhow!("We should never return this status here"));
-                    }
-                    _ => (),
+            None => match audit_effect_tree(e, t, &scan_res, config)? {
+                AuditStatus::EarlyExit => {
+                    break;
                 }
-            }
+                AuditStatus::AuditChildEffect => {
+                    dependency_audit_effect = Some(e.clone());
+                    break;
+                }
+                AuditStatus::AuditParentEffect => {
+                    return Err(anyhow!("We should never return this status here"));
+                }
+                _ => (),
+            },
         }
     }
+
+    // NOTE: We recalculate the public functions here so we don't have to keep
+    //       track of them during the audit. This is a bit slower, but simplifies
+    //       the code dramatically.
+    policy.recalc_pub_caller_checked(&scan_res.pub_fns);
 
     Ok(dependency_audit_effect)
 }
@@ -316,7 +280,6 @@ fn update_audit_annotation(
     scan_res: &ScanResults,
     effect_tree: &mut EffectTree,
     curr_effect: EffectInfo,
-    pub_caller_checked: &mut HashSet<CanonicalPath>,
 ) -> Result<AuditStatus> {
     match annotation {
         SafetyAnnotation::CallerChecked => {
@@ -325,11 +288,6 @@ fn update_audit_annotation(
             // anything
             if let EffectTree::Branch(_, _) = effect_tree {
                 return Ok(AuditStatus::ContinueAudit);
-            }
-
-            // If the caller is public, add to set of public caller-checked
-            if scan_res.pub_fns.contains(&curr_effect.caller_path) {
-                pub_caller_checked.insert(curr_effect.caller_path.clone());
             }
 
             // Add all call locations as parents of this effect
@@ -370,27 +328,14 @@ fn update_audit_from_input(
     effect_tree: &mut EffectTree,
     effect_history: &[&EffectInfo],
     curr_effect: EffectInfo,
-    pub_caller_checked: &mut HashSet<CanonicalPath>,
     config: &Config,
 ) -> Result<AuditStatus> {
     match get_user_annotation() {
         Ok((Some(a), AuditStatus::ContinueAudit)) => {
-            let update_status = update_audit_annotation(
-                a,
-                scan_res,
-                effect_tree,
-                curr_effect,
-                pub_caller_checked,
-            )?;
+            let update_status =
+                update_audit_annotation(a, scan_res, effect_tree, curr_effect)?;
             if update_status == AuditStatus::AuditParentEffect {
-                audit_branch(
-                    orig_effect,
-                    effect_tree,
-                    effect_history,
-                    scan_res,
-                    pub_caller_checked,
-                    config,
-                )
+                audit_branch(orig_effect, effect_tree, effect_history, scan_res, config)
             } else {
                 Ok(AuditStatus::ContinueAudit)
             }
@@ -414,6 +359,109 @@ fn update_audit_from_input(
     }
 }
 
-// pub fn audit_pub_fn(
-//     policy: &mut PolicyFile,
-// )
+/// Looks up the policy associated with the crate from `sink_ident` and audit
+/// the sink public function. This function is responsible for updating the
+/// chain and any policy files on the filesystem from the audit.
+pub fn audit_pub_fn(chain: &AuditChain, sink_ident: &Sink) -> Result<()> {
+    let sink_crate = sink_ident
+        .first_ident()
+        .ok_or_else(|| anyhow!("Missing leading identifier for pattern"))?;
+    // TODO: The sink crate we get here may include the version
+    let (sink_crate_name, mut prev_policy) = chain
+        .read_policy_no_version(sink_crate.as_str())
+        .ok_or_else(|| anyhow!("Couldn't find policy for the sink: {}", sink_crate))?;
+    let mut new_policy = prev_policy.clone();
+
+    // Find the public function associated with the sink
+    let scan_res = scan_crate(&new_policy.base_dir)?;
+    let sink_fn = CanonicalPath::new(sink_ident.as_str());
+    loop {
+        // Keep looping until we are done with auditing children
+        match audit_pub_fn_effect(&mut new_policy, &sink_fn, &scan_res)? {
+            (AuditStatus::ContinueAudit | AuditStatus::EarlyExit, _) => {
+                // We are done auditing this crate, so break out to clean up
+                break;
+            }
+            (AuditStatus::AuditChildEffect, Some(child_effect)) => {
+                // Save the current policy,
+                new_policy.recalc_pub_caller_checked(&scan_res.pub_fns);
+                chain.save_policy(&sink_crate_name, &new_policy)?;
+                let removed_fns = PolicyFile::pub_diff(&prev_policy, &new_policy);
+                chain
+                    .remove_cross_crate_effects(removed_fns, sink_crate_name.as_str())?;
+                prev_policy = new_policy;
+
+                let child_effect = child_effect.effects().get(0).ok_or_else(|| {
+                    anyhow!("Missing an EffectInstance in the dependency EffectBlock")
+                })?;
+                let child_sink = match child_effect.eff_type() {
+                    Effect::SinkCall(s) => s,
+                    _ => {
+                        return Err(anyhow!(
+                            "Can only audit the children of Sink effects"
+                        ))
+                    }
+                };
+                audit_pub_fn(chain, child_sink)?;
+                // We have to reload the new policy because auditing child
+                // effects may have removed some base effects from the current
+                // crate
+                new_policy = chain.read_policy(&sink_crate_name).ok_or_else(|| {
+                    anyhow!("Couldn't find policy for the sink: {}", sink_crate_name)
+                })?;
+                // After we audit the child function, we will recurse until the
+                // user marks everything, or we run out of child functions to
+                // audit.
+            }
+            (AuditStatus::AuditChildEffect, None) => {
+                return Err(anyhow!(
+                "Should never try to audit the child effect without an associated effect"
+            ))
+            }
+            (AuditStatus::AuditParentEffect, _) => {
+                return Err(anyhow!("Cannot audit parent effect in this context"));
+            }
+        }
+    }
+
+    // Save the new policy
+    new_policy.recalc_pub_caller_checked(&scan_res.pub_fns);
+    chain.save_policy(&sink_crate_name, &new_policy)?;
+
+    // update parent crates based off updated effects
+    let removed_fns = PolicyFile::pub_diff(&prev_policy, &new_policy);
+    chain.remove_cross_crate_effects(removed_fns, &sink_crate_name)?;
+
+    Ok(())
+}
+
+fn audit_pub_fn_effect(
+    policy: &mut PolicyFile,
+    sink_fn: &CanonicalPath,
+    scan_res: &ScanResults,
+) -> Result<(AuditStatus, Option<EffectBlock>)> {
+    for base_effect in policy.pub_caller_checked.get(sink_fn).ok_or_else(|| {
+        anyhow!("Couldn't find public function from sink: {:?}", &sink_fn)
+    })? {
+        let effect_tree = policy.audit_trees.get_mut(base_effect).ok_or_else(|| {
+            anyhow!(
+                "Couldn't find tree when auditing public function for effect block: {:?}",
+                base_effect
+            )
+        })?;
+        let config = Config::default();
+        match audit_effect_tree(base_effect, effect_tree, scan_res, &config)? {
+            AuditStatus::ContinueAudit => (),
+            s @ AuditStatus::EarlyExit => {
+                return Ok((s, None));
+            }
+            s @ AuditStatus::AuditChildEffect => {
+                return Ok((s, Some(base_effect.clone())));
+            }
+            AuditStatus::AuditParentEffect => {
+                return Err(anyhow!("Cannot audit parent effect in this context"));
+            }
+        }
+    }
+    Ok((AuditStatus::ContinueAudit, None))
+}

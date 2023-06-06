@@ -1,5 +1,5 @@
 use cargo_scan::audit_chain::{create_new_audit_chain, AuditChain, Create};
-use cargo_scan::auditing::audit::audit_policy;
+use cargo_scan::auditing::audit::{audit_policy, audit_pub_fn};
 use cargo_scan::auditing::info::Config as AuditConfig;
 use cargo_scan::auditing::review::review_policy;
 use cargo_scan::effect::Effect;
@@ -8,7 +8,6 @@ use cargo_scan::scanner;
 
 use anyhow::{anyhow, Result};
 use clap::{Args as ClapArgs, Parser, Subcommand, ValueEnum};
-use std::collections::HashSet;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug, Clone)]
@@ -130,7 +129,7 @@ impl CommandRunner for Audit {
     fn run_command(self, args: OuterArgs) -> Result<()> {
         println!("Auditing crate: {}", self.crate_name);
         match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path)) {
-            Ok(Some(mut chain)) => {
+            Ok(Some(chain)) => {
                 // TODO: Handle more than one policy matching a crate
                 if let Some((full_crate_name, orig_policy)) =
                     chain.read_policy_no_version(&self.crate_name)
@@ -142,19 +141,20 @@ impl CommandRunner for Audit {
                     let audit_config = AuditConfig::default();
 
                     // TODO: Mechanism for re-auditing the default policies
-                    if let Some(dep_effect) =
-                        audit_policy(&mut new_policy, scan_res, &audit_config)?
-                    {
+                    let audit_res =
+                        audit_policy(&mut new_policy, scan_res, &audit_config);
+                    // Save the policy immediately after audit so we don't error
+                    // out and forget to save
+                    chain.save_policy(&full_crate_name, &new_policy)?;
+                    if let Some(dep_effect) = audit_res? {
                         let effect = dep_effect.effects().get(0).ok_or_else(|| {
                             anyhow!(
                                 "Missing an EffectInstance in the dependency EffectBlock"
                             )
                         })?;
                         match effect.eff_type() {
-                            Effect::SinkCall(s) => {
-                                let _sink_crate = s.first_ident().ok_or_else(|| {
-                                    anyhow!("Missing leading identifier for pattern")
-                                })?;
+                            Effect::SinkCall(sink_ident) => {
+                                audit_pub_fn(&chain, sink_ident)?;
                             }
                             _ => {
                                 return Err(anyhow!(
@@ -166,12 +166,7 @@ impl CommandRunner for Audit {
 
                     // if any public function annotations have changed,
                     // update parent packages
-                    let removed_fns = orig_policy
-                        .pub_caller_checked
-                        .difference(&new_policy.pub_caller_checked)
-                        .cloned()
-                        .collect::<HashSet<_>>();
-
+                    let removed_fns = PolicyFile::pub_diff(&orig_policy, &new_policy);
                     chain.remove_cross_crate_effects(removed_fns, &full_crate_name)?;
 
                     Ok(())
@@ -198,7 +193,7 @@ fn review_crate_policy(
         ReviewInfo::All => review_policy(policy, &crate_path, &AuditConfig::default()),
         ReviewInfo::PubFuns => {
             println!("Public functions marked caller-checked:");
-            for pub_fn in policy.pub_caller_checked.iter() {
+            for pub_fn in policy.pub_caller_checked.keys() {
                 // TODO: Print more info
                 println!("  {}", pub_fn);
             }

@@ -109,6 +109,16 @@ impl AuditChain {
         None
     }
 
+    /// Looks up where the policy is saved from the full crate name and saves the
+    /// given PolicyFile to the PathBuf associated with that crate.
+    pub fn save_policy(&self, crate_name: &str, policy: &PolicyFile) -> Result<()> {
+        let policy_path = self
+            .crate_policies
+            .get(crate_name)
+            .ok_or_else(|| anyhow!("Couldn't find entry for crate: {}", crate_name))?;
+        policy.save_to_file(policy_path.clone())
+    }
+
     /// Loads the lockfile for the given crate path. Will generate a new one
     /// with the default configuration if none exists.
     pub fn load_lockfile(&self) -> Result<Lockfile> {
@@ -130,8 +140,9 @@ impl AuditChain {
 
     /// Removes all effects that originate from `removed_fns` for all parent
     /// crates of `updated_crate` in the AuditChain's dependency graph.
+    /// `updated_crate should the full crate name with version`
     pub fn remove_cross_crate_effects(
-        &mut self,
+        &self,
         mut removed_fns: HashSet<CanonicalPath>,
         updated_crate: &str,
     ) -> Result<()> {
@@ -156,12 +167,17 @@ impl AuditChain {
             let mut package_policy = self
                 .read_policy(&package_string)
                 .context(format!("Couldn't find policy for {}", package_string))?;
-            let starting_pub_caller_checked = package_policy.pub_caller_checked.clone();
+            let starting_pub_caller_checked =
+                package_policy.pub_caller_checked.keys().cloned().collect::<HashSet<_>>();
 
             package_policy.remove_sinks_from_tree(&removed_fns);
-            let next_removed_fns = starting_pub_caller_checked
-                .difference(&package_policy.pub_caller_checked)
-                .cloned();
+            let package_pub_fns = &package_policy
+                .pub_caller_checked
+                .keys()
+                .cloned()
+                .collect::<HashSet<_>>();
+            let next_removed_fns =
+                starting_pub_caller_checked.difference(package_pub_fns).cloned();
             removed_fns.extend(next_removed_fns);
 
             // reconstruct invariant
@@ -275,7 +291,7 @@ fn collect_dependency_sinks(
         let policy = chain.read_policy(&dep_string).context(
             "couldnt read dependency policy file (maybe created it out of order)",
         )?;
-        sinks.extend(policy.pub_caller_checked.iter().cloned());
+        sinks.extend(policy.pub_caller_checked.keys().cloned());
     }
 
     Ok(sinks)
