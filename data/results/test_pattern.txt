@@ -1,14 +1,17 @@
 ===== Patterns =====
 Total instances of each import pattern:
-[Unsafe]: 29
 libc: 9
+[UnsafeCall]: 8
 std::process: 7
 std::fs: 4
 [PtrDeref]: 4
+[UnionField]: 3
 std::net: 2
 [FFI]: 2
 std::env: 1
 std::path: 1
+[StaticExtVar]: 1
+[StaticMutVar]: 1
 std::os: 0
 winapi: 0
 mio::net: 0
