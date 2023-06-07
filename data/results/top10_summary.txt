@@ -1,11 +1,11 @@
 ===== Crate Summary =====
 Number of dangerous imports by crate:
-libc: 87
-syn: 31
+libc: 89
+syn: 30
 autocfg: 30
-rand: 22
 serde: 16
-proc-macro2: 13
+rand: 11
+proc-macro2: 10
 rand_core: 2
 ===== Crate Totals =====
 7 crates with 1 or more dangerous imports

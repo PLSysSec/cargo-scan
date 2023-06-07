@@ -1,6 +1,6 @@
 ===== Patterns =====
 Total instances of each import pattern:
-[Unsafe]: 123
+[UnsafeCall]: 108
 [FFI]: 21
 std::process: 15
 std::path: 11
@@ -10,6 +10,8 @@ std::net: 8
 std::fs: 3
 std::os: 1
 libc: 1
+[StaticMutVar]: 1
+[StaticExtVar]: 1
 winapi: 0
 mio::net: 0
 mio::unix: 0
