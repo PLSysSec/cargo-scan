@@ -1,5 +1,5 @@
 ===== Patterns =====
-Total instances of each import pattern:
+Total instances of each effect pattern:
 libc: 9
 [UnsafeCall]: 8
 std::process: 7

@@ -1,5 +1,5 @@
 ===== Patterns =====
-Total instances of each import pattern:
+Total instances of each effect pattern:
 [UnsafeCall]: 108
 [FFI]: 21
 std::process: 15

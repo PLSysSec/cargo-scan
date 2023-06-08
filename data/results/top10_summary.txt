@@ -1,5 +1,5 @@
 ===== Crate Summary =====
-Number of dangerous imports by crate:
+Number of effects by crate:
 libc: 89
 syn: 30
 autocfg: 30
@@ -8,5 +8,5 @@ rand: 11
 proc-macro2: 10
 rand_core: 2
 ===== Crate Totals =====
-7 crates with 1 or more dangerous imports
-3 crates with 0 dangerous imports
+7 crates with 1 or more effects
+3 crates with 0 effects
