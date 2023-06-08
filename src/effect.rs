@@ -10,7 +10,7 @@ use super::ident::{CanonicalPath, IdentPath};
 use super::sink::Sink;
 use super::util::csv;
 
-use log::info;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt;
@@ -221,12 +221,14 @@ impl EffectInstance {
     where
         S: Spanned,
     {
+        // Code to classify an effect based on call site information
         let call_loc = SrcLoc::from_span(filepath, callsite);
         let eff_type = if let Some(pat) = Sink::new_match(&callee, sinks) {
             if ffi.is_some() {
                 // This case occurs for some libc calls
-                info!(
-                    "found sink stdlib pattern also matching an FFI call: \
+                debug!(
+                    "Found FFI callsite also matching a sink pattern; \
+                    classifying as SinkCall: \
                     {} ({}) (FFI {:?})",
                     callee, call_loc, ffi
                 );
@@ -236,9 +238,9 @@ impl EffectInstance {
             if !is_unsafe {
                 // This case can occur in certain contexts, e.g. with
                 // the wasm_bindgen attribute
-                info!(
-                    "found call to an FFI function call that wasn't marked \
-                    unsafe; assuming unsafe anyway: \
+                debug!(
+                    "Found FFI callsite that wasn't marked unsafe; \
+                    classifying as FFICall: \
                     {} ({}) (FFI {:?})",
                     callee, call_loc, ffi
                 );
