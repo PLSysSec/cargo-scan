@@ -28,10 +28,10 @@ use ra_ap_ide_db::defs::{Definition, IdentClass};
 use ra_ap_paths::AbsPathBuf;
 use ra_ap_project_model::{
     CargoConfig, CargoFeatures, InvocationLocation, InvocationStrategy, ProjectManifest,
-    ProjectWorkspace, RustcSource, UnsetTestCrates,
+    RustcSource, UnsetTestCrates,
 };
 
-use ra_ap_rust_analyzer::cli::load_cargo::{load_workspace, LoadCargoConfig};
+use ra_ap_rust_analyzer::cli::load_cargo::LoadCargoConfig;
 use ra_ap_syntax::{AstNode, SourceFile, SyntaxToken, TokenAtOffset};
 use ra_ap_vfs::{Vfs, VfsPath};
 
@@ -61,7 +61,7 @@ impl Resolver {
         let unset_test_crates = UnsetTestCrates::Only(vec![String::from("core")]);
 
         // Setup RUSTC_WRAPPER to point to `rust-analyzer` binary itself.
-        let wrap_rustc_in_build_scripts = true;
+        let wrap_rustc_in_build_scripts = false;
 
         let run_build_script_command = None;
 
@@ -88,7 +88,7 @@ impl Resolver {
     pub fn new(crate_path: &Path) -> Result<Resolver> {
         debug!("Creating resolver with path {:?}", crate_path);
 
-        let canon_path = canonicalize(crate_path).unwrap();
+        let canon_path = canonicalize(crate_path)?;
         let abs_path = AbsPathBuf::assert(canon_path);
         // Make sure the path is a crate
         if !crate_path.is_dir() {
@@ -102,8 +102,7 @@ impl Resolver {
         let manifest = ProjectManifest::discover_single(&abs_path)?;
         let cargo_config = &Self::cargo_config();
 
-        let no_progress = &|_| {};
-        let ws = ProjectWorkspace::load(manifest, cargo_config, no_progress)?;
+        let progress = &|p| debug!("Workspace loading progress: {:?}", p);
 
         let load_config = LoadCargoConfig {
             load_out_dirs_from_check: true,
@@ -111,9 +110,12 @@ impl Resolver {
             prefill_caches: true,
         };
 
-        let (host, vfs, _) = load_workspace(ws, &cargo_config.extra_env, &load_config)?;
-        // let (host, vfs, _) =
-        // load_workspace_at(&crate_path, &cargo_config, &load_config, &|_| {})?;
+        let (host, vfs, _) = ra_ap_rust_analyzer::cli::load_cargo::load_workspace_at(
+            crate_path,
+            cargo_config,
+            &load_config,
+            progress,
+        )?;
 
         // TODO: make db and sems fields of the Resolver
         // let db = host.raw_database();
