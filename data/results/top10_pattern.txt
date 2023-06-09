@@ -1,14 +1,15 @@
 ===== Patterns =====
-Total instances of each import pattern:
-[Unsafe]: 150
-[FFI]: 19
+Total instances of each effect pattern:
+[UnsafeCall]: 126
+[FFI]: 22
 std::process: 15
 std::path: 12
+[PtrDeref]: 9
 std::env: 8
-std::net: 8
 std::fs: 3
 std::os: 1
 libc: 1
+std::net: 0
 winapi: 0
 mio::net: 0
 mio::unix: 0
