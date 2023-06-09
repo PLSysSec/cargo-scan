@@ -1,7 +1,7 @@
 ===== Crate Summary =====
 Number of effects by crate:
 toy-crates: 15
-unsafe-test: 10
+unsafe-test: 9
 permissions-ex: 6
 caller-checked: 4
 fns-closures: 4

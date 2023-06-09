@@ -7,9 +7,9 @@ std::fs: 4
 [PtrDeref]: 4
 [UnionField]: 3
 std::net: 2
-[FFI]: 2
 std::env: 1
 std::path: 1
+[FFI]: 1
 [StaticExtVar]: 1
 [StaticMutVar]: 1
 std::os: 0

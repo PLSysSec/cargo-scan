@@ -41,4 +41,3 @@ unsafe_test, unsafe_test::main, unsafe_test::MyUnion::f2, [UnionField], data/tes
 unsafe_test, unsafe_test::main, unsafe_test::MyUnion::f1, [UnionField], data/test-packages/unsafe-test/src, main.rs, 56, 22
 unsafe_test, unsafe_test::main, unsafe_test::MY_EXTERN_STATIC, [StaticExtVar], data/test-packages/unsafe-test/src, main.rs, 63, 18
 unsafe_test, unsafe_test::main, unsafe_test::MY_STATIC_VAR, [StaticMutVar], data/test-packages/unsafe-test/src, main.rs, 64, 8
-unsafe_test, unsafe_test::wasm_bindgen_ex::call_fn, unsafe_test::wasm_bindgen_ex::fetch_with_request, [FFI], data/test-packages/unsafe-test/src, wasm_bindgen_ex.rs, 23, 17
