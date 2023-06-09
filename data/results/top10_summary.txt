@@ -5,7 +5,7 @@ syn: 30
 autocfg: 30
 serde: 16
 rand: 11
-proc-macro2: 10
+proc-macro2: 5
 rand_core: 2
 ===== Crate Totals =====
 7 crates with 1 or more effects

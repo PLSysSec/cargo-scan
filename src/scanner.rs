@@ -196,18 +196,28 @@ impl<'a> Scanner<'a> {
         }
     }
 
+    // Quickfix to decide when to skip a CFG attribute
+    // TODO: we need to use rust-analyzer or similar to more robustly parse attributes
+    pub fn skip_cfg(&self, args: &str) -> bool {
+        args.starts_with("target_os = \"linux\"") || args.starts_with("not (feature =")
+    }
+
     // Return true if the attributes imply the code should be skipped
     pub fn skip_attr(&self, attr: &'a syn::Attribute) -> bool {
         let path = attr.path();
-        if path.is_ident("cfg_args") || path.is_ident("cfg") {
+        // if path.is_ident("cfg_args") || path.is_ident("cfg") {
+        if path.is_ident("cfg") {
             let syn::Meta::List(l) = &attr.meta else { return false };
             let args = &l.tokens;
-            info!("cfg_args: {}", args);
-            // TODO
-            false
-        } else {
-            false
+            if self.skip_cfg(args.to_string().as_str()) {
+                info!("Skipping cfg attribute: {}", args);
+                return true;
+            } else {
+                debug!("Scanning cfg attribute: {}", args);
+                return false;
+            }
         }
+        false
     }
 
     // Return true if the attributes imply the code should be skipped

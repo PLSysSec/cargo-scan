@@ -1,6 +1,6 @@
 ===== Patterns =====
 Total instances of each effect pattern:
-[UnsafeCall]: 108
+[UnsafeCall]: 103
 [FFI]: 21
 std::process: 15
 std::path: 11
