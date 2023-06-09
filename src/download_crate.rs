@@ -1,10 +1,11 @@
-use std::fs::{create_dir_all, remove_file, File};
+use std::fs::{create_dir_all, remove_file, write, File};
 use std::path::PathBuf;
 
 use anyhow::Result;
 use cargo_lock::Package;
 use curl::easy::Easy;
 use flate2::read::GzDecoder;
+use log::info;
 use tar::Archive;
 
 fn get_crates_io_url(package: &Package) -> String {
@@ -48,11 +49,29 @@ pub fn download_crate(package: &Package, download_dir: &str) -> Result<PathBuf> 
     let tarball_name = format!("{}.tar.gz", package_dir_name);
     let mut download_dir = PathBuf::from(download_dir);
     download_dir.push(tarball_name.clone());
+    write(&download_dir, dst)?;
 
     {
         let tarball_file = File::open(download_dir.clone())?;
         let tar = GzDecoder::new(tarball_file);
         let mut archive = Archive::new(tar);
+
+        // Set the download_dir to the expected crate download dir
+        download_dir.pop();
+        download_dir.push(&package_dir_name);
+
+        // if the directory already exists, delete it and use the new version;
+        // we redownload to make sure that e.g. non-crates.io versions with the
+        // same semver are still downloaded
+        if download_dir.exists() {
+            info!(
+                "Another instance of this crate already exists, downloading new version"
+            );
+            std::fs::remove_dir_all(download_dir.clone())?;
+        }
+
+        // pop the last folder because the extraction will include a new folder
+        // for the package
         download_dir.pop();
         create_dir_all(download_dir.clone())?;
         archive.unpack(download_dir.clone())?;

@@ -155,7 +155,7 @@ def sort_summary_dict(d):
 def make_pattern_summary(pattern_summary):
     result = ""
     result += "===== Patterns =====\n"
-    result += "Total instances of each import pattern:\n"
+    result += "Total instances of each effect pattern:\n"
     pattern_sorted = sort_summary_dict(pattern_summary)
     for p, n in pattern_sorted:
         result += f"{p}: {n}\n"
@@ -164,7 +164,7 @@ def make_pattern_summary(pattern_summary):
 def make_crate_summary(crate_summary):
     result = ""
     result += "===== Crate Summary =====\n"
-    result += "Number of dangerous imports by crate:\n"
+    result += "Number of effects by crate:\n"
     crate_sorted = sort_summary_dict(crate_summary)
     num_nonzero = 0
     num_zero = 0
@@ -175,8 +175,8 @@ def make_crate_summary(crate_summary):
         else:
             num_zero += 1
     result += "===== Crate Totals =====\n"
-    result += f"{num_nonzero} crates with 1 or more dangerous imports\n"
-    result += f"{num_zero} crates with 0 dangerous imports\n"
+    result += f"{num_nonzero} crates with 1 or more effects\n"
+    result += f"{num_zero} crates with 0 effects\n"
 
     return result
 

@@ -98,3 +98,64 @@ pub mod fs {
         reader.map(|line| line.unwrap())
     }
 }
+
+/// Parse Cargo TOML
+use anyhow::{anyhow, Context, Result};
+use log::debug;
+use std::fs::read_to_string;
+use std::path::Path;
+use std::str::FromStr;
+use toml::{self, value::Table};
+
+#[derive(Debug, Clone)]
+pub struct CrateData {
+    pub name: String,
+    pub version: String,
+}
+
+pub fn load_cargo_toml(crate_path: &Path) -> Result<CrateData> {
+    debug!("Loading Cargo.toml at: {:?}", crate_path);
+
+    let toml_string = read_to_string(crate_path.join("Cargo.toml"))?;
+    let cargo_toml =
+        toml::from_str::<Table>(&toml_string).context("Couldn't parse Cargo.toml")?;
+    let root_toml_table = cargo_toml
+        .get("package")
+        .context("No package in Cargo.toml")?
+        .as_table()
+        .context("Package field is not a table")?;
+    let name = root_toml_table
+        .get("name")
+        .context("No name for the root package in Cargo.toml")?
+        .as_str()
+        .context("name field in package is not a string")?
+        .to_string();
+    let version = root_toml_table
+        .get("version")
+        .context("No version for the root package in Cargo.toml")?
+        .as_str()
+        .context("version field in package couldn't be interpreted as a string")?
+        .to_string();
+
+    let result = CrateData { name, version };
+    debug!("Loaded: {:?}", result);
+    Ok(result)
+}
+
+/// Takes a fully-stringified crate name and gets the name and version from it
+/// e.g. "libc-0.4.8-pre18" will return "libc" and the version 0.4.8 with
+/// prerelease string "pre18"
+pub fn package_info_from_string(
+    package: &str,
+) -> Result<(cargo_lock::Name, cargo_lock::Version)> {
+    let split = package.split('-').collect::<Vec<_>>();
+    for i in (0..split.len()).rev() {
+        let test_str = split[i..].join("-");
+        if let Ok(version) = cargo_lock::Version::parse(&test_str) {
+            let name = split[..i].join("-");
+            return Ok((cargo_lock::Name::from_str(&name)?, version));
+        }
+    }
+
+    Err(anyhow!("Couldn't parse string as package"))
+}

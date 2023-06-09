@@ -7,12 +7,13 @@ pub use super::name_resolution::Resolver;
 
 use super::effect::SrcLoc;
 use super::hacky_resolver::HackyResolver;
-use super::ident::{CanonicalPath, Ident};
+use super::ident::{CanonicalPath, CanonicalType, Ident};
 
 use anyhow::Result;
-use log::{debug, warn};
+use log::{debug, info, warn};
+use std::fmt::Display;
 use std::path::Path as FilePath;
-use syn;
+use syn::{self, spanned::Spanned};
 
 /// Common interface for FileResolver and HackyResolver
 ///
@@ -31,11 +32,15 @@ pub trait Resolve<'a>: Sized {
     fn resolve_path(&self, p: &'a syn::Path) -> CanonicalPath;
     fn resolve_def(&self, i: &'a syn::Ident) -> CanonicalPath;
     fn resolve_ffi(&self, p: &'a syn::Path) -> Option<CanonicalPath>;
+    fn resolve_unsafe_path(&self, p: &'a syn::Path) -> bool;
+    fn resolve_unsafe_ident(&self, p: &'a syn::Ident) -> bool;
 
     /*
         Type resolution functions
     */
     fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath;
+    fn resolve_path_type(&self, i: &'a syn::Path) -> CanonicalType;
+    fn resolve_field_type(&self, i: &'a syn::Ident) -> CanonicalType;
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath;
 
     /*
@@ -59,33 +64,87 @@ pub struct FileResolver<'a> {
 }
 
 impl<'a> FileResolver<'a> {
-    pub fn new(resolver: &'a Resolver, filepath: &'a FilePath) -> Result<Self> {
+    pub fn new(
+        crate_name: &'a str,
+        resolver: &'a Resolver,
+        filepath: &'a FilePath,
+    ) -> Result<Self> {
         debug!("Creating FileResolver for file: {:?}", filepath);
-        let backup = HackyResolver::new(filepath)?;
+        let backup = HackyResolver::new(crate_name, filepath)?;
         Ok(Self { filepath, resolver, backup })
     }
 
     fn resolve_core(&self, i: &syn::Ident) -> Result<CanonicalPath> {
         let mut s = SrcLoc::from_span(self.filepath, i);
         debug!("Resolving: {} ({})", i, s);
-        // TODO Lydia remove
+        // Add 1 to column to avoid weird off-by-one errors
         s.add1();
         let i = Ident::from_syn(i);
         self.resolver.resolve_ident(s, i)
     }
 
-    fn resolve_or_else<F>(&self, i: &syn::Ident, fallback: F) -> CanonicalPath
+    fn resolve_ffi_core(&self, i: &syn::Ident) -> Result<Option<CanonicalPath>> {
+        let mut s = SrcLoc::from_span(self.filepath, i);
+        debug!("Resolving FFI: {} ({})", i, s);
+        // Add 1 to column to avoid weird off-by-one errors
+        s.add1();
+        let i_owned = Ident::from_syn(i);
+        if self.resolver.is_ffi(s, i_owned)? {
+            Ok(Some(self.resolve_core(i)?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn resolve_unsafe_core(&self, i: &syn::Ident) -> Result<bool> {
+        let mut s = SrcLoc::from_span(self.filepath, i);
+        debug!("Resolving Unsafe Call: {} ({})", i, s);
+        // Add 1 to column to avoid weird off-by-one errors
+        s.add1();
+        let i_owned = Ident::from_syn(i);
+        if self.resolver.is_unsafe_call(s, i_owned)? {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    fn resolve_type_core(&self, i: &syn::Ident) -> Result<CanonicalType> {
+        let mut s = SrcLoc::from_span(self.filepath, i);
+        debug!("Resolving type: {} ({})", i, s);
+        // Add 1 to column to avoid weird off-by-one errors
+        s.add1();
+        let i = Ident::from_syn(i);
+        self.resolver.resolve_type(s, i)
+    }
+
+    fn resolve_or_else<S, R, F, T>(&self, i: &S, try_resolve: R, fallback: F) -> T
+    where
+        S: Display + Spanned,
+        R: FnOnce() -> Result<T>,
+        F: FnOnce() -> T,
+    {
+        try_resolve().unwrap_or_else(|err| {
+            let s = SrcLoc::from_span(self.filepath, i);
+            // Temporarily suppressing this warning.
+            // TODO: Bump this back up to warn! once a fix is pushed
+            info!("Resolution failed (using fallback) for: {} ({}) ({})", i, s, err);
+            fallback()
+        })
+    }
+
+    fn resolve_ident_or_else<F>(&self, i: &syn::Ident, fallback: F) -> CanonicalPath
     where
         F: FnOnce() -> CanonicalPath,
     {
-        match self.resolve_core(i) {
-            Ok(res) => res,
-            Err(err) => {
-                let s = SrcLoc::from_span(self.filepath, i);
-                warn!("Resolution failed (using fallback) for: {} ({}) ({})", i, s, err);
-                fallback()
-            }
-        }
+        self.resolve_or_else(i, || self.resolve_core(i), fallback)
+    }
+
+    fn resolve_type_or_else<F>(&self, i: &syn::Ident, fallback: F) -> CanonicalType
+    where
+        F: FnOnce() -> CanonicalType,
+    {
+        self.resolve_or_else(i, || self.resolve_type_core(i), fallback)
     }
 }
 
@@ -95,21 +154,47 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
     }
 
     fn resolve_ident(&self, i: &'a syn::Ident) -> CanonicalPath {
-        self.resolve_or_else(i, || self.backup.resolve_ident(i))
+        self.resolve_ident_or_else(i, || self.backup.resolve_ident(i))
     }
 
     fn resolve_path(&self, p: &'a syn::Path) -> CanonicalPath {
         let i = &p.segments.last().unwrap().ident;
-        self.resolve_or_else(i, || self.backup.resolve_path(p))
+        self.resolve_ident_or_else(i, || self.backup.resolve_path(p))
+    }
+
+    fn resolve_path_type(&self, p: &'a syn::Path) -> CanonicalType {
+        let i = &p.segments.last().unwrap().ident;
+        self.resolve_type_or_else(i, || self.backup.resolve_path_type(p))
     }
 
     fn resolve_def(&self, i: &'a syn::Ident) -> CanonicalPath {
-        self.resolve_or_else(i, || self.backup.resolve_def(i))
+        self.resolve_ident_or_else(i, || self.backup.resolve_def(i))
     }
 
     fn resolve_ffi(&self, p: &syn::Path) -> Option<CanonicalPath> {
-        // TODO: RA implementation
-        self.backup.resolve_ffi(p)
+        let i = &p.segments.last().unwrap().ident;
+        self.resolve_or_else(
+            i,
+            || self.resolve_ffi_core(i),
+            || self.backup.resolve_ffi(p),
+        )
+    }
+
+    fn resolve_unsafe_path(&self, p: &syn::Path) -> bool {
+        let i = &p.segments.last().unwrap().ident;
+        self.resolve_or_else(
+            i,
+            || self.resolve_unsafe_core(i),
+            || self.backup.resolve_unsafe_path(p),
+        )
+    }
+
+    fn resolve_unsafe_ident(&self, i: &syn::Ident) -> bool {
+        self.resolve_or_else(
+            i,
+            || self.resolve_unsafe_core(i),
+            || self.backup.resolve_unsafe_ident(i),
+        )
     }
 
     fn push_mod(&mut self, mod_ident: &'a syn::Ident) {
@@ -145,11 +230,11 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
     }
 
     fn resolve_method(&self, i: &'a syn::Ident) -> CanonicalPath {
-        self.resolve_or_else(i, || self.backup.resolve_method(i))
+        self.resolve_ident_or_else(i, || self.backup.resolve_method(i))
     }
 
     fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath {
-        self.resolve_or_else(i, || self.backup.resolve_field(i))
+        self.resolve_ident_or_else(i, || self.backup.resolve_field(i))
     }
 
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath {
@@ -159,5 +244,9 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
             idx, s
         );
         self.backup.resolve_field_index(idx)
+    }
+
+    fn resolve_field_type(&self, i: &'a syn::Ident) -> CanonicalType {
+        self.resolve_type_or_else(i, || self.backup.resolve_field_type(i))
     }
 }

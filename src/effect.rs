@@ -10,7 +10,7 @@ use super::ident::{CanonicalPath, IdentPath};
 use super::sink::Sink;
 use super::util::csv;
 
-use log::{info, warn};
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt;
@@ -145,9 +145,16 @@ pub enum Effect {
     SinkCall(Sink),
     /// FFI call
     FFICall(CanonicalPath),
-    /// Unsafe operation, e.g. pointer deref
-    /// see: https://doc.rust-lang.org/nomicon/what-unsafe-does.html
-    UnsafeOp,
+    /// Unsafe function/method call
+    UnsafeCall(CanonicalPath),
+    /// Pointer dereference
+    RawPointer(CanonicalPath),
+    /// Reading a union field
+    UnionField(CanonicalPath),
+    /// Accessing a global mutable variable
+    StaticMut(CanonicalPath),
+    /// Accessing an external mutable variable
+    StaticExt(CanonicalPath),
     /// Other function call -- not dangerous
     OtherCall,
 }
@@ -156,7 +163,11 @@ impl Effect {
         match self {
             Self::SinkCall(s) => Some(s),
             Self::FFICall(_) => None,
-            Self::UnsafeOp => None,
+            Self::UnsafeCall(_) => None,
+            Self::RawPointer(_) => None,
+            Self::UnionField(_) => None,
+            Self::StaticMut(_) => None,
+            Self::StaticExt(_) => None,
             Self::OtherCall => None,
         }
     }
@@ -165,7 +176,11 @@ impl Effect {
         match self {
             Self::SinkCall(s) => s.as_str(),
             Self::FFICall(_) => "[FFI]",
-            Self::UnsafeOp => "[Unsafe]",
+            Self::UnsafeCall(_) => "[UnsafeCall]",
+            Self::RawPointer(_) => "[PtrDeref]",
+            Self::UnionField(_) => "[UnionField]",
+            Self::StaticMut(_) => "[StaticMutVar]",
+            Self::StaticExt(_) => "[StaticExtVar]",
             Self::OtherCall => "[None]",
         }
     }
@@ -186,7 +201,7 @@ pub struct EffectInstance {
     call_loc: SrcLoc,
 
     /// Callee (effect) function, e.g. libc::sched_getaffinity
-    callee: IdentPath,
+    callee: CanonicalPath,
 
     /// EffectInstance type
     /// If Sink, this includes the effect pattern -- prefix of callee (effect), e.g. libc.
@@ -197,7 +212,7 @@ impl EffectInstance {
     pub fn new_call<S>(
         filepath: &FilePath,
         caller: CanonicalPath,
-        callee: IdentPath,
+        callee: CanonicalPath,
         callsite: &S,
         is_unsafe: bool,
         ffi: Option<CanonicalPath>,
@@ -206,13 +221,14 @@ impl EffectInstance {
     where
         S: Spanned,
     {
+        // Code to classify an effect based on call site information
         let call_loc = SrcLoc::from_span(filepath, callsite);
         let eff_type = if let Some(pat) = Sink::new_match(&callee, sinks) {
             if ffi.is_some() {
-                // This case should generally not occur, though it might
-                // if we add custom sink patterns
-                warn!(
-                    "found sink stdlib pattern also matching an FFI call: \
+                // This case occurs for some libc calls
+                debug!(
+                    "Found FFI callsite also matching a sink pattern; \
+                    classifying as SinkCall: \
                     {} ({}) (FFI {:?})",
                     callee, call_loc, ffi
                 );
@@ -222,19 +238,33 @@ impl EffectInstance {
             if !is_unsafe {
                 // This case can occur in certain contexts, e.g. with
                 // the wasm_bindgen attribute
-                info!(
-                    "found call to an FFI function call that wasn't marked \
-                    unsafe; assuming unsafe anyway: \
+                debug!(
+                    "Found FFI callsite that wasn't marked unsafe; \
+                    classifying as FFICall: \
                     {} ({}) (FFI {:?})",
                     callee, call_loc, ffi
                 );
             }
             Effect::FFICall(ffi)
         } else if is_unsafe {
-            Effect::UnsafeOp
+            Effect::UnsafeCall(callee.clone())
         } else {
             Effect::OtherCall
         };
+        Self { caller, call_loc, callee, eff_type }
+    }
+
+    pub fn new_effect<S>(
+        filepath: &FilePath,
+        caller: CanonicalPath,
+        callee: CanonicalPath,
+        eff_site: &S,
+        eff_type: Effect,
+    ) -> Self
+    where
+        S: Spanned,
+    {
+        let call_loc = SrcLoc::from_span(filepath, eff_site);
         Self { caller, call_loc, callee, eff_type }
     }
 
@@ -246,7 +276,7 @@ impl EffectInstance {
         self.caller.as_str()
     }
 
-    pub fn callee(&self) -> &IdentPath {
+    pub fn callee(&self) -> &CanonicalPath {
         &self.callee
     }
 
@@ -285,8 +315,20 @@ impl EffectInstance {
         matches!(self.eff_type, Effect::FFICall(_))
     }
 
-    pub fn is_unsafe_op(&self) -> bool {
-        matches!(self.eff_type, Effect::UnsafeOp)
+    pub fn is_unsafe_call(&self) -> bool {
+        matches!(self.eff_type, Effect::UnsafeCall(_))
+    }
+
+    pub fn is_ptr_deref(&self) -> bool {
+        matches!(self.eff_type, Effect::RawPointer(_))
+    }
+
+    pub fn is_union_field_acc(&self) -> bool {
+        matches!(self.eff_type, Effect::UnionField(_))
+    }
+
+    pub fn is_mut_static(&self) -> bool {
+        matches!(self.eff_type, Effect::StaticMut(_))
     }
 
     pub fn is_dangerous(&self) -> bool {
@@ -437,6 +479,14 @@ impl EffectBlock {
         &self.effects
     }
 
+    pub fn filter_effects<F>(&mut self, f: F)
+    where
+        F: FnMut(&EffectInstance) -> bool,
+    {
+        let effects = std::mem::take(&mut self.effects);
+        self.effects = effects.into_iter().filter(f).collect::<Vec<_>>();
+    }
+
     pub fn containing_fn(&self) -> &FnDec {
         &self.containing_fn
     }
@@ -449,14 +499,20 @@ impl EffectBlock {
 pub struct TraitImpl {
     src_loc: SrcLoc,
     tr_name: CanonicalPath,
+    self_type: Option<CanonicalPath>,
 }
 impl TraitImpl {
-    pub fn new<S>(impl_span: &S, filepath: &FilePath, tr_name: CanonicalPath) -> Self
+    pub fn new<S>(
+        impl_span: &S,
+        filepath: &FilePath,
+        tr_name: CanonicalPath,
+        self_type: Option<CanonicalPath>,
+    ) -> Self
     where
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, impl_span);
-        Self { src_loc, tr_name }
+        Self { src_loc, tr_name, self_type }
     }
 }
 

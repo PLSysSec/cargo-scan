@@ -5,10 +5,14 @@
 //! CanonicalPath: crate::fs::File
 //! Pattern: std::fs, std::fs::*
 
+use itertools::Itertools;
 use log::warn;
 use serde::{Deserialize, Serialize};
-use std::fmt::{self, Display};
-use syn;
+use std::{
+    fmt::{self, Display},
+    path::Path,
+};
+use syn::{self, spanned::Spanned};
 
 use super::util::iter::FreshIter;
 
@@ -160,6 +164,11 @@ impl IdentPath {
         Some(Ident::new(i))
     }
 
+    pub fn first_ident(&self) -> Option<Ident> {
+        let (i, _) = self.0.split_once("::")?;
+        Some(Ident::new(i))
+    }
+
     pub fn append(&mut self, other: &Self) {
         if !other.is_empty() {
             if !self.is_empty() {
@@ -280,6 +289,144 @@ impl CanonicalPath {
     pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
+
+    // NOTE: The matches definition should align with whatever definition format
+    //       we use for our default sinks
+    pub fn matches(&self, pattern: &Pattern) -> bool {
+        self.0.matches(pattern)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+pub enum TypeKind {
+    RawPointer,
+    Callable(CallableKind),
+    DynTrait,
+    Generic,
+    UnionFld,
+    StaticMut,
+    #[default]
+    // Default case. Types that we have fully resolved
+    // and do not need extra information about.
+    Plain,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum CallableKind {
+    Closure,
+    FnPtr,
+    FnOnce,
+    Other,
+}
+
+/// Type representing a type identifier.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+pub struct CanonicalType {
+    ty: String,
+    ty_kind: TypeKind,
+    trait_bounds: Vec<CanonicalPath>,
+}
+impl Display for CanonicalType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.ty.fmt(f)
+    }
+}
+
+impl CanonicalType {
+    fn char_ok(c: char) -> bool {
+        c.is_ascii_alphanumeric() || "_-&*+|!=,;:<>()[]{} ".contains(c)
+    }
+
+    pub fn invariant(&self) -> bool {
+        self.ty.chars().all(Self::char_ok)
+    }
+
+    pub fn check_invariant(&self) {
+        if !self.invariant() {
+            warn!("failed invariant! on CanonicalType {}", self);
+        }
+    }
+
+    pub fn new(s: &str) -> Self {
+        Self::new_owned_string(s.to_string())
+    }
+
+    pub fn new_owned_string(s: String) -> Self {
+        Self::new_owned(s, vec![], Default::default())
+    }
+
+    pub fn new_owned(s: String, b: Vec<CanonicalPath>, k: TypeKind) -> Self {
+        let result = Self { ty: s, trait_bounds: b, ty_kind: k };
+        result.check_invariant();
+        result
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.ty.as_str()
+    }
+
+    pub fn add_trait_bound(&mut self, trait_bound: CanonicalPath) {
+        self.trait_bounds.push(trait_bound)
+    }
+
+    pub fn get_trait_bounds(&self) -> &Vec<CanonicalPath> {
+        &self.trait_bounds
+    }
+
+    pub fn is_raw_ptr(&self) -> bool {
+        if let TypeKind::RawPointer = self.ty_kind {
+            return true;
+        }
+        false
+    }
+
+    pub fn is_callable(&self) -> bool {
+        if let TypeKind::Callable(_) = self.ty_kind {
+            return true;
+        }
+        false
+    }
+
+    pub fn is_dyn_trait(&self) -> bool {
+        if let TypeKind::DynTrait = self.ty_kind {
+            return true;
+        }
+        false
+    }
+
+    pub fn is_generic(&self) -> bool {
+        if let TypeKind::Generic = self.ty_kind {
+            return true;
+        }
+        false
+    }
+
+    pub fn is_closure(&self) -> bool {
+        if let TypeKind::Callable(CallableKind::Closure) = &self.ty_kind {
+            return true;
+        }
+        false
+    }
+
+    pub fn is_union_field(&self) -> bool {
+        if let TypeKind::UnionFld = self.ty_kind {
+            return true;
+        }
+        false
+    }
+
+    pub fn is_mut_static(&self) -> bool {
+        if let TypeKind::StaticMut = self.ty_kind {
+            return true;
+        }
+        false
+    }
+
+    pub fn get_callable_kind(&self) -> Option<CallableKind> {
+        if let TypeKind::Callable(kind) = &self.ty_kind {
+            return Some(kind.clone());
+        }
+        None
+    }
 }
 
 /// Type representing a pattern over paths
@@ -317,6 +464,10 @@ impl Pattern {
         Self::from_path(IdentPath::from_ident(i))
     }
 
+    pub fn first_ident(&self) -> Option<Ident> {
+        self.0.first_ident()
+    }
+
     pub fn from_path(p: IdentPath) -> Self {
         let result = Self(p);
         result.check_invariant();
@@ -338,6 +489,29 @@ impl Pattern {
     pub fn superset(&self, other: &Self) -> bool {
         other.subset(self)
     }
+}
+
+// Create a pseudo-identifier for closure definitions
+// using their location in the source code
+pub fn create_closure_ident<S>(filepath: &Path, s: &S) -> Option<String>
+where
+    S: Spanned,
+{
+    let invariant = |s: &str| s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
+
+    let dir = filepath
+        .parent()?
+        .to_str()?
+        .replace('-', "_")
+        .split('/')
+        .filter(|x| invariant(x))
+        .join("::");
+
+    let file = filepath.file_name()?.to_str()?.strip_suffix(".rs")?.to_string();
+    let start_line = s.span().start().line.to_string();
+    let start_col = s.span().start().column.to_string();
+
+    Some(format!("{}::{}::{}::{}::{}", "CLOSURE", dir, file, start_line, start_col))
 }
 
 #[cfg(test)]

@@ -3,19 +3,20 @@
 //! Parse a Rust crate or source file and collect effect blocks, function calls, and
 //! various other information.
 
-use crate::sink::Sink;
-
 use super::effect::{
-    BlockType, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
+    BlockType, Effect, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
     Visibility,
 };
 use super::ident::{CanonicalPath, IdentPath};
 use super::resolve::{FileResolver, Resolve, Resolver};
+use super::sink::Sink;
 use super::util;
 
 use anyhow::{anyhow, Result};
 use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
+use proc_macro2::{TokenStream, TokenTree};
+use quote::ToTokens;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -37,13 +38,11 @@ pub struct ScanResults {
     pub unsafe_impls: Vec<TraitImpl>,
 
     // Saved function declarations
-    // TODO replace with call graph info
     pub pub_fns: HashSet<CanonicalPath>,
-    pub fn_locs: HashMap<IdentPath, SrcLoc>,
+    pub fn_locs: HashMap<CanonicalPath, SrcLoc>,
 
-    // TODO currently unused
-    call_graph: DiGraph<IdentPath, SrcLoc>,
-    node_idxs: HashMap<IdentPath, NodeIndex>,
+    call_graph: DiGraph<CanonicalPath, SrcLoc>,
+    node_idxs: HashMap<CanonicalPath, NodeIndex>,
 
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
@@ -64,7 +63,10 @@ impl ScanResults {
             .collect::<HashSet<_>>()
     }
 
-    pub fn get_callers<'a>(&'a self, callee: &IdentPath) -> HashSet<&'a EffectInstance> {
+    pub fn get_callers<'a>(
+        &'a self,
+        callee: &CanonicalPath,
+    ) -> HashSet<&'a EffectInstance> {
         let mut callers = HashSet::new();
         for e in &self.effects {
             let effect_callee = e.callee();
@@ -80,14 +82,14 @@ impl ScanResults {
         let fn_name = f.fn_name;
 
         // Update call graph
-        let node_idx = self.call_graph.add_node(fn_name.as_path().clone());
-        self.node_idxs.insert(fn_name.as_path().clone(), node_idx);
+        let node_idx = self.call_graph.add_node(fn_name.clone());
+        self.node_idxs.insert(fn_name.clone(), node_idx);
 
         // Save function info
         if let Visibility::Public = f.vis {
             self.pub_fns.insert(fn_name.clone());
         }
-        self.fn_locs.insert(fn_name.to_path(), f.src_loc);
+        self.fn_locs.insert(fn_name, f.src_loc);
     }
 }
 
@@ -108,6 +110,12 @@ pub struct Scanner<'a> {
     /// (always 0 at top level)
     /// (includes only unsafe blocks and fn decls -- not traits and trait impls)
     scope_unsafe: usize,
+
+    /// Whether we are scaning an assignment expression.
+    /// Useful to check if a union field is accessed to
+    /// read its value, which is unsafe, or to write to it.
+    /// Accessing a union field to assign to it is safe.
+    scope_assign_lhs: bool,
 
     /// Functions inside
     scope_fns: Vec<FnDec>,
@@ -135,6 +143,7 @@ impl<'a> Scanner<'a> {
             resolver,
             scope_effect_blocks: Vec::new(),
             scope_unsafe: 0,
+            scope_assign_lhs: false,
             scope_fns: Vec::new(),
             data,
             sinks: Sink::default_sinks(),
@@ -274,7 +283,27 @@ impl<'a> Scanner<'a> {
         if imp.unsafety.is_some() {
             // we found an `unsafe impl` declaration
             let tr_name = self.resolver.resolve_path(tr);
-            self.data.unsafe_impls.push(TraitImpl::new(imp, self.filepath, tr_name));
+            let self_ty = imp
+                .self_ty
+                .to_token_stream()
+                .into_iter()
+                .filter_map(|token| match token {
+                    TokenTree::Ident(i) => Some(i),
+                    _ => None,
+                })
+                .last();
+            // resolve the implementing type of the trait, if there is one
+            let tr_type = match &self_ty {
+                Some(ident) => Some(self.resolver.resolve_ident(ident)),
+                _ => None,
+            };
+
+            self.data.unsafe_impls.push(TraitImpl::new(
+                imp,
+                self.filepath,
+                tr_name,
+                tr_type,
+            ));
         }
     }
 
@@ -378,7 +407,9 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Assign(x) => {
+                self.scope_assign_lhs = true;
                 self.scan_expr(&x.left);
+                self.scope_assign_lhs = false;
                 self.scan_expr(&x.right);
             }
             syn::Expr::Async(x) => {
@@ -418,11 +449,12 @@ impl<'a> Scanner<'a> {
                 // Note that the body expression doesn't get evaluated yet,
                 // and may be evaluated somewhere else.
                 // May need to do something more special here.
-                self.scan_expr(&x.body);
+                self.scan_closure(x);
             }
             syn::Expr::Continue(_) => (),
             syn::Expr::Field(x) => {
                 self.scan_expr(&x.base);
+                self.scan_field_access(x);
             }
             syn::Expr::ForLoop(x) => {
                 self.scan_expr(&x.expr);
@@ -479,8 +511,9 @@ impl<'a> Scanner<'a> {
             syn::Expr::Paren(x) => {
                 self.scan_expr(&x.expr);
             }
-            syn::Expr::Path(_) => {
+            syn::Expr::Path(x) => {
                 // typically a local variable
+                self.scan_path(&x.path);
             }
             syn::Expr::Range(x) => {
                 if let Some(y) = &x.start {
@@ -525,8 +558,9 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Unary(x) => {
-                // TODO: Once we have type info, check to see if we deref a
-                //       pointer here
+                if let syn::UnOp::Deref(_) = x.op {
+                    self.scan_deref(&x.expr);
+                }
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Unsafe(x) => {
@@ -549,6 +583,78 @@ impl<'a> Scanner<'a> {
                 }
             }
             _ => self.syn_warning("encountered unknown expression", e),
+        }
+    }
+
+    fn scan_path(&mut self, x: &'a syn::Path) {
+        let ty = self.resolver.resolve_path_type(x);
+        // Accessing a mutable global variable
+        if ty.is_mut_static() {
+            let cp = self.resolver.resolve_path(x);
+            self.push_effect(x.span(), cp.clone(), Effect::StaticMut(cp));
+        }
+        // Accessing an external static variable
+        if self.resolver.resolve_ffi(x).is_some() {
+            let cp = self.resolver.resolve_path(x);
+            self.push_effect(x.span(), cp.clone(), Effect::StaticExt(cp));
+        }
+    }
+
+    fn scan_closure(&mut self, x: &'a syn::ExprClosure) {
+        // Create identifier for closure definition to handle it as any other function.
+        let ident = crate::ident::create_closure_ident(self.filepath, &x.span());
+        if ident.is_none() {
+            return;
+        }
+
+        let vis = syn::Visibility::Inherited;
+        let cl_name = CanonicalPath::new_owned(ident.unwrap());
+        let cl_dec = FnDec::new(self.filepath, &x.span(), cl_name.clone(), &vis);
+
+        // Always push the new closure declaration before scanning the
+        // body so we have access to the closure its in for unsafe blocks
+        self.scope_fns.push(cl_dec.clone());
+
+        // Notify ScanResults
+        self.data.add_fn_dec(cl_dec);
+
+        // Update effect blocks
+        let effect_block = EffectBlock::new_fn(self.filepath, &x.body, cl_name, &vis);
+        self.scope_effect_blocks.push(effect_block);
+
+        // ***** Scan body *****
+        self.scan_expr(&x.body);
+
+        // Reset state
+        self.scope_fns.pop();
+
+        // Save effect block
+        self.data.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
+    }
+
+    fn scan_deref(&mut self, x: &'a syn::Expr) {
+        let mut tokens: TokenStream = TokenStream::new();
+        x.to_tokens(&mut tokens);
+        tokens.into_iter().for_each(|tt| {
+            if let TokenTree::Ident(i) = tt {
+                let ty = self.resolver.resolve_field_type(&i);
+                let p = self.resolver.resolve_field(&i);
+                if ty.is_raw_ptr() {
+                    self.push_effect(x.span(), p.clone(), Effect::RawPointer(p));
+                }
+            }
+        });
+    }
+
+    // Check if the field being accessed is a Union field
+    fn scan_field_access(&mut self, x: &'a syn::ExprField) {
+        if let syn::Member::Named(i) = &x.member {
+            let ty = self.resolver.resolve_field_type(i);
+            if !ty.is_union_field() || self.scope_assign_lhs {
+                return;
+            }
+            let cp = self.resolver.resolve_field(i);
+            self.push_effect(x.span(), cp.clone(), Effect::UnionField(cp));
         }
     }
 
@@ -583,19 +689,40 @@ impl<'a> Scanner<'a> {
         }
     }
 
+    fn push_effect<S>(&mut self, eff_span: S, callee: CanonicalPath, eff_type: Effect)
+    where
+        S: Debug + Spanned,
+    {
+        let caller = &self.scope_fns.last().expect("not inside a function!").fn_name;
+
+        let eff = EffectInstance::new_effect(
+            self.filepath,
+            caller.clone(),
+            callee,
+            &eff_span,
+            eff_type,
+        );
+        if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
+            effect_block.push_effect(eff.clone())
+        } else {
+            self.syn_warning("unexpected effect found outside an effect block", eff_span);
+        }
+        self.data.effects.push(eff);
+    }
+
     /// push an Effect to the list of results based on this call site.
     fn push_callsite<S>(
         &mut self,
         callee_span: S,
         callee: CanonicalPath,
         ffi: Option<CanonicalPath>,
+        is_unsafe: bool,
     ) where
         S: Debug + Spanned,
     {
         let caller = &self.scope_fns.last().expect("not inside a function!").fn_name;
-
-        if let Some(caller_node_idx) = self.data.node_idxs.get(caller.as_path()) {
-            if let Some(callee_node_idx) = self.data.node_idxs.get(callee.as_path()) {
+        if let Some(caller_node_idx) = self.data.node_idxs.get(caller) {
+            if let Some(callee_node_idx) = self.data.node_idxs.get(&callee) {
                 self.data.call_graph.add_edge(
                     *caller_node_idx,
                     *callee_node_idx,
@@ -607,9 +734,9 @@ impl<'a> Scanner<'a> {
         let eff = EffectInstance::new_call(
             self.filepath,
             caller.clone(),
-            callee.to_path(),
+            callee,
             &callee_span,
-            self.scope_unsafe > 0,
+            is_unsafe,
             ffi,
             &self.sinks,
         );
@@ -629,7 +756,9 @@ impl<'a> Scanner<'a> {
             syn::Expr::Path(p) => {
                 let callee = self.resolver.resolve_path(&p.path);
                 let ffi = self.resolver.resolve_ffi(&p.path);
-                self.push_callsite(p, callee, ffi);
+                let is_unsafe =
+                    self.resolver.resolve_unsafe_path(&p.path) && self.scope_unsafe > 0;
+                self.push_callsite(p, callee, ffi, is_unsafe);
             }
             syn::Expr::Paren(x) => {
                 // e.g. (my_struct.f)(x)
@@ -654,24 +783,34 @@ impl<'a> Scanner<'a> {
     fn scan_expr_call_field(&mut self, m: &'a syn::Member) {
         match m {
             syn::Member::Named(i) => {
-                self.push_callsite(i, self.resolver.resolve_field(i), None);
+                let is_unsafe =
+                    self.resolver.resolve_unsafe_ident(i) && self.scope_unsafe > 0;
+                self.push_callsite(i, self.resolver.resolve_field(i), None, is_unsafe);
             }
             syn::Member::Unnamed(idx) => {
-                self.push_callsite(idx, self.resolver.resolve_field_index(idx), None);
+                self.push_callsite(
+                    idx,
+                    self.resolver.resolve_field_index(idx),
+                    None,
+                    self.scope_unsafe > 0,
+                );
             }
         }
     }
 
     fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
-        self.push_callsite(i, self.resolver.resolve_method(i), None);
+        let is_unsafe = self.resolver.resolve_unsafe_ident(i) && self.scope_unsafe > 0;
+        self.push_callsite(i, self.resolver.resolve_method(i), None, is_unsafe);
     }
 }
 
 /// Load the Rust file at the filepath and scan it
 pub fn scan_file(
+    crate_name: &str,
     filepath: &FilePath,
     resolver: &Resolver,
     scan_results: &mut ScanResults,
+    sinks: HashSet<IdentPath>,
 ) -> Result<()> {
     debug!("Scanning file: {:?}", filepath);
 
@@ -682,8 +821,9 @@ pub fn scan_file(
     let syntax_tree = syn::parse_file(&src)?;
 
     // Initialize data structures
-    let file_resolver = FileResolver::new(resolver, filepath)?;
+    let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
     let mut scanner = Scanner::new(filepath, file_resolver, scan_results);
+    scanner.add_sinks(sinks);
 
     // Scan file contents
     scanner.scan_file(&syntax_tree);
@@ -693,17 +833,24 @@ pub fn scan_file(
 
 /// Try to run scan_file, reporting any errors back to the user
 pub fn try_scan_file(
+    crate_name: &str,
     filepath: &FilePath,
     resolver: &Resolver,
     scan_results: &mut ScanResults,
+    sinks: HashSet<IdentPath>,
 ) {
-    scan_file(filepath, resolver, scan_results).unwrap_or_else(|err| {
-        warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
-    });
+    scan_file(crate_name, filepath, resolver, scan_results, sinks).unwrap_or_else(
+        |err| {
+            warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
+        },
+    );
 }
 
-/// Scan the supplied crate
-pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
+/// Scan the supplied crate with an additional list of sinks
+pub fn scan_crate_with_sinks(
+    crate_path: &FilePath,
+    sinks: HashSet<IdentPath>,
+) -> Result<ScanResults> {
     info!("Scanning crate: {:?}", crate_path);
 
     // Make sure the path is a crate
@@ -717,6 +864,8 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
         return Err(anyhow!("Path is not a crate; missing Cargo.toml: {:?}", crate_path));
     }
 
+    let crate_name = util::load_cargo_toml(crate_path)?.name;
+
     let resolver = Resolver::new(crate_path)?;
 
     let mut scan_results = ScanResults::new();
@@ -726,13 +875,25 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
     let src_dir = crate_path.join(FilePath::new("src"));
     if src_dir.is_dir() {
         for entry in util::fs::walk_files_with_extension(&src_dir, "rs") {
-            try_scan_file(entry.as_path(), &resolver, &mut scan_results);
+            try_scan_file(
+                &crate_name,
+                entry.as_path(),
+                &resolver,
+                &mut scan_results,
+                sinks.clone(),
+            );
         }
     } else {
         info!("crate has no src dir; looking for a single lib.rs file instead");
         let lib_file = crate_path.join(FilePath::new("lib.rs"));
         if lib_file.is_file() {
-            try_scan_file(lib_file.as_path(), &resolver, &mut scan_results);
+            try_scan_file(
+                &crate_name,
+                lib_file.as_path(),
+                &resolver,
+                &mut scan_results,
+                sinks,
+            );
         } else {
             warn!(
                 "unable to find src dir or lib.rs file; \
@@ -743,4 +904,9 @@ pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
     }
 
     Ok(scan_results)
+}
+
+/// Scan the supplied crate
+pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
+    scan_crate_with_sinks(crate_path, HashSet::new())
 }

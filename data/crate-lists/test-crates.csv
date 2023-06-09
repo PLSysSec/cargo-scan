@@ -1,6 +1,7 @@
 name
 caller-checked
 dummy
+fns-closures
 fnv_minimal
 inline-ex
 libc-ex
