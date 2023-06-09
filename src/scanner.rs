@@ -196,8 +196,30 @@ impl<'a> Scanner<'a> {
         }
     }
 
+    // Return true if the attributes imply the code should be skipped
+    pub fn skip_attr(&self, attr: &'a syn::Attribute) -> bool {
+        let path = attr.path();
+        if path.is_ident("cfg_args") || path.is_ident("cfg") {
+            let syn::Meta::List(l) = &attr.meta else { return false };
+            let args = &l.tokens;
+            info!("cfg_args: {}", args);
+            // TODO
+            false
+        } else {
+            false
+        }
+    }
+
+    // Return true if the attributes imply the code should be skipped
+    pub fn skip_attrs(&self, attrs: &'a [syn::Attribute]) -> bool {
+        attrs.iter().any(|x| self.skip_attr(x))
+    }
+
     pub fn scan_mod(&mut self, m: &'a syn::ItemMod) {
-        // TBD: reset use state; handle super keywords
+        if self.skip_attrs(&m.attrs) {
+            return;
+        }
+
         if let Some((_, items)) = &m.content {
             self.resolver.push_mod(&m.ident);
             for i in items {
@@ -221,6 +243,10 @@ impl<'a> Scanner<'a> {
     */
 
     fn scan_foreign_mod(&mut self, fm: &'a syn::ItemForeignMod) {
+        if self.skip_attrs(&fm.attrs) {
+            return;
+        }
+
         self.scope_unsafe += 1;
         for i in &fm.items {
             self.scan_foreign_item(i);
@@ -245,6 +271,10 @@ impl<'a> Scanner<'a> {
     */
 
     fn scan_trait(&mut self, t: &'a syn::ItemTrait) {
+        if self.skip_attrs(&t.attrs) {
+            return;
+        }
+
         let t_name = self.resolver.resolve_def(&t.ident);
         let t_unsafety = t.unsafety;
         if t_unsafety.is_some() {
@@ -255,6 +285,10 @@ impl<'a> Scanner<'a> {
     }
 
     fn scan_impl(&mut self, imp: &'a syn::ItemImpl) {
+        if self.skip_attrs(&imp.attrs) {
+            return;
+        }
+
         self.resolver.push_impl(imp);
 
         if let Some((_, tr, _)) = &imp.trait_ {
@@ -312,10 +346,18 @@ impl<'a> Scanner<'a> {
     */
 
     fn scan_fn_decl(&mut self, f: &'a syn::ItemFn) {
+        if self.skip_attrs(&f.attrs) {
+            return;
+        }
+
         self.scan_fn(&f.sig, &f.block, &f.vis);
     }
 
     fn scan_method(&mut self, m: &'a syn::ImplItemFn) {
+        if self.skip_attrs(&m.attrs) {
+            return;
+        }
+
         // NB: may or may not be a method, if there is no self keyword
         self.scan_fn(&m.sig, &m.block, &m.vis);
     }
