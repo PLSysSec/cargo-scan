@@ -365,52 +365,31 @@ impl CanonicalType {
     }
 
     pub fn is_raw_ptr(&self) -> bool {
-        if let TypeKind::RawPointer = self.ty_kind {
-            return true;
-        }
-        false
+        matches!(self.ty_kind, TypeKind::RawPointer)
     }
 
     pub fn is_callable(&self) -> bool {
-        if let TypeKind::Callable(_) = self.ty_kind {
-            return true;
-        }
-        false
+        matches!(&self.ty_kind, TypeKind::Callable(_))
     }
 
     pub fn is_dyn_trait(&self) -> bool {
-        if let TypeKind::DynTrait = self.ty_kind {
-            return true;
-        }
-        false
+        matches!(self.ty_kind, TypeKind::DynTrait)
     }
 
     pub fn is_generic(&self) -> bool {
-        if let TypeKind::Generic = self.ty_kind {
-            return true;
-        }
-        false
+        matches!(self.ty_kind, TypeKind::Generic)
     }
 
     pub fn is_closure(&self) -> bool {
-        if let TypeKind::Callable(CallableKind::Closure) = &self.ty_kind {
-            return true;
-        }
-        false
+        matches!(&self.ty_kind, TypeKind::Callable(crate::ident::CallableKind::Closure))
     }
 
     pub fn is_union_field(&self) -> bool {
-        if let TypeKind::UnionFld = self.ty_kind {
-            return true;
-        }
-        false
+        matches!(self.ty_kind, TypeKind::UnionFld)
     }
 
     pub fn is_mut_static(&self) -> bool {
-        if let TypeKind::StaticMut = self.ty_kind {
-            return true;
-        }
-        false
+        matches!(self.ty_kind, TypeKind::StaticMut)
     }
 
     pub fn is_function(&self) -> bool {
