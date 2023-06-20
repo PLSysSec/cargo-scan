@@ -25,6 +25,41 @@ use std::io::Read;
 use std::path::Path as FilePath;
 use syn::spanned::Spanned;
 
+/// Lines of Code tracker
+#[derive(Debug, Default)]
+pub struct LoCTracker {
+    instances: usize,
+    lines: usize,
+    zero_size_lines: usize,
+}
+impl LoCTracker {
+    /// Create an empty tracker
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    /// Add a syn Spanned object
+    pub fn add_span<S: Spanned>(&mut self, s: S) {
+        self.instances += 1;
+        let start = s.span().start().line;
+        let end = s.span().end().line;
+        if start == end {
+            self.zero_size_lines += 1;
+        } else {
+            // Could add 1 here, but we choose to instead
+            // track zero-sized lines separately
+            self.lines += end - start;
+        }
+    }
+
+    /// Attempt to summarize the tracker as a single "lines of code" number
+    ///
+    /// This overapproximates by counting zero-sized lines as a full line.
+    pub fn as_loc(&self) -> usize {
+        self.lines + self.zero_size_lines
+    }
+}
+
 /// Results of a scan
 ///
 /// Holds the intermediate state between scans which doesn't hold references
@@ -46,6 +81,12 @@ pub struct ScanResults {
 
     pub skipped_macros: usize,
     pub skipped_fn_calls: usize,
+
+    /* Tracking lines of code (LoC) and skipped/unsupported cases */
+    pub total_loc: LoCTracker,
+    pub effects_loc: LoCTracker,
+    pub skipped_macros_todo: LoCTracker,
+    pub skipped_fn_calls_todo: LoCTracker,
 }
 
 impl ScanResults {
@@ -169,6 +210,8 @@ impl<'a> Scanner<'a> {
     */
 
     pub fn scan_file(&mut self, f: &'a syn::File) {
+        // track lines of code (LoC) at the file level
+        self.data.total_loc.add_span(f);
         // scan the file and return a list of all calls in it
         for i in &f.items {
             self.scan_item(i);
@@ -227,6 +270,7 @@ impl<'a> Scanner<'a> {
 
     pub fn scan_mod(&mut self, m: &'a syn::ItemMod) {
         if self.skip_attrs(&m.attrs) {
+            // TODO track LoC
             return;
         }
 
