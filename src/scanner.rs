@@ -39,7 +39,7 @@ impl LoCTracker {
     }
 
     /// Add a syn Spanned object
-    pub fn add_span<S: Spanned>(&mut self, s: S) {
+    pub fn add<S: Spanned>(&mut self, s: S) {
         self.instances += 1;
         let start = s.span().start().line;
         let end = s.span().end().line;
@@ -50,6 +50,11 @@ impl LoCTracker {
             // track zero-sized lines separately
             self.lines += end - start;
         }
+    }
+
+    /// Return true if no spans were added
+    pub fn is_empty(&self) -> bool {
+        self.instances == 0
     }
 
     /// Attempt to summarize the tracker as a single "lines of code" number
@@ -79,14 +84,17 @@ pub struct ScanResults {
     call_graph: DiGraph<CanonicalPath, SrcLoc>,
     node_idxs: HashMap<CanonicalPath, NodeIndex>,
 
-    pub skipped_macros: usize,
-    pub skipped_fn_calls: usize,
-
     /* Tracking lines of code (LoC) and skipped/unsupported cases */
     pub total_loc: LoCTracker,
-    pub effects_loc: LoCTracker,
-    pub skipped_macros_todo: LoCTracker,
-    pub skipped_fn_calls_todo: LoCTracker,
+    pub skipped_macros: LoCTracker,
+    pub skipped_conditional_code: LoCTracker,
+    pub skipped_fn_calls: LoCTracker,
+    pub skipped_other: LoCTracker,
+
+    // TODO other cases:
+    pub _effects_loc: LoCTracker,
+    pub _skipped_attributes: LoCTracker,
+    pub _skipped_build_rs: LoCTracker,
 }
 
 impl ScanResults {
@@ -211,7 +219,7 @@ impl<'a> Scanner<'a> {
 
     pub fn scan_file(&mut self, f: &'a syn::File) {
         // track lines of code (LoC) at the file level
-        self.data.total_loc.add_span(f);
+        self.data.total_loc.add(f);
         // scan the file and return a list of all calls in it
         for i in &f.items {
             self.scan_item(i);
@@ -228,15 +236,17 @@ impl<'a> Scanner<'a> {
             syn::Item::Fn(fun) => self.scan_fn_decl(fun),
             syn::Item::Trait(t) => self.scan_trait(t),
             syn::Item::ForeignMod(fm) => self.scan_foreign_mod(fm),
-            syn::Item::Macro(_) => {
-                self.data.skipped_macros += 1;
+            syn::Item::Macro(m) => {
+                self.data.skipped_macros.add(m);
             }
-            _ => (),
-            // For all syntax elements see
-            // https://docs.rs/syn/latest/syn/enum.Item.html
-            // Potentially interesting:
-            // Const(ItemConst), Static(ItemStatic) -- for information flow
+            other => {
+                self.data.skipped_other.add(other);
+            }
         }
+        // For all syntax elements see
+        // https://docs.rs/syn/latest/syn/enum.Item.html
+        // Potentially interesting:
+        // Const(ItemConst), Static(ItemStatic) -- for information flow
     }
 
     // Quickfix to decide when to skip a CFG attribute
@@ -270,7 +280,7 @@ impl<'a> Scanner<'a> {
 
     pub fn scan_mod(&mut self, m: &'a syn::ItemMod) {
         if self.skip_attrs(&m.attrs) {
-            // TODO track LoC
+            self.data.skipped_conditional_code.add(m);
             return;
         }
 
@@ -298,6 +308,7 @@ impl<'a> Scanner<'a> {
 
     fn scan_foreign_mod(&mut self, fm: &'a syn::ItemForeignMod) {
         if self.skip_attrs(&fm.attrs) {
+            self.data.skipped_conditional_code.add(fm);
             return;
         }
 
@@ -311,10 +322,12 @@ impl<'a> Scanner<'a> {
     fn scan_foreign_item(&mut self, i: &'a syn::ForeignItem) {
         match i {
             syn::ForeignItem::Fn(f) => self.resolver.scan_foreign_fn(f),
-            syn::ForeignItem::Macro(_) => {
-                self.data.skipped_macros += 1;
+            syn::ForeignItem::Macro(m) => {
+                self.data.skipped_macros.add(m);
             }
-            _ => {}
+            other => {
+                self.data.skipped_other.add(other);
+            }
         }
         // Ignored: Static, Type, Macro, Verbatim
         // https://docs.rs/syn/latest/syn/enum.ForeignItem.html
@@ -326,6 +339,7 @@ impl<'a> Scanner<'a> {
 
     fn scan_trait(&mut self, t: &'a syn::ItemTrait) {
         if self.skip_attrs(&t.attrs) {
+            self.data.skipped_conditional_code.add(t);
             return;
         }
 
@@ -340,6 +354,7 @@ impl<'a> Scanner<'a> {
 
     fn scan_impl(&mut self, imp: &'a syn::ItemImpl) {
         if self.skip_attrs(&imp.attrs) {
+            self.data.skipped_conditional_code.add(imp);
             return;
         }
 
@@ -354,13 +369,15 @@ impl<'a> Scanner<'a> {
                 syn::ImplItem::Fn(m) => {
                     self.scan_method(m);
                 }
-                syn::ImplItem::Macro(_) => {
-                    self.data.skipped_macros += 1;
+                syn::ImplItem::Macro(m) => {
+                    self.data.skipped_macros.add(m);
                 }
                 syn::ImplItem::Verbatim(v) => {
                     self.syn_warning("skipping Verbatim expression", v);
                 }
-                _ => (),
+                other => {
+                    self.data.skipped_other.add(other);
+                }
             }
         }
 
@@ -401,6 +418,7 @@ impl<'a> Scanner<'a> {
 
     fn scan_fn_decl(&mut self, f: &'a syn::ItemFn) {
         if self.skip_attrs(&f.attrs) {
+            self.data.skipped_conditional_code.add(f);
             return;
         }
 
@@ -409,6 +427,7 @@ impl<'a> Scanner<'a> {
 
     fn scan_method(&mut self, m: &'a syn::ImplItemFn) {
         if self.skip_attrs(&m.attrs) {
+            self.data.skipped_conditional_code.add(m);
             return;
         }
 
@@ -470,8 +489,8 @@ impl<'a> Scanner<'a> {
             syn::Stmt::Local(l) => self.scan_fn_local(l),
             syn::Stmt::Expr(e, _semi) => self.scan_expr(e),
             syn::Stmt::Item(i) => self.scan_item_in_fn(i),
-            syn::Stmt::Macro(_) => {
-                self.data.skipped_macros += 1;
+            syn::Stmt::Macro(m) => {
+                self.data.skipped_macros.add(m);
             }
         }
     }
@@ -583,8 +602,8 @@ impl<'a> Scanner<'a> {
                     self.scan_fn_statement(s);
                 }
             }
-            syn::Expr::Macro(_) => {
-                self.data.skipped_macros += 1;
+            syn::Expr::Macro(m) => {
+                self.data.skipped_macros.add(m);
             }
             syn::Expr::Match(x) => {
                 self.scan_expr(&x.expr);
@@ -865,13 +884,13 @@ impl<'a> Scanner<'a> {
                 // Note: not a method call!
                 self.scan_expr_call_field(&x.member)
             }
-            syn::Expr::Macro(_) => {
-                self.data.skipped_macros += 1;
+            syn::Expr::Macro(m) => {
+                self.data.skipped_macros.add(m);
             }
-            _ => {
+            other => {
                 // anything else could be a function, too -- could return a closure
                 // or fn pointer. No way to tell w/o type information.
-                self.data.skipped_fn_calls += 1;
+                self.data.skipped_fn_calls.add(other);
             }
         }
     }
