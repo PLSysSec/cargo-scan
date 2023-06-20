@@ -155,6 +155,8 @@ pub enum Effect {
     StaticMut(CanonicalPath),
     /// Accessing an external mutable variable
     StaticExt(CanonicalPath),
+    /// Creation of function pointer
+    FnPtrCreation,
     /// Other function call -- not dangerous
     OtherCall,
 }
@@ -168,6 +170,7 @@ impl Effect {
             Self::UnionField(_) => None,
             Self::StaticMut(_) => None,
             Self::StaticExt(_) => None,
+            Self::FnPtrCreation => None,
             Self::OtherCall => None,
         }
     }
@@ -181,6 +184,7 @@ impl Effect {
             Self::UnionField(_) => "[UnionField]",
             Self::StaticMut(_) => "[StaticMutVar]",
             Self::StaticExt(_) => "[StaticExtVar]",
+            Self::FnPtrCreation => "[FnPtrCreation]",
             Self::OtherCall => "[None]",
         }
     }

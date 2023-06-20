@@ -305,6 +305,7 @@ pub enum TypeKind {
     Generic,
     UnionFld,
     StaticMut,
+    Function,
     #[default]
     // Default case. Types that we have fully resolved
     // and do not need extra information about.
@@ -419,6 +420,14 @@ impl CanonicalType {
             return true;
         }
         false
+    }
+
+    pub fn is_function(&self) -> bool {
+        matches!(self.ty_kind, TypeKind::Function)
+    }
+
+    pub fn is_fn_ptr(&self) -> bool {
+        matches!(&self.ty_kind, TypeKind::Callable(crate::ident::CallableKind::FnPtr))
     }
 
     pub fn get_callable_kind(&self) -> Option<CallableKind> {

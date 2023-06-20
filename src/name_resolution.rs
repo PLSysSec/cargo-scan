@@ -27,8 +27,8 @@ use ra_ap_ide::{AnalysisHost, FileId, LineCol, RootDatabase, TextSize};
 use ra_ap_ide_db::defs::{Definition, IdentClass};
 use ra_ap_paths::AbsPathBuf;
 use ra_ap_project_model::{
-    CargoConfig, CargoFeatures, InvocationLocation, InvocationStrategy, ProjectManifest,
-    RustcSource, UnsetTestCrates,
+    CargoConfig, CargoFeatures, InvocationLocation, InvocationStrategy, RustcSource,
+    UnsetTestCrates,
 };
 
 use ra_ap_rust_analyzer::cli::load_cargo::LoadCargoConfig;
@@ -99,9 +99,7 @@ impl Resolver {
         }
 
         // TODO: Maybe allow to load and analyze multiple crates
-        let manifest = ProjectManifest::discover_single(&abs_path)?;
         let cargo_config = &Self::cargo_config();
-
         let progress = &|p| debug!("Workspace loading progress: {:?}", p);
 
         let load_config = LoadCargoConfig {
@@ -242,7 +240,10 @@ impl Resolver {
             let data = db.function_data(func_id);
             Ok(data.has_unsafe_kw())
         } else {
-            is_unsafe_callable_ty(def, db)
+            // Not necessary for v0, as we do not always have enough
+            // information for function pointers and closures
+            // is_unsafe_callable_ty(def, db)
+            Ok(false)
         }
     }
 
@@ -503,7 +504,10 @@ fn get_canonical_type(
         Definition::SelfType(it) => Some(it.self_ty(db)),
         Definition::TypeAlias(it) => Some(it.ty(db)),
         Definition::BuiltinType(it) => Some(it.ty(db)),
-        Definition::Function(it) => Some(it.ret_type(db)),
+        Definition::Function(it) => {
+            ty_kind = TypeKind::Function;
+            Some(it.ret_type(db))
+        }
         Definition::Static(it) => {
             if it.is_mut(db) {
                 ty_kind = TypeKind::StaticMut;
@@ -548,12 +552,6 @@ fn get_canonical_type(
     }
 
     let ty = ty.unwrap();
-    if ty.is_closure() {
-        ty_kind = TypeKind::Callable(crate::ident::CallableKind::Closure)
-    }
-    if ty.is_fn() {
-        ty_kind = TypeKind::Callable(crate::ident::CallableKind::FnPtr)
-    }
     if ty.impls_fnonce(db) {
         // impls_fnonce can be used in RA to check if a type is callable.
         // FnOnce is a supertait of FnMut and Fn, so any callable type
@@ -561,6 +559,12 @@ fn get_canonical_type(
         // TODO: More sophisticated checks are needed to precisely
         // determine which trait is actually implemented.
         ty_kind = TypeKind::Callable(crate::ident::CallableKind::FnOnce)
+    }
+    if ty.is_closure() {
+        ty_kind = TypeKind::Callable(crate::ident::CallableKind::Closure)
+    }
+    if ty.is_fn() {
+        ty_kind = TypeKind::Callable(crate::ident::CallableKind::FnPtr)
     }
     if ty.is_raw_ptr() {
         ty_kind = TypeKind::RawPointer
@@ -604,7 +608,7 @@ fn get_canonical_type(
 }
 
 //Note: This is still under development
-fn is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
+fn _is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
     match def {
         Definition::Const(c) => {
             let data = db.const_data(c.into());
@@ -631,7 +635,7 @@ fn is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
                 substs,
             ) = kind
             {
-                return is_unsafe_callable_in_smart_ptr(substs);
+                return _is_unsafe_callable_in_smart_ptr(substs);
             }
         }
         Definition::Local(l) => {
@@ -651,7 +655,7 @@ fn is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
                         TyKind::Adt(
                             chalk_ir::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
                             substs,
-                        ) => is_unsafe_callable_in_smart_ptr(substs),
+                        ) => _is_unsafe_callable_in_smart_ptr(substs),
                         _ => Ok(false),
                     }
                 })
@@ -675,7 +679,7 @@ fn is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
                 substs,
             ) = kind
             {
-                return is_unsafe_callable_in_smart_ptr(substs);
+                return _is_unsafe_callable_in_smart_ptr(substs);
             }
         }
         _ => (),
@@ -685,7 +689,7 @@ fn is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
 }
 
 // This case is for callable items inside smart pointers, like 'Box<unsafe fn(i32, i32) -> i32>'
-fn is_unsafe_callable_in_smart_ptr(substs: &ra_ap_hir_ty::Substitution) -> Result<bool> {
+fn _is_unsafe_callable_in_smart_ptr(substs: &ra_ap_hir_ty::Substitution) -> Result<bool> {
     substs
         .iter(Interner)
         .find(|subst| match subst.ty(Interner) {

@@ -188,11 +188,33 @@ impl<'a> Scanner<'a> {
             syn::Item::Macro(_) => {
                 self.data.skipped_macros += 1;
             }
+            syn::Item::Struct(s) => self.scan_fields(&s.fields),
+            syn::Item::Enum(e) => self.scan_enum_variants(&e.variants),
+            syn::Item::Union(u) => self.scan_fields(&u.fields.to_owned().into()),
             _ => (),
             // For all syntax elements see
             // https://docs.rs/syn/latest/syn/enum.Item.html
             // Potentially interesting:
             // Const(ItemConst), Static(ItemStatic) -- for information flow
+        }
+    }
+
+    fn scan_enum_variants(
+        &mut self,
+        variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
+    ) {
+        variants.into_iter().for_each(|var| self.scan_fields(&var.fields))
+    }
+
+    fn scan_fields(&mut self, fields: &syn::Fields) {
+        if let syn::Fields::Named(f) = fields {
+            let ident = f.named.first().unwrap().ident.clone().unwrap();
+            let ty = self.resolver.resolve_field_type(&ident);
+            // Function pointer creation
+            if ty.is_function() || ty.is_fn_ptr() {
+                let cp = self.resolver.resolve_ident(&ident);
+                self.push_effect(ident.span(), cp, Effect::FnPtrCreation);
+            }
         }
     }
 
@@ -403,6 +425,19 @@ impl<'a> Scanner<'a> {
             EffectBlock::new_fn(self.filepath, body, f_name, vis)
         };
         self.scope_effect_blocks.push(effect_block);
+
+        // Scan function arguments for function pointer creation
+        for arg in &f_sig.inputs {
+            if let syn::FnArg::Typed(pat_ty) = arg {
+                if let syn::Pat::Ident(pat_ident) = *pat_ty.pat.to_owned() {
+                    let ty = self.resolver.resolve_field_type(&pat_ident.ident);
+                    if ty.is_fn_ptr() {
+                        let cp = self.resolver.resolve_ident(&pat_ident.ident);
+                        self.push_effect(pat_ty.span(), cp, Effect::FnPtrCreation);
+                    }
+                }
+            }
+        }
 
         // ***** Scan body *****
         for s in &body.stmts {
@@ -640,6 +675,11 @@ impl<'a> Scanner<'a> {
 
     fn scan_path(&mut self, x: &'a syn::Path) {
         let ty = self.resolver.resolve_path_type(x);
+        // Function pointer creation
+        if ty.is_function() || ty.is_fn_ptr() {
+            let cp = self.resolver.resolve_path(x);
+            self.push_effect(x.span(), cp, Effect::FnPtrCreation);
+        }
         // Accessing a mutable global variable
         if ty.is_mut_static() {
             let cp = self.resolver.resolve_path(x);
@@ -745,20 +785,29 @@ impl<'a> Scanner<'a> {
     where
         S: Debug + Spanned,
     {
-        let caller = &self.scope_fns.last().expect("not inside a function!").fn_name;
+        let caller = match &self.scope_fns.last() {
+            Some(fn_dec) => fn_dec.fn_name.to_owned(),
+            None => {
+                let mut path = callee.to_owned();
+                // Pop ident to get the path of the containting module/data type
+                path.pop_ident();
+                path
+            }
+        };
 
         let eff = EffectInstance::new_effect(
             self.filepath,
-            caller.clone(),
+            caller,
             callee,
             &eff_span,
             eff_type,
         );
         if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
             effect_block.push_effect(eff.clone())
-        } else {
-            self.syn_warning("unexpected effect found outside an effect block", eff_span);
         }
+        // else {
+        //     self.syn_warning("unexpected effect found outside an effect block", eff_span);
+        // }
         self.data.effects.push(eff);
     }
 
