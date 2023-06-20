@@ -1,10 +1,11 @@
 //! A hacky in-house resolver for Rust identifiers
 
 use super::effect::SrcLoc;
-use super::ident::{CanonicalPath, CanonicalType, Ident, IdentPath};
-use super::resolve::Resolve;
+use super::ident::{CanonicalPath, CanonicalType, IdentPath};
+use super::resolve::{ident_from_syn, Resolve};
 
 use anyhow::Result;
+use itertools::Itertools;
 use log::{debug, warn};
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -14,6 +15,29 @@ use syn::{self, spanned::Spanned};
 /*
     Hacky functions to (incorrectly) infer modules from filepath
 */
+
+/// Create a pseudo-identifier for closure definitions
+/// using their location in the source code
+pub fn create_closure_ident<S>(filepath: &FilePath, s: &S) -> Option<String>
+where
+    S: Spanned,
+{
+    let invariant = |s: &str| s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
+
+    let dir = filepath
+        .parent()?
+        .to_str()?
+        .replace('-', "_")
+        .split('/')
+        .filter(|x| invariant(x))
+        .join("::");
+
+    let file = filepath.file_name()?.to_str()?.strip_suffix(".rs")?.to_string();
+    let start_line = s.span().start().line.to_string();
+    let start_col = s.span().start().column.to_string();
+
+    Some(format!("{}::{}::{}::{}::{}", "CLOSURE", dir, file, start_line, start_col))
+}
 
 fn infer_module(filepath: &FilePath) -> Vec<String> {
     let post_src: Vec<String> = filepath
@@ -150,7 +174,7 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         result.append_path(&self.get_mod_scope());
 
         // Push definition ident
-        result.push_ident(&Ident::from_syn(i));
+        result.push_ident(&ident_from_syn(i));
 
         result
     }
@@ -390,13 +414,13 @@ impl<'a> HackyResolver<'a> {
     }
 
     fn get_mod_scope(&self) -> IdentPath {
-        IdentPath::from_idents(self.scope_mods.iter().cloned().map(Ident::from_syn))
+        IdentPath::from_idents(self.scope_mods.iter().cloned().map(ident_from_syn))
     }
 
     fn aggregate_path(p: &[&'a syn::Ident]) -> CanonicalPath {
         let mut result = IdentPath::new_empty();
         for &i in p {
-            result.push_ident(&Ident::from_syn(i));
+            result.push_ident(&ident_from_syn(i));
         }
         CanonicalPath::from_path(result)
     }
@@ -404,7 +428,7 @@ impl<'a> HackyResolver<'a> {
     fn aggregate_path_type(p: &[&'a syn::Ident]) -> CanonicalType {
         let mut result = IdentPath::new_empty();
         for &i in p {
-            result.push_ident(&Ident::from_syn(i));
+            result.push_ident(&ident_from_syn(i));
         }
         CanonicalType::new_owned_string(result.to_string())
     }

@@ -37,17 +37,17 @@ fn main() -> Result<()> {
     }
 
     if args.verbose {
-        if results.skipped_fn_calls > 0 {
+        if !results.skipped_fn_calls.is_empty() {
             eprintln!(
-                "Note: analysis skipped {} function calls \
+                "Note: analysis skipped {} LoC of function calls \
                 (closures or other complex expressions called as functions)",
-                results.skipped_fn_calls
+                results.skipped_fn_calls.as_loc()
             );
         }
-        if results.skipped_macros > 0 {
+        if !results.skipped_macros.is_empty() {
             eprintln!(
-                "Note: analysis skipped {} macro invocations",
-                results.skipped_macros
+                "Note: analysis skipped {} LoC of macro invocations",
+                results.skipped_macros.as_loc()
             );
         }
     }
