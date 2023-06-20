@@ -15,6 +15,14 @@ use std::fmt::Display;
 use std::path::Path as FilePath;
 use syn::{self, spanned::Spanned};
 
+/*
+    Conversion functions from syn to internal ident data model
+*/
+
+pub fn ident_from_syn(i: &syn::Ident) -> Ident {
+    Ident::new_owned(i.to_string())
+}
+
 /// Common interface for FileResolver and HackyResolver
 ///
 /// Abstracts the functionality for resolution that is needed by Scanner.
@@ -79,7 +87,7 @@ impl<'a> FileResolver<'a> {
         debug!("Resolving: {} ({})", i, s);
         // Add 1 to column to avoid weird off-by-one errors
         s.add1();
-        let i = Ident::from_syn(i);
+        let i = ident_from_syn(i);
         self.resolver.resolve_ident(s, i)
     }
 
@@ -88,7 +96,7 @@ impl<'a> FileResolver<'a> {
         debug!("Resolving FFI: {} ({})", i, s);
         // Add 1 to column to avoid weird off-by-one errors
         s.add1();
-        let i_owned = Ident::from_syn(i);
+        let i_owned = ident_from_syn(i);
         if self.resolver.is_ffi(s, i_owned)? {
             Ok(Some(self.resolve_core(i)?))
         } else {
@@ -101,7 +109,7 @@ impl<'a> FileResolver<'a> {
         debug!("Resolving Unsafe Call: {} ({})", i, s);
         // Add 1 to column to avoid weird off-by-one errors
         s.add1();
-        let i_owned = Ident::from_syn(i);
+        let i_owned = ident_from_syn(i);
         if self.resolver.is_unsafe_call(s, i_owned)? {
             Ok(true)
         } else {
@@ -114,7 +122,7 @@ impl<'a> FileResolver<'a> {
         debug!("Resolving type: {} ({})", i, s);
         // Add 1 to column to avoid weird off-by-one errors
         s.add1();
-        let i = Ident::from_syn(i);
+        let i = ident_from_syn(i);
         self.resolver.resolve_type(s, i)
     }
 
