@@ -732,6 +732,8 @@ impl<'a> Scanner<'a> {
 
         let cl_name = CanonicalPath::new_owned(ident.unwrap());
         self.push_effect(x.span(), cl_name, Effect::ClosureCreation);
+
+        self.scan_expr(&x.body);
     }
 
     fn scan_deref(&mut self, x: &'a syn::Expr) {
