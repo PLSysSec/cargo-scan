@@ -864,6 +864,7 @@ impl<'a> Scanner<'a> {
         self.data.effects.push(eff);
     }
 
+    // f in a call of the form (f)(args)
     fn scan_expr_call(&mut self, f: &'a syn::Expr) {
         match f {
             syn::Expr::Path(p) => {
@@ -888,6 +889,8 @@ impl<'a> Scanner<'a> {
             other => {
                 // anything else could be a function, too -- could return a closure
                 // or fn pointer. No way to tell w/o type information.
+                let s = SrcLoc::from_span(self.filepath, other);
+                info!("Skipped function call {} ({:?})", s, other);
                 self.data.skipped_fn_calls.add(other);
             }
         }
