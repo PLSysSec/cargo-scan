@@ -1,12 +1,14 @@
 ===== Crate Summary =====
 Number of effects by crate:
-toy-crates: 15
+toy-crates: 17
 unsafe-test: 9
+fns-closures: 7
 permissions-ex: 6
 caller-checked: 4
-fns-closures: 4
+resolution-ex: 4
 libc-ex: 2
 num_cpus_minimal: 2
+parsing-ex: 1
 ===== Crate Totals =====
-7 crates with 1 or more effects
-6 crates with 0 effects
+9 crates with 1 or more effects
+4 crates with 0 effects
