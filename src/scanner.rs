@@ -765,29 +765,8 @@ impl<'a> Scanner<'a> {
             return;
         }
 
-        let vis = syn::Visibility::Inherited;
         let cl_name = CanonicalPath::new_owned(ident.unwrap());
-        let cl_dec = FnDec::new(self.filepath, &x.span(), cl_name.clone(), &vis);
-
-        // Always push the new closure declaration before scanning the
-        // body so we have access to the closure its in for unsafe blocks
-        self.scope_fns.push(cl_dec.clone());
-
-        // Notify ScanResults
-        self.data.add_fn_dec(cl_dec);
-
-        // Update effect blocks
-        let effect_block = EffectBlock::new_fn(self.filepath, &x.body, cl_name, &vis);
-        self.scope_effect_blocks.push(effect_block);
-
-        // ***** Scan body *****
-        self.scan_expr(&x.body);
-
-        // Reset state
-        self.scope_fns.pop();
-
-        // Save effect block
-        self.data.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
+        self.push_effect(x.span(), cl_name, Effect::ClosureCreation);
     }
 
     fn scan_deref(&mut self, x: &'a syn::Expr) {

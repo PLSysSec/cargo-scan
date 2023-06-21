@@ -157,6 +157,8 @@ pub enum Effect {
     StaticExt(CanonicalPath),
     /// Creation of function pointer
     FnPtrCreation,
+    /// Closure creation
+    ClosureCreation,
     /// Other function call -- not dangerous
     OtherCall,
 }
@@ -171,6 +173,7 @@ impl Effect {
             Self::StaticMut(_) => None,
             Self::StaticExt(_) => None,
             Self::FnPtrCreation => None,
+            Self::ClosureCreation => None,
             Self::OtherCall => None,
         }
     }
@@ -185,6 +188,7 @@ impl Effect {
             Self::StaticMut(_) => "[StaticMutVar]",
             Self::StaticExt(_) => "[StaticExtVar]",
             Self::FnPtrCreation => "[FnPtrCreation]",
+            Self::ClosureCreation => "[ClosureCreation]",
             Self::OtherCall => "[None]",
         }
     }
