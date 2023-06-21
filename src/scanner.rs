@@ -240,33 +240,11 @@ impl<'a> Scanner<'a> {
             syn::Item::Macro(m) => {
                 self.data.skipped_macros.add(m);
             }
-            syn::Item::Struct(s) => self.scan_fields(&s.fields),
-            syn::Item::Enum(e) => self.scan_enum_variants(&e.variants),
-            syn::Item::Union(u) => self.scan_fields(&u.fields.to_owned().into()),
             _ => (),
             // For all syntax elements see
             // https://docs.rs/syn/latest/syn/enum.Item.html
             // Potentially interesting:
             // Const(ItemConst), Static(ItemStatic) -- for information flow
-        }
-    }
-
-    fn scan_enum_variants(
-        &mut self,
-        variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
-    ) {
-        variants.into_iter().for_each(|var| self.scan_fields(&var.fields))
-    }
-
-    fn scan_fields(&mut self, fields: &syn::Fields) {
-        if let syn::Fields::Named(f) = fields {
-            let ident = f.named.first().unwrap().ident.clone().unwrap();
-            let ty = self.resolver.resolve_field_type(&ident);
-            // Function pointer creation
-            if ty.is_function() || ty.is_fn_ptr() {
-                let cp = self.resolver.resolve_ident(&ident);
-                self.push_effect(ident.span(), cp, Effect::FnPtrCreation);
-            }
         }
     }
 
@@ -487,19 +465,6 @@ impl<'a> Scanner<'a> {
             EffectBlock::new_fn(self.filepath, body, f_name, vis)
         };
         self.scope_effect_blocks.push(effect_block);
-
-        // Scan function arguments for function pointer creation
-        for arg in &f_sig.inputs {
-            if let syn::FnArg::Typed(pat_ty) = arg {
-                if let syn::Pat::Ident(pat_ident) = *pat_ty.pat.to_owned() {
-                    let ty = self.resolver.resolve_field_type(&pat_ident.ident);
-                    if ty.is_fn_ptr() {
-                        let cp = self.resolver.resolve_ident(&pat_ident.ident);
-                        self.push_effect(pat_ty.span(), cp, Effect::FnPtrCreation);
-                    }
-                }
-            }
-        }
 
         // ***** Scan body *****
         for s in &body.stmts {
