@@ -33,7 +33,7 @@ pub trait Resolve<'a>: Sized {
     fn assert_top_level_invariant(&self);
 
     /*
-        Function resolution functions
+        Function resolution
     */
     fn resolve_ident(&self, i: &'a syn::Ident) -> CanonicalPath;
     fn resolve_method(&self, i: &'a syn::Ident) -> CanonicalPath;
@@ -44,12 +44,17 @@ pub trait Resolve<'a>: Sized {
     fn resolve_unsafe_ident(&self, p: &'a syn::Ident) -> bool;
 
     /*
-        Type resolution functions
+        Field and expression resolution
     */
     fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath;
+    fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath;
+    fn resolve_closure(&self, cl: &'a syn::ExprClosure) -> CanonicalPath;
+
+    /*
+        Type resolution
+    */
     fn resolve_path_type(&self, i: &'a syn::Path) -> CanonicalType;
     fn resolve_field_type(&self, i: &'a syn::Ident) -> CanonicalType;
-    fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath;
 
     /*
         Optional helper functions to inform the resolver of the scope
@@ -256,5 +261,11 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
 
     fn resolve_field_type(&self, i: &'a syn::Ident) -> CanonicalType {
         self.resolve_type_or_else(i, || self.backup.resolve_field_type(i))
+    }
+
+    fn resolve_closure(&self, cl: &'a syn::ExprClosure) -> CanonicalPath {
+        let s = SrcLoc::from_span(self.filepath, cl);
+        info!("Skipping closure resolution (using fallback) for {:?} ({})", cl, s);
+        self.backup.resolve_closure(cl)
     }
 }

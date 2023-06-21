@@ -18,7 +18,7 @@ use syn::{self, spanned::Spanned};
 
 /// Create a pseudo-identifier for closure definitions
 /// using their location in the source code
-pub fn create_closure_ident<S>(filepath: &FilePath, s: &S) -> Option<String>
+fn infer_closure_ident<S>(filepath: &FilePath, s: &S) -> Option<String>
 where
     S: Spanned,
 {
@@ -216,6 +216,15 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         // will conservatively consider it unsafe, and Scanner will
         // check if the call belongs inside an unsafe block.
         true
+    }
+
+    fn resolve_closure(&self, cl: &'a syn::ExprClosure) -> CanonicalPath {
+        if let Some(ident) = infer_closure_ident(self.filepath, &cl.span()) {
+            CanonicalPath::new_owned(ident)
+        } else {
+            let s = SrcLoc::from_span(self.filepath, &cl.span());
+            CanonicalPath::new_owned(format!("UNKNOWN_CLOSURE::{}", s))
+        }
     }
 }
 

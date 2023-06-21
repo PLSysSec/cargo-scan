@@ -7,7 +7,6 @@ use super::effect::{
     BlockType, Effect, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
     Visibility,
 };
-use super::hacky_resolver::create_closure_ident;
 use super::ident::{CanonicalPath, IdentPath};
 use super::resolve::{FileResolver, Resolve, Resolver};
 use super::sink::Sink;
@@ -720,17 +719,8 @@ impl<'a> Scanner<'a> {
     }
 
     fn scan_closure(&mut self, x: &'a syn::ExprClosure) {
-        // Create identifier for closure definition to handle it as any other function.
-        // TODO: remove this for v0
-        // TODO: inference functions like create_closure_ident
-        // should also ideally be abstracted behind Resolve and
-        // hacky_resolver to hide the implementation detail from Scanner.
-        let ident = create_closure_ident(self.filepath, &x.span());
-        if ident.is_none() {
-            return;
-        }
+        let cl_name = self.resolver.resolve_closure(x);
 
-        let cl_name = CanonicalPath::new_owned(ident.unwrap());
         self.push_effect(x.span(), cl_name, Effect::ClosureCreation);
 
         self.scan_expr(&x.body);
