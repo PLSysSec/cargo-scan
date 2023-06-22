@@ -1,5 +1,7 @@
 ===== Patterns =====
 Total instances of each effect pattern:
+[ClosureCreation]: 447
+[FnPtrCreation]: 350
 [UnsafeCall]: 103
 [FFI]: 21
 std::process: 15
