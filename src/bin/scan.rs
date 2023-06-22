@@ -22,9 +22,9 @@ struct Args {
     #[arg(short, long, default_value_t = false)]
     verbose: bool,
 
-    /// Include dependency effects
+    /// Include transitive effects in dependency crates
     #[arg(short, long, default_value_t = false)]
-    dependencies: bool,
+    transitive: bool,
 
     /// Path to download crates to for auditing
     #[clap(short = 'd', long = "crate-download-path", default_value = ".stats_tmp")]
@@ -35,7 +35,7 @@ fn main() -> Result<()> {
     cargo_scan::util::init_logging();
     let args = Args::parse();
 
-    let results = if args.dependencies {
+    let results = if args.transitive {
         let crate_path = args
             .crate_path
             .as_os_str()
