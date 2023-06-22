@@ -15,7 +15,7 @@ use std::path::PathBuf;
 use toml;
 
 use crate::download_crate;
-use crate::ident::CanonicalPath;
+use crate::ident::{CanonicalPath, IdentPath};
 use crate::policy::{DefaultPolicyType, PolicyFile};
 use crate::util::{self, load_cargo_toml};
 
@@ -396,6 +396,14 @@ pub fn create_new_audit_chain(
 
     println!("Finished creating policy chain");
     Ok(chain)
+}
+
+// Mirror of the above that returns HashSet of sinks
+pub fn create_dependency_sinks(
+    _args: Create,
+    _crate_download_path: &str,
+) -> Result<HashSet<IdentPath>> {
+    todo!()
 }
 
 /// Gets the package that matches the name and version if one exists in the project.
