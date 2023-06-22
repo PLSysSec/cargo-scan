@@ -47,6 +47,8 @@ fn main() -> Result<()> {
             format!("{}/crate.manifest", &args.crate_download_path),
             args.crate_download_path.clone(),
             false,
+            None,
+            None,
         );
 
         let sinks =

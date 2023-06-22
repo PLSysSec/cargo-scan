@@ -8,33 +8,23 @@ use flate2::read::GzDecoder;
 use log::info;
 use tar::Archive;
 
-fn get_crates_io_url(package: &Package) -> String {
+fn get_crates_io_url(package_name: &str, package_version: &str) -> String {
     format!(
         "https://crates.io/api/v1/crates/{}/{}/download",
-        package.name.as_str(),
-        package.version
+        package_name, package_version
     )
 }
 
-pub fn download_crate(package: &Package, download_dir: &str) -> Result<PathBuf> {
-    let url = match &package.source {
-        // TODO: This is a bit of a hack to handle crates.io urls. We should
-        //       handle non crates.io urls as well.
-        Some(source) => {
-            let source_str = source.url().as_str().to_string();
-            if source_str == "https://github.com/rust-lang/crates.io-index" {
-                get_crates_io_url(package)
-            } else {
-                source_str
-            }
-        }
-        None => get_crates_io_url(package),
-    };
-
+fn download_crate(
+    url: &str,
+    package_name: &str,
+    package_version: &str,
+    download_dir: &str,
+) -> Result<PathBuf> {
     let mut dst = Vec::new();
     let mut easy = Easy::new();
     easy.follow_location(true)?;
-    easy.url(&url)?;
+    easy.url(url)?;
 
     {
         let mut transfer = easy.transfer();
@@ -45,7 +35,7 @@ pub fn download_crate(package: &Package, download_dir: &str) -> Result<PathBuf> 
         transfer.perform()?;
     }
 
-    let package_dir_name = format!("{}-{}", package.name.as_str(), package.version);
+    let package_dir_name = format!("{}-{}", package_name, package_version);
     let tarball_name = format!("{}.tar.gz", package_dir_name);
     let mut download_dir = PathBuf::from(download_dir);
     download_dir.push(tarball_name.clone());
@@ -84,4 +74,41 @@ pub fn download_crate(package: &Package, download_dir: &str) -> Result<PathBuf> 
     download_dir.push(package_dir_name);
 
     Ok(download_dir)
+}
+
+/// Downloads the crate from the package name and version
+pub fn download_crate_from_info(
+    package_name: &str,
+    package_version: &str,
+    download_dir: &str,
+) -> Result<PathBuf> {
+    let url = get_crates_io_url(package_name, package_version);
+    download_crate(&url, package_name, package_version, download_dir)
+}
+
+/// Downloads the crate from the `cargo_lock::Package`
+pub fn download_crate_from_package(
+    package: &Package,
+    download_dir: &str,
+) -> Result<PathBuf> {
+    let url = match &package.source {
+        // TODO: This is a bit of a hack to handle crates.io urls. We should
+        //       handle non crates.io urls as well.
+        Some(source) => {
+            let source_str = source.url().as_str().to_string();
+            if source_str == "https://github.com/rust-lang/crates.io-index" {
+                get_crates_io_url(package.name.as_str(), &package.version.to_string())
+            } else {
+                source_str
+            }
+        }
+        None => get_crates_io_url(package.name.as_str(), &package.version.to_string()),
+    };
+
+    download_crate(
+        &url,
+        package.name.as_ref(),
+        &package.version.to_string(),
+        download_dir,
+    )
 }

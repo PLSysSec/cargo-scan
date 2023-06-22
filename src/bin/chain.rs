@@ -4,10 +4,11 @@ use cargo_scan::auditing::info::Config as AuditConfig;
 use cargo_scan::auditing::review::review_policy;
 use cargo_scan::effect::Effect;
 use cargo_scan::policy::PolicyFile;
-use cargo_scan::scanner;
+use cargo_scan::{download_crate, scanner};
 
 use anyhow::{anyhow, Result};
 use clap::{Args as ClapArgs, Parser, Subcommand, ValueEnum};
+use std::fs::create_dir_all;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug, Clone)]
@@ -50,6 +51,27 @@ impl CommandRunner for Command {
 
 impl CommandRunner for Create {
     fn run_command(self, args: OuterArgs) -> Result<()> {
+        if let (Some(crate_name), Some(crate_version)) =
+            (&self.download_root_crate, &self.download_version)
+        {
+            // TODO: Maybe force_overwrite should overwrite this crate as well?
+            // Make sure there isn't a directory at the crate_path
+            let crate_path = PathBuf::from(self.crate_path.clone());
+            if crate_path.exists() {
+                return Err(anyhow!(
+                    "Something already exists at the root crate path: {}",
+                    self.crate_path
+                ));
+            }
+
+            create_dir_all(crate_path)?;
+            download_crate::download_crate_from_info(
+                crate_name,
+                crate_version,
+                &args.crate_download_path,
+            )?;
+        }
+
         let chain = create_new_audit_chain(self, &args.crate_download_path)?;
         chain.save_to_file()?;
         Ok(())

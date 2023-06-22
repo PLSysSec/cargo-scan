@@ -210,17 +210,25 @@ impl AuditChain {
 #[derive(Clone, ClapArgs, Debug)]
 pub struct Create {
     /// Path to crate
-    crate_path: String,
+    pub crate_path: String,
     /// Path to manifest
-    manifest_path: String,
+    pub manifest_path: String,
 
     // TODO: Check to make sure it meets the format (clap supports this?)
     /// Default policy folder
     #[clap(short = 'p', long = "policy-path", default_value = ".audit_policies")]
-    policy_path: String,
+    pub policy_path: String,
 
     #[clap(short = 'f', long, default_value_t = false)]
-    force_overwrite: bool,
+    pub force_overwrite: bool,
+
+    /// Download the crate and save it to the crate_path instead of using an
+    /// existing crate. Contains the crate name and the stringified version.
+    #[clap(short = 'd', long, requires = "download_version")]
+    pub download_root_crate: Option<String>,
+
+    #[clap(long)]
+    pub download_version: Option<String>,
 }
 
 impl Create {
@@ -229,8 +237,17 @@ impl Create {
         manifest_path: String,
         policy_path: String,
         force_overwrite: bool,
+        download_root_crate: Option<String>,
+        download_version: Option<String>,
     ) -> Self {
-        Self { crate_path, manifest_path, policy_path, force_overwrite }
+        Self {
+            crate_path,
+            manifest_path,
+            policy_path,
+            force_overwrite,
+            download_root_crate,
+            download_version,
+        }
     }
 }
 
@@ -321,7 +338,7 @@ fn make_new_policy(
         PathBuf::from(args.crate_path.clone())
     } else {
         // TODO: Handle the case where we have a crate source not from crates.io
-        download_crate::download_crate(package, crate_download_path)?
+        download_crate::download_crate_from_package(package, crate_download_path)?
     };
 
     // Try to create a new default policy

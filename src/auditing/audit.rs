@@ -216,7 +216,7 @@ fn audit_effect_tree(
 //       will re-prompt the user once we resume auditing the policy. We would
 //       like to remember that they have already seen these effects during this
 //       audit
-/// Iterate through all the skipped annotaitons in the policy file and perform
+/// Iterate through all the skipped annotations in the policy file and perform
 /// the auditing process on those effect trees. Will exit early if the user
 /// audits one of the root effects as needing to check its child effects, in
 /// which case we will return Ok with Some EffectBlock which contains the effect

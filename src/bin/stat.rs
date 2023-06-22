@@ -48,6 +48,8 @@ fn main() -> Result<()> {
         format!("{}/crate.manifest", &args.crate_download_path),
         args.crate_download_path.clone(),
         false,
+        None,
+        None,
     );
 
     let chain = create_new_audit_chain(create, &args.crate_download_path)?;
