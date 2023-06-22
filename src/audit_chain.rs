@@ -123,6 +123,7 @@ impl AuditChain {
     /// with the default configuration if none exists.
     pub fn load_lockfile(&self) -> Result<Lockfile> {
         let mut crate_path = self.crate_path.clone();
+        crate_path = crate_path.canonicalize()?;
         crate_path.push("Cargo.lock");
         if let Ok(l) = Lockfile::load(&crate_path) {
             Ok(l)
@@ -130,8 +131,10 @@ impl AuditChain {
             println!("Lockfile missing: generating new lockfile");
             let config = config::Config::default()?;
             crate_path.pop();
+            crate_path.push("Cargo.toml");
             let workspace = Workspace::new(&crate_path, &config)?;
             generate_lockfile(&workspace)?;
+            crate_path.pop();
             crate_path.push("Cargo.lock");
             let l = Lockfile::load(&crate_path)?;
             Ok(l)
@@ -223,11 +226,14 @@ pub struct Create {
     pub force_overwrite: bool,
 
     /// Download the crate and save it to the crate_path instead of using an
-    /// existing crate. Contains the crate name and the stringified version.
+    /// existing crate. If this value is set, requires `download_version` to be
+    /// set as well.
     #[clap(short = 'd', long, requires = "download_version")]
     pub download_root_crate: Option<String>,
 
-    #[clap(long)]
+    /// The crate version to be downloaded. Should be used alongside
+    /// `download_root_crate`.
+    #[clap(short = 'v', long)]
     pub download_version: Option<String>,
 }
 
