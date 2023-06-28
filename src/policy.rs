@@ -172,12 +172,14 @@ impl PolicyFile {
         Ok(Some(policy_file))
     }
 
-    /// Mark all callers of functions in the effect tree to be caller-checked.
-    fn mark_caller_checked(
+    /// Mark caller-checked functions but don't add a caller to the tree more
+    /// than once (so we don't get an infinite cycle).
+    fn mark_caller_checked_recurse(
         base_effect: &EffectBlock,
         tree: &mut EffectTree,
         pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectBlock>>,
         scan_res: &ScanResults,
+        prev_callers: Vec<CanonicalPath>,
     ) {
         if let EffectTree::Leaf(effect_info, annotation) = tree {
             // Add the function to the list of sinks if it is public
@@ -191,27 +193,59 @@ impl PolicyFile {
             let mut callers = scan_res
                 .get_callers(&effect_info.caller_path)
                 .into_iter()
-                .map(|x| {
-                    EffectTree::Leaf(
-                        EffectInfo::from_instance(&x.clone()),
-                        SafetyAnnotation::Skipped,
-                    )
+                .filter_map(|x| {
+                    if prev_callers.contains(x.caller()) {
+                        None
+                    } else {
+                        Some(EffectTree::Leaf(
+                            EffectInfo::from_instance(&x.clone()),
+                            SafetyAnnotation::Skipped,
+                        ))
+                    }
                 })
                 .collect::<Vec<_>>();
             if callers.is_empty() {
                 *annotation = SafetyAnnotation::CallerChecked;
             } else {
                 for eff in callers.iter_mut() {
-                    PolicyFile::mark_caller_checked(
+                    let mut next_callers = prev_callers.clone();
+                    // NOTE: This will always be a leaf since it is only created
+                    //       from the map above
+                    if let EffectTree::Leaf(i, _) = eff {
+                        next_callers.push(i.caller_path.clone());
+                    }
+                    PolicyFile::mark_caller_checked_recurse(
                         base_effect,
                         eff,
                         pub_caller_checked,
                         scan_res,
+                        next_callers,
                     );
                 }
                 *tree = EffectTree::Branch(effect_info.clone(), callers);
             }
         }
+    }
+
+    /// Mark all callers of functions in the effect tree to be caller-checked.
+    fn mark_caller_checked(
+        base_effect: &EffectBlock,
+        tree: &mut EffectTree,
+        pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectBlock>>,
+        scan_res: &ScanResults,
+    ) {
+        let callers = base_effect
+            .effects()
+            .first()
+            .map(|x| vec![x.caller().clone()])
+            .unwrap_or_else(Vec::new);
+        Self::mark_caller_checked_recurse(
+            base_effect,
+            tree,
+            pub_caller_checked,
+            scan_res,
+            callers,
+        );
     }
 
     fn recalc_pub_caller_checked_tree(
