@@ -90,6 +90,7 @@ pub struct ScanResults {
     pub skipped_conditional_code: LoCTracker,
     pub skipped_fn_calls: LoCTracker,
     pub skipped_other: LoCTracker,
+    pub skipped_fn_ptrs: LoCTracker,
 
     // TODO other cases:
     pub _effects_loc: LoCTracker,
@@ -703,8 +704,13 @@ impl<'a> Scanner<'a> {
         let ty = self.resolver.resolve_path_type(x);
         // Function pointer creation
         if ty.is_function() || ty.is_fn_ptr() {
-            let cp = self.resolver.resolve_path(x);
-            self.push_effect(x.span(), cp, Effect::FnPtrCreation);
+            // Skip constant or immutable static function pointers
+            if self.resolver.resolve_const_or_static(x) {
+                self.data.skipped_fn_ptrs.add(x.span());
+            } else {
+                let cp = self.resolver.resolve_path(x);
+                self.push_effect(x.span(), cp, Effect::FnPtrCreation);
+            }
         }
         // Accessing a mutable global variable
         if ty.is_mut_static() {
