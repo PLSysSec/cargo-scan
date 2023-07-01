@@ -49,6 +49,7 @@ pub trait Resolve<'a>: Sized {
     fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath;
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath;
     fn resolve_closure(&self, cl: &'a syn::ExprClosure) -> CanonicalPath;
+    fn resolve_const_or_static(&self, p: &'a syn::Path) -> bool;
 
     /*
         Type resolution
@@ -129,6 +130,15 @@ impl<'a> FileResolver<'a> {
         s.add1();
         let i = ident_from_syn(i);
         self.resolver.resolve_type(s, i)
+    }
+
+    fn resolve_const_or_static_core(&self, i: &syn::Ident) -> Result<bool> {
+        let mut s = SrcLoc::from_span(self.filepath, i);
+        debug!("Resolving const or immutable static: {} ({})", i, s);
+        // Add 1 to column to avoid weird off-by-one errors
+        s.add1();
+        let i = ident_from_syn(i);
+        self.resolver.is_const_or_immutable_static_ident(s, i)
     }
 
     fn resolve_or_else<S, R, F, T>(&self, i: &S, try_resolve: R, fallback: F) -> T
@@ -267,5 +277,14 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
         let s = SrcLoc::from_span(self.filepath, cl);
         info!("Skipping closure resolution (using fallback) for {:?} ({})", cl, s);
         self.backup.resolve_closure(cl)
+    }
+
+    fn resolve_const_or_static(&self, p: &'a syn::Path) -> bool {
+        let i = &p.segments.last().unwrap().ident;
+        self.resolve_or_else(
+            i,
+            || self.resolve_const_or_static_core(i),
+            || self.backup.resolve_const_or_static(p),
+        )
     }
 }

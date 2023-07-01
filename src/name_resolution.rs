@@ -264,6 +264,28 @@ impl Resolver {
             .map(|d| d.code.as_str().to_string())
             .collect_vec()
     }
+
+    pub fn is_const_or_immutable_static_ident(
+        &self,
+        s: SrcLoc,
+        i: Ident,
+    ) -> Result<bool> {
+        let db = self.get_db();
+        let sems = self.get_semantics();
+        let file_id = self.get_file_id(&s, &sems)?;
+        let token = self.token(&sems, file_id, i, s)?;
+        let diags = self.get_ra_diagnostics(file_id, &token);
+        let def = find_def(&token, &sems, db, diags)?;
+
+        let is_immutable_static = |def: Definition| -> bool {
+            if let Definition::Static(s) = def {
+                return !s.is_mut(db);
+            }
+            false
+        };
+
+        Ok(matches!(def, Definition::Const(_)) || is_immutable_static(def))
+    }
 }
 
 fn get_token(

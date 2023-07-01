@@ -226,6 +226,10 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
             CanonicalPath::new_owned(format!("UNKNOWN_CLOSURE::{}", s))
         }
     }
+
+    fn resolve_const_or_static(&self, _: &'a syn::Path) -> bool {
+        false
+    }
 }
 
 impl<'a> HackyResolver<'a> {
