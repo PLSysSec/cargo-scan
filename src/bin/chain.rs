@@ -6,7 +6,7 @@ use cargo_scan::effect::Effect;
 use cargo_scan::policy::PolicyFile;
 use cargo_scan::{download_crate, scanner};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use clap::{Args as ClapArgs, Parser, Subcommand, ValueEnum};
 use std::fs::create_dir_all;
 use std::path::PathBuf;
@@ -65,11 +65,26 @@ impl CommandRunner for Create {
             }
 
             create_dir_all(crate_path)?;
-            download_crate::download_crate_from_info(
+            let downloaded_path = download_crate::download_crate_from_info(
                 crate_name,
                 crate_version,
-                &args.crate_download_path,
+                &self.crate_path,
             )?;
+
+            // We have now downloaded the crate into a subfolder of the
+            // crate_path, so we should move it up where the user expects it
+            let mut tmp_path = PathBuf::from(&self.crate_path);
+            let bottom_folder = tmp_path.file_name().context("No bottom folder in user crate path")?.to_os_string();
+            let bottom_folder_str = bottom_folder.to_string_lossy();
+            tmp_path.pop();
+            tmp_path.push(format!("{}-tmp", bottom_folder_str));
+            std::fs::rename(&downloaded_path, &tmp_path)?;
+
+            let mut parent_downloaded_path = PathBuf::from(&downloaded_path);
+            parent_downloaded_path.pop();
+            std::fs::remove_dir(&parent_downloaded_path)?;
+
+            std::fs::rename(&tmp_path, &self.crate_path)?;
         }
 
         let chain = create_new_audit_chain(self, &args.crate_download_path)?;
