@@ -74,7 +74,10 @@ impl CommandRunner for Create {
             // We have now downloaded the crate into a subfolder of the
             // crate_path, so we should move it up where the user expects it
             let mut tmp_path = PathBuf::from(&self.crate_path);
-            let bottom_folder = tmp_path.file_name().context("No bottom folder in user crate path")?.to_os_string();
+            let bottom_folder = tmp_path
+                .file_name()
+                .context("No bottom folder in user crate path")?
+                .to_os_string();
             let bottom_folder_str = bottom_folder.to_string_lossy();
             tmp_path.pop();
             tmp_path.push(format!("{}-tmp", bottom_folder_str));
@@ -104,8 +107,9 @@ struct Review {
     review_target: Option<String>,
 }
 
-#[derive(ValueEnum, Clone, Copy, Debug)]
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
 enum ReviewInfo {
+    Crates,
     PubFuns,
     All,
 }
@@ -113,6 +117,7 @@ enum ReviewInfo {
 impl std::fmt::Display for ReviewInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
+            ReviewInfo::Crates => "crates",
             ReviewInfo::PubFuns => "pub-funs",
             ReviewInfo::All => "all",
         };
@@ -131,6 +136,18 @@ impl CommandRunner for Review {
             )),
             Err(e) => Err(e),
         }?;
+
+        // Don't have to do the usual review process of loading up the crate's
+        // policy if we are just printing out the list of crates for the given
+        // manifest file
+        if self.review_info == ReviewInfo::Crates {
+            println!("Dependency crates:");
+            for krate in chain.all_crates() {
+                println!("  - {}", krate.as_str());
+            }
+
+            return Ok(());
+        }
 
         let crates_to_review = match self.review_target {
             None => chain.all_crates(),
@@ -158,7 +175,7 @@ impl CommandRunner for Review {
 struct Audit {
     /// Path to manifest
     manifest_path: String,
-    /// Crate to review
+    /// Name of the crate to review
     crate_name: String,
 }
 
@@ -226,7 +243,6 @@ fn review_crate_policy(
     review_type: ReviewInfo,
 ) -> Result<()> {
     match review_type {
-        // TODO: Plug in to existing policy review
         ReviewInfo::All => review_policy(policy, &crate_path, &AuditConfig::default()),
         ReviewInfo::PubFuns => {
             println!("Public functions marked caller-checked:");
@@ -235,6 +251,10 @@ fn review_crate_policy(
                 println!("  {}", pub_fn);
             }
             Ok(())
+        }
+
+        ReviewInfo::Crates => {
+            Err(anyhow!("Shouldn't review a crate policy when printing crates"))
         }
     }
 }
