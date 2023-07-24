@@ -19,7 +19,7 @@ extern "C" {
 }
 
 // calling an FFI function without unsafe!
-fn call_fn() -> String {
+pub fn call_fn() -> String {
     let result = fetch_with_request(32);
     format!("{}", result)
 }

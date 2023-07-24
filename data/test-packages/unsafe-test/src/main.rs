@@ -1,4 +1,6 @@
-pub mod wasm_bindgen_ex;
+use std::fs::File;
+use std::io::Write;
+use log;
 
 unsafe fn my_unsafe_fn() {
     println!("I am unsafe");
@@ -35,7 +37,34 @@ pub struct MyEx (pub i32, MyUnion);
 
 static mut MY_STATIC_VAR: i32 = 0;
 
+use log::{error, info, warn, Record, Level, Metadata, LevelFilter};
+
+static MY_LOGGER: MyLogger = MyLogger;
+
+struct MyLogger;
+
+impl log::Log for MyLogger {
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        metadata.level() <= Level::Info
+    }
+
+    fn log(&self, record: &Record) {
+        if self.enabled(record.metadata()) {
+            println!("{} - {}", record.level(), record.args());
+        }
+    }
+    fn flush(&self) {}
+}
+
+
 fn main() {
+    log::set_logger(&MY_LOGGER).unwrap();
+	log::set_max_level(LevelFilter::Info);
+
+	info!("Hello log");
+    warn!("warning");
+    error!("oops");
+
     println!("Hello, world!");
     unsafe {
         my_unsafe_fn();
@@ -63,4 +92,7 @@ fn main() {
         let ret = MY_EXTERN_STATIC;
         MY_STATIC_VAR += 1;
     }
+
+    let mut file = File::create("foo.txt").unwrap();
+    file.write_all(b"Hello, test").unwrap();
 }

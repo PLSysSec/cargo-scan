@@ -6,4 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-wasm-bindgen = { version = "0.2.68", features = [ "serde-serialize" ] }
+log = "0.4.19"
+wasm-bindgen = { version = "0.2.68", features = ["serde-serialize"] }
