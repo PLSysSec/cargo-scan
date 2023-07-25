@@ -6,7 +6,7 @@ use cargo_scan::effect::EffectBlock;
 use cargo_scan::policy::*;
 use cargo_scan::scanner;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs::File;
 use std::path::PathBuf;
 
@@ -48,12 +48,15 @@ enum ContinueStatus {
 // Asks the user how to handle the invalid policy file. If they continue with a
 // new file, will update the policy and policy_path and return Continue;
 // otherwise will return ExitNow.
-fn handle_invalid_policy(
+fn handle_invalid_policy<'a, I>(
     policy: &mut PolicyFile,
     policy_path: &mut PathBuf,
-    scan_effect_blocks: &HashSet<&EffectBlock>,
+    scan_effect_blocks: I,
     overwrite_policy: bool,
-) -> Result<ContinueStatus> {
+) -> Result<ContinueStatus>
+where
+    I: IntoIterator<Item = &'a EffectBlock>,
+{
     // TODO: Colorize
     println!("Crate has changed from last policy audit");
 
@@ -61,7 +64,6 @@ fn handle_invalid_policy(
         println!("Generating new policy file");
 
         policy.audit_trees = scan_effect_blocks
-            .clone()
             .into_iter()
             .map(|x: &EffectBlock| {
                 // TODO: for now we assume that all EffectBlocks include an EffectInstance,
@@ -108,7 +110,6 @@ fn handle_invalid_policy(
                 println!("Generating new policy file");
 
                 policy.audit_trees = scan_effect_blocks
-                    .clone()
                     .into_iter()
                     .map(|x: &EffectBlock| {
                         // TODO: for now we assume that all EffectBlocks include an EffectInstance,
@@ -158,13 +159,13 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     let mut policy_path = args.policy_path.clone();
     let mut policy_file = match policy_file {
         Some(mut pf) => {
-            if !is_policy_scan_valid(&pf, &scan_effect_blocks, args.crate_path.clone())? {
+            if !is_policy_scan_valid(&pf, args.crate_path.clone())? {
                 // TODO: If the policy file diverges from the effects at all, we
                 //       should enter incremental mode and detect what's changed
                 match handle_invalid_policy(
                     &mut pf,
                     &mut policy_path,
-                    &scan_effect_blocks,
+                    scan_effect_blocks,
                     args.overwrite_policy,
                 ) {
                     Ok(ContinueStatus::Continue) => (),

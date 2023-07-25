@@ -1,7 +1,5 @@
-use crate::effect::EffectBlock;
 use crate::policy::PolicyFile;
 
-use std::collections::HashSet;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;

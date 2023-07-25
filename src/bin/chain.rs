@@ -191,7 +191,11 @@ impl CommandRunner for Audit {
                     let mut new_policy = orig_policy.clone();
                     let mut crate_path = PathBuf::from(&args.crate_download_path);
                     crate_path.push(&full_crate_name);
+
+                    // Iterate through the crate's dependencies and add the
+                    // public functions to the scan sinks
                     let scan_res = scanner::scan_crate(&crate_path)?;
+
                     let audit_config = AuditConfig::default();
 
                     // TODO: Mechanism for re-auditing the default policies

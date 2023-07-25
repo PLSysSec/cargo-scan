@@ -127,9 +127,11 @@ impl PolicyFile {
         })
     }
 
-    pub fn set_base_audit_trees(&mut self, effect_blocks: HashSet<&EffectBlock>) {
+    pub fn set_base_audit_trees<'a, I>(&mut self, effect_blocks: I)
+    where
+        I: IntoIterator<Item = &'a EffectBlock>,
+    {
         self.audit_trees = effect_blocks
-            .clone()
             .into_iter()
             .map(|x| {
                 (
