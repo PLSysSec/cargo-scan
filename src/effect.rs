@@ -427,6 +427,7 @@ impl EffectBlock {
         let effects = Vec::new();
         Self { src_loc, block_type, effects, containing_fn }
     }
+
     pub fn new_fn<S>(
         filepath: &FilePath,
         decl_span: &S,
@@ -446,6 +447,7 @@ impl EffectBlock {
             containing_fn: FnDec::new(filepath, decl_span, fn_name, vis),
         }
     }
+
     pub fn new_unsafe_fn<S>(
         filepath: &FilePath,
         decl_span: &S,

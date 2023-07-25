@@ -30,17 +30,11 @@ where
     Ok(hasher.finalize().into())
 }
 
-pub fn is_policy_scan_valid<P>(
-    policy: &PolicyFile,
-    scan_effect_blocks: &HashSet<&EffectBlock>,
-    crate_path: P,
-) -> Result<bool>
+pub fn is_policy_scan_valid<P>(policy: &PolicyFile, crate_path: P) -> Result<bool>
 where
     P: AsRef<Path>,
 {
-    let policy_effect_blocks = policy.audit_trees.keys().collect::<HashSet<_>>();
     let hash = hash_dir(crate_path)?;
-    // NOTE: We're checking the hash in addition to the effect blocks for now
-    //       because we might have changed how we scan packages for effects.
-    Ok(policy_effect_blocks == *scan_effect_blocks && policy.hash == hash)
+    // TODO: Better way to check hash
+    Ok(policy.hash == hash)
 }

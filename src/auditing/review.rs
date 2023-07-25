@@ -58,8 +58,7 @@ pub fn review_policy(
     config: &Config,
 ) -> Result<()> {
     let scan_res = scanner::scan_crate(crate_path)?;
-    let scan_effect_blocks = scan_res.unsafe_effect_blocks_set();
-    if !is_policy_scan_valid(policy, &scan_effect_blocks, crate_path)? {
+    if !is_policy_scan_valid(policy, crate_path)? {
         println!("Error: crate has changed since last policy scan.");
         return Err(anyhow!("Invalid policy during review"));
     }
