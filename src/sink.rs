@@ -46,11 +46,6 @@ impl Display for Sink {
 
 impl Sink {
     /// Get the sink pattern matching a callee.
-    /// This uses the hardcoded list of sink patterns in SINK_PATTERNS.
-    //
-    // TODO: allocating new Patterns every time this is called is inefficient.
-    // Use lazy_static! to create the list of pattern strings only once.
-    // (Or even better, compile the patterns to a Trie or similar)
     pub fn new_match(callee: &CanonicalPath, sinks: &HashSet<IdentPath>) -> Option<Self> {
         let mut result = None;
         for pat_raw in sinks {

@@ -15,6 +15,7 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+use toml;
 
 /// SafetyAnnotation is really a lattice with `Skipped` as the top element, and
 /// `Unsafe` as the bottom element.
@@ -143,33 +144,25 @@ impl PolicyFile {
     }
 
     pub fn save_to_file(&self, p: PathBuf) -> Result<()> {
-        let json = serde_json::to_string(self)?;
+        let toml = toml::to_string(self)?;
         let mut f = File::create(p)?;
-        f.write_all(json.as_bytes())?;
+        f.write_all(toml.as_bytes())?;
         Ok(())
     }
 
     /// Returns Some policy file if it exists, or None if we should create a new one.
     /// Errors if the policy filepath is invalid or if we can't read an existing
     /// policy file
-    pub fn read_policy(policy_filepath: PathBuf) -> Result<Option<PolicyFile>> {
-        if policy_filepath.is_dir() {
-            return Err(anyhow!("Policy file filepath is a directory"));
-        } else if !policy_filepath.is_file() {
-            return Ok(None);
+    pub fn read_policy(path: PathBuf) -> Result<Option<PolicyFile>> {
+        if path.is_dir() {
+            Err(anyhow!("Policy path is a directory"))
+        } else if path.is_file() {
+            let toml_string = std::fs::read_to_string(path.as_path())?;
+            let policy = toml::from_str(&toml_string)?;
+            Ok(Some(policy))
+        } else {
+            Ok(None)
         }
-
-        // We found a policy file
-        // TODO: make this display a message if the file isn't the proper format
-        let json = std::fs::read_to_string(policy_filepath)?;
-
-        // If we try to read an empty file, just make a new one
-        if json.is_empty() {
-            return Ok(None);
-        }
-
-        let policy_file = serde_json::from_str(&json)?;
-        Ok(Some(policy_file))
     }
 
     /// Mark caller-checked functions but don't add a caller to the tree more
