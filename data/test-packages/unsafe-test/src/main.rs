@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::Write;
+use std::fs;
 use log;
 
 unsafe fn my_unsafe_fn() {
@@ -95,4 +96,6 @@ fn main() {
 
     let mut file = File::create("foo.txt").unwrap();
     file.write_all(b"Hello, test").unwrap();
+
+    let a = fs::read("Cargo.toml");
 }

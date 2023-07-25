@@ -840,7 +840,7 @@ impl<'a> Scanner<'a> {
             }
         }
 
-        let eff = EffectInstance::new_call(
+        let Some(eff) = EffectInstance::new_call(
             self.filepath,
             caller.clone(),
             callee,
@@ -848,7 +848,10 @@ impl<'a> Scanner<'a> {
             is_unsafe,
             ffi,
             &self.sinks,
-        );
+        ) else {
+            return;
+        };
+
         if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
             effect_block.push_effect(eff.clone())
         } else {

@@ -159,8 +159,6 @@ pub enum Effect {
     FnPtrCreation,
     /// Closure creation
     ClosureCreation,
-    /// Other function call -- not dangerous
-    OtherCall,
 }
 impl Effect {
     fn sink_pattern(&self) -> Option<&Sink> {
@@ -174,7 +172,6 @@ impl Effect {
             Self::StaticExt(_) => None,
             Self::FnPtrCreation => None,
             Self::ClosureCreation => None,
-            Self::OtherCall => None,
         }
     }
 
@@ -189,7 +186,6 @@ impl Effect {
             Self::StaticExt(_) => "[StaticExtVar]",
             Self::FnPtrCreation => "[FnPtrCreation]",
             Self::ClosureCreation => "[ClosureCreation]",
-            Self::OtherCall => "[None]",
         }
     }
 
@@ -217,6 +213,9 @@ pub struct EffectInstance {
 }
 
 impl EffectInstance {
+    /// Returns a new EffectInstance if the call matches a Sink, is an ffi call,
+    /// or is an unsafe call. Regular calls are handled by the explicit call
+    /// graph structure.
     pub fn new_call<S>(
         filepath: &FilePath,
         caller: CanonicalPath,
@@ -225,7 +224,7 @@ impl EffectInstance {
         is_unsafe: bool,
         ffi: Option<CanonicalPath>,
         sinks: &HashSet<IdentPath>,
-    ) -> Self
+    ) -> Option<Self>
     where
         S: Spanned,
     {
@@ -241,7 +240,7 @@ impl EffectInstance {
                     callee, call_loc, ffi
                 );
             }
-            Effect::SinkCall(pat)
+            Some(Effect::SinkCall(pat))
         } else if let Some(ffi) = ffi {
             if !is_unsafe {
                 // This case can occur in certain contexts, e.g. with
@@ -253,13 +252,13 @@ impl EffectInstance {
                     callee, call_loc, ffi
                 );
             }
-            Effect::FFICall(ffi)
+            Some(Effect::FFICall(ffi))
         } else if is_unsafe {
-            Effect::UnsafeCall(callee.clone())
+            Some(Effect::UnsafeCall(callee.clone()))
         } else {
-            Effect::OtherCall
+            None
         };
-        Self { caller, call_loc, callee, eff_type }
+        Some(Self { caller, call_loc, callee, eff_type: eff_type? })
     }
 
     pub fn new_effect<S>(
@@ -337,10 +336,6 @@ impl EffectInstance {
 
     pub fn is_mut_static(&self) -> bool {
         matches!(self.eff_type, Effect::StaticMut(_))
-    }
-
-    pub fn is_dangerous(&self) -> bool {
-        !matches!(self.eff_type, Effect::OtherCall)
     }
 
     pub fn call_loc(&self) -> &SrcLoc {
