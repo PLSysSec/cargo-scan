@@ -709,17 +709,19 @@ impl<'a> Scanner<'a> {
                 self.data.skipped_fn_ptrs.add(x.span());
             } else {
                 let cp = self.resolver.resolve_path(x);
-                self.push_effect(x.span(), cp, Effect::FnPtrCreation);
+                self.push_independent_effect(x.span(), cp, Effect::FnPtrCreation);
             }
         }
         // Accessing a mutable global variable
         if ty.is_mut_static() {
             let cp = self.resolver.resolve_path(x);
+            // NOTE: Can only be done in an unsafe block
             self.push_effect(x.span(), cp.clone(), Effect::StaticMut(cp));
         }
         // Accessing an external static variable
         if self.resolver.resolve_ffi(x).is_some() {
             let cp = self.resolver.resolve_path(x);
+            // NOTE: Can only be done in an unsafe block
             self.push_effect(x.span(), cp.clone(), Effect::StaticExt(cp));
         }
     }
@@ -727,7 +729,7 @@ impl<'a> Scanner<'a> {
     fn scan_closure(&mut self, x: &'a syn::ExprClosure) {
         let cl_name = self.resolver.resolve_closure(x);
 
-        self.push_effect(x.span(), cl_name, Effect::ClosureCreation);
+        self.push_independent_effect(x.span(), cl_name, Effect::ClosureCreation);
 
         self.scan_expr(&x.body);
     }
@@ -740,6 +742,7 @@ impl<'a> Scanner<'a> {
                 let ty = self.resolver.resolve_field_type(&i);
                 let p = self.resolver.resolve_field(&i);
                 if ty.is_raw_ptr() {
+                    // NOTE: Can only be done in an unsafe block
                     self.push_effect(x.span(), p.clone(), Effect::RawPointer(p));
                 }
             }
@@ -754,6 +757,7 @@ impl<'a> Scanner<'a> {
                 return;
             }
             let cp = self.resolver.resolve_field(i);
+            // NOTE: Can only be done in an unsafe block
             self.push_effect(x.span(), cp.clone(), Effect::UnionField(cp));
         }
     }
@@ -789,6 +793,9 @@ impl<'a> Scanner<'a> {
         }
     }
 
+    /// Push an effect into the current `EffectBlock`. Should be used when
+    /// pushing an effect in an unsafe block so all effects can be captured at
+    /// the same time.
     fn push_effect<S>(&mut self, eff_span: S, callee: CanonicalPath, eff_type: Effect)
     where
         S: Debug + Spanned,
@@ -817,6 +824,49 @@ impl<'a> Scanner<'a> {
         //     self.syn_warning("unexpected effect found outside an effect block", eff_span);
         // }
         self.data.effects.push(eff);
+    }
+
+    /// Push an effect into a new `EffectBlock` and save that block. Should be
+    /// used most of the time when adding a new effect.
+    fn push_independent_effect<S>(
+        &mut self,
+        eff_span: S,
+        callee: CanonicalPath,
+        eff_type: Effect,
+    ) where
+        S: Debug + Spanned,
+    {
+        if let Some(effect_block) = self.scope_effect_blocks.last().cloned() {
+            println!("can find effect_block");
+            println!("callee: {:?}", callee);
+            let caller = match &self.scope_fns.last() {
+                Some(fn_dec) => fn_dec.fn_name.to_owned(),
+                None => {
+                    let mut path = callee.to_owned();
+                    // Pop ident to get the path of the containting module/data type
+                    path.pop_ident();
+                    path
+                }
+            };
+
+            let eff = EffectInstance::new_effect(
+                self.filepath,
+                caller,
+                callee,
+                &eff_span,
+                eff_type,
+            );
+
+            // Always make an UnsafeExpr EffectBloc for independent effects
+            // TODO: The containing_fn here might not be right
+            let mut new_effect_block = EffectBlock::new_unsafe_expr(
+                self.filepath,
+                &eff_span,
+                effect_block.containing_fn().clone(),
+            );
+            new_effect_block.push_effect(eff);
+            self.data.effect_blocks.push(new_effect_block);
+        }
     }
 
     /// push an Effect to the list of results based on this call site.
@@ -871,6 +921,14 @@ impl<'a> Scanner<'a> {
                 let ffi = self.resolver.resolve_ffi(&p.path);
                 let is_unsafe =
                     self.resolver.resolve_unsafe_path(&p.path) && self.scope_unsafe > 0;
+                if let Some(sink) = Sink::new_match(&callee, &self.sinks) {
+                    println!("sink?");
+                    self.push_independent_effect(
+                        f.span(),
+                        callee.clone(),
+                        Effect::SinkCall(sink),
+                    );
+                }
                 self.push_callsite(p, callee, ffi, is_unsafe);
             }
             syn::Expr::Paren(x) => {
