@@ -15,7 +15,6 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
-use toml;
 
 /// SafetyAnnotation is really a lattice with `Skipped` as the top element, and
 /// `Unsafe` as the bottom element.
@@ -146,9 +145,9 @@ impl PolicyFile {
     }
 
     pub fn save_to_file(&self, p: PathBuf) -> Result<()> {
-        let toml = toml::to_string(self)?;
+        let json = serde_json::to_string(self)?;
         let mut f = File::create(p)?;
-        f.write_all(toml.as_bytes())?;
+        f.write_all(json.as_bytes())?;
         Ok(())
     }
 
@@ -159,8 +158,8 @@ impl PolicyFile {
         if path.is_dir() {
             Err(anyhow!("Policy path is a directory"))
         } else if path.is_file() {
-            let toml_string = std::fs::read_to_string(path.as_path())?;
-            let policy = toml::from_str(&toml_string)?;
+            let json_string = std::fs::read_to_string(path.as_path())?;
+            let policy = serde_json::from_str(&json_string)?;
             Ok(Some(policy))
         } else {
             Ok(None)
