@@ -175,18 +175,22 @@ impl CommandRunner for Review {
 struct Audit {
     /// Path to manifest
     manifest_path: String,
-    /// Name of the crate to review
-    crate_name: String,
+    /// Name of the crate to review (defaults to the root crate if none is provided)
+    crate_name: Option<String>,
 }
 
 impl CommandRunner for Audit {
     fn run_command(self, args: OuterArgs) -> Result<()> {
-        println!("Auditing crate: {}", self.crate_name);
         match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path)) {
             Ok(Some(chain)) => {
+                let crate_name = match self.crate_name {
+                    Some(crate_name) => crate_name,
+                    None => chain.root_crate()?,
+                };
+
                 // TODO: Handle more than one policy matching a crate
                 if let Some((full_crate_name, orig_policy)) =
-                    chain.read_policy_no_version(&self.crate_name)
+                    chain.read_policy_no_version(&crate_name)
                 {
                     let mut new_policy = orig_policy.clone();
                     let mut crate_path = PathBuf::from(&args.crate_download_path);

@@ -837,8 +837,6 @@ impl<'a> Scanner<'a> {
         S: Debug + Spanned,
     {
         if let Some(effect_block) = self.scope_effect_blocks.last().cloned() {
-            println!("can find effect_block");
-            println!("callee: {:?}", callee);
             let caller = match &self.scope_fns.last() {
                 Some(fn_dec) => fn_dec.fn_name.to_owned(),
                 None => {
@@ -922,7 +920,6 @@ impl<'a> Scanner<'a> {
                 let is_unsafe =
                     self.resolver.resolve_unsafe_path(&p.path) && self.scope_unsafe > 0;
                 if let Some(sink) = Sink::new_match(&callee, &self.sinks) {
-                    println!("sink?");
                     self.push_independent_effect(
                         f.span(),
                         callee.clone(),
