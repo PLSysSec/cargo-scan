@@ -211,6 +211,37 @@ fn audit_effect_tree(
     }
 }
 
+/// Returns the total number of unaudited leaf nodes.
+fn total_unaudited_effects(t: &EffectTree) -> usize {
+    let mut total = 0;
+    match t {
+        EffectTree::Leaf(_, SafetyAnnotation::Skipped) => {
+            total += 1;
+        },
+        EffectTree::Leaf(_, _) => (),
+        EffectTree::Branch(_, ts) => {
+            total += ts.iter().fold(0, |total, t| total + total_unaudited_effects(t));
+        },
+    };
+    total
+}
+
+/// Returns the number of unaudited base effects, and the number of unaudited
+/// leaf nodes.
+fn unaudited_effects(policy: &PolicyFile) -> (usize, usize) {
+    let mut unaudited_base = 0;
+    let mut unaudited_total = 0;
+    for (_, t) in policy.audit_trees.iter() {
+        let total = total_unaudited_effects(t);
+        if total > 0 {
+            unaudited_base += 1;
+            unaudited_total += total;
+        }
+    }
+
+    (unaudited_base, unaudited_total)
+}
+
 // TODO: When we exit early, we have no way of knowing which effects the user
 //       has already gone through in this audit and marked "skipped" and so we
 //       will re-prompt the user once we resume auditing the policy. We would
@@ -229,6 +260,12 @@ pub fn audit_policy(
     // We will set this to the root effect we need to audit if we audit an
     // effect tree and need to now traverse into the dependency packages.
     let mut dependency_audit_effect: Option<EffectBlock> = None;
+
+    let (unaudited_base, unaudited_total) = unaudited_effects(policy);
+    if unaudited_base > 0 {
+        println!("Total unaudited effects: {}", unaudited_base);
+        println!("Total unaudited locations: {}", unaudited_total);
+    }
 
     // Iterate through the effects and prompt the user for if they're safe
     for (e, t) in policy.audit_trees.iter_mut() {

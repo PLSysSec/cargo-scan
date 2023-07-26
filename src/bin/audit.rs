@@ -1,5 +1,6 @@
 use cargo_scan::auditing::audit::audit_policy;
 use cargo_scan::auditing::info::Config;
+use cargo_scan::auditing::reset::reset_annotation;
 use cargo_scan::auditing::review::review_policy;
 use cargo_scan::auditing::util::{hash_dir, is_policy_scan_valid};
 use cargo_scan::effect::EffectBlock;
@@ -34,6 +35,10 @@ struct Args {
     /// Review the policy file without performing an audit
     #[clap(long, short, default_value_t = false)]
     review: bool,
+
+    /// Reset an annotation to "skipped" for a base effect
+    #[clap(long)]
+    reset_annotation: bool,
 
     /// For debugging stuff
     #[clap(long, default_value_t = false)]
@@ -201,7 +206,12 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
 fn runner(args: Args) -> Result<()> {
     let policy_file = PolicyFile::read_policy(args.policy_path.clone())?;
 
-    if args.review {
+    if args.reset_annotation {
+        match policy_file {
+            None => Err(anyhow!("Policy file doesn't exist")),
+            Some(pf) => reset_annotation(pf, args.policy_path),
+        }
+    } else if args.review {
         match policy_file {
             None => Err(anyhow!("Policy file to review doesn't exist")),
             Some(pf) => review_policy(&pf, &args.crate_path, &args.config),
@@ -216,7 +226,7 @@ fn main() {
     let args = Args::parse();
 
     match runner(args) {
-        Ok(_) => println!("Finished checking policy"),
+        Ok(_) => (),
         Err(e) => println!("Error: {:?}", e),
     };
 }
