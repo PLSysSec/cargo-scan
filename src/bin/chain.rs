@@ -180,7 +180,7 @@ struct Audit {
 }
 
 impl CommandRunner for Audit {
-    fn run_command(self, args: OuterArgs) -> Result<()> {
+    fn run_command(self, _args: OuterArgs) -> Result<()> {
         match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path)) {
             Ok(Some(chain)) => {
                 let crate_name = match self.crate_name {
@@ -189,12 +189,11 @@ impl CommandRunner for Audit {
                 };
 
                 // TODO: Handle more than one policy matching a crate
-                if let Some((full_crate_name, orig_policy)) =
-                    chain.read_policy_no_version(&crate_name)
+                let res = chain.read_policy_no_version(&crate_name);
+                if let Some((full_crate_name, orig_policy)) = res
                 {
                     let mut new_policy = orig_policy.clone();
-                    let mut crate_path = PathBuf::from(&args.crate_download_path);
-                    crate_path.push(&full_crate_name);
+                    let crate_path = PathBuf::from(&orig_policy.base_dir);
 
                     // Iterate through the crate's dependencies and add the
                     // public functions to the scan sinks
