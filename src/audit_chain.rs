@@ -5,6 +5,7 @@ use cargo_toml::Manifest;
 use clap::Args as ClapArgs;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::DfsPostOrder;
+use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs::{create_dir_all, remove_file, File};
@@ -84,14 +85,16 @@ impl AuditChain {
     }
 
     /// Returns all matching full package names with the version
-    pub fn resolve_all_policies(&self, crate_name: &str) -> Vec<String> {
+    pub fn resolve_all_policies(&self, search_name: &str) -> Vec<String> {
         let mut res = Vec::new();
         for (full_name, _) in self.crate_policies.iter() {
             // trim the version number off the package and see if they match
             // TODO: Make sure the full non-version prefix matches (e.g.
             //       searching "bin" would matching "binary-tree-0.3.1")
-            if full_name.starts_with(crate_name) {
-                res.push(crate_name.to_string());
+            let sem_name = Version::parse(full_name);
+
+            if full_name.starts_with(search_name) {
+                res.push(search_name.to_string());
             }
         }
         res
