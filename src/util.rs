@@ -129,12 +129,38 @@ pub fn load_cargo_toml(crate_path: &Path) -> Result<CrateData> {
         .as_str()
         .context("name field in package is not a string")?
         .to_string();
-    let version = root_toml_table
+
+    // TODO: The reality of finding the version is more messy than this because
+    //       you have to track things like the current workspace and virtual
+    //       workspaces. For now, we will just assume things are nice.
+    let version = match root_toml_table
         .get("version")
         .context("No version for the root package in Cargo.toml")?
         .as_str()
-        .context("version field in package couldn't be interpreted as a string")?
-        .to_string();
+    {
+        Some(v) => v.to_string(),
+        None => {
+            // Look up the version from the workspace.package section
+            let workspace_table = cargo_toml
+                .get("workspace")
+                .context("Missing version in package section and no workspace section")?
+                .as_table()
+                .context("workpace is not a table")?
+                .get("package")
+                .context("Missing version in package section and no workspace.package")?
+                .as_table()
+                .context("workspace.package is not a table")?;
+
+            workspace_table
+                .get("version")
+                .context(
+                    "No version entry in package section or workspace.package section",
+                )?
+                .as_str()
+                .context("version entry in workspace.package is not a string")?
+                .to_string()
+        }
+    };
 
     let result = CrateData { name, version };
     debug!("Loaded: {:?}", result);
