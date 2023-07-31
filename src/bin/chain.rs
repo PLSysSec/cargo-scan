@@ -143,7 +143,7 @@ impl CommandRunner for Review {
         if self.review_info == ReviewInfo::Crates {
             println!("Dependency crates:");
             for krate in chain.all_crates() {
-                println!("  - {}", krate.as_str());
+                println!("  - {}", krate);
             }
 
             return Ok(());
@@ -163,7 +163,7 @@ impl CommandRunner for Review {
                 ))
             })?;
             let mut crate_path = PathBuf::from(&args.crate_download_path);
-            crate_path.push(review_crate);
+            crate_path.push(format!("{}", review_crate));
             review_crate_policy(&policy, crate_path, self.review_info)?;
         }
         Ok(())
@@ -183,15 +183,15 @@ impl CommandRunner for Audit {
     fn run_command(self, _args: OuterArgs) -> Result<()> {
         match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path)) {
             Ok(Some(chain)) => {
-                let crate_name = match self.crate_name {
-                    Some(crate_name) => crate_name,
+                let crate_id = match self.crate_name {
+                    Some(crate_name) => chain.resolve_crate_id(&crate_name).context(
+                        format!("Couldn't resolve crate_name for {}", &crate_name),
+                    )?,
                     None => chain.root_crate()?,
                 };
 
                 // TODO: Handle more than one policy matching a crate
-                let res = chain.read_policy_no_version(&crate_name);
-                if let Some((full_crate_name, orig_policy)) = res
-                {
+                if let Some(orig_policy) = chain.read_policy(&crate_id) {
                     let mut new_policy = orig_policy.clone();
                     let crate_path = PathBuf::from(&orig_policy.base_dir);
 
@@ -206,7 +206,7 @@ impl CommandRunner for Audit {
                         audit_policy(&mut new_policy, scan_res, &audit_config);
                     // Save the policy immediately after audit so we don't error
                     // out and forget to save
-                    chain.save_policy(&full_crate_name, &new_policy)?;
+                    chain.save_policy(&crate_id, &new_policy)?;
                     if let Some(dep_effect) = audit_res? {
                         let effect = dep_effect.effects().get(0).ok_or_else(|| {
                             anyhow!(
@@ -228,7 +228,7 @@ impl CommandRunner for Audit {
                     // if any public function annotations have changed,
                     // update parent packages
                     let removed_fns = PolicyFile::pub_diff(&orig_policy, &new_policy);
-                    chain.remove_cross_crate_effects(removed_fns, &full_crate_name)?;
+                    chain.remove_cross_crate_effects(removed_fns, &crate_id)?;
 
                     Ok(())
                 } else {

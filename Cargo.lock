@@ -326,6 +326,7 @@ dependencies = [
  "ra_ap_rust-analyzer",
  "ra_ap_syntax",
  "ra_ap_vfs",
+ "semver",
  "serde",
  "serde_json",
  "serde_with",

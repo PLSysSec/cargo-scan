@@ -404,7 +404,7 @@ pub fn audit_pub_fn(chain: &AuditChain, sink_ident: &Sink) -> Result<()> {
         .first_ident()
         .ok_or_else(|| anyhow!("Missing leading identifier for pattern"))?;
     // TODO: The sink crate we get here may include the version
-    let (sink_crate_name, mut prev_policy) = chain
+    let (sink_crate_id, mut prev_policy) = chain
         .read_policy_no_version(sink_crate.as_str())
         .ok_or_else(|| anyhow!("Couldn't find policy for the sink: {}", sink_crate))?;
     let mut new_policy = prev_policy.clone();
@@ -422,10 +422,10 @@ pub fn audit_pub_fn(chain: &AuditChain, sink_ident: &Sink) -> Result<()> {
             (AuditStatus::AuditChildEffect, Some(child_effect)) => {
                 // Save the current policy,
                 new_policy.recalc_pub_caller_checked(&scan_res.pub_fns);
-                chain.save_policy(&sink_crate_name, &new_policy)?;
+                chain.save_policy(&sink_crate_id, &new_policy)?;
                 let removed_fns = PolicyFile::pub_diff(&prev_policy, &new_policy);
                 chain
-                    .remove_cross_crate_effects(removed_fns, sink_crate_name.as_str())?;
+                    .remove_cross_crate_effects(removed_fns, &sink_crate_id)?;
                 prev_policy = new_policy;
 
                 let child_effect = child_effect.effects().get(0).ok_or_else(|| {
@@ -443,8 +443,8 @@ pub fn audit_pub_fn(chain: &AuditChain, sink_ident: &Sink) -> Result<()> {
                 // We have to reload the new policy because auditing child
                 // effects may have removed some base effects from the current
                 // crate
-                new_policy = chain.read_policy(&sink_crate_name).ok_or_else(|| {
-                    anyhow!("Couldn't find policy for the sink: {}", sink_crate_name)
+                new_policy = chain.read_policy(&sink_crate_id).ok_or_else(|| {
+                    anyhow!("Couldn't find policy for the sink: {}", sink_crate_id)
                 })?;
                 // After we audit the child function, we will recurse until the
                 // user marks everything, or we run out of child functions to
@@ -463,11 +463,11 @@ pub fn audit_pub_fn(chain: &AuditChain, sink_ident: &Sink) -> Result<()> {
 
     // Save the new policy
     new_policy.recalc_pub_caller_checked(&scan_res.pub_fns);
-    chain.save_policy(&sink_crate_name, &new_policy)?;
+    chain.save_policy(&sink_crate_id, &new_policy)?;
 
     // update parent crates based off updated effects
     let removed_fns = PolicyFile::pub_diff(&prev_policy, &new_policy);
-    chain.remove_cross_crate_effects(removed_fns, &sink_crate_name)?;
+    chain.remove_cross_crate_effects(removed_fns, &sink_crate_id)?;
 
     Ok(())
 }

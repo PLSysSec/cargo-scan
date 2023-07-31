@@ -8,24 +8,59 @@ use petgraph::visit::DfsPostOrder;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use std::fmt;
 use std::fs::{create_dir_all, remove_file, File};
 use std::io::Write;
 use std::iter::IntoIterator;
 use std::mem;
 use std::path::PathBuf;
+use std::str::FromStr;
 use toml;
 
 use crate::download_crate;
 use crate::ident::{CanonicalPath, IdentPath};
 use crate::policy::{DefaultPolicyType, PolicyFile};
-use crate::util::{self, load_cargo_toml};
+use crate::util::load_cargo_toml;
+
+#[derive(Eq, Hash, PartialEq, Serialize, Deserialize, Debug, Clone)]
+pub struct CrateId {
+    pub crate_name: String,
+    pub version: Version,
+}
+
+impl From<&Package> for CrateId {
+    fn from(package: &Package) -> Self {
+        CrateId { crate_name: package.name.to_string(), version: package.version.clone() }
+    }
+}
+
+impl From<&Dependency> for CrateId {
+    fn from(dep: &Dependency) -> Self {
+        CrateId { crate_name: dep.name.to_string(), version: dep.version.clone() }
+    }
+}
+
+impl CrateId {
+    pub fn from_toml_package(package: &cargo_toml::Package) -> Result<Self> {
+        Ok(CrateId {
+            crate_name: package.name.to_string(),
+            version: Version::parse(package.version())?,
+        })
+    }
+}
+
+impl fmt::Display for CrateId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}-{}", self.crate_name, self.version)
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuditChain {
     #[serde(skip)]
     manifest_path: PathBuf,
     crate_path: PathBuf,
-    crate_policies: HashMap<String, PathBuf>,
+    crate_policies: HashMap<CrateId, PathBuf>,
 }
 
 impl AuditChain {
@@ -33,14 +68,17 @@ impl AuditChain {
         AuditChain { manifest_path, crate_path, crate_policies: HashMap::new() }
     }
 
-    pub fn all_crates(&self) -> Vec<&String> {
+    pub fn all_crates(&self) -> Vec<&CrateId> {
         self.crate_policies.keys().collect::<Vec<_>>()
     }
 
-    pub fn matching_crates_no_version<'a>(&'a self, crate_name: &str) -> Vec<&'a String> {
+    pub fn matching_crates_no_version<'a>(
+        &'a self,
+        crate_name: &str,
+    ) -> Vec<&'a CrateId> {
         self.crate_policies
             .keys()
-            .filter(|x| x.starts_with(crate_name))
+            .filter(|x| x.crate_name == crate_name)
             .collect::<Vec<_>>()
     }
 
@@ -66,35 +104,34 @@ impl AuditChain {
     }
 
     pub fn add_crate_policy(&mut self, package: &Package, policy_loc: PathBuf) {
-        let package_id = format!("{}-{}", package.name.as_str(), package.version);
-        self.crate_policies.insert(package_id, policy_loc);
+        let crate_id = CrateId::from(package);
+        self.crate_policies.insert(crate_id, policy_loc);
     }
 
-    pub fn read_policy(&self, package: &str) -> Option<PolicyFile> {
-        let policy_path = self.crate_policies.get(package)?;
+    pub fn read_policy(&self, crate_id: &CrateId) -> Option<PolicyFile> {
+        let policy_path = self.crate_policies.get(crate_id)?;
         PolicyFile::read_policy(policy_path.clone()).ok()?
     }
 
     /// Returns the full package name with version if there is exactly one
     /// package matching the input, or none otherwise
-    pub fn resolve_policy(&self, crate_name: &str) -> Option<String> {
-        match &self.resolve_all_policies(crate_name)[..] {
-            [p] => Some(p.to_string()),
+    pub fn resolve_crate_id(&self, crate_name: &str) -> Option<CrateId> {
+        match &self.resolve_all_crates(crate_name)[..] {
+            [p] => Some(p.clone()),
             _ => None,
         }
     }
 
     /// Returns all matching full package names with the version
-    pub fn resolve_all_policies(&self, search_name: &str) -> Vec<String> {
+    pub fn resolve_all_crates(&self, search_name: &str) -> Vec<CrateId> {
         let mut res = Vec::new();
-        for (full_name, _) in self.crate_policies.iter() {
+        for (crate_id, _) in self.crate_policies.iter() {
             // trim the version number off the package and see if they match
             // TODO: Make sure the full non-version prefix matches (e.g.
             //       searching "bin" would matching "binary-tree-0.3.1")
-            let sem_name = Version::parse(full_name);
 
-            if full_name.starts_with(search_name) {
-                res.push(search_name.to_string());
+            if crate_id.crate_name == search_name {
+                res.push(crate_id.clone());
             }
         }
         res
@@ -103,10 +140,10 @@ impl AuditChain {
     pub fn read_policy_no_version(
         &self,
         crate_name: &str,
-    ) -> Option<(String, PolicyFile)> {
-        if let Some(full_name) = self.resolve_policy(crate_name) {
-            if let Some(policy) = self.read_policy(&full_name) {
-                return Some((full_name, policy));
+    ) -> Option<(CrateId, PolicyFile)> {
+        if let Some(crate_id) = self.resolve_crate_id(crate_name) {
+            if let Some(policy) = self.read_policy(&crate_id) {
+                return Some((crate_id, policy));
             }
         }
         None
@@ -114,11 +151,11 @@ impl AuditChain {
 
     /// Looks up where the policy is saved from the full crate name and saves the
     /// given PolicyFile to the PathBuf associated with that crate.
-    pub fn save_policy(&self, crate_name: &str, policy: &PolicyFile) -> Result<()> {
+    pub fn save_policy(&self, crate_id: &CrateId, policy: &PolicyFile) -> Result<()> {
         let policy_path = self
             .crate_policies
-            .get(crate_name)
-            .ok_or_else(|| anyhow!("Couldn't find entry for crate: {}", crate_name))?;
+            .get(crate_id)
+            .ok_or_else(|| anyhow!("Couldn't find entry for crate: {}", crate_id))?;
         policy.save_to_file(policy_path.clone())
     }
 
@@ -150,7 +187,7 @@ impl AuditChain {
     pub fn remove_cross_crate_effects(
         &self,
         mut removed_fns: HashSet<CanonicalPath>,
-        updated_crate: &str,
+        updated_crate: &CrateId,
     ) -> Result<()> {
         let lockfile = self.load_lockfile()?;
         let dep_tree = lockfile.dependency_tree()?;
@@ -169,29 +206,26 @@ impl AuditChain {
             // TODO: Only update packages whose dependencies have changed public
             //       caller-checked lists.
             let package = &dep_graph[n];
-            let package_string = format!("{}-{}", package.name, package.version);
-            let mut package_policy = self
-                .read_policy(&package_string)
-                .context(format!("Couldn't find policy for {}", package_string))?;
+            let crate_id = CrateId::from(package);
+            let mut crate_policy = self
+                .read_policy(&crate_id)
+                .context(format!("Couldn't find policy for {}", crate_id))?;
             let starting_pub_caller_checked =
-                package_policy.pub_caller_checked.keys().cloned().collect::<HashSet<_>>();
+                crate_policy.pub_caller_checked.keys().cloned().collect::<HashSet<_>>();
 
-            package_policy.remove_sinks_from_tree(&removed_fns);
-            let package_pub_fns = &package_policy
-                .pub_caller_checked
-                .keys()
-                .cloned()
-                .collect::<HashSet<_>>();
+            crate_policy.remove_sinks_from_tree(&removed_fns);
+            let package_pub_fns =
+                &crate_policy.pub_caller_checked.keys().cloned().collect::<HashSet<_>>();
             let next_removed_fns =
                 starting_pub_caller_checked.difference(package_pub_fns).cloned();
             removed_fns.extend(next_removed_fns);
 
             // reconstruct invariant
-            package_policy.recalc_pub_caller_checked(&starting_pub_caller_checked);
-            package_policy.save_to_file(
+            crate_policy.recalc_pub_caller_checked(&starting_pub_caller_checked);
+            crate_policy.save_to_file(
                 self.crate_policies
-                    .get(&package_string)
-                    .context(format!("Missing crate {} from chain", &package_string))?
+                    .get(&crate_id)
+                    .context(format!("Missing crate {} from chain", &crate_id))?
                     .clone(),
             )?;
         }
@@ -199,8 +233,8 @@ impl AuditChain {
         Ok(())
     }
 
-    /// Gets the root crate name with version
-    pub fn root_crate(&self) -> Result<String> {
+    /// Gets the root crate id
+    pub fn root_crate(&self) -> Result<CrateId> {
         let root_package = Manifest::from_path(format!(
             "{}/Cargo.toml",
             self.crate_path.to_string_lossy()
@@ -208,7 +242,7 @@ impl AuditChain {
         .package
         .ok_or_else(|| anyhow!("Can't load root package for the root crate path"))?;
 
-        Ok(format!("{}-{}", root_package.name, root_package.version.get()?))
+        CrateId::from_toml_package(&root_package)
     }
 }
 
@@ -313,8 +347,8 @@ fn collect_dependency_sinks(
 ) -> Result<HashSet<CanonicalPath>> {
     let mut sinks = HashSet::new();
     for dep in deps {
-        let dep_string = format!("{}-{}", dep.name, dep.version);
-        let policy = chain.read_policy(&dep_string).context(
+        let dep_id = CrateId::from(dep);
+        let policy = chain.read_policy(&dep_id).context(
             "couldnt read dependency policy file (maybe created it out of order)",
         )?;
         sinks.extend(policy.pub_caller_checked.keys().cloned());
@@ -325,7 +359,7 @@ fn collect_dependency_sinks(
 
 // TODO: Different default policies
 /// Creates a new default policy for the given package and returns the path to
-/// the saved policy file
+/// the saved pnameolicy file
 fn make_new_policy(
     chain: &AuditChain,
     package: &Package,
@@ -434,11 +468,12 @@ pub fn create_dependency_sinks(
 }
 
 /// Gets the package that matches the name and version if one exists in the project.
-fn lookup_package_from_name<I>(full_name: &str, project_packages: I) -> Result<Package>
+fn lookup_package_from_name<I>(crate_id: &CrateId, project_packages: I) -> Result<Package>
 where
     I: IntoIterator<Item = Package>,
 {
-    let (name, version) = util::package_info_from_string(full_name)?;
+    let name = cargo_lock::Name::from_str(&crate_id.crate_name)?;
+    let version = cargo_lock::Version::parse(&format!("{}", crate_id.version))?;
     for p in project_packages {
         if p.name == name && p.version == version {
             return Ok(p);
