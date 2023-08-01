@@ -6,7 +6,8 @@ use clap::Args as ClapArgs;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::DfsPostOrder;
 use semver::Version;
-use serde::{Deserialize, Serialize};
+use serde::de::{self, Unexpected, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fs::{create_dir_all, remove_file, File};
@@ -22,10 +23,55 @@ use crate::ident::{CanonicalPath, IdentPath};
 use crate::policy::{DefaultPolicyType, PolicyFile};
 use crate::util::load_cargo_toml;
 
-#[derive(Eq, Hash, PartialEq, Serialize, Deserialize, Debug, Clone)]
+#[derive(Eq, Hash, PartialEq, Debug, Clone)]
 pub struct CrateId {
     pub crate_name: String,
     pub version: Version,
+}
+
+impl Serialize for CrateId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&format!("{}:{}", self.crate_name, self.version))
+    }
+}
+
+struct CrateIdVisitor;
+
+impl<'de> Visitor<'de> for CrateIdVisitor {
+    type Value = CrateId;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a colon-separated pair of the crate name and version")
+    }
+
+    fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        let mut split = s.split(':');
+        match (split.next(), split.next(), split.next()) {
+            (Some(crate_name), Some(crate_version), None) => {
+                if let Ok(version) = Version::parse(crate_version) {
+                    Ok(CrateId { crate_name: crate_name.to_string(), version })
+                } else {
+                    Err(de::Error::invalid_value(Unexpected::Str(s), &self))
+                }
+            }
+            _ => Err(de::Error::invalid_value(Unexpected::Str(s), &self))
+        }
+    }
+}
+
+impl<'a> Deserialize<'a> for CrateId {
+    fn deserialize<D>(deserializer: D) -> Result<CrateId, D::Error>
+    where
+        D: Deserializer<'a>,
+    {
+        deserializer.deserialize_string(CrateIdVisitor)
+    }
 }
 
 impl From<&Package> for CrateId {
