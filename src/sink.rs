@@ -14,12 +14,20 @@ use std::{
 // TODO: Convert these examples to canonical paths
 /// Hard-coded list of sink patterns
 const SINK_PATTERNS: &[&str] = &[
+    "std::arch",
+    "std::backtrace",
     "std::env",
+    "std::ffi",
     "std::fs",
+    "std::intrinsics",
+    "std::io",
+    "std::mem",
     "std::net",
     "std::os",
     "std::path",
+    "std::panic",
     "std::process",
+    "std::simd",
     "libc",
     "winapi",
     "mio::net",
