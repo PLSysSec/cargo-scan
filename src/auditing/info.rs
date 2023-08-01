@@ -122,10 +122,18 @@ pub fn print_effect_src(
         effect_origin
             .effects()
             .iter()
-            .filter_map(|x| match x.eff_type() {
-                Effect::SinkCall(sink) => Some(format!("sink call: {}", sink)),
-                Effect::FFICall(call) => Some(format!("ffi call: {}", call)),
-                _ => None,
+            .map(|x| match x.eff_type() {
+                Effect::SinkCall(sink) => format!("sink call: {}", sink),
+                Effect::FFICall(call) => format!("ffi call: {}", call),
+                Effect::UnsafeCall(call) => format!("unsafe call: {}", call),
+                Effect::RawPointer(ptr) => format!("raw pointer access: {}", ptr),
+                Effect::UnionField(union) => format!("union access: {}", union),
+                Effect::StaticMut(var) => format!("static mut access: {}", var),
+                Effect::StaticExt(var) => format!("static ffi variable access: {}", var),
+                Effect::FnPtrCreation =>
+                    "function pointer creation (verify the function is always safe to call)".to_string(),
+                Effect::ClosureCreation =>
+                    "closure creation (verify the closure is always safe to call)".to_string(),
             })
             .collect::<Vec<_>>()
             .join("\n")
