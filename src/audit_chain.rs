@@ -60,7 +60,7 @@ impl<'de> Visitor<'de> for CrateIdVisitor {
                     Err(de::Error::invalid_value(Unexpected::Str(s), &self))
                 }
             }
-            _ => Err(de::Error::invalid_value(Unexpected::Str(s), &self))
+            _ => Err(de::Error::invalid_value(Unexpected::Str(s), &self)),
         }
     }
 }
@@ -229,12 +229,13 @@ impl AuditChain {
 
     /// Removes all effects that originate from `removed_fns` for all parent
     /// crates of `updated_crate` in the AuditChain's dependency graph.
-    /// `updated_crate should the full crate name with version`
+    /// `updated_crate should the full crate name with version`. Returns the
+    /// set of removed functions if it succeeds.
     pub fn remove_cross_crate_effects(
         &self,
         mut removed_fns: HashSet<CanonicalPath>,
         updated_crate: &CrateId,
-    ) -> Result<()> {
+    ) -> Result<HashSet<CanonicalPath>> {
         let lockfile = self.load_lockfile()?;
         let dep_tree = lockfile.dependency_tree()?;
         let dep_nodes = dep_tree.nodes();
@@ -276,7 +277,7 @@ impl AuditChain {
             )?;
         }
 
-        Ok(())
+        Ok(removed_fns)
     }
 
     /// Gets the root crate id

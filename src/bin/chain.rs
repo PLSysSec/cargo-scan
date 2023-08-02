@@ -8,6 +8,7 @@ use cargo_scan::{download_crate, scanner};
 
 use anyhow::{anyhow, Context, Result};
 use clap::{Args as ClapArgs, Parser, Subcommand, ValueEnum};
+use std::collections::HashSet;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
@@ -171,6 +172,9 @@ impl CommandRunner for Review {
 }
 
 // TODO: Default to top-level package
+// TODO: Add option to audit a public function from a particular package
+// TODO: Add info if the user doesn't have anything left to audit
+// TODO: Add effect reset command
 #[derive(Clone, ClapArgs, Debug)]
 struct Audit {
     /// Path to manifest
@@ -179,6 +183,7 @@ struct Audit {
     crate_name: Option<String>,
 }
 
+// TODO: print more info during auding (e.g. saving files)
 impl CommandRunner for Audit {
     fn run_command(self, _args: OuterArgs) -> Result<()> {
         match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path)) {
@@ -202,12 +207,16 @@ impl CommandRunner for Audit {
                     let audit_config = AuditConfig::default();
 
                     // TODO: Mechanism for re-auditing the default policies
+                    // NOTE: audit_res will contain an EffectBlock if the user
+                    //       needs to audit a child package's effects
                     let audit_res =
                         audit_policy(&mut new_policy, scan_res, &audit_config);
                     // Save the policy immediately after audit so we don't error
                     // out and forget to save
                     chain.save_policy(&crate_id, &new_policy)?;
-                    if let Some(dep_effect) = audit_res? {
+                    let removed_fns = if let Some(dep_effect) = audit_res? {
+                        // TODO: Print parents of an effect the user audits when
+                        //       auditing children
                         let effect = dep_effect.effects().get(0).ok_or_else(|| {
                             anyhow!(
                                 "Missing an EffectInstance in the dependency EffectBlock"
@@ -215,7 +224,7 @@ impl CommandRunner for Audit {
                         })?;
                         match effect.eff_type() {
                             Effect::SinkCall(sink_ident) => {
-                                audit_pub_fn(&chain, sink_ident)?;
+                                audit_pub_fn(&chain, sink_ident)?
                             }
                             _ => {
                                 return Err(anyhow!(
@@ -223,12 +232,15 @@ impl CommandRunner for Audit {
                                 ))
                             }
                         }
-                    }
+                    } else {
+                        HashSet::new()
+                    };
 
                     // if any public function annotations have changed,
                     // update parent packages
-                    let removed_fns = PolicyFile::pub_diff(&orig_policy, &new_policy);
-                    chain.remove_cross_crate_effects(removed_fns, &crate_id)?;
+                    if !removed_fns.is_empty() {
+                        chain.remove_cross_crate_effects(removed_fns, &crate_id)?;
+                    }
 
                     Ok(())
                 } else {

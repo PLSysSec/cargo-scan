@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::audit_chain::AuditChain;
 use crate::auditing::info::*;
 use crate::effect::{Effect, EffectBlock};
@@ -194,7 +196,7 @@ fn audit_branch<'a>(
 
 // TODO: Now that our auditing for branches and leaves are very similar, we might
 //       want to combine them into one function so we don't have to check to make
-//       sure we are in the right variante very time
+//       sure we are in the right variant very time
 fn audit_effect_tree(
     orig_effect: &EffectBlock,
     effect_tree: &mut EffectTree,
@@ -217,11 +219,11 @@ fn total_unaudited_effects(t: &EffectTree) -> usize {
     match t {
         EffectTree::Leaf(_, SafetyAnnotation::Skipped) => {
             total += 1;
-        },
+        }
         EffectTree::Leaf(_, _) => (),
         EffectTree::Branch(_, ts) => {
             total += ts.iter().fold(0, |total, t| total + total_unaudited_effects(t));
-        },
+        }
     };
     total
 }
@@ -398,8 +400,12 @@ fn update_audit_from_input(
 
 /// Looks up the policy associated with the crate from `sink_ident` and audit
 /// the sink public function. This function is responsible for updating the
-/// chain and any policy files on the filesystem from the audit.
-pub fn audit_pub_fn(chain: &AuditChain, sink_ident: &Sink) -> Result<()> {
+/// chain and any policy files on the filesystem from the audit. Returns the set
+/// of removed functions if it succeeds.
+pub fn audit_pub_fn(
+    chain: &AuditChain,
+    sink_ident: &Sink,
+) -> Result<HashSet<CanonicalPath>> {
     let sink_crate = sink_ident
         .first_ident()
         .ok_or_else(|| anyhow!("Missing leading identifier for pattern"))?;
@@ -424,8 +430,7 @@ pub fn audit_pub_fn(chain: &AuditChain, sink_ident: &Sink) -> Result<()> {
                 new_policy.recalc_pub_caller_checked(&scan_res.pub_fns);
                 chain.save_policy(&sink_crate_id, &new_policy)?;
                 let removed_fns = PolicyFile::pub_diff(&prev_policy, &new_policy);
-                chain
-                    .remove_cross_crate_effects(removed_fns, &sink_crate_id)?;
+                chain.remove_cross_crate_effects(removed_fns, &sink_crate_id)?;
                 prev_policy = new_policy;
 
                 let child_effect = child_effect.effects().get(0).ok_or_else(|| {
@@ -467,9 +472,9 @@ pub fn audit_pub_fn(chain: &AuditChain, sink_ident: &Sink) -> Result<()> {
 
     // update parent crates based off updated effects
     let removed_fns = PolicyFile::pub_diff(&prev_policy, &new_policy);
-    chain.remove_cross_crate_effects(removed_fns, &sink_crate_id)?;
+    let removed_fns = chain.remove_cross_crate_effects(removed_fns, &sink_crate_id)?;
 
-    Ok(())
+    Ok(removed_fns)
 }
 
 fn audit_pub_fn_effect(

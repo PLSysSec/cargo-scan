@@ -407,12 +407,14 @@ pub struct EffectBlock {
     effects: Vec<EffectInstance>,
     containing_fn: FnDec,
 }
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum BlockType {
     UnsafeExpr,
     NormalFn,
     UnsafeFn,
 }
+
 impl EffectBlock {
     pub fn new_unsafe_expr<S>(
         filepath: &FilePath,
@@ -506,6 +508,7 @@ pub struct TraitImpl {
     tr_name: CanonicalPath,
     self_type: Option<CanonicalPath>,
 }
+
 impl TraitImpl {
     pub fn new<S>(
         impl_span: &S,
