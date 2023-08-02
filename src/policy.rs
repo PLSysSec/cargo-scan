@@ -249,7 +249,9 @@ impl PolicyFile {
         pub_fns: &HashSet<CanonicalPath>,
     ) {
         match tree {
-            EffectTree::Leaf(info, _) => {
+            EffectTree::Leaf(info, SafetyAnnotation::CallerChecked) |
+            EffectTree::Leaf(info, SafetyAnnotation::Unsafe) |
+            EffectTree::Leaf(info, SafetyAnnotation::Skipped) => {
                 if pub_fns.contains(&info.caller_path) {
                     pub_caller_checked
                         .entry(info.caller_path.clone())
@@ -257,6 +259,7 @@ impl PolicyFile {
                         .insert(base_effect.clone());
                 }
             }
+            EffectTree::Leaf(_, SafetyAnnotation::Safe) => (),
             EffectTree::Branch(info, next_trees) => {
                 if pub_fns.contains(&info.caller_path) {
                     pub_caller_checked
@@ -303,11 +306,10 @@ impl PolicyFile {
             // Remove all effects that match our sinks to remove
             block.filter_effects(|e| {
                 if let Effect::SinkCall(s) = e.eff_type() {
-                    if sinks_to_remove.contains(&CanonicalPath::new(s.as_str())) {
-                        return false;
-                    }
+                    !sinks_to_remove.contains(&CanonicalPath::new(s.as_str()))
+                } else {
+                    true
                 }
-                true
             });
 
             // If there are no more effects, remove this effect tree
