@@ -388,7 +388,7 @@ pub fn create_new_audit_chain(
 
     let crate_data = load_cargo_toml(&PathBuf::from(&args.crate_path))?;
 
-    let root_name = format!("{}-{}", crate_data.name, crate_data.version);
+    let root_name = format!("{}-{}", crate_data.crate_name, crate_data.version);
 
     let config = config::Config::default()?;
     let _lock = config.acquire_package_cache_lock();

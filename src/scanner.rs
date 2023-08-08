@@ -1034,7 +1034,7 @@ pub fn scan_crate_with_sinks(
         return Err(anyhow!("Path is not a crate; missing Cargo.toml: {:?}", crate_path));
     }
 
-    let crate_name = util::load_cargo_toml(crate_path)?.name;
+    let crate_name = util::load_cargo_toml(crate_path)?.crate_name;
 
     let resolver = Resolver::new(crate_path)?;
 

@@ -193,13 +193,7 @@ impl fmt::Display for CrateId {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct CrateData {
-    pub name: String,
-    pub version: String,
-}
-
-pub fn load_cargo_toml(crate_path: &Path) -> Result<CrateData> {
+pub fn load_cargo_toml(crate_path: &Path) -> Result<CrateId> {
     debug!("Loading Cargo.toml at: {:?}", crate_path);
 
     let toml_string = read_to_string(crate_path.join("Cargo.toml"))?;
@@ -249,7 +243,7 @@ pub fn load_cargo_toml(crate_path: &Path) -> Result<CrateData> {
         }
     };
 
-    let result = CrateData { name, version };
+    let result = CrateId { crate_name: name, version: Version::parse(&version)? };
     debug!("Loaded: {:?}", result);
     Ok(result)
 }
