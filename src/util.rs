@@ -101,10 +101,97 @@ pub mod fs {
 
 /// Parse Cargo TOML
 use anyhow::{Context, Result};
+use cargo_lock::{Dependency, Package};
 use log::debug;
+use semver::Version;
+use serde::de::{self, Unexpected, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt;
 use std::fs::read_to_string;
 use std::path::Path;
 use toml::{self, value::Table};
+
+#[derive(Eq, Hash, PartialEq, Debug, Clone)]
+pub struct CrateId {
+    pub crate_name: String,
+    pub version: Version,
+}
+
+impl Serialize for CrateId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&format!("{}:{}", self.crate_name, self.version))
+    }
+}
+
+struct CrateIdVisitor;
+
+impl<'de> Visitor<'de> for CrateIdVisitor {
+    type Value = CrateId;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a colon-separated pair of the crate name and version")
+    }
+
+    fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        let mut split = s.split(':');
+        match (split.next(), split.next(), split.next()) {
+            (Some(crate_name), Some(crate_version), None) => {
+                if let Ok(version) = Version::parse(crate_version) {
+                    Ok(CrateId { crate_name: crate_name.to_string(), version })
+                } else {
+                    Err(de::Error::invalid_value(Unexpected::Str(s), &self))
+                }
+            }
+            _ => Err(de::Error::invalid_value(Unexpected::Str(s), &self)),
+        }
+    }
+}
+
+impl<'a> Deserialize<'a> for CrateId {
+    fn deserialize<D>(deserializer: D) -> Result<CrateId, D::Error>
+    where
+        D: Deserializer<'a>,
+    {
+        deserializer.deserialize_string(CrateIdVisitor)
+    }
+}
+
+impl From<&Package> for CrateId {
+    fn from(package: &Package) -> Self {
+        CrateId { crate_name: package.name.to_string(), version: package.version.clone() }
+    }
+}
+
+impl From<&Dependency> for CrateId {
+    fn from(dep: &Dependency) -> Self {
+        CrateId { crate_name: dep.name.to_string(), version: dep.version.clone() }
+    }
+}
+
+impl CrateId {
+    pub fn from_toml_package(package: &cargo_toml::Package) -> Result<Self> {
+        Ok(CrateId {
+            crate_name: package.name.to_string(),
+            version: Version::parse(package.version())?,
+        })
+    }
+
+    pub fn new(name: String, version: Version) -> Self {
+        CrateId { crate_name: name, version }
+    }
+}
+
+impl fmt::Display for CrateId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}-{}", self.crate_name, self.version)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct CrateData {

@@ -1,105 +1,25 @@
 use anyhow::{anyhow, Context, Result};
+use cargo::core::source::MaybePackage;
+use cargo::ops::{fetch, FetchOptions};
 use cargo::{core::Workspace, ops::generate_lockfile, util::config};
 use cargo_lock::{Dependency, Lockfile, Package};
 use cargo_toml::Manifest;
 use clap::Args as ClapArgs;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::DfsPostOrder;
-use semver::Version;
-use serde::de::{self, Unexpected, Visitor};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::fmt;
 use std::fs::{create_dir_all, remove_file, File};
 use std::io::Write;
 use std::iter::IntoIterator;
 use std::mem;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use toml;
 
-use crate::download_crate;
 use crate::ident::{CanonicalPath, IdentPath};
 use crate::policy::{DefaultPolicyType, PolicyFile};
-use crate::util::load_cargo_toml;
-
-#[derive(Eq, Hash, PartialEq, Debug, Clone)]
-pub struct CrateId {
-    pub crate_name: String,
-    pub version: Version,
-}
-
-impl Serialize for CrateId {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&format!("{}:{}", self.crate_name, self.version))
-    }
-}
-
-struct CrateIdVisitor;
-
-impl<'de> Visitor<'de> for CrateIdVisitor {
-    type Value = CrateId;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a colon-separated pair of the crate name and version")
-    }
-
-    fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        let mut split = s.split(':');
-        match (split.next(), split.next(), split.next()) {
-            (Some(crate_name), Some(crate_version), None) => {
-                if let Ok(version) = Version::parse(crate_version) {
-                    Ok(CrateId { crate_name: crate_name.to_string(), version })
-                } else {
-                    Err(de::Error::invalid_value(Unexpected::Str(s), &self))
-                }
-            }
-            _ => Err(de::Error::invalid_value(Unexpected::Str(s), &self)),
-        }
-    }
-}
-
-impl<'a> Deserialize<'a> for CrateId {
-    fn deserialize<D>(deserializer: D) -> Result<CrateId, D::Error>
-    where
-        D: Deserializer<'a>,
-    {
-        deserializer.deserialize_string(CrateIdVisitor)
-    }
-}
-
-impl From<&Package> for CrateId {
-    fn from(package: &Package) -> Self {
-        CrateId { crate_name: package.name.to_string(), version: package.version.clone() }
-    }
-}
-
-impl From<&Dependency> for CrateId {
-    fn from(dep: &Dependency) -> Self {
-        CrateId { crate_name: dep.name.to_string(), version: dep.version.clone() }
-    }
-}
-
-impl CrateId {
-    pub fn from_toml_package(package: &cargo_toml::Package) -> Result<Self> {
-        Ok(CrateId {
-            crate_name: package.name.to_string(),
-            version: Version::parse(package.version())?,
-        })
-    }
-}
-
-impl fmt::Display for CrateId {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}-{}", self.crate_name, self.version)
-    }
-}
+use crate::util::{load_cargo_toml, CrateId};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuditChain {
@@ -406,13 +326,13 @@ fn collect_dependency_sinks(
 
 // TODO: Different default policies
 /// Creates a new default policy for the given package and returns the path to
-/// the saved pnameolicy file
+/// the saved policy file
 fn make_new_policy(
     chain: &AuditChain,
     package: &Package,
     root_name: &str,
     args: &Create,
-    crate_download_path: &str,
+    crate_path: &Path,
     policy_type: DefaultPolicyType,
 ) -> Result<PathBuf> {
     let policy_path = PathBuf::from(format!(
@@ -421,15 +341,13 @@ fn make_new_policy(
         package.name.as_str(),
         package.version
     ));
-
     // download the new policy
     let full_name = format!("{}-{}", package.name, package.version);
     let package_path = if full_name == root_name {
         // We are creating a policy for the root crate
         PathBuf::from(args.crate_path.clone())
     } else {
-        // TODO: Handle the case where we have a crate source not from crates.io
-        download_crate::download_crate_from_package(package, crate_download_path)?
+        PathBuf::from(crate_path)
     };
 
     // Try to create a new default policy
@@ -472,6 +390,31 @@ pub fn create_new_audit_chain(
 
     let root_name = format!("{}-{}", crate_data.name, crate_data.version);
 
+    let config = config::Config::default()?;
+    let _lock = config.acquire_package_cache_lock();
+    let set = HashSet::new();
+    let mut path = PathBuf::from(&args.crate_path);
+    path.push("Cargo.toml");
+    let workspace = Workspace::new(Path::new(&path), &config)?;
+    let fetch_options = FetchOptions { config: &config, targets: Vec::new() };
+    let (resolve, _package_set) = fetch(&workspace, &fetch_options)?;
+    let crate_paths: HashMap<CrateId, PathBuf> =
+        HashMap::from_iter(resolve.iter().filter_map(|p| {
+            // NOTE: We should return Some for every element here
+            let source_id = p.source_id();
+            let Ok(mut source) = source_id.load(&config, &set) else {
+                return None;
+            };
+            match source.download(p) {
+                Ok(MaybePackage::Ready(pkg)) => {
+                    let crate_id =
+                        CrateId::new(p.name().to_string(), p.version().clone());
+                    Some((crate_id, pkg.root().to_path_buf()))
+                }
+                _ => None,
+            }
+        }));
+
     println!("Creating dependency graph");
     let (graph, package_map, root_node) =
         make_dependency_graph(&lockfile.packages, &root_name);
@@ -485,6 +428,10 @@ pub fn create_new_audit_chain(
         } else {
             DefaultPolicyType::CallerChecked
         };
+
+        let crate_download_path = crate_paths
+            .get(&CrateId::from(package))
+            .context("Unresolved path for a crate")?;
 
         let res = make_new_policy(
             &chain,
