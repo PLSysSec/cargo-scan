@@ -486,12 +486,16 @@ impl EffectBlock {
         &self.effects
     }
 
-    pub fn filter_effects<F>(&mut self, f: F)
+    /// Removes all the elements from self.effects for which `f` returns `false`
+    /// and returns them
+    pub fn filter_effects<F>(&mut self, f: F) -> Vec<EffectInstance>
     where
         F: FnMut(&EffectInstance) -> bool,
     {
         let effects = std::mem::take(&mut self.effects);
-        self.effects = effects.into_iter().filter(f).collect::<Vec<_>>();
+        let (new_effects, removed_effects) = effects.into_iter().partition(f);
+        self.effects = new_effects;
+        removed_effects
     }
 
     pub fn containing_fn(&self) -> &FnDec {

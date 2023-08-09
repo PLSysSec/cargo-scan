@@ -18,7 +18,7 @@ use std::str::FromStr;
 use toml;
 
 use crate::ident::{CanonicalPath, IdentPath};
-use crate::policy::{DefaultPolicyType, PolicyFile};
+use crate::policy::{DefaultPolicyType, PolicyFile, PolicyVersion};
 use crate::util::{load_cargo_toml, CrateId};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -26,7 +26,7 @@ pub struct AuditChain {
     #[serde(skip)]
     manifest_path: PathBuf,
     crate_path: PathBuf,
-    crate_policies: HashMap<CrateId, PathBuf>,
+    crate_policies: HashMap<CrateId, (PathBuf, PolicyVersion)>,
 }
 
 impl AuditChain {
@@ -38,13 +38,14 @@ impl AuditChain {
         self.crate_policies.keys().collect::<Vec<_>>()
     }
 
-    pub fn matching_crates_no_version<'a>(
-        &'a self,
+    pub fn matching_crates_no_version(
+        &self,
         crate_name: &str,
-    ) -> Vec<&'a CrateId> {
+    ) -> Vec<CrateId> {
         self.crate_policies
             .keys()
             .filter(|x| x.crate_name == crate_name)
+            .cloned()
             .collect::<Vec<_>>()
     }
 
@@ -69,14 +70,39 @@ impl AuditChain {
         Ok(())
     }
 
-    pub fn add_crate_policy(&mut self, package: &Package, policy_loc: PathBuf) {
+    pub fn add_crate_policy(
+        &mut self,
+        package: &Package,
+        policy_loc: PathBuf,
+        version: PolicyVersion,
+    ) {
         let crate_id = CrateId::from(package);
-        self.crate_policies.insert(crate_id, policy_loc);
+        self.crate_policies.insert(crate_id, (policy_loc, version));
     }
 
-    pub fn read_policy(&self, crate_id: &CrateId) -> Option<PolicyFile> {
-        let policy_path = self.crate_policies.get(crate_id)?;
-        PolicyFile::read_policy(policy_path.clone()).ok()?
+    pub fn read_policy(&mut self, crate_id: &CrateId) -> Result<Option<PolicyFile>> {
+        let (policy_path, expected_version) = self
+            .crate_policies
+            .get(crate_id)
+            .context("Can't find an associated policy for the crate")?
+            .clone();
+        match PolicyFile::read_policy(policy_path.clone())? {
+            Some(policy) => {
+                if policy.version != expected_version {
+                    // The policy has been updated in a different audit, so we need to
+                    // recalculate the policies for its parents
+                    let potentially_removed = policy.safe_pub_fns();
+                    self.remove_cross_crate_effects(potentially_removed, crate_id)?;
+
+                    // re-read the policy so changes have taken effect
+                    // NOTE: This assumes there aren't concurrent audits modifying policies
+                    PolicyFile::read_policy(policy_path)
+                } else {
+                    Ok(Some(policy))
+                }
+            }
+            None => Ok(None),
+        }
     }
 
     /// Returns the full package name with version if there is exactly one
@@ -104,24 +130,25 @@ impl AuditChain {
     }
 
     pub fn read_policy_no_version(
-        &self,
+        &mut self,
         crate_name: &str,
-    ) -> Option<(CrateId, PolicyFile)> {
+    ) -> Result<Option<(CrateId, PolicyFile)>> {
         if let Some(crate_id) = self.resolve_crate_id(crate_name) {
-            if let Some(policy) = self.read_policy(&crate_id) {
-                return Some((crate_id, policy));
+            if let Some(policy) = self.read_policy(&crate_id)? {
+                return Ok(Some((crate_id, policy)));
             }
         }
-        None
+        Ok(None)
     }
 
     /// Looks up where the policy is saved from the full crate name and saves the
     /// given PolicyFile to the PathBuf associated with that crate.
-    pub fn save_policy(&self, crate_id: &CrateId, policy: &PolicyFile) -> Result<()> {
-        let policy_path = self
+    pub fn save_policy(&mut self, crate_id: &CrateId, policy: &PolicyFile) -> Result<()> {
+        let (policy_path, policy_version) = self
             .crate_policies
-            .get(crate_id)
+            .get_mut(crate_id)
             .ok_or_else(|| anyhow!("Couldn't find entry for crate: {}", crate_id))?;
+        *policy_version = policy.version;
         policy.save_to_file(policy_path.clone())
     }
 
@@ -147,12 +174,15 @@ impl AuditChain {
         }
     }
 
+    // TODO: Write a test for this to make sure it's properly recalculating
+    //       dependency policies when they are invalid. It's going to be almost
+    //       impossible to tell if something has gone wrong here.
     /// Removes all effects that originate from `removed_fns` for all parent
     /// crates of `updated_crate` in the AuditChain's dependency graph.
     /// `updated_crate should the full crate name with version`. Returns the
     /// set of removed functions if it succeeds.
     pub fn remove_cross_crate_effects(
-        &self,
+        &mut self,
         mut removed_fns: HashSet<CanonicalPath>,
         updated_crate: &CrateId,
     ) -> Result<HashSet<CanonicalPath>> {
@@ -175,16 +205,24 @@ impl AuditChain {
             let package = &dep_graph[n];
             let crate_id = CrateId::from(package);
             let mut crate_policy = self
-                .read_policy(&crate_id)
+                .read_policy(&crate_id)?
                 .context(format!("Couldn't find policy for {}", crate_id))?;
             let starting_pub_caller_checked =
                 crate_policy.pub_caller_checked.keys().cloned().collect::<HashSet<_>>();
 
-            crate_policy.remove_sinks_from_tree(&removed_fns);
+            let removed_effect_instances =
+                crate_policy.remove_sinks_from_tree(&removed_fns);
             let package_pub_fns =
                 &crate_policy.pub_caller_checked.keys().cloned().collect::<HashSet<_>>();
-            let next_removed_fns =
-                starting_pub_caller_checked.difference(package_pub_fns).cloned();
+            let next_removed_fns = starting_pub_caller_checked
+                .difference(package_pub_fns)
+                .cloned()
+                .collect::<Vec<_>>();
+            if !next_removed_fns.is_empty() || !removed_effect_instances.is_empty() {
+                // If the policy file changes, we need to bump the version so
+                // other audit chains know to recalculate their effects
+                crate_policy.version += 1;
+            }
             removed_fns.extend(next_removed_fns);
 
             // reconstruct invariant
@@ -193,8 +231,14 @@ impl AuditChain {
                 self.crate_policies
                     .get(&crate_id)
                     .context(format!("Missing crate {} from chain", &crate_id))?
+                    .0
                     .clone(),
             )?;
+
+            self.crate_policies
+                .get_mut(&crate_id)
+                .context("Couldn't find the crate in the chain manifest")?
+                .1 = crate_policy.version;
         }
 
         Ok(removed_fns)
@@ -309,13 +353,13 @@ fn make_dependency_graph(
 }
 
 fn collect_dependency_sinks(
-    chain: &AuditChain,
+    chain: &mut AuditChain,
     deps: &Vec<Dependency>,
 ) -> Result<HashSet<CanonicalPath>> {
     let mut sinks = HashSet::new();
     for dep in deps {
         let dep_id = CrateId::from(dep);
-        let policy = chain.read_policy(&dep_id).context(
+        let policy = chain.read_policy(&dep_id)?.context(
             "couldnt read dependency policy file (maybe created it out of order)",
         )?;
         sinks.extend(policy.pub_caller_checked.keys().cloned());
@@ -328,13 +372,13 @@ fn collect_dependency_sinks(
 /// Creates a new default policy for the given package and returns the path to
 /// the saved policy file
 fn make_new_policy(
-    chain: &AuditChain,
+    chain: &mut AuditChain,
     package: &Package,
     root_name: &str,
     args: &Create,
     crate_path: &Path,
     policy_type: DefaultPolicyType,
-) -> Result<PathBuf> {
+) -> Result<()> {
     let policy_path = PathBuf::from(format!(
         "{}/{}-{}.policy",
         args.policy_path,
@@ -367,7 +411,9 @@ fn make_new_policy(
         PolicyFile::new_default_with_sinks(package_path.as_path(), sinks, policy_type)?;
     policy.save_to_file(policy_path.clone())?;
 
-    Ok(policy_path)
+    chain.add_crate_policy(package, policy_path, policy.version);
+
+    Ok(())
 }
 
 pub fn create_new_audit_chain(
@@ -433,20 +479,14 @@ pub fn create_new_audit_chain(
             .get(&CrateId::from(package))
             .context("Unresolved path for a crate")?;
 
-        let res = make_new_policy(
-            &chain,
+        make_new_policy(
+            &mut chain,
             package,
             &root_name,
             &args,
             crate_download_path,
             policy_type,
-        );
-        match res {
-            Ok(policy_path) => {
-                chain.add_crate_policy(package, policy_path);
-            }
-            Err(e) => return Err(anyhow!("Audit chain creation failed: {}", e)),
-        };
+        )?;
     }
 
     println!("Finished creating policy chain");

@@ -99,6 +99,8 @@ pub enum DefaultPolicyType {
     CallerChecked,
 }
 
+pub type PolicyVersion = u32;
+
 // TODO: Include information about crate/version
 // TODO: We should include more information from the ScanResult
 #[serde_as]
@@ -113,6 +115,7 @@ pub struct PolicyFile {
     // TODO: Make the base_dir a crate instead
     pub base_dir: PathBuf,
     pub hash: [u8; 32],
+    pub version: PolicyVersion,
 }
 
 impl PolicyFile {
@@ -123,6 +126,7 @@ impl PolicyFile {
             pub_caller_checked: HashMap::new(),
             base_dir: p,
             hash,
+            version: 0,
         })
     }
 
@@ -249,13 +253,13 @@ impl PolicyFile {
         pub_fns: &HashSet<CanonicalPath>,
     ) {
         match tree {
-            EffectTree::Leaf(info, SafetyAnnotation::CallerChecked) |
-            EffectTree::Leaf(info, SafetyAnnotation::Unsafe) |
-            EffectTree::Leaf(info, SafetyAnnotation::Skipped) => {
+            EffectTree::Leaf(info, SafetyAnnotation::CallerChecked)
+            | EffectTree::Leaf(info, SafetyAnnotation::Unsafe)
+            | EffectTree::Leaf(info, SafetyAnnotation::Skipped) => {
                 if pub_fns.contains(&info.caller_path) {
                     pub_caller_checked
-                        .entry(info.caller_path.clone())
-                        .or_insert_with(HashSet::new)
+                        .get_mut(&info.caller_path)
+                        .unwrap()
                         .insert(base_effect.clone());
                 }
             }
@@ -263,8 +267,8 @@ impl PolicyFile {
             EffectTree::Branch(info, next_trees) => {
                 if pub_fns.contains(&info.caller_path) {
                     pub_caller_checked
-                        .entry(info.caller_path.clone())
-                        .or_insert_with(HashSet::new)
+                        .get_mut(&info.caller_path)
+                        .unwrap()
                         .insert(base_effect.clone());
                 }
                 for t in next_trees {
@@ -284,7 +288,8 @@ impl PolicyFile {
     /// disk, because it assumes the invariant that the list in
     /// `pub_caller_checked` aligns with those in the effect tree.
     pub fn recalc_pub_caller_checked(&mut self, pub_fns: &HashSet<CanonicalPath>) {
-        let mut pub_caller_checked = HashMap::new();
+        let mut pub_caller_checked =
+            HashMap::from_iter(pub_fns.iter().map(|p| (p.clone(), HashSet::new())));
         for (effect, tree) in self.audit_trees.iter() {
             PolicyFile::recalc_pub_caller_checked_tree(
                 effect,
@@ -297,29 +302,54 @@ impl PolicyFile {
         self.pub_caller_checked = pub_caller_checked;
     }
 
-    /// Removes any effect trees which have the given sink as the root
-    pub fn remove_sinks_from_tree(&mut self, sinks_to_remove: &HashSet<CanonicalPath>) {
+    /// Returns the list of all safe public functions (these include all the
+    /// public functions which have been removed since the last policy update).
+    pub fn safe_pub_fns(&self) -> HashSet<CanonicalPath> {
+        self.pub_caller_checked.iter().filter_map(|(path, set)| {
+            if set.is_empty() {
+                Some(path.clone())
+            } else {
+                None
+            }
+        }).collect()
+    }
+
+    /// Removes any effect trees which have the given sink as the root. Returns
+    /// the removed effects.
+    pub fn remove_sinks_from_tree(
+        &mut self,
+        sinks_to_remove: &HashSet<CanonicalPath>,
+    ) -> Vec<EffectInstance> {
         // Replace the audit tree with a temporary value so we can use a filter
         // map to drop effects
         let audit_trees = std::mem::take(&mut self.audit_trees);
-        let new_trees = audit_trees.into_iter().filter_map(|(mut block, tree)| {
-            // Remove all effects that match our sinks to remove
-            block.filter_effects(|e| {
-                if let Effect::SinkCall(s) = e.eff_type() {
-                    !sinks_to_remove.contains(&CanonicalPath::new(s.as_str()))
-                } else {
-                    true
-                }
-            });
+        #[allow(clippy::type_complexity)]
+        let (new_trees, removed_effects): (
+            Vec<Option<(EffectBlock, EffectTree)>>,
+            Vec<Vec<EffectInstance>>,
+        ) = audit_trees
+            .into_iter()
+            .map(|(mut block, tree)| {
+                // Remove all effects that match our sinks to remove
+                let removed = block.filter_effects(|e| {
+                    if let Effect::SinkCall(s) = e.eff_type() {
+                        !sinks_to_remove.contains(&CanonicalPath::new(s.as_str()))
+                    } else {
+                        true
+                    }
+                });
 
-            // If there are no more effects, remove this effect tree
-            if block.effects().is_empty() {
-                None
-            } else {
-                Some((block, tree))
-            }
-        });
+                // If there are no more effects, remove this effect tree
+                if block.effects().is_empty() {
+                    (None, removed)
+                } else {
+                    (Some((block, tree)), removed)
+                }
+            })
+            .unzip();
+        let new_trees = new_trees.into_iter().flatten();
         self.audit_trees = new_trees.collect::<HashMap<_, _>>();
+        removed_effects.into_iter().flatten().collect::<Vec<_>>()
     }
 
     pub fn new_caller_checked_default(crate_path: &FilePath) -> Result<PolicyFile> {

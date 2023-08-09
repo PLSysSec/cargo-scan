@@ -128,7 +128,7 @@ impl std::fmt::Display for ReviewInfo {
 
 impl CommandRunner for Review {
     fn run_command(self, args: OuterArgs) -> Result<()> {
-        let chain = match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path))
+        let mut chain = match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path))
         {
             Ok(Some(chain)) => Ok(chain),
             Ok(None) => Err(anyhow!(
@@ -151,13 +151,13 @@ impl CommandRunner for Review {
         }
 
         let crates_to_review = match self.review_target {
-            None => chain.all_crates(),
+            None => chain.all_crates().into_iter().cloned().collect::<Vec<_>>(),
             Some(crate_name) => chain.matching_crates_no_version(&crate_name),
         };
 
         for review_crate in crates_to_review {
             println!("Reviewing policy for {}", review_crate);
-            let policy = chain.read_policy(review_crate).ok_or_else(|| {
+            let policy = chain.read_policy(&review_crate)?.ok_or_else(|| {
                 anyhow!(format!(
                     "Couldn't find policy for crate {} in chain",
                     review_crate
@@ -187,7 +187,7 @@ struct Audit {
 impl CommandRunner for Audit {
     fn run_command(self, _args: OuterArgs) -> Result<()> {
         match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path)) {
-            Ok(Some(chain)) => {
+            Ok(Some(mut chain)) => {
                 let crate_id = match self.crate_name {
                     Some(crate_name) => chain.resolve_crate_id(&crate_name).context(
                         format!("Couldn't resolve crate_name for {}", &crate_name),
@@ -196,7 +196,7 @@ impl CommandRunner for Audit {
                 };
 
                 // TODO: Handle more than one policy matching a crate
-                if let Some(orig_policy) = chain.read_policy(&crate_id) {
+                if let Some(orig_policy) = chain.read_policy(&crate_id)? {
                     let mut new_policy = orig_policy.clone();
                     let crate_path = PathBuf::from(&orig_policy.base_dir);
 
@@ -224,7 +224,7 @@ impl CommandRunner for Audit {
                         })?;
                         match effect.eff_type() {
                             Effect::SinkCall(sink_ident) => {
-                                audit_pub_fn(&chain, sink_ident)?
+                                audit_pub_fn(&mut chain, sink_ident)?
                             }
                             _ => {
                                 return Err(anyhow!(

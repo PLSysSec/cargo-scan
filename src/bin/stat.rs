@@ -52,10 +52,10 @@ fn main() -> Result<()> {
         None,
     );
 
-    let chain = create_new_audit_chain(create, &args.crate_download_path)?;
+    let mut chain = create_new_audit_chain(create, &args.crate_download_path)?;
     let root_crate = chain.root_crate()?;
     let root_policy = chain
-        .read_policy(&root_crate)
+        .read_policy(&root_crate)?
         .ok_or_else(|| anyhow!("Couldn't read root crate from the policy"))?;
     let review_config = Config::new(0, 0);
     review_policy(&root_policy, &PathBuf::from(&args.crate_path), &review_config)?;

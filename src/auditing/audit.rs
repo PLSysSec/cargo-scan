@@ -403,7 +403,7 @@ fn update_audit_from_input(
 /// chain and any policy files on the filesystem from the audit. Returns the set
 /// of removed functions if it succeeds.
 pub fn audit_pub_fn(
-    chain: &AuditChain,
+    chain: &mut AuditChain,
     sink_ident: &Sink,
 ) -> Result<HashSet<CanonicalPath>> {
     let sink_crate = sink_ident
@@ -411,7 +411,7 @@ pub fn audit_pub_fn(
         .ok_or_else(|| anyhow!("Missing leading identifier for pattern"))?;
     // TODO: The sink crate we get here may include the version
     let (sink_crate_id, mut prev_policy) = chain
-        .read_policy_no_version(sink_crate.as_str())
+        .read_policy_no_version(sink_crate.as_str())?
         .ok_or_else(|| anyhow!("Couldn't find policy for the sink: {}", sink_crate))?;
     let mut new_policy = prev_policy.clone();
 
@@ -448,7 +448,7 @@ pub fn audit_pub_fn(
                 // We have to reload the new policy because auditing child
                 // effects may have removed some base effects from the current
                 // crate
-                new_policy = chain.read_policy(&sink_crate_id).ok_or_else(|| {
+                new_policy = chain.read_policy(&sink_crate_id)?.ok_or_else(|| {
                     anyhow!("Couldn't find policy for the sink: {}", sink_crate_id)
                 })?;
                 // After we audit the child function, we will recurse until the
