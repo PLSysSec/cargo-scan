@@ -38,10 +38,7 @@ impl AuditChain {
         self.crate_policies.keys().collect::<Vec<_>>()
     }
 
-    pub fn matching_crates_no_version(
-        &self,
-        crate_name: &str,
-    ) -> Vec<CrateId> {
+    pub fn matching_crates_no_version(&self, crate_name: &str) -> Vec<CrateId> {
         self.crate_policies
             .keys()
             .filter(|x| x.crate_name == crate_name)
@@ -118,10 +115,6 @@ impl AuditChain {
     pub fn resolve_all_crates(&self, search_name: &str) -> Vec<CrateId> {
         let mut res = Vec::new();
         for (crate_id, _) in self.crate_policies.iter() {
-            // trim the version number off the package and see if they match
-            // TODO: Make sure the full non-version prefix matches (e.g.
-            //       searching "bin" would matching "binary-tree-0.3.1")
-
             if crate_id.crate_name == search_name {
                 res.push(crate_id.clone());
             }
@@ -257,7 +250,6 @@ impl AuditChain {
     }
 }
 
-// TODO: Add an argument for the default policy type
 #[derive(Clone, ClapArgs, Debug)]
 pub struct Create {
     /// Path to crate
