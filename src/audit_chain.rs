@@ -424,16 +424,16 @@ pub fn create_new_audit_chain(
     // If the lockfile doesn't exist, generate it
     let lockfile = chain.load_lockfile()?;
 
-    let crate_data = load_cargo_toml(&PathBuf::from(&args.crate_path))?;
+    let mut crate_path_buf = Path::new(&args.crate_path).canonicalize()?;
+    let crate_data = load_cargo_toml(&crate_path_buf)?;
 
     let root_name = format!("{}-{}", crate_data.crate_name, crate_data.version);
 
     let config = config::Config::default()?;
     let _lock = config.acquire_package_cache_lock();
     let set = HashSet::new();
-    let mut path = PathBuf::from(&args.crate_path);
-    path.push("Cargo.toml");
-    let workspace = Workspace::new(Path::new(&path), &config)?;
+    crate_path_buf.push("Cargo.toml");
+    let workspace = Workspace::new(Path::new(&crate_path_buf), &config)?;
     let fetch_options = FetchOptions { config: &config, targets: Vec::new() };
     let (resolve, _package_set) = fetch(&workspace, &fetch_options)?;
     let crate_paths: HashMap<CrateId, PathBuf> =
