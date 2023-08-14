@@ -305,13 +305,18 @@ impl PolicyFile {
     /// Returns the list of all safe public functions (these include all the
     /// public functions which have been removed since the last policy update).
     pub fn safe_pub_fns(&self) -> HashSet<CanonicalPath> {
-        self.pub_caller_checked.iter().filter_map(|(path, set)| {
-            if set.is_empty() {
-                Some(path.clone())
-            } else {
-                None
-            }
-        }).collect()
+        self.pub_caller_checked
+            .iter()
+            .filter_map(
+                |(path, set)| {
+                    if set.is_empty() {
+                        Some(path.clone())
+                    } else {
+                        None
+                    }
+                },
+            )
+            .collect()
     }
 
     /// Removes any effect trees which have the given sink as the root. Returns

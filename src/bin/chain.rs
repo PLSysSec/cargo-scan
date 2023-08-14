@@ -128,15 +128,15 @@ impl std::fmt::Display for ReviewInfo {
 
 impl CommandRunner for Review {
     fn run_command(self, args: OuterArgs) -> Result<()> {
-        let mut chain = match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path))
-        {
-            Ok(Some(chain)) => Ok(chain),
-            Ok(None) => Err(anyhow!(
-                "Couldn't find audit chain manifest at {}",
-                &self.manifest_path
-            )),
-            Err(e) => Err(e),
-        }?;
+        let mut chain =
+            match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path)) {
+                Ok(Some(chain)) => Ok(chain),
+                Ok(None) => Err(anyhow!(
+                    "Couldn't find audit chain manifest at {}",
+                    &self.manifest_path
+                )),
+                Err(e) => Err(e),
+            }?;
 
         // Don't have to do the usual review process of loading up the crate's
         // policy if we are just printing out the list of crates for the given
