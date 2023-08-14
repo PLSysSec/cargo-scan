@@ -1,4 +1,4 @@
-.PHONY: install install-mirai checks test test-results top10 top100 top1000 top10000 mozilla small medium large clean
+.PHONY: install checks test test-results top10 top100 top1000 top10000 mozilla small medium large clean
 .DEFAULT_GOAL := install
 
 SCAN_PY = ./scripts/scan.py
@@ -6,12 +6,6 @@ SCAN_PY = ./scripts/scan.py
 install:
 	- cargo install cargo-download
 	cargo build && cargo build --release
-
-install-mirai: install
-	cargo install cargo-download
-	git submodule init
-	git submodule update
-	cd mirai/MIRAI && cargo install --locked --path ./checker
 
 checks:
 	cargo test
