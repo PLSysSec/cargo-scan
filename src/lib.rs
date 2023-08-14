@@ -3,6 +3,7 @@ pub mod auditing;
 pub mod download_crate;
 pub mod effect;
 pub mod ident;
+pub mod loc_tracker;
 pub mod policy;
 pub mod scanner;
 pub mod sink;

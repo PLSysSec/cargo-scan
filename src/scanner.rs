@@ -8,6 +8,7 @@ use super::effect::{
     Visibility,
 };
 use super::ident::{CanonicalPath, IdentPath};
+use super::loc_tracker::LoCTracker;
 use super::resolve::{FileResolver, Resolve, Resolver};
 use super::sink::Sink;
 use super::util;
@@ -24,46 +25,6 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path as FilePath;
 use syn::spanned::Spanned;
-
-/// Lines of Code tracker
-#[derive(Debug, Default)]
-pub struct LoCTracker {
-    instances: usize,
-    lines: usize,
-    zero_size_lines: usize,
-}
-impl LoCTracker {
-    /// Create an empty tracker
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    /// Add a syn Spanned object
-    pub fn add<S: Spanned>(&mut self, s: S) {
-        self.instances += 1;
-        let start = s.span().start().line;
-        let end = s.span().end().line;
-        if start == end {
-            self.zero_size_lines += 1;
-        } else {
-            // Could add 1 here, but we choose to instead
-            // track zero-sized lines separately
-            self.lines += end - start;
-        }
-    }
-
-    /// Return true if no spans were added
-    pub fn is_empty(&self) -> bool {
-        self.instances == 0
-    }
-
-    /// Attempt to summarize the tracker as a single "lines of code" number
-    ///
-    /// This overapproximates by counting zero-sized lines as a full line.
-    pub fn as_loc(&self) -> usize {
-        self.lines + self.zero_size_lines
-    }
-}
 
 /// Results of a scan
 ///
