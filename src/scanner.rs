@@ -776,7 +776,7 @@ impl<'a> Scanner<'a> {
     where
         S: Debug + Spanned,
     {
-        let caller = match &self.scope_fns.last() {
+        let caller = match self.scope_fns.last() {
             Some(fn_dec) => fn_dec.fn_name.to_owned(),
             None => {
                 let mut path = callee.to_owned();
@@ -795,10 +795,9 @@ impl<'a> Scanner<'a> {
         );
         if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
             effect_block.push_effect(eff.clone())
+        } else {
+            self.syn_warning("unexpected effect found outside an effect block", eff_span);
         }
-        // else {
-        //     self.syn_warning("unexpected effect found outside an effect block", eff_span);
-        // }
         self.data.effects.push(eff);
     }
 
@@ -812,35 +811,42 @@ impl<'a> Scanner<'a> {
     ) where
         S: Debug + Spanned,
     {
-        if let Some(effect_block) = self.scope_effect_blocks.last().cloned() {
-            let caller = match &self.scope_fns.last() {
-                Some(fn_dec) => fn_dec.fn_name.to_owned(),
-                None => {
-                    let mut path = callee.to_owned();
-                    // Pop ident to get the path of the containting module/data type
-                    path.pop_ident();
-                    path
-                }
-            };
+        // TODO: This function is not working.
+        // Falling back for now, we can run `make test` to see if changes preserve
+        // the correct functionality
+        self.push_effect(eff_span, callee, eff_type);
 
-            let eff = EffectInstance::new_effect(
-                self.filepath,
-                caller,
-                callee,
-                &eff_span,
-                eff_type,
-            );
+        // if let Some(effect_block) = self.scope_effect_blocks.last().cloned() {
+        //     let caller = match &self.scope_fns.last() {
+        //         Some(fn_dec) => fn_dec.fn_name.to_owned(),
+        //         None => {
+        //             let mut path = callee.to_owned();
+        //             // Pop ident to get the path of the containting module/data type
+        //             path.pop_ident();
+        //             path
+        //         }
+        //     };
 
-            // Always make an UnsafeExpr EffectBloc for independent effects
-            // TODO: The containing_fn here might not be right
-            let mut new_effect_block = EffectBlock::new_unsafe_expr(
-                self.filepath,
-                &eff_span,
-                effect_block.containing_fn().clone(),
-            );
-            new_effect_block.push_effect(eff);
-            self.data.effect_blocks.push(new_effect_block);
-        }
+        //     let eff = EffectInstance::new_effect(
+        //         self.filepath,
+        //         caller,
+        //         callee,
+        //         &eff_span,
+        //         eff_type,
+        //     );
+
+        //     // Always make an UnsafeExpr EffectBloc for independent effects
+        //     // TODO: The containing_fn here might not be right
+        //     let mut new_effect_block = EffectBlock::new_unsafe_expr(
+        //         self.filepath,
+        //         &eff_span,
+        //         effect_block.containing_fn().clone(),
+        //     );
+        //     new_effect_block.push_effect(eff);
+        //     self.data.effect_blocks.push(new_effect_block);
+        // } else {
+        //     self.syn_warning("unexpected effect found outside an effect block", eff_span);
+        // }
     }
 
     /// push an Effect to the list of results based on this call site.
@@ -895,13 +901,15 @@ impl<'a> Scanner<'a> {
                 let ffi = self.resolver.resolve_ffi(&p.path);
                 let is_unsafe =
                     self.resolver.resolve_unsafe_path(&p.path) && self.scope_unsafe > 0;
-                if let Some(sink) = Sink::new_match(&callee, &self.sinks) {
-                    self.push_independent_effect(
-                        f.span(),
-                        callee.clone(),
-                        Effect::SinkCall(sink),
-                    );
-                }
+                // TODO: this duplicates effect::EffectInstance::new_call
+                // Should not be needed, do we need to rethink the effect model?
+                // if let Some(sink) = Sink::new_match(&callee, &self.sinks) {
+                //     self.push_independent_effect(
+                //         f.span(),
+                //         callee.clone(),
+                //         Effect::SinkCall(sink),
+                //     );
+                // }
                 self.push_callsite(p, callee, ffi, is_unsafe);
             }
             syn::Expr::Paren(x) => {
