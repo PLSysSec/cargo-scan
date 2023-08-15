@@ -12,6 +12,7 @@ rand, rand::distributions::uniform::UniformDuration::new_inclusive, CLOSURE::dat
 rand, rand::distributions::weighted_index::WeightedIndex::sample, CLOSURE::data::packages::rand::src::distributions::weighted_index::231::30, [ClosureCreation], data/packages/rand/src/distributions, weighted_index.rs, 231, 30
 rand, rand::distributions::weighted_index::test::test_weightedindex, CLOSURE::data::packages::rand::src::distributions::weighted_index::295::21, [ClosureCreation], data/packages/rand/src/distributions, weighted_index.rs, 295, 21
 rand, rand::rngs::adapter::read::ReadRng::fill_bytes, CLOSURE::data::packages::rand::src::rngs::adapter::read::60::49, [ClosureCreation], data/packages/rand/src/rngs/adapter, read.rs, 60, 49
+rand, rand::rngs::adapter::read::ReadRng::try_fill_bytes, std::io::Read::read_exact, std::io, data/packages/rand/src/rngs/adapter, read.rs, 74, 13
 rand, rand::rngs::adapter::read::ReadRng::try_fill_bytes, CLOSURE::data::packages::rand::src::rngs::adapter::read::75::21, [ClosureCreation], data/packages/rand/src/rngs/adapter, read.rs, 75, 21
 rand, rand::rngs::adapter::reseeding::ReseedingCore::reseed, CLOSURE::data::packages::rand::src::rngs::adapter::reseeding::220::44, [ClosureCreation], data/packages/rand/src/rngs/adapter, reseeding.rs, 220, 44
 rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, CLOSURE::data::packages::rand::src::rngs::adapter::reseeding::319::27, [ClosureCreation], data/packages/rand/src/rngs/adapter, reseeding.rs, 319, 27
@@ -749,7 +750,10 @@ syn, syn::ty::printing::TypeTuple::to_tokens, CLOSURE::data::packages::syn::src:
 syn, syn::ty::printing::TypeGroup::to_tokens, CLOSURE::data::packages::syn::src::ty::1205::46, [ClosureCreation], data/packages/syn/src, ty.rs, 1205, 46
 syn, syn::ty::printing::TypeParen::to_tokens, CLOSURE::data::packages::syn::src::ty::1214::46, [ClosureCreation], data/packages/syn/src, ty.rs, 1214, 46
 rand_core, rand_core::block::BlockRng::next_u64, CLOSURE::data::packages::rand_core::src::block::198::23, [ClosureCreation], data/packages/rand_core/src, block.rs, 198, 23
+rand_core, rand_core::error::Error::raw_os_error, std::io::error::Error::raw_os_error, std::io, data/packages/rand_core/src, error.rs, 91, 25
 rand_core, rand_core::error::Error::code, CLOSURE::data::packages::rand_core::src::error::109::55, [ClosureCreation], data/packages/rand_core/src, error.rs, 109, 55
+rand_core, rand_core::error::Error::from, std::io::error::Error::from_raw_os_error, std::io, data/packages/rand_core/src, error.rs, 198, 12
+rand_core, rand_core::error::Error::from, std::io::error::Error::new, std::io, data/packages/rand_core/src, error.rs, 200, 12
 rand_core, rand_core::impls::as_byte_slice, core::slice::raw::from_raw_parts, [UnsafeCall], data/packages/rand_core/src, impls.rs, 70, 17
 rand_core, rand_core::impls::as_byte_slice, core::slice::raw::from_raw_parts, [UnsafeCall], data/packages/rand_core/src, impls.rs, 81, 17
 libc, libc::fuchsia::mod::__CMSG_NEXT, __CMSG_LEN, [UnsafeCall], data/packages/libc/src/fuchsia, mod.rs, 3333, 26
@@ -878,6 +882,7 @@ proc_macro2, proc_macro2::parse::character, CLOSURE::data::packages::proc_macro2
 proc_macro2, proc_macro2::parse::character, CLOSURE::data::packages::proc_macro2::src::parse::518::45, [ClosureCreation], data/packages/proc-macro2/src, parse.rs, 518, 45
 proc_macro2, proc_macro2::parse::float_digits, CLOSURE::data::packages::proc_macro2::src::parse::625::35, [ClosureCreation], data/packages/proc-macro2/src, parse.rs, 625, 35
 proc_macro2, proc_macro2::imp::proc_macro_parse, CLOSURE::data::packages::proc_macro2::src::wrapper::118::37, [ClosureCreation], data/packages/proc-macro2/src, wrapper.rs, 118, 37
+proc_macro2, proc_macro2::imp::proc_macro_parse, std::panic::catch_unwind, std::panic, data/packages/proc-macro2/src, wrapper.rs, 118, 17
 proc_macro2, proc_macro2::imp::proc_macro_parse, CLOSURE::data::packages::proc_macro2::src::wrapper::119::26, [ClosureCreation], data/packages/proc-macro2/src, wrapper.rs, 119, 26
 proc_macro2, proc_macro2::imp::TokenStream::from_iter, proc_macro2::imp::into_compiler_token, [FnPtrCreation], data/packages/proc-macro2/src, wrapper.rs, 184, 38
 proc_macro2, proc_macro2::imp::TokenStream::from_iter, CLOSURE::data::packages::proc_macro2::src::wrapper::198::48, [ClosureCreation], data/packages/proc-macro2/src, wrapper.rs, 198, 48
@@ -925,18 +930,12 @@ serde, serde::__private::de::content::visit_content_map_ref, CLOSURE::data::pack
 serde, serde::__private::de::content::EnumRefDeserializer::variant_seed, CLOSURE::data::packages::serde::src::private::de::2203::21, [ClosureCreation], data/packages/serde/src/private, de.rs, 2203, 21
 serde, serde::__private::de::FlatMapDeserializer::deserialize_enum, CLOSURE::data::packages::serde::src::private::de::2745::61, [ClosureCreation], data/packages/serde/src/private, de.rs, 2745, 61
 serde, serde::__private::de::FlatStructAccess::next_key_seed, CLOSURE::data::packages::serde::src::private::de::2921::61, [ClosureCreation], data/packages/serde/src/private, de.rs, 2921, 61
-serde, serde::ser::impls::Ipv4Addr::serialize, std::net::ip_addr::Ipv4Addr::octets, std::net, data/packages/serde/src/ser, impls.rs, 734, 45
-serde, serde::ser::impls::Ipv4Addr::serialize, std::net::ip_addr::Ipv4Addr::octets, std::net, data/packages/serde/src/ser, impls.rs, 735, 29
 serde, serde::ser::impls::Ipv4Addr::serialize, core::str::converts::from_utf8_unchecked, [UnsafeCall], data/packages/serde/src/ser, impls.rs, 740, 46
-serde, serde::ser::impls::Ipv4Addr::serialize, std::net::ip_addr::Ipv4Addr::octets, std::net, data/packages/serde/src/ser, impls.rs, 742, 17
-serde, serde::ser::impls::Ipv6Addr::serialize, std::net::ip_addr::Ipv6Addr::octets, std::net, data/packages/serde/src/ser, impls.rs, 758, 17
-serde, serde::ser::impls::SocketAddrV4::serialize, std::net::socket_addr::SocketAddrV4::ip, std::net, data/packages/serde/src/ser, impls.rs, 798, 18
-serde, serde::ser::impls::SocketAddrV4::serialize, std::net::socket_addr::SocketAddrV4::port, std::net, data/packages/serde/src/ser, impls.rs, 798, 29
-serde, serde::ser::impls::SocketAddrV6::serialize, std::net::socket_addr::SocketAddrV6::ip, std::net, data/packages/serde/src/ser, impls.rs, 817, 18
-serde, serde::ser::impls::SocketAddrV6::serialize, std::net::socket_addr::SocketAddrV6::port, std::net, data/packages/serde/src/ser, impls.rs, 817, 29
 serde, serde::ser::impls::Path::serialize, std::path::Path::to_str, std::path, data/packages/serde/src/ser, impls.rs, 830, 19
 serde, serde::ser::impls::PathBuf::serialize, std::path::PathBuf::as_path, std::path, data/packages/serde/src/ser, impls.rs, 843, 13
 serde, serde::ser::impls::OsStr::serialize, std::os::unix::ffi::os_str::OsStr::as_bytes, std::os, data/packages/serde/src/ser, impls.rs, 855, 73
+serde, serde::ser::impls::OsString::serialize, std::ffi::os_str::OsString::as_os_str, std::ffi, data/packages/serde/src/ser, impls.rs, 875, 13
+autocfg, autocfg::error::Error::fmt, std::io::error::Error::fmt, std::io, data/packages/autocfg/src, error.rs, 31, 38
 autocfg, autocfg::AutoCfg::new, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 141, 14
 autocfg, autocfg::AutoCfg::with_dir, std::env::var_os, std::env, data/packages/autocfg/src, lib.rs, 156, 20
 autocfg, autocfg::AutoCfg::with_dir, CLOSURE::data::packages::autocfg::src::lib::156::56, [ClosureCreation], data/packages/autocfg/src, lib.rs, 156, 56
@@ -944,6 +943,8 @@ autocfg, autocfg::AutoCfg::with_dir, std::env::var_os, std::env, data/packages/a
 autocfg, autocfg::AutoCfg::with_dir, std::fs::Metadata::is_dir, std::fs, data/packages/autocfg/src, lib.rs, 165, 17
 autocfg, autocfg::AutoCfg::with_dir, std::fs::Metadata::permissions, std::fs, data/packages/autocfg/src, lib.rs, 165, 34
 autocfg, autocfg::AutoCfg::with_dir, std::fs::Permissions::readonly, std::fs, data/packages/autocfg/src, lib.rs, 165, 48
+autocfg, autocfg::AutoCfg::with_dir, std::io::stdio::stderr, std::io, data/packages/autocfg/src, lib.rs, 185, 16
+autocfg, autocfg::AutoCfg::with_dir, std::io::stdio::Stderr::write_all, std::io, data/packages/autocfg/src, lib.rs, 185, 25
 autocfg, autocfg::AutoCfg::probe, std::process::Command::new, std::process, data/packages/autocfg/src, lib.rs, 210, 26
 autocfg, autocfg::AutoCfg::probe, std::process::Command::arg, std::process, data/packages/autocfg/src, lib.rs, 212, 13
 autocfg, autocfg::AutoCfg::probe, std::process::Command::arg, std::process, data/packages/autocfg/src, lib.rs, 213, 13

@@ -8,12 +8,15 @@ std::process: 15
 std::path: 11
 [PtrDeref]: 10
 std::env: 8
-std::net: 8
+std::io: 7
 std::fs: 3
 std::os: 1
 libc: 1
 [StaticMutVar]: 1
 [StaticExtVar]: 1
+std::panic: 1
+std::ffi: 1
+std::net: 0
 winapi: 0
 mio::net: 0
 mio::unix: 0

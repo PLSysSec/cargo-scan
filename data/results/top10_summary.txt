@@ -2,13 +2,13 @@
 Number of effects by crate:
 syn: 701
 libc: 89
-rand: 48
-serde: 43
-autocfg: 42
-proc-macro2: 37
+rand: 49
+autocfg: 45
+proc-macro2: 38
+serde: 36
 unicode-xid: 9
+rand_core: 7
 quote: 7
-rand_core: 4
 ===== Crate Totals =====
 9 crates with 1 or more effects
 1 crates with 0 effects
