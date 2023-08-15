@@ -254,8 +254,18 @@ impl<'a> Scanner<'a> {
     }
 
     /*
-        Reusable warning logger
+        Reusable loggers
     */
+
+    fn syn_debug<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
+        let loc = SrcLoc::from_span(self.filepath, &syn_node);
+        debug!("Scanner: {} ({}) ({:?})", msg, loc, syn_node);
+    }
+
+    fn syn_info<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
+        let loc = SrcLoc::from_span(self.filepath, &syn_node);
+        info!("Scanner: {} ({}) ({:?})", msg, loc, syn_node);
+    }
 
     fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
         let loc = SrcLoc::from_span(self.filepath, &syn_node);
@@ -377,6 +387,8 @@ impl<'a> Scanner<'a> {
     */
 
     fn scan_fn_decl(&mut self, f: &'a syn::ItemFn) {
+        self.syn_debug("scanning function", f);
+
         if self.skip_attrs(&f.attrs) {
             self.data.skipped_conditional_code.add(f);
             return;
@@ -667,6 +679,7 @@ impl<'a> Scanner<'a> {
         if ty.is_function() || ty.is_fn_ptr() {
             // Skip constant or immutable static function pointers
             if self.resolver.resolve_const_or_static(x) {
+                self.syn_info("Skipping const or static item", x);
                 self.data.skipped_fn_ptrs.add(x.span());
             } else {
                 let cp = self.resolver.resolve_path(x);
@@ -688,6 +701,8 @@ impl<'a> Scanner<'a> {
     }
 
     fn scan_closure(&mut self, x: &'a syn::ExprClosure) {
+        self.syn_debug("scanning closure", x);
+
         let cl_name = self.resolver.resolve_closure(x);
 
         self.push_independent_effect(x.span(), cl_name, Effect::ClosureCreation);
@@ -904,8 +919,7 @@ impl<'a> Scanner<'a> {
             other => {
                 // anything else could be a function, too -- could return a closure
                 // or fn pointer. No way to tell w/o type information.
-                let s = SrcLoc::from_span(self.filepath, other);
-                info!("Skipped function call {} ({:?})", s, other);
+                self.syn_info("Skipped function call", other);
                 self.data.skipped_fn_calls.add(other);
             }
         }
@@ -943,7 +957,7 @@ pub fn scan_file(
     scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
 ) -> Result<()> {
-    debug!("Scanning file: {:?}", filepath);
+    info!("Scanning file: {:?}", filepath);
 
     // Load file contents
     let mut file = File::open(filepath)?;
