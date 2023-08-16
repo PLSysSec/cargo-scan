@@ -360,7 +360,6 @@ fn collect_dependency_sinks(
     Ok(sinks)
 }
 
-// TODO: Different default policies
 /// Creates a new default policy for the given package and returns the path to
 /// the saved policy file
 fn make_new_policy(
@@ -381,9 +380,9 @@ fn make_new_policy(
     let full_name = format!("{}-{}", package.name, package.version);
     let package_path = if full_name == root_name {
         // We are creating a policy for the root crate
-        PathBuf::from(args.crate_path.clone())
+        PathBuf::from(args.crate_path.clone()).canonicalize()?
     } else {
-        PathBuf::from(crate_path)
+        PathBuf::from(crate_path).canonicalize()?
     };
 
     // Try to create a new default policy
@@ -400,7 +399,7 @@ fn make_new_policy(
 
     let sinks = collect_dependency_sinks(chain, &package.dependencies)?;
     let policy =
-        PolicyFile::new_default_with_sinks(package_path.as_path(), sinks, policy_type)?;
+        PolicyFile::new_default_with_sinks(&package_path, sinks, policy_type)?;
     policy.save_to_file(policy_path.clone())?;
 
     chain.add_crate_policy(package, policy_path, policy.version);

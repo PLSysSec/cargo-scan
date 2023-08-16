@@ -55,8 +55,6 @@ impl CommandRunner for Create {
         if let (Some(crate_name), Some(crate_version)) =
             (&self.download_root_crate, &self.download_version)
         {
-            // TODO: Maybe force_overwrite should overwrite this crate as well?
-            // Make sure there isn't a directory at the crate_path
             let crate_path = PathBuf::from(self.crate_path.clone());
             if crate_path.exists() {
                 return Err(anyhow!(
