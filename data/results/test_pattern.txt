@@ -1,6 +1,6 @@
 ===== Patterns =====
 Total instances of each effect pattern:
-libc: 9
+[FFI]: 11
 [ClosureCreation]: 9
 std::process: 9
 [UnsafeCall]: 7
@@ -9,7 +9,6 @@ std::fs: 6
 [PtrDeref]: 4
 [UnionField]: 3
 std::net: 2
-[FFI]: 2
 std::path: 1
 std::env: 1
 std::ffi: 1

@@ -228,18 +228,7 @@ impl EffectInstance {
     {
         // Code to classify an effect based on call site information
         let call_loc = SrcLoc::from_span(filepath, callsite);
-        let eff_type = if let Some(pat) = Sink::new_match(&callee, sinks) {
-            if ffi.is_some() {
-                // This case occurs for some libc calls
-                debug!(
-                    "Found FFI callsite also matching a sink pattern; \
-                    classifying as SinkCall: \
-                    {} ({}) (FFI {:?})",
-                    callee, call_loc, ffi
-                );
-            }
-            Some(Effect::SinkCall(pat))
-        } else if let Some(ffi) = ffi {
+        let eff_type = if let Some(ffi) = ffi {
             if !is_unsafe {
                 // This case can occur in certain contexts, e.g. with
                 // the wasm_bindgen attribute
@@ -250,7 +239,18 @@ impl EffectInstance {
                     callee, call_loc, ffi
                 );
             }
+            if Sink::new_match(&callee, sinks).is_some() {
+                // This case occurs for many libc calls
+                debug!(
+                    "Found FFI callsite also matching a sink pattern; \
+                    classifying as FFICall: \
+                    {} ({}) (FFI {:?})",
+                    callee, call_loc, ffi
+                );
+            }
             Some(Effect::FFICall(ffi))
+        } else if let Some(pat) = Sink::new_match(&callee, sinks) {
+            Some(Effect::SinkCall(pat))
         } else if is_unsafe {
             Some(Effect::UnsafeCall(callee.clone()))
         } else {
