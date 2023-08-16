@@ -110,7 +110,11 @@ pub struct Scanner<'a> {
     /// (includes only unsafe blocks and fn decls -- not traits and trait impls)
     scope_unsafe: usize,
 
-    /// Whether we are scaning an assignment expression.
+    /// Number of effects found in the current unsafe block
+    /// Used only for sanity check / debugging purposes
+    scope_unsafe_effects: usize,
+
+    /// Whether we are scanning an assignment expression.
     /// Useful to check if a union field is accessed to
     /// read its value, which is unsafe, or to write to it.
     /// Accessing a union field to assign to it is safe.
@@ -141,6 +145,7 @@ impl<'a> Scanner<'a> {
             filepath,
             resolver,
             scope_unsafe: 0,
+            scope_unsafe_effects: 0,
             scope_assign_lhs: false,
             scope_fns: Vec::new(),
             data,
@@ -153,6 +158,7 @@ impl<'a> Scanner<'a> {
         self.resolver.assert_top_level_invariant();
         debug_assert!(self.scope_fns.is_empty());
         debug_assert_eq!(self.scope_unsafe, 0);
+        debug_assert_eq!(self.scope_unsafe_effects, 0);
     }
 
     pub fn add_sinks(&mut self, new_sinks: HashSet<IdentPath>) {
@@ -269,11 +275,9 @@ impl<'a> Scanner<'a> {
             return;
         }
 
-        self.scope_unsafe += 1;
         for i in &fm.items {
             self.scan_foreign_item(i);
         }
-        self.scope_unsafe -= 1;
     }
 
     fn scan_foreign_item(&mut self, i: &'a syn::ForeignItem) {
@@ -431,9 +435,13 @@ impl<'a> Scanner<'a> {
         self.resolver.pop_fn();
 
         // Reset unsafety
-        if f_unsafety.is_some() {
+        if let Some(f_unsafety) = f_unsafety {
             debug_assert!(self.scope_unsafe >= 1);
             self.scope_unsafe -= 1;
+            if self.scope_unsafe_effects == 0 {
+                self.syn_warning("unsafe block without any unsafe effects", f_unsafety)
+            }
+            self.scope_unsafe_effects = 0;
         }
     }
 
@@ -724,7 +732,14 @@ impl<'a> Scanner<'a> {
         for s in &x.block.stmts {
             self.scan_fn_statement(s);
         }
+
+        // Reset unsafety
+        debug_assert!(self.scope_unsafe >= 1);
         self.scope_unsafe -= 1;
+        if self.scope_unsafe_effects == 0 {
+            self.syn_warning("unsafe block without any unsafe effects", x)
+        }
+        self.scope_unsafe_effects = 0;
     }
 
     /*
@@ -757,6 +772,9 @@ impl<'a> Scanner<'a> {
             eff_type,
         );
 
+        if self.scope_unsafe > 0 && eff.is_rust_unsafe() {
+            self.scope_unsafe_effects += 1;
+        }
         self.data.effects.push(eff);
     }
 
@@ -795,6 +813,9 @@ impl<'a> Scanner<'a> {
             return;
         };
 
+        if self.scope_unsafe > 0 && eff.is_rust_unsafe() {
+            self.scope_unsafe_effects += 1;
+        }
         self.data.effects.push(eff);
     }
 

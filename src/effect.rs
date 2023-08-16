@@ -164,15 +164,13 @@ impl Effect {
     fn sink_pattern(&self) -> Option<&Sink> {
         match self {
             Self::SinkCall(s) => Some(s),
-            Self::FFICall(_) => None,
-            Self::UnsafeCall(_) => None,
-            Self::RawPointer(_) => None,
-            Self::UnionField(_) => None,
-            Self::StaticMut(_) => None,
-            Self::StaticExt(_) => None,
-            Self::FnPtrCreation => None,
-            Self::ClosureCreation => None,
+            _ => None,
         }
+    }
+
+    /// Return true if the type of unsafety is something that Rust considers unsafe.
+    fn is_rust_unsafe(&self) -> bool {
+        !matches!(self, Self::SinkCall(_) | Self::FnPtrCreation | Self::ClosureCreation)
     }
 
     fn simple_str(&self) -> &str {
@@ -318,24 +316,9 @@ impl EffectInstance {
         self.eff_type.sink_pattern()
     }
 
-    pub fn is_ffi(&self) -> bool {
-        matches!(self.eff_type, Effect::FFICall(_))
-    }
-
-    pub fn is_unsafe_call(&self) -> bool {
-        matches!(self.eff_type, Effect::UnsafeCall(_))
-    }
-
-    pub fn is_ptr_deref(&self) -> bool {
-        matches!(self.eff_type, Effect::RawPointer(_))
-    }
-
-    pub fn is_union_field_acc(&self) -> bool {
-        matches!(self.eff_type, Effect::UnionField(_))
-    }
-
-    pub fn is_mut_static(&self) -> bool {
-        matches!(self.eff_type, Effect::StaticMut(_))
+    /// Return true if the type of unsafety is something that Rust considers unsafe.
+    pub fn is_rust_unsafe(&self) -> bool {
+        self.eff_type.is_rust_unsafe()
     }
 
     pub fn call_loc(&self) -> &SrcLoc {
