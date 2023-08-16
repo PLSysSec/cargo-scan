@@ -178,12 +178,17 @@ def scan_crate(crate, crate_dir, of_interest, add_args):
     command = CARGO_SCAN + [crate_dir] + add_args
     logging.debug(f"Running: {command}")
     proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-    result_lines = iter(proc.stdout.readline, b"")
-    next(result_lines) # skip header row
-    for line in result_lines:
+
+    # read CSV lines, skipping header row
+    first_line = True
+    for line in iter(proc.stdout.readline, b""):
         effect_csv = line.strip().decode("utf-8")
-        effect_pat = effect_csv.split(", ")[3]
-        yield effect_pat, effect_csv
+        if first_line:
+            assert effect_csv == CARGO_SCAN_CSV_HEADER
+            first_line = False
+        else:
+            effect_pat = effect_csv.split(", ")[3]
+            yield effect_pat, effect_csv
 
 # ===== Entrypoint =====
 
