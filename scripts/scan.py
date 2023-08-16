@@ -53,38 +53,11 @@ OPEN = ["open"]
 # Number of progress tracking messages to display
 PROGRESS_INCS = 10
 
+# Source lists
 CRATES_DIR = "data/packages"
 TEST_CRATES_DIR = "data/test-packages"
-RUST_SRC = "src"
 
-# Potentially dangerous stdlib imports.
-OF_INTEREST_STD = [
-    "std::env",
-    "std::fs",
-    "std::net",
-    "std::os",
-    "std::path",
-    "std::process",
-]
-
-# Crates that seem to be a transitive risk.
-# This list is manually updated.
-OF_INTEREST_OTHER = [
-    "libc",
-    "winapi",
-    "mio::net",
-    "mio::unix",
-    "tokio::fs",
-    "tokio::io",
-    "tokio::net",
-    "tokio::process",
-    "hyper::client",
-    "hyper::server",
-    "tokio_util::udp",
-    "tokio_util::net",
-    "socket2",
-]
-
+# Results
 RESULTS_DIR = "data/results"
 RESULTS_ALL_SUFFIX = "_all.csv"
 RESULTS_PATTERN_SUFFIX = "_pattern.txt"
@@ -173,7 +146,7 @@ def make_crate_summary(crate_summary):
 
 # ===== Syn backend =====
 
-def scan_crate(crate, crate_dir, of_interest, add_args):
+def scan_crate(crate, crate_dir, add_args):
     logging.debug(f"Scanning crate: {crate}")
     command = CARGO_SCAN + [crate_dir] + add_args
     logging.debug(f"Running: {command}")
@@ -229,10 +202,6 @@ def main():
     if args.output_prefix is None and num_crates > 1:
         logging.warning("No results prefix specified; results of this run will not be saved")
 
-    of_interest = OF_INTEREST_STD
-    if not args.std:
-        of_interest += OF_INTEREST_OTHER
-
     add_args = []
     if args.verbose >= 4:
         add_args = ["-v"]
@@ -241,7 +210,7 @@ def main():
 
     results = []
     crate_summary = {c: 0 for c in crates}
-    pattern_summary = {p: 0 for p in of_interest}
+    pattern_summary = {}
     progress_inc = num_crates // PROGRESS_INCS
 
     for i, crate in enumerate(crates):
@@ -256,7 +225,7 @@ def main():
             sys.exit(1)
 
         crate_dir = os.path.join(crates_dir, crate)
-        for eff_pat, eff_csv in scan_crate(crate, crate_dir, of_interest, add_args):
+        for eff_pat, eff_csv in scan_crate(crate, crate_dir, add_args):
             logging.debug(f"effect found: {eff_csv}")
             results.append(eff_csv)
             # Update summaries
