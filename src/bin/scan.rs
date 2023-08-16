@@ -6,6 +6,8 @@
     the header or see effect.rs.
 */
 
+use cargo_scan::effect::EffectInstance;
+use cargo_scan::loc_tracker::LoCTracker;
 use cargo_scan::{audit_chain, scanner};
 
 use anyhow::{anyhow, Result};
@@ -58,24 +60,36 @@ fn main() -> Result<()> {
         scanner::scan_crate(&args.crate_path)?
     };
 
+    println!("{}", EffectInstance::csv_header());
     for effect in results.effects {
         println!("{}", effect.to_csv());
     }
 
     if args.verbose {
-        if !results.skipped_fn_calls.is_empty() {
-            eprintln!(
-                "Note: analysis skipped {} LoC of function calls \
-                (closures or other complex expressions called as functions)",
-                results.skipped_fn_calls.as_loc()
-            );
+        eprintln!("Total LoC scanned: {}", results.total_loc.as_loc());
+
+        fn print_ignored_items<T>(ignored: &[T], msg: &str) {
+            if !ignored.is_empty() {
+                eprintln!("Note: analysis ignored {} {}", ignored.len(), msg);
+            }
         }
-        if !results.skipped_macros.is_empty() {
-            eprintln!(
-                "Note: analysis skipped {} LoC of macro invocations",
-                results.skipped_macros.as_loc()
-            );
+        fn print_skipped_loc(loc: &LoCTracker, msg: &str) {
+            if !loc.is_empty() {
+                eprintln!("Note: analysis skipped {} LoC of {}", loc.as_loc(), msg);
+            }
         }
+
+        print_ignored_items(&results.unsafe_traits, "unsafe traits");
+        print_ignored_items(&results.unsafe_impls, "unsafe trait impls");
+        print_skipped_loc(&results.skipped_macros, "macro invocations");
+        print_skipped_loc(&results.skipped_conditional_code, "conditional code");
+        print_skipped_loc(
+            &results.skipped_fn_calls,
+            "function calls (closures or other \
+            complex expressions called as functions)",
+        );
+        print_skipped_loc(&results.skipped_fn_ptrs, "function pointers");
+        print_skipped_loc(&results.skipped_other, "other unsupported code");
     }
 
     Ok(())

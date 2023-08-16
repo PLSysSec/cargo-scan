@@ -48,8 +48,8 @@ pub struct ScanResults {
     pub skipped_macros: LoCTracker,
     pub skipped_conditional_code: LoCTracker,
     pub skipped_fn_calls: LoCTracker,
-    pub skipped_other: LoCTracker,
     pub skipped_fn_ptrs: LoCTracker,
+    pub skipped_other: LoCTracker,
 
     // TODO other cases:
     pub _effects_loc: LoCTracker,

@@ -12,7 +12,6 @@ import logging
 import os
 import subprocess
 import sys
-from functools import partial, partialmethod
 
 # ===== Check requirements =====
 
@@ -35,15 +34,14 @@ CARGO = ["cargo"]
 CARGO_DOWNLOAD = CARGO + ["download"]
 
 # Uncomment to enable debug checks
-SYN_FIND = ["./target/debug/scan"]
+CARGO_SCAN = ["./target/debug/scan"]
 # Uncomment for release mode
-# SYN_FIND = ["./target/release/scan"]
-# Binary which simply prints out the CSV header
-SYN_CSV_HEADER = ["./target/debug/csv_header"]
+# CARGO_SCAN = ["./target/release/scan"]
+CARGO_SCAN_CSV_HEADER = "crate, fn_decl, callee, effect, dir, file, line, col"
 
 check_installed(RUSTC)
 check_installed(CARGO)
-check_installed(SYN_FIND)
+check_installed(CARGO_SCAN)
 check_installed(CARGO_DOWNLOAD, check_exit_code=False)
 
 # Unchecked dependencies
@@ -94,13 +92,6 @@ RESULTS_SUMMARY_SUFFIX = "_summary.txt"
 
 # ===== Utility =====
 
-# Set up trace logging level below debug
-# https://stackoverflow.com/a/55276759/2038713
-logging.TRACE = logging.DEBUG - 5
-logging.addLevelName(logging.TRACE, 'TRACE')
-logging.Logger.trace = partialmethod(logging.Logger.log, logging.TRACE)
-logging.trace = partial(logging.log, logging.TRACE)
-
 # Color logging output
 logging.addLevelName(logging.INFO, "\033[0;32m%s\033[0;0m" % "INFO")
 logging.addLevelName(logging.WARNING, "\033[0;33m%s\033[0;0m" % "WARNING")
@@ -134,14 +125,14 @@ def get_crate_names(cratefile):
         in_reader = csv.reader(infile, delimiter=',')
         for i, row in enumerate(in_reader):
             if i > 0:
-                logging.trace(f"Input crate: {row[0]} ({','.join(row[1:])})")
+                logging.debug(f"Input crate: {row[0]} ({','.join(row[1:])})")
                 crates.append(row[0])
     return crates
 
 def download_crate(crates_dir, crate, test_run):
     target = os.path.join(crates_dir, crate)
     if os.path.exists(target):
-        logging.trace(f"Found existing crate: {target}")
+        logging.debug(f"Found existing crate: {target}")
     else:
         if test_run:
             logging.warning(f"Crate not found during test run: {target}")
@@ -182,24 +173,14 @@ def make_crate_summary(crate_summary):
 
 # ===== Syn backend =====
 
-def get_effect_csv_header():
-    logging.debug(f"Getting effect CSV header")
-    command = SYN_CSV_HEADER
-    logging.debug(f"Running: {command}")
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-    results = []
-    for line in iter(proc.stdout.readline, b""):
-        results.append(line.strip().decode("utf-8"))
-    if len(results) != 1:
-        logging.error(f"Expected only a single-line CSV header! {results}")
-    return results[0]
-
 def scan_crate(crate, crate_dir, of_interest, add_args):
     logging.debug(f"Scanning crate: {crate}")
-    command = SYN_FIND + [crate_dir] + add_args
+    command = CARGO_SCAN + [crate_dir] + add_args
     logging.debug(f"Running: {command}")
     proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-    for line in iter(proc.stdout.readline, b""):
+    result_lines = iter(proc.stdout.readline, b"")
+    next(result_lines) # skip header row
+    for line in result_lines:
         effect_csv = line.strip().decode("utf-8")
         effect_pat = effect_csv.split(", ")[3]
         yield effect_pat, effect_csv
@@ -219,9 +200,9 @@ def main():
     args = parser.parse_args()
 
     if args.verbose > 5:
-        logging.error("verbosity only goes up to 5 (-vvvvv)")
+        logging.error("verbosity only goes up to 4 (-vvvv)")
         sys.exit(1)
-    log_level = [logging.INFO, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG, logging.TRACE][args.verbose]
+    log_level = [logging.INFO, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG][args.verbose]
     logging.basicConfig(level=log_level)
     logging.debug(args)
 
@@ -278,8 +259,6 @@ def main():
             pattern_summary.setdefault(eff_pat, 0)
             pattern_summary[eff_pat] += 1
 
-    effect_csv_header = get_effect_csv_header()
-
     # Sanity check
     if sum(crate_summary.values()) != sum(pattern_summary.values()):
         logging.error("Logic error: crate summary and pattern summary were inconsistent!")
@@ -308,7 +287,7 @@ def main():
 
         logging.info(f"Saving all results to {results_path}")
         with open(results_path, 'w') as fh:
-            fh.write(effect_csv_header + '\n')
+            fh.write(CARGO_SCAN_CSV_HEADER + '\n')
             for eff_csv in results:
                 fh.write(eff_csv + '\n')
 
