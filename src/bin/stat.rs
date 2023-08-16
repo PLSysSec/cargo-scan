@@ -53,6 +53,7 @@ impl std::fmt::Display for PathType {
 // TODO: Figure out who is responsible for clearing the policy path so we don't
 //       re-use audited policies.
 fn main() -> Result<()> {
+    cargo_scan::util::init_logging();
     let args = Args::parse();
 
     if let (Some(crate_name), Some(crate_version)) =

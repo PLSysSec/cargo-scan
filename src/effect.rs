@@ -398,109 +398,38 @@ impl FnDec {
 /// we don't currently enumerate all the "bad"
 /// things unsafe code could do as individual effects, such as
 /// pointer derefs etc.
+///
+/// DEPRECATED: TODO Remove
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[deprecated]
 pub struct EffectBlock {
     // TODO: Include the span in the EffectBlock
     // TODO: Include the ident of the enclosing function
     src_loc: SrcLoc,
-    block_type: BlockType,
     effects: Vec<EffectInstance>,
     containing_fn: FnDec,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum BlockType {
-    UnsafeExpr,
-    NormalFn,
-    UnsafeFn,
-}
-
 impl EffectBlock {
-    pub fn new_unsafe_expr<S>(
-        filepath: &FilePath,
-        block_span: &S,
-        containing_fn: FnDec,
-    ) -> Self
-    where
-        S: Spanned,
-    {
-        let src_loc = SrcLoc::from_span(filepath, block_span);
-        let block_type = BlockType::UnsafeExpr;
-        let effects = Vec::new();
-        Self { src_loc, block_type, effects, containing_fn }
-    }
-
-    pub fn from_fn_decl(fn_decl: FnDec) -> Self {
-        let src_loc = fn_decl.src_loc.clone();
-        let block_type = BlockType::NormalFn;
-        let effects = Vec::new();
-        Self { src_loc, block_type, effects, containing_fn: fn_decl }
-    }
-
     pub fn from_effect(eff: EffectInstance, containing_fn: FnDec) -> Self {
-        let mut result = Self::from_fn_decl(containing_fn);
-        result.push_effect(eff);
-        result
+        let src_loc = containing_fn.src_loc.clone();
+        let effects = vec![eff];
+        Self { src_loc, effects, containing_fn }
     }
 
-    pub fn new_fn<S>(
-        filepath: &FilePath,
-        decl_span: &S,
-        fn_name: CanonicalPath,
-        vis: &syn::Visibility,
-    ) -> Self
-    where
-        S: Spanned,
-    {
-        let src_loc = SrcLoc::from_span(filepath, decl_span);
-        let block_type = BlockType::NormalFn;
-        let effects = Vec::new();
-        Self {
-            src_loc,
-            block_type,
-            effects,
-            containing_fn: FnDec::new(filepath, decl_span, fn_name, vis),
-        }
-    }
-
-    pub fn new_unsafe_fn<S>(
-        filepath: &FilePath,
-        decl_span: &S,
-        fn_name: CanonicalPath,
-        vis: &syn::Visibility,
-    ) -> Self
-    where
-        S: Spanned,
-    {
-        let src_loc = SrcLoc::from_span(filepath, decl_span);
-        let block_type = BlockType::NormalFn;
-        let effects = Vec::new();
-        Self {
-            src_loc,
-            block_type,
-            effects,
-            containing_fn: FnDec::new(filepath, decl_span, fn_name, vis),
-        }
-    }
-
+    #[deprecated]
     pub fn src_loc(&self) -> &SrcLoc {
         &self.src_loc
     }
 
-    pub fn block_type(&self) -> &BlockType {
-        &self.block_type
-    }
-
-    pub fn push_effect(&mut self, effect: EffectInstance) {
-        self.effects.push(effect);
-    }
-
+    #[deprecated]
     pub fn effects(&self) -> &Vec<EffectInstance> {
         &self.effects
     }
 
     /// Removes all the elements from self.effects for which `f` returns `false`
     /// and returns them
+    #[deprecated]
     pub fn filter_effects<F>(&mut self, f: F) -> Vec<EffectInstance>
     where
         F: FnMut(&EffectInstance) -> bool,
@@ -511,6 +440,7 @@ impl EffectBlock {
         removed_effects
     }
 
+    #[deprecated]
     pub fn containing_fn(&self) -> &FnDec {
         &self.containing_fn
     }

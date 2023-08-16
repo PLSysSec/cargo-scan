@@ -4,8 +4,7 @@
 //! various other information.
 
 use super::effect::{
-    BlockType, Effect, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl,
-    Visibility,
+    Effect, EffectBlock, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
 };
 use super::ident::{CanonicalPath, IdentPath};
 use super::loc_tracker::LoCTracker;
@@ -34,9 +33,8 @@ use syn::spanned::Spanned;
 pub struct ScanResults {
     pub effects: Vec<EffectInstance>,
 
-    // TODO remove
-    #[deprecated]
-    pub effect_blocks: Vec<EffectBlock>,
+    // TODO: deprecated, remove
+    effect_blocks: Vec<EffectBlock>,
 
     pub unsafe_traits: Vec<TraitDec>,
     pub unsafe_impls: Vec<TraitImpl>,
@@ -67,16 +65,14 @@ impl ScanResults {
         Default::default()
     }
 
-    // TODO
+    pub fn effects_set(&self) -> HashSet<&EffectInstance> {
+        self.effects.iter().collect::<HashSet<_>>()
+    }
+
+    // TODO remove
     #[deprecated]
     pub fn unsafe_effect_blocks_set(&self) -> HashSet<&EffectBlock> {
-        self.effect_blocks
-            .iter()
-            .filter(|x| match x.block_type() {
-                BlockType::UnsafeExpr | BlockType::UnsafeFn => true,
-                BlockType::NormalFn => false,
-            })
-            .collect::<HashSet<_>>()
+        self.effect_blocks.iter().collect::<HashSet<_>>()
     }
 
     pub fn get_callers<'a>(
@@ -95,8 +91,7 @@ impl ScanResults {
     }
 
     pub fn push_effect(&mut self, eff: EffectInstance, containing_fn: FnDec) {
-        let mut new_block = EffectBlock::from_effect(eff.clone(), containing_fn);
-        new_block.push_effect(eff.clone());
+        let new_block = EffectBlock::from_effect(eff.clone(), containing_fn);
         self.effects.push(eff);
         self.effect_blocks.push(new_block);
     }
