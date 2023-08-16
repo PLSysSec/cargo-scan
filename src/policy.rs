@@ -1,4 +1,4 @@
-use super::effect::{EffectBlock, EffectInstance, SrcLoc};
+use super::effect::{EffectInstance, SrcLoc};
 use crate::auditing::util::hash_dir;
 use crate::effect::Effect;
 use crate::ident::CanonicalPath;
@@ -55,10 +55,6 @@ impl EffectInfo {
 
         EffectInfo::new(caller_src_path, callee_loc)
     }
-
-    pub fn from_block(effect: &EffectBlock) -> Self {
-        EffectInfo::new(effect.containing_fn().fn_name.clone(), effect.src_loc().clone())
-    }
 }
 
 #[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
@@ -108,10 +104,10 @@ pub type PolicyVersion = u32;
 pub struct PolicyFile {
     // TODO: Switch to EffectInstance once we have the full list
     #[serde_as(as = "Vec<(_, _)>")]
-    pub audit_trees: HashMap<EffectBlock, EffectTree>,
+    pub audit_trees: HashMap<EffectInstance, EffectTree>,
     /// Contains a map from public functions marked caller-checked to a set of
-    /// all base EffectBlocks that flow into that function
-    pub pub_caller_checked: HashMap<CanonicalPath, HashSet<EffectBlock>>,
+    /// all base EffectInstances that flow into that function
+    pub pub_caller_checked: HashMap<CanonicalPath, HashSet<EffectInstance>>,
     // TODO: Make the base_dir a crate instead
     pub base_dir: PathBuf,
     pub hash: [u8; 32],
@@ -132,7 +128,7 @@ impl PolicyFile {
 
     pub fn set_base_audit_trees<'a, I>(&mut self, effect_blocks: I)
     where
-        I: IntoIterator<Item = &'a EffectBlock>,
+        I: IntoIterator<Item = &'a EffectInstance>,
     {
         self.audit_trees = effect_blocks
             .into_iter()
@@ -140,7 +136,7 @@ impl PolicyFile {
                 (
                     x.clone(),
                     EffectTree::Leaf(
-                        EffectInfo::from_block(x),
+                        EffectInfo::from_instance(x),
                         SafetyAnnotation::Skipped,
                     ),
                 )
@@ -173,9 +169,9 @@ impl PolicyFile {
     /// Mark caller-checked functions but don't add a caller to the tree more
     /// than once (so we don't get an infinite cycle).
     fn mark_caller_checked_recurse(
-        base_effect: &EffectBlock,
+        base_effect: &EffectInstance,
         tree: &mut EffectTree,
-        pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectBlock>>,
+        pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectInstance>>,
         scan_res: &ScanResults,
         prev_callers: Vec<CanonicalPath>,
     ) {
@@ -227,16 +223,12 @@ impl PolicyFile {
 
     /// Mark all callers of functions in the effect tree to be caller-checked.
     fn mark_caller_checked(
-        base_effect: &EffectBlock,
+        base_effect: &EffectInstance,
         tree: &mut EffectTree,
-        pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectBlock>>,
+        pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectInstance>>,
         scan_res: &ScanResults,
     ) {
-        let callers = base_effect
-            .effects()
-            .first()
-            .map(|x| vec![x.caller().clone()])
-            .unwrap_or_else(Vec::new);
+        let callers = vec![base_effect.caller().clone()];
         Self::mark_caller_checked_recurse(
             base_effect,
             tree,
@@ -247,9 +239,9 @@ impl PolicyFile {
     }
 
     fn recalc_pub_caller_checked_tree(
-        base_effect: &EffectBlock,
+        base_effect: &EffectInstance,
         tree: &EffectTree,
-        pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectBlock>>,
+        pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectInstance>>,
         pub_fns: &HashSet<CanonicalPath>,
     ) {
         match tree {
@@ -330,25 +322,20 @@ impl PolicyFile {
         let audit_trees = std::mem::take(&mut self.audit_trees);
         #[allow(clippy::type_complexity)]
         let (new_trees, removed_effects): (
-            Vec<Option<(EffectBlock, EffectTree)>>,
+            Vec<Option<(EffectInstance, EffectTree)>>,
             Vec<Vec<EffectInstance>>,
         ) = audit_trees
             .into_iter()
-            .map(|(mut block, tree)| {
-                // Remove all effects that match our sinks to remove
-                let removed = block.filter_effects(|e| {
-                    if let Effect::SinkCall(s) = e.eff_type() {
-                        !sinks_to_remove.contains(&CanonicalPath::new(s.as_str()))
+            .map(|(e, tree)| {
+                // Remove effects that match our sinks to remove
+                if let Effect::SinkCall(s) = e.eff_type() {
+                    if sinks_to_remove.contains(&CanonicalPath::new(s.as_str())) {
+                        (None, vec![e])
                     } else {
-                        true
+                        (Some((e, tree)), vec![])
                     }
-                });
-
-                // If there are no more effects, remove this effect tree
-                if block.effects().is_empty() {
-                    (None, removed)
                 } else {
-                    (Some((block, tree)), removed)
+                    (Some((e, tree)), vec![])
                 }
             })
             .unzip();
@@ -370,7 +357,7 @@ impl PolicyFile {
             sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
         let scan_res = scanner::scan_crate_with_sinks(crate_path, ident_sinks)?;
         let mut pub_caller_checked = HashMap::new();
-        policy.set_base_audit_trees(scan_res.unsafe_effect_blocks_set());
+        policy.set_base_audit_trees(scan_res.effects_set());
 
         for (e, t) in policy.audit_trees.iter_mut() {
             PolicyFile::mark_caller_checked(e, t, &mut pub_caller_checked, &scan_res);
@@ -389,7 +376,7 @@ impl PolicyFile {
         let ident_sinks =
             sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
         let scan_res = scanner::scan_crate_with_sinks(crate_path, ident_sinks)?;
-        policy.set_base_audit_trees(scan_res.unsafe_effect_blocks_set());
+        policy.set_base_audit_trees(scan_res.effects_set());
 
         Ok(policy)
     }

@@ -1,5 +1,5 @@
 use crate::{
-    effect::EffectBlock,
+    effect::EffectInstance,
     policy::{EffectTree, PolicyFile, SafetyAnnotation},
 };
 
@@ -36,9 +36,9 @@ fn select_reset(num_effects: usize) -> Result<Option<usize>> {
     }
 }
 
-fn print_blocks(blocks: &[(&EffectBlock, SafetyAnnotation)]) -> Result<()> {
+fn print_blocks(blocks: &[(&EffectInstance, SafetyAnnotation)]) -> Result<()> {
     for (idx, (block, annotation)) in blocks.iter().enumerate() {
-        let src_loc = block.src_loc();
+        let src_loc = block.call_loc();
         let mut full_path = PathBuf::from(src_loc.dir());
         full_path.push(src_loc.file());
         let effect_line = if let Ok(f) = File::open(full_path) {

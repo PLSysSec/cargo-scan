@@ -387,65 +387,6 @@ impl FnDec {
     }
 }
 
-/// Type representing a *block* of zero or more dangerous effects.
-/// The block can be:
-/// - an expression enclosed by `unsafe { ... }`
-/// - a normal function decl `fn foo(args) { ... }`
-/// - an unsafe function decl `unsafe fn foo(args) { ... }`
-///
-/// It also contains a Vector of effects inside the block.
-/// However, note that the vector could be empty --
-/// we don't currently enumerate all the "bad"
-/// things unsafe code could do as individual effects, such as
-/// pointer derefs etc.
-///
-/// DEPRECATED: TODO Remove
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-#[deprecated]
-pub struct EffectBlock {
-    // TODO: Include the span in the EffectBlock
-    // TODO: Include the ident of the enclosing function
-    src_loc: SrcLoc,
-    effects: Vec<EffectInstance>,
-    containing_fn: FnDec,
-}
-
-impl EffectBlock {
-    pub fn from_effect(eff: EffectInstance, containing_fn: FnDec) -> Self {
-        let src_loc = containing_fn.src_loc.clone();
-        let effects = vec![eff];
-        Self { src_loc, effects, containing_fn }
-    }
-
-    #[deprecated]
-    pub fn src_loc(&self) -> &SrcLoc {
-        &self.src_loc
-    }
-
-    #[deprecated]
-    pub fn effects(&self) -> &Vec<EffectInstance> {
-        &self.effects
-    }
-
-    /// Removes all the elements from self.effects for which `f` returns `false`
-    /// and returns them
-    #[deprecated]
-    pub fn filter_effects<F>(&mut self, f: F) -> Vec<EffectInstance>
-    where
-        F: FnMut(&EffectInstance) -> bool,
-    {
-        let effects = std::mem::take(&mut self.effects);
-        let (new_effects, removed_effects) = effects.into_iter().partition(f);
-        self.effects = new_effects;
-        removed_effects
-    }
-
-    #[deprecated]
-    pub fn containing_fn(&self) -> &FnDec {
-        &self.containing_fn
-    }
-}
-
 /// Trait implementations
 /// Since an unsafe trait impl cannot itself have any unsafe code,
 /// we do not consider it to be an effect block.

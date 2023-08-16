@@ -217,12 +217,7 @@ impl CommandRunner for Audit {
                     let removed_fns = if let Some(dep_effect) = audit_res? {
                         // TODO: Print parents of an effect the user audits when
                         //       auditing children
-                        let effect = dep_effect.effects().get(0).ok_or_else(|| {
-                            anyhow!(
-                                "Missing an EffectInstance in the dependency EffectBlock"
-                            )
-                        })?;
-                        match effect.eff_type() {
+                        match dep_effect.eff_type() {
                             Effect::SinkCall(sink_ident) => {
                                 audit_pub_fn(&mut chain, sink_ident)?
                             }

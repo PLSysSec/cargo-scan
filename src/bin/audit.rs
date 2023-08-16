@@ -3,7 +3,7 @@ use cargo_scan::auditing::info::Config;
 use cargo_scan::auditing::reset::reset_annotation;
 use cargo_scan::auditing::review::review_policy;
 use cargo_scan::auditing::util::{hash_dir, is_policy_scan_valid};
-use cargo_scan::effect::EffectBlock;
+use cargo_scan::effect::EffectInstance;
 use cargo_scan::policy::*;
 use cargo_scan::scanner;
 
@@ -56,11 +56,11 @@ enum ContinueStatus {
 fn handle_invalid_policy<'a, I>(
     policy: &mut PolicyFile,
     policy_path: &mut PathBuf,
-    scan_effect_blocks: I,
+    scan_effects: I,
     overwrite_policy: bool,
 ) -> Result<ContinueStatus>
 where
-    I: IntoIterator<Item = &'a EffectBlock>,
+    I: IntoIterator<Item = &'a EffectInstance>,
 {
     // TODO: Colorize
     println!("Crate has changed from last policy audit");
@@ -68,15 +68,11 @@ where
     if overwrite_policy {
         println!("Generating new policy file");
 
-        policy.audit_trees = scan_effect_blocks
+        policy.audit_trees = scan_effects
             .into_iter()
-            .map(|x: &EffectBlock| {
-                // TODO: for now we assume that all EffectBlocks include an EffectInstance,
-                //       this isn't true, but we have to get caller location into
-                //       EffectBocks before we can do this correctly
-                let effect_instance = x.effects().first().unwrap();
+            .map(|effect_instance: &EffectInstance| {
                 (
-                    x.clone(),
+                    effect_instance.clone(),
                     EffectTree::Leaf(
                         EffectInfo::from_instance(effect_instance),
                         SafetyAnnotation::Skipped,
@@ -114,15 +110,11 @@ where
                 // TODO: Prompt user for new policy path
                 println!("Generating new policy file");
 
-                policy.audit_trees = scan_effect_blocks
+                policy.audit_trees = scan_effects
                     .into_iter()
-                    .map(|x: &EffectBlock| {
-                        // TODO: for now we assume that all EffectBlocks include an EffectInstance,
-                        //       this isn't true, but we have to get caller location into
-                        //       EffectBocks before we can do this correctly
-                        let effect_instance = x.effects().first().unwrap();
+                    .map(|effect_instance: &EffectInstance| {
                         (
-                            x.clone(),
+                            effect_instance.clone(),
                             EffectTree::Leaf(
                                 EffectInfo::from_instance(effect_instance),
                                 SafetyAnnotation::Skipped,
@@ -154,7 +146,7 @@ where
 
 fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     let scan_res = scanner::scan_crate(&args.crate_path)?;
-    let scan_effect_blocks = scan_res.unsafe_effect_blocks_set();
+    let scan_effects = scan_res.effects_set();
 
     if args.debug {
         println!("{:?}", scan_res);
@@ -170,7 +162,7 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
                 match handle_invalid_policy(
                     &mut pf,
                     &mut policy_path,
-                    scan_effect_blocks,
+                    scan_effects,
                     args.overwrite_policy,
                 ) {
                     Ok(ContinueStatus::Continue) => (),
@@ -187,7 +179,7 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
 
             // Return an empty PolicyFile, we'll add effects to it later
             let mut pf = PolicyFile::empty(args.crate_path.clone())?;
-            pf.set_base_audit_trees(scan_effect_blocks);
+            pf.set_base_audit_trees(scan_effects);
             pf
         }
     };

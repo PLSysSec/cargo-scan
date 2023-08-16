@@ -9,7 +9,7 @@ use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 
 use crate::ident::CanonicalPath;
 use crate::{
-    effect::{Effect, EffectBlock, SrcLoc},
+    effect::{Effect, EffectInstance, SrcLoc},
     policy::EffectInfo,
 };
 
@@ -39,7 +39,7 @@ impl Config {
 }
 
 pub fn print_effect_src(
-    effect_origin: &EffectBlock,
+    effect_origin: &EffectInstance,
     effect: &EffectInfo,
     fn_locs: &HashMap<CanonicalPath, SrcLoc>,
     config: &Config,
@@ -116,27 +116,25 @@ pub fn print_effect_src(
         }
     };
 
-    let label_msg = if effect_origin.containing_fn().fn_name == effect.caller_path {
+    let label_msg = if effect_origin.caller() == &effect.caller_path {
         // We are in the original function, so print all the effects in the
-        // EffectBlock
-        effect_origin
-            .effects()
-            .iter()
-            .map(|x| match x.eff_type() {
-                Effect::SinkCall(sink) => format!("sink call: {}", sink),
-                Effect::FFICall(call) => format!("ffi call: {}", call),
-                Effect::UnsafeCall(call) => format!("unsafe call: {}", call),
-                Effect::RawPointer(ptr) => format!("raw pointer access: {}", ptr),
-                Effect::UnionField(union) => format!("union access: {}", union),
-                Effect::StaticMut(var) => format!("static mut access: {}", var),
-                Effect::StaticExt(var) => format!("static ffi variable access: {}", var),
-                Effect::FnPtrCreation =>
-                    "function pointer creation (verify the function is always safe to call)".to_string(),
-                Effect::ClosureCreation =>
-                    "closure creation (verify the closure is always safe to call)".to_string(),
-            })
-            .collect::<Vec<_>>()
-            .join("\n")
+        // EffectInstance
+        match effect_origin.eff_type() {
+            Effect::SinkCall(sink) => format!("sink call: {}", sink),
+            Effect::FFICall(call) => format!("ffi call: {}", call),
+            Effect::UnsafeCall(call) => format!("unsafe call: {}", call),
+            Effect::RawPointer(ptr) => format!("raw pointer access: {}", ptr),
+            Effect::UnionField(union) => format!("union access: {}", union),
+            Effect::StaticMut(var) => format!("static mut access: {}", var),
+            Effect::StaticExt(var) => format!("static ffi variable access: {}", var),
+            Effect::FnPtrCreation => {
+                "function pointer creation (verify the function is always safe to call)"
+                    .to_string()
+            }
+            Effect::ClosureCreation => {
+                "closure creation (verify the closure is always safe to call)".to_string()
+            }
+        }
     } else {
         "call safety marked as callee-checked".to_string()
     };
@@ -239,7 +237,7 @@ fn print_call_stack(
 }
 
 pub fn print_effect_info(
-    orig_effect: &EffectBlock,
+    orig_effect: &EffectInstance,
     curr_effect: &EffectInfo,
     effect_history: &[&EffectInfo],
     fn_locs: &HashMap<CanonicalPath, SrcLoc>,

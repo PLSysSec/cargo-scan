@@ -5,13 +5,13 @@ use std::path::Path;
 use super::info::Config;
 use super::util::is_policy_scan_valid;
 use crate::auditing::info::print_effect_info;
-use crate::effect::{EffectBlock, SrcLoc};
+use crate::effect::{EffectInstance, SrcLoc};
 use crate::ident::CanonicalPath;
 use crate::policy::{EffectInfo, EffectTree, PolicyFile, SafetyAnnotation};
 use crate::scanner;
 
 fn review_effect_tree_info_helper(
-    orig_effect: &EffectBlock,
+    orig_effect: &EffectInstance,
     effect_tree: &EffectTree,
     effect_history: &[&EffectInfo],
     fn_locs: &HashMap<CanonicalPath, SrcLoc>,
@@ -44,7 +44,7 @@ fn review_effect_tree_info_helper(
 }
 
 fn review_effect_tree_info(
-    effect: &EffectBlock,
+    effect: &EffectInstance,
     effect_tree: &EffectTree,
     fn_locs: &HashMap<CanonicalPath, SrcLoc>,
     config: &Config,

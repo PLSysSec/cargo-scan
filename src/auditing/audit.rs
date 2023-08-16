@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::audit_chain::AuditChain;
 use crate::auditing::info::*;
-use crate::effect::{Effect, EffectBlock};
+use crate::effect::{Effect, EffectInstance};
 use crate::ident::CanonicalPath;
 use crate::policy::{EffectInfo, EffectTree};
 use crate::scanner::scan_crate;
@@ -50,7 +50,7 @@ fn get_user_annotation() -> Result<(Option<SafetyAnnotation>, AuditStatus)> {
 }
 
 fn print_and_update_audit<'a>(
-    orig_effect: &'a EffectBlock,
+    orig_effect: &'a EffectInstance,
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
@@ -83,7 +83,7 @@ fn print_and_update_audit<'a>(
 }
 
 fn audit_leaf<'a>(
-    orig_effect: &'a EffectBlock,
+    orig_effect: &'a EffectInstance,
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
@@ -93,7 +93,7 @@ fn audit_leaf<'a>(
 }
 
 fn update_audit_child<'a>(
-    orig_effect: &'a EffectBlock,
+    orig_effect: &'a EffectInstance,
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
@@ -129,7 +129,7 @@ fn update_audit_child<'a>(
 }
 
 fn audit_branch<'a>(
-    orig_effect: &'a EffectBlock,
+    orig_effect: &'a EffectInstance,
     effect_tree: &mut EffectTree,
     effect_history: &[&'a EffectInfo],
     scan_res: &ScanResults,
@@ -198,7 +198,7 @@ fn audit_branch<'a>(
 //       want to combine them into one function so we don't have to check to make
 //       sure we are in the right variant very time
 fn audit_effect_tree(
-    orig_effect: &EffectBlock,
+    orig_effect: &EffectInstance,
     effect_tree: &mut EffectTree,
     scan_res: &ScanResults,
     config: &Config,
@@ -252,16 +252,16 @@ fn unaudited_effects(policy: &PolicyFile) -> (usize, usize) {
 /// Iterate through all the skipped annotations in the policy file and perform
 /// the auditing process on those effect trees. Will exit early if the user
 /// audits one of the root effects as needing to check its child effects, in
-/// which case we will return Ok with Some EffectBlock which contains the effect
+/// which case we will return Ok with Some EffectInstance which contains the effect
 /// in the dependency crates that need to be audited.
 pub fn audit_policy(
     policy: &mut PolicyFile,
     scan_res: ScanResults,
     config: &Config,
-) -> Result<Option<EffectBlock>> {
+) -> Result<Option<EffectInstance>> {
     // We will set this to the root effect we need to audit if we audit an
     // effect tree and need to now traverse into the dependency packages.
-    let mut dependency_audit_effect: Option<EffectBlock> = None;
+    let mut dependency_audit_effect: Option<EffectInstance> = None;
 
     let (unaudited_base, unaudited_total) = unaudited_effects(policy);
     if unaudited_base > 0 {
@@ -362,7 +362,7 @@ fn update_audit_annotation(
 }
 
 fn update_audit_from_input(
-    orig_effect: &EffectBlock,
+    orig_effect: &EffectInstance,
     scan_res: &ScanResults,
     effect_tree: &mut EffectTree,
     effect_history: &[&EffectInfo],
@@ -433,9 +433,6 @@ pub fn audit_pub_fn(
                 chain.remove_cross_crate_effects(removed_fns, &sink_crate_id)?;
                 prev_policy = new_policy;
 
-                let child_effect = child_effect.effects().get(0).ok_or_else(|| {
-                    anyhow!("Missing an EffectInstance in the dependency EffectBlock")
-                })?;
                 let child_sink = match child_effect.eff_type() {
                     Effect::SinkCall(s) => s,
                     _ => {
@@ -481,7 +478,7 @@ fn audit_pub_fn_effect(
     policy: &mut PolicyFile,
     sink_fn: &CanonicalPath,
     scan_res: &ScanResults,
-) -> Result<(AuditStatus, Option<EffectBlock>)> {
+) -> Result<(AuditStatus, Option<EffectInstance>)> {
     for base_effect in policy.pub_caller_checked.get(sink_fn).ok_or_else(|| {
         anyhow!("Couldn't find public function from sink: {:?}", &sink_fn)
     })? {
