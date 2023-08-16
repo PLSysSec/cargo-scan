@@ -439,7 +439,7 @@ impl<'a> Scanner<'a> {
             debug_assert!(self.scope_unsafe >= 1);
             self.scope_unsafe -= 1;
             if self.scope_unsafe_effects == 0 {
-                self.syn_warning("unsafe block without any unsafe effects", f_unsafety)
+                self.syn_debug("unsafe block without any unsafe effects", f_unsafety)
             }
             self.scope_unsafe_effects = 0;
         }
@@ -737,7 +737,7 @@ impl<'a> Scanner<'a> {
         debug_assert!(self.scope_unsafe >= 1);
         self.scope_unsafe -= 1;
         if self.scope_unsafe_effects == 0 {
-            self.syn_warning("unsafe block without any unsafe effects", x)
+            self.syn_debug("unsafe block without any unsafe effects", x)
         }
         self.scope_unsafe_effects = 0;
     }
