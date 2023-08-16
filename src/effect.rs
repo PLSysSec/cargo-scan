@@ -367,7 +367,6 @@ impl From<&syn::Visibility> for Visibility {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FnDec {
     pub src_loc: SrcLoc,
-    // TBD: should be CanonicalPath?
     pub fn_name: CanonicalPath,
     pub vis: Visibility,
 }
@@ -383,7 +382,8 @@ impl FnDec {
         S: Spanned,
     {
         let src_loc = SrcLoc::from_span(filepath, decl_span);
-        Self { src_loc, fn_name, vis: vis.into() }
+        let vis = vis.into();
+        Self { src_loc, fn_name, vis }
     }
 }
 
@@ -428,6 +428,19 @@ impl EffectBlock {
         let block_type = BlockType::UnsafeExpr;
         let effects = Vec::new();
         Self { src_loc, block_type, effects, containing_fn }
+    }
+
+    pub fn from_fn_decl(fn_decl: FnDec) -> Self {
+        let src_loc = fn_decl.src_loc.clone();
+        let block_type = BlockType::NormalFn;
+        let effects = Vec::new();
+        Self { src_loc, block_type, effects, containing_fn: fn_decl }
+    }
+
+    pub fn from_effect(eff: EffectInstance, containing_fn: FnDec) -> Self {
+        let mut result = Self::from_fn_decl(containing_fn);
+        result.push_effect(eff);
+        result
     }
 
     pub fn new_fn<S>(

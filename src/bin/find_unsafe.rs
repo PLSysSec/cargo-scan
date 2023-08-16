@@ -27,13 +27,6 @@ fn main() -> Result<()> {
 
     let results = scanner::scan_crate(&args.crate_path)?;
 
-    if !results.effect_blocks.is_empty() {
-        println!("=== Effect blocks ===");
-        for bl_decl in results.effect_blocks {
-            println!("{:?}", bl_decl);
-        }
-    }
-
     if !results.unsafe_traits.is_empty() {
         println!("=== Unsafe trait declarations ===");
         for tr_decl in results.unsafe_traits {

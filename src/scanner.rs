@@ -33,6 +33,9 @@ use syn::spanned::Spanned;
 #[derive(Debug, Default)]
 pub struct ScanResults {
     pub effects: Vec<EffectInstance>,
+
+    // TODO remove
+    #[deprecated]
     pub effect_blocks: Vec<EffectBlock>,
 
     pub unsafe_traits: Vec<TraitDec>,
@@ -64,6 +67,8 @@ impl ScanResults {
         Default::default()
     }
 
+    // TODO
+    #[deprecated]
     pub fn unsafe_effect_blocks_set(&self) -> HashSet<&EffectBlock> {
         self.effect_blocks
             .iter()
@@ -89,6 +94,13 @@ impl ScanResults {
         callers
     }
 
+    pub fn push_effect(&mut self, eff: EffectInstance, containing_fn: FnDec) {
+        let mut new_block = EffectBlock::from_effect(eff.clone(), containing_fn);
+        new_block.push_effect(eff.clone());
+        self.effects.push(eff);
+        self.effect_blocks.push(new_block);
+    }
+
     pub fn add_fn_dec(&mut self, f: FnDec) {
         let fn_name = f.fn_name;
 
@@ -112,10 +124,6 @@ pub struct Scanner<'a> {
 
     /// Name resolution resolver
     resolver: FileResolver<'a>,
-
-    /// Stack-based scope to save effects under
-    /// (always empty at top level)
-    scope_effect_blocks: Vec<EffectBlock>,
 
     /// Number of unsafe keywords the current scope is nested inside
     /// (always 0 at top level)
@@ -152,7 +160,6 @@ impl<'a> Scanner<'a> {
         Self {
             filepath,
             resolver,
-            scope_effect_blocks: Vec::new(),
             scope_unsafe: 0,
             scope_assign_lhs: false,
             scope_fns: Vec::new(),
@@ -164,7 +171,7 @@ impl<'a> Scanner<'a> {
     /// Top-level invariant -- called before consuming results
     pub fn assert_top_level_invariant(&self) {
         self.resolver.assert_top_level_invariant();
-        debug_assert!(self.scope_effect_blocks.is_empty());
+        debug_assert!(self.scope_fns.is_empty());
         debug_assert_eq!(self.scope_unsafe, 0);
     }
 
@@ -419,7 +426,7 @@ impl<'a> Scanner<'a> {
         let fn_dec = FnDec::new(self.filepath, f_sig, f_name.clone(), vis);
 
         // Always push the new function declaration before scanning the
-        // body so we have access to the function its in for unsafe blocks
+        // body so we have access to the function its in
         self.scope_fns.push(fn_dec.clone());
 
         // Notify resolver
@@ -428,16 +435,11 @@ impl<'a> Scanner<'a> {
         // Notify ScanResults
         self.data.add_fn_dec(fn_dec);
 
-        // Update effect blocks
+        // Update unsafety
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
-        let effect_block = if f_unsafety.is_some() {
-            // `unsafe fn` declaration
+        if f_unsafety.is_some() {
             self.scope_unsafe += 1;
-            EffectBlock::new_unsafe_fn(self.filepath, body, f_name, vis)
-        } else {
-            EffectBlock::new_fn(self.filepath, body, f_name, vis)
-        };
-        self.scope_effect_blocks.push(effect_block);
+        }
 
         // ***** Scan body *****
         for s in &body.stmts {
@@ -448,8 +450,7 @@ impl<'a> Scanner<'a> {
         self.scope_fns.pop();
         self.resolver.pop_fn();
 
-        // Save effect block
-        self.data.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
+        // Reset unsafety
         if f_unsafety.is_some() {
             debug_assert!(self.scope_unsafe >= 1);
             self.scope_unsafe -= 1;
@@ -683,7 +684,7 @@ impl<'a> Scanner<'a> {
                 self.data.skipped_fn_ptrs.add(x.span());
             } else {
                 let cp = self.resolver.resolve_path(x);
-                self.push_independent_effect(x.span(), cp, Effect::FnPtrCreation);
+                self.push_effect(x.span(), cp, Effect::FnPtrCreation);
             }
         }
         // Accessing a mutable global variable
@@ -705,7 +706,7 @@ impl<'a> Scanner<'a> {
 
         let cl_name = self.resolver.resolve_closure(x);
 
-        self.push_independent_effect(x.span(), cl_name, Effect::ClosureCreation);
+        self.push_effect(x.span(), cl_name, Effect::ClosureCreation);
 
         self.scan_expr(&x.body);
     }
@@ -740,20 +741,9 @@ impl<'a> Scanner<'a> {
 
     fn scan_unsafe_block(&mut self, x: &'a syn::ExprUnsafe) {
         self.scope_unsafe += 1;
-
-        // We will always be in a function definition inside of a block, so it
-        // is safe to unwrap the last fn_decl
-        let effect_block = EffectBlock::new_unsafe_expr(
-            self.filepath,
-            &x.block,
-            self.scope_fns.last().unwrap().clone(),
-        );
-        self.scope_effect_blocks.push(effect_block);
         for s in &x.block.stmts {
             self.scan_fn_statement(s);
         }
-        self.data.effect_blocks.push(self.scope_effect_blocks.pop().unwrap());
-
         self.scope_unsafe -= 1;
     }
 
@@ -776,77 +766,18 @@ impl<'a> Scanner<'a> {
     where
         S: Debug + Spanned,
     {
-        let caller = match self.scope_fns.last() {
-            Some(fn_dec) => fn_dec.fn_name.to_owned(),
-            None => {
-                let mut path = callee.to_owned();
-                // Pop ident to get the path of the containting module/data type
-                path.pop_ident();
-                path
-            }
-        };
+        let containing_fn = self.scope_fns.last().expect("not inside a function!");
+        let caller = &containing_fn.fn_name;
 
         let eff = EffectInstance::new_effect(
             self.filepath,
-            caller,
+            caller.clone(),
             callee,
             &eff_span,
             eff_type,
         );
-        if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
-            effect_block.push_effect(eff.clone())
-        } else {
-            self.syn_warning("unexpected effect found outside an effect block", eff_span);
-        }
-        self.data.effects.push(eff);
-    }
 
-    /// Push an effect into a new `EffectBlock` and save that block. Should be
-    /// used most of the time when adding a new effect.
-    fn push_independent_effect<S>(
-        &mut self,
-        eff_span: S,
-        callee: CanonicalPath,
-        eff_type: Effect,
-    ) where
-        S: Debug + Spanned,
-    {
-        // TODO: This function is not working.
-        // Falling back for now, we can run `make test` to see if changes preserve
-        // the correct functionality
-        self.push_effect(eff_span, callee, eff_type);
-
-        // if let Some(effect_block) = self.scope_effect_blocks.last().cloned() {
-        //     let caller = match &self.scope_fns.last() {
-        //         Some(fn_dec) => fn_dec.fn_name.to_owned(),
-        //         None => {
-        //             let mut path = callee.to_owned();
-        //             // Pop ident to get the path of the containting module/data type
-        //             path.pop_ident();
-        //             path
-        //         }
-        //     };
-
-        //     let eff = EffectInstance::new_effect(
-        //         self.filepath,
-        //         caller,
-        //         callee,
-        //         &eff_span,
-        //         eff_type,
-        //     );
-
-        //     // Always make an UnsafeExpr EffectBloc for independent effects
-        //     // TODO: The containing_fn here might not be right
-        //     let mut new_effect_block = EffectBlock::new_unsafe_expr(
-        //         self.filepath,
-        //         &eff_span,
-        //         effect_block.containing_fn().clone(),
-        //     );
-        //     new_effect_block.push_effect(eff);
-        //     self.data.effect_blocks.push(new_effect_block);
-        // } else {
-        //     self.syn_warning("unexpected effect found outside an effect block", eff_span);
-        // }
+        self.data.push_effect(eff, containing_fn.clone());
     }
 
     /// push an Effect to the list of results based on this call site.
@@ -859,7 +790,9 @@ impl<'a> Scanner<'a> {
     ) where
         S: Debug + Spanned,
     {
-        let caller = &self.scope_fns.last().expect("not inside a function!").fn_name;
+        let containing_fn = self.scope_fns.last().expect("not inside a function!");
+        let caller = &containing_fn.fn_name;
+
         if let Some(caller_node_idx) = self.data.node_idxs.get(caller) {
             if let Some(callee_node_idx) = self.data.node_idxs.get(&callee) {
                 self.data.call_graph.add_edge(
@@ -882,15 +815,7 @@ impl<'a> Scanner<'a> {
             return;
         };
 
-        if let Some(effect_block) = self.scope_effect_blocks.last_mut() {
-            effect_block.push_effect(eff.clone())
-        } else {
-            self.syn_warning(
-                "unexpected function call site found outside an effect block",
-                callee_span,
-            );
-        }
-        self.data.effects.push(eff);
+        self.data.push_effect(eff, containing_fn.clone());
     }
 
     // f in a call of the form (f)(args)
@@ -901,15 +826,6 @@ impl<'a> Scanner<'a> {
                 let ffi = self.resolver.resolve_ffi(&p.path);
                 let is_unsafe =
                     self.resolver.resolve_unsafe_path(&p.path) && self.scope_unsafe > 0;
-                // TODO: this duplicates effect::EffectInstance::new_call
-                // Should not be needed, do we need to rethink the effect model?
-                // if let Some(sink) = Sink::new_match(&callee, &self.sinks) {
-                //     self.push_independent_effect(
-                //         f.span(),
-                //         callee.clone(),
-                //         Effect::SinkCall(sink),
-                //     );
-                // }
                 self.push_callsite(p, callee, ffi, is_unsafe);
             }
             syn::Expr::Paren(x) => {
