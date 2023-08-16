@@ -3,14 +3,13 @@ Total instances of each effect pattern:
 [ClosureCreation]: 447
 [FnPtrCreation]: 350
 [UnsafeCall]: 103
-[FFI]: 21
+[FFI]: 22
 std::process: 15
 std::path: 11
 [PtrDeref]: 10
 std::env: 8
 std::io: 7
 std::fs: 3
-libc: 1
 [StaticMutVar]: 1
 [StaticExtVar]: 1
 std::panic: 1

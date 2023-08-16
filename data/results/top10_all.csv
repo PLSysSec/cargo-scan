@@ -19,7 +19,7 @@ rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, CLOSURE::data
 rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, rand::rngs::adapter::reseeding::fork::fork_handler, [FnPtrCreation], data/packages/rand/src/rngs/adapter, reseeding.rs, 322, 21
 rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, rand::rngs::adapter::reseeding::fork::fork_handler, [FnPtrCreation], data/packages/rand/src/rngs/adapter, reseeding.rs, 323, 21
 rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, rand::rngs::adapter::reseeding::fork::fork_handler, [FnPtrCreation], data/packages/rand/src/rngs/adapter, reseeding.rs, 324, 21
-rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, libc::unix::bsd::pthread_atfork, libc, data/packages/rand/src/rngs/adapter, reseeding.rs, 321, 31
+rand, rand::rngs::adapter::reseeding::fork::register_fork_handler, libc::unix::bsd::pthread_atfork, [FFI], data/packages/rand/src/rngs/adapter, reseeding.rs, 321, 31
 rand, rand::rngs::thread::thread_rng, CLOSURE::data::packages::rand::src::rngs::thread::89::34, [ClosureCreation], data/packages/rand/src/rngs, thread.rs, 89, 34
 rand, rand::rngs::thread::ThreadRng::next_u32, core::cell::UnsafeCell::get, [PtrDeref], data/packages/rand/src/rngs, thread.rs, 104, 33
 rand, rand::rngs::thread::ThreadRng::next_u64, core::cell::UnsafeCell::get, [PtrDeref], data/packages/rand/src/rngs, thread.rs, 112, 33
