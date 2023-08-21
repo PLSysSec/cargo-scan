@@ -38,7 +38,7 @@ impl fmt::Display for SafetyAnnotation {
     }
 }
 
-#[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
+#[derive(PartialEq, Debug, Serialize, Deserialize, Clone, Hash, Eq)]
 pub struct EffectInfo {
     pub caller_path: CanonicalPath,
     pub callee_loc: SrcLoc,
@@ -174,7 +174,7 @@ impl PolicyFile {
         pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectInstance>>,
         scan_res: &ScanResults,
         prev_callers: Vec<CanonicalPath>,
-    ) {
+    ) -> Result<()> {
         if let EffectTree::Leaf(effect_info, annotation) = tree {
             // Add the function to the list of sinks if it is public
             if scan_res.pub_fns.contains(&effect_info.caller_path) {
@@ -185,14 +185,14 @@ impl PolicyFile {
             }
 
             let mut callers = scan_res
-                .get_callers(&effect_info.caller_path)
+                .get_callers(&effect_info.caller_path)?
                 .into_iter()
-                .filter_map(|x| {
-                    if prev_callers.contains(x.caller()) {
+                .filter_map(|e| {
+                    if prev_callers.contains(&e.caller_path) {
                         None
                     } else {
                         Some(EffectTree::Leaf(
-                            EffectInfo::from_instance(&x.clone()),
+                            e,
                             SafetyAnnotation::Skipped,
                         ))
                     }
@@ -214,11 +214,13 @@ impl PolicyFile {
                         pub_caller_checked,
                         scan_res,
                         next_callers,
-                    );
+                    )?;
                 }
                 *tree = EffectTree::Branch(effect_info.clone(), callers);
             }
         }
+
+        Ok(())
     }
 
     /// Mark all callers of functions in the effect tree to be caller-checked.
@@ -227,7 +229,7 @@ impl PolicyFile {
         tree: &mut EffectTree,
         pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectInstance>>,
         scan_res: &ScanResults,
-    ) {
+    ) -> Result<()> {
         let callers = vec![base_effect.caller().clone()];
         Self::mark_caller_checked_recurse(
             base_effect,
@@ -235,7 +237,7 @@ impl PolicyFile {
             pub_caller_checked,
             scan_res,
             callers,
-        );
+        )
     }
 
     fn recalc_pub_caller_checked_tree(
@@ -360,7 +362,7 @@ impl PolicyFile {
         policy.set_base_audit_trees(scan_res.effects_set());
 
         for (e, t) in policy.audit_trees.iter_mut() {
-            PolicyFile::mark_caller_checked(e, t, &mut pub_caller_checked, &scan_res);
+            PolicyFile::mark_caller_checked(e, t, &mut pub_caller_checked, &scan_res)?;
         }
 
         policy.pub_caller_checked = pub_caller_checked;

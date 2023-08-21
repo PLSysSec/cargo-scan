@@ -3,6 +3,8 @@
 //! Parse a Rust crate or source file and collect effect blocks, function calls, and
 //! various other information.
 
+use crate::policy::EffectInfo;
+
 use super::effect::{
     Effect, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
 };
@@ -12,9 +14,11 @@ use super::resolve::{FileResolver, Resolve, Resolver};
 use super::sink::Sink;
 use super::util;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::visit::EdgeRef;
+use petgraph::Direction;
 use proc_macro2::{TokenStream, TokenTree};
 use quote::ToTokens;
 use std::collections::HashMap;
@@ -66,19 +70,22 @@ impl ScanResults {
         self.effects.iter().collect::<HashSet<_>>()
     }
 
-    pub fn get_callers<'a>(
-        &'a self,
-        callee: &CanonicalPath,
-    ) -> HashSet<&'a EffectInstance> {
-        let mut callers = HashSet::new();
-        for e in &self.effects {
-            let effect_callee = e.callee();
-            if effect_callee == callee {
-                callers.insert(e);
-            }
-        }
-
-        callers
+    pub fn get_callers(&self, callee: &CanonicalPath) -> Result<HashSet<EffectInfo>> {
+        let callee_node = self
+            .node_idxs
+            .get(callee)
+            .context("Missing callee for get_callers in results graph")?;
+        let effects = self
+            .call_graph
+            .edges_directed(*callee_node, Direction::Incoming)
+            .map(|e| {
+                let caller_node = e.source();
+                let caller = self.call_graph[caller_node].clone();
+                let src_loc = e.weight();
+                EffectInfo::new(caller, src_loc.clone())
+            })
+            .collect::<HashSet<_>>();
+        Ok(effects)
     }
 
     pub fn add_fn_dec(&mut self, f: FnDec) {

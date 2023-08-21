@@ -331,11 +331,11 @@ fn update_audit_annotation(
 
             // Add all call locations as parents of this effect
             let new_check_locs = scan_res
-                .get_callers(&curr_effect.caller_path)
+                .get_callers(&curr_effect.caller_path)?
                 .into_iter()
-                .map(|x| {
+                .map(|e| {
                     EffectTree::Leaf(
-                        EffectInfo::from_instance(&x.clone()),
+                        e,
                         SafetyAnnotation::Skipped,
                     )
                 })
