@@ -102,7 +102,6 @@ pub type PolicyVersion = u32;
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PolicyFile {
-    // TODO: Switch to EffectInstance once we have the full list
     #[serde_as(as = "Vec<(_, _)>")]
     pub audit_trees: HashMap<EffectInstance, EffectTree>,
     /// Contains a map from public functions marked caller-checked to a set of

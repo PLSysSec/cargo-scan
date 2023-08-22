@@ -13,7 +13,7 @@ where
     P: AsRef<Path>,
 {
     let mut hasher = Sha256::new();
-    for entry in WalkDir::new(&p) {
+    for entry in WalkDir::new(&p).sort_by_file_name() {
         match entry {
             Ok(ne) if ne.path().is_file() => {
                 let mut file = File::open(ne.path())?;
