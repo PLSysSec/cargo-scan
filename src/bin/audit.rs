@@ -43,6 +43,12 @@ struct Args {
     /// For debugging stuff
     #[clap(long, default_value_t = false)]
     debug: bool,
+
+    /// Ignore the hash of the crate. WARNING: use cautiously - the package files will not be checked
+    /// to ensure they are the same when the policy file was created/last audited, but there may be
+    /// things like local configuration files that will mess up consistent hashes.
+    #[clap(long, default_value_t = false)]
+    ignore_hash: bool,
 }
 
 enum ContinueStatus {
@@ -156,7 +162,7 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     let mut policy_path = args.policy_path.clone();
     let mut policy_file = match policy_file {
         Some(mut pf) => {
-            if !is_policy_scan_valid(&pf, args.crate_path.clone())? {
+            if !args.ignore_hash && !is_policy_scan_valid(&pf, args.crate_path.clone())? {
                 // TODO: If the policy file diverges from the effects at all, we
                 //       should enter incremental mode and detect what's changed
                 match handle_invalid_policy(
