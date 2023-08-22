@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
@@ -76,7 +77,9 @@ pub fn print_effect_src(
 
     // TODO: cache files?
     let mut files = SimpleFiles::new();
-    let file_id = files.add(format!("{}", effect_loc.file().display()), src_contents);
+    let mut file_path = PathBuf::from(effect_loc.dir());
+    file_path.push(effect_loc.file());
+    let file_id = files.add(format!("{}", file_path.to_string_lossy()), src_contents);
 
     // If the labels don't include the function signature, include it as
     // another label
