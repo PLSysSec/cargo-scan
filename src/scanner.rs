@@ -44,8 +44,8 @@ pub struct ScanResults {
     pub pub_fns: HashSet<CanonicalPath>,
     pub fn_locs: HashMap<CanonicalPath, SrcLoc>,
 
-    call_graph: DiGraph<CanonicalPath, SrcLoc>,
-    node_idxs: HashMap<CanonicalPath, NodeIndex>,
+    pub call_graph: DiGraph<CanonicalPath, SrcLoc>,
+    pub node_idxs: HashMap<CanonicalPath, NodeIndex>,
 
     /* Tracking lines of code (LoC) and skipped/unsupported cases */
     pub total_loc: LoCTracker,

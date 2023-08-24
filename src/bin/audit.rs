@@ -9,11 +9,13 @@ use cargo_scan::scanner;
 
 use std::collections::HashMap;
 use std::fs::File;
-use std::path::PathBuf;
+use std::io::Write;
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use inquire::{validator::Validation, Text};
+use petgraph::dot::Dot;
 
 /// Interactively vet a package policy
 #[derive(Parser, Debug)]
@@ -49,6 +51,10 @@ struct Args {
     /// things like local configuration files that will mess up consistent hashes.
     #[clap(long, default_value_t = false)]
     ignore_hash: bool,
+
+    /// Dump the callgraph to the specified file. Uses the DOT format.
+    #[clap(long)]
+    dump_callgraph: Option<String>,
 }
 
 enum ContinueStatus {
@@ -153,6 +159,16 @@ where
 fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
     let scan_res = scanner::scan_crate(&args.crate_path)?;
     let scan_effects = scan_res.effects_set();
+
+    if let Some(callgraph_file) = &args.dump_callgraph {
+        let path = Path::new(callgraph_file);
+        if !path.exists() {
+            let mut file = File::create(callgraph_file)?;
+            file.write_all(&format!("{}", Dot::new(&scan_res.call_graph)).into_bytes())?;
+        } else {
+            println!("Callgraph filepath already exists");
+        }
+    }
 
     if args.debug {
         println!("{:?}", scan_res);
