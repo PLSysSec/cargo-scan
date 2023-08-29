@@ -7,34 +7,28 @@ It can also be used in tandem with [cargo vet](https://mozilla.github.io/cargo-v
 
 ## Installation
 
-Make sure you have [Rust](https://www.rust-lang.org/tools/install), then run `make install`.
+1. Make sure you have [Rust](https://www.rust-lang.org/tools/install)
+2. Run `rustup update` -- the build has been known to crash on older versions of Rust.
+3. Run `make install`.
 
 This installs [cargo-download](https://crates.io/crates/cargo-download) and builds the Rust source.
 Installation has been tested on Mac OS (Monterey) and Linux (Arch Linux).
 
-## Quick-start
+## Quick-start: running a scan
 
-### Obtaining a crate
-
-To use Cargo Scan you first need a crate.
-You can either:
-- Fetch an existing crate from [crates.io](crates.io):
-  ```
-  cargo download -x <crate name>
-  ```
-- Use one of the provided test crates in `data/test-crates`
-- Provide your own (given the directory to the source files)
-
-## Running a scan
-
-To scan a crate, looking for dangerous function calls:
+To use Cargo Scan you first need a Rust crate somewhere on your system. To scan a crate, looking for dangerous function calls:
 ```
 cargo run <path to crate>
 ```
 
-Crates can be put anywhere, but are generally placed in `data/packages` for our scripting. For example,
+For example, you can download a crate and run
 ```
-cargo run data/packages/num_cpus
+cargo download -x fs-extra
+cargo run fs_extra-1.3.0/
+```
+
+Or you can run on a provided test crate in `data/test-packages`:
+```
 cargo run data/test-packages/permissions-ex
 ```
 
@@ -45,12 +39,16 @@ To audit a package:
 cargo run --bin audit <path to crate> crate.policy
 ```
 
-## Unit tests
+Auditing is WIP, for more information please see the file `AUDITING.md`.
+
+## Other usage
+
+### Running the unit tests
 
 - Run `cargo test` to run Rust unit tests
 
 - Run `make test` to re-run the tool on all our test packages, whose results are in `data/results` and placed under version control to check for any regressions.
 
-## Running an experiment
+### Running an experiment
 
 You can also run `./scripts/scan.py -h` to see options for running an experiment; this is useful for running a scan on a large list of crates, e.g. the top 100 crates on crates.io or your own provided list. Alternatively, see `Makefile` for some pre-defined experiments to run, such as `make top10`.
