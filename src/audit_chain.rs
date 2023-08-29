@@ -398,8 +398,7 @@ fn make_new_policy(
     }
 
     let sinks = collect_dependency_sinks(chain, &package.dependencies)?;
-    let policy =
-        PolicyFile::new_default_with_sinks(&package_path, sinks, policy_type)?;
+    let policy = PolicyFile::new_default_with_sinks(&package_path, sinks, policy_type)?;
     policy.save_to_file(policy_path.clone())?;
 
     chain.add_crate_policy(package, policy_path, policy.version);

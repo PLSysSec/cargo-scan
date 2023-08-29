@@ -190,10 +190,7 @@ impl PolicyFile {
                     if prev_callers.contains(&e.caller_path) {
                         None
                     } else {
-                        Some(EffectTree::Leaf(
-                            e,
-                            SafetyAnnotation::Skipped,
-                        ))
+                        Some(EffectTree::Leaf(e, SafetyAnnotation::Skipped))
                     }
                 })
                 .collect::<Vec<_>>();
