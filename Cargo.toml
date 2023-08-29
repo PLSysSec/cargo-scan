@@ -49,6 +49,7 @@ walkdir = "2.3.3"
 itertools = {version = "0.11.0"}
 ra_ap_hir_expand = "0.0.171"
 ra_ap_hir_def = "0.0.171"
+ra_ap_load-cargo = "0.0.171"
 cargo-lock = { version = "9.0.0", features = ["dependency-tree"] }
 curl = "0.4.44"
 flate2 = "1.0.27"

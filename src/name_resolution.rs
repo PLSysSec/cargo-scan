@@ -27,11 +27,12 @@ use ra_ap_ide::{AnalysisHost, FileId, LineCol, RootDatabase, TextSize};
 use ra_ap_ide_db::defs::{Definition, IdentClass};
 use ra_ap_paths::AbsPathBuf;
 use ra_ap_project_model::{
-    CargoConfig, CargoFeatures, InvocationLocation, InvocationStrategy, RustcSource,
-    UnsetTestCrates,
+    CargoConfig, CargoFeatures, InvocationLocation, InvocationStrategy, RustLibSource,
+    CfgOverrides,
 };
 
-use ra_ap_rust_analyzer::cli::load_cargo::LoadCargoConfig;
+use ra_ap_load_cargo::{LoadCargoConfig, ProcMacroServerChoice};
+
 use ra_ap_syntax::{AstNode, SourceFile, SyntaxToken, TokenAtOffset};
 use ra_ap_vfs::{Vfs, VfsPath};
 
@@ -52,13 +53,10 @@ impl Resolver {
         let target = None;
 
         // Whether to load sysroot crates (`std`, `core` & friends).
-        let sysroot = Some(RustcSource::Discover);
+        let sysroot = Some(RustLibSource::Discover);
 
         // rustc private crate source
         let rustc_source = None;
-
-        // crates to disable `#[cfg(test)]` on
-        let unset_test_crates = UnsetTestCrates::Only(vec![String::from("core")]);
 
         // Setup RUSTC_WRAPPER to point to `rust-analyzer` binary itself.
         let wrap_rustc_in_build_scripts = false;
@@ -71,14 +69,26 @@ impl Resolver {
         let invocation_strategy = InvocationStrategy::PerWorkspace;
         let invocation_location = InvocationLocation::Workspace;
 
+        // TODO: added arguments for newest version of rust-analyzer
+        // Not sure if these are correct, putting in default values
+        let sysroot_src = None;
+        let cfg_overrides = Default::default();
+        let extra_args = Vec::new();
+
+        // crates to disable `#[cfg(test)]` on
+        // TODO
+        // let unset_test_crates = CfgOverrides::Only(vec![String::from("core")]);
+
         CargoConfig {
             features,
             target,
             sysroot,
+            sysroot_src,
             rustc_source,
-            unset_test_crates,
+            cfg_overrides,
             wrap_rustc_in_build_scripts,
             run_build_script_command,
+            extra_args,
             extra_env,
             invocation_strategy,
             invocation_location,
@@ -102,13 +112,16 @@ impl Resolver {
         let cargo_config = &Self::cargo_config();
         let progress = &|p| debug!("Workspace loading progress: {:?}", p);
 
+        // TODO: check options to use here
+        let with_proc_macro_server = ProcMacroServerChoice::Sysroot;
+
         let load_config = LoadCargoConfig {
             load_out_dirs_from_check: true,
-            with_proc_macro: true,
+            with_proc_macro_server,
             prefill_caches: true,
         };
 
-        let (host, vfs, _) = ra_ap_rust_analyzer::cli::load_cargo::load_workspace_at(
+        let (host, vfs, _) = ra_ap_load_cargo::load_workspace_at(
             crate_path,
             cargo_config,
             &load_config,
@@ -651,9 +664,9 @@ fn _is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
             let kind = ty.skip_binders().kind(Interner);
 
             if let TyKind::Function(fn_ptr) = kind {
-                return Ok(matches!(fn_ptr.sig.safety, chalk_ir::Safety::Unsafe));
+                return Ok(matches!(fn_ptr.sig.safety, ra_ap_hir_ty::Safety::Unsafe));
             } else if let TyKind::Adt(
-                chalk_ir::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
+                ra_ap_hir_ty::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
                 substs,
             ) = kind
             {
@@ -672,10 +685,10 @@ fn _is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
                     let kind = ty.kind(Interner);
                     match kind {
                         TyKind::Function(fn_pointer) => {
-                            Ok(matches!(fn_pointer.sig.safety, chalk_ir::Safety::Unsafe))
+                            Ok(matches!(fn_pointer.sig.safety, ra_ap_hir_ty::Safety::Unsafe))
                         }
                         TyKind::Adt(
-                            chalk_ir::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
+                            ra_ap_hir_ty::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
                             substs,
                         ) => _is_unsafe_callable_in_smart_ptr(substs),
                         _ => Ok(false),
@@ -695,9 +708,9 @@ fn _is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
             let kind = ty.kind(Interner);
 
             if let TyKind::Function(fn_pointer) = kind {
-                return Ok(matches!(fn_pointer.sig.safety, chalk_ir::Safety::Unsafe));
+                return Ok(matches!(fn_pointer.sig.safety, ra_ap_hir_ty::Safety::Unsafe));
             } else if let TyKind::Adt(
-                chalk_ir::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
+                ra_ap_hir_ty::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
                 substs,
             ) = kind
             {
@@ -722,7 +735,7 @@ fn _is_unsafe_callable_in_smart_ptr(substs: &ra_ap_hir_ty::Substitution) -> Resu
             if let TyKind::Function(fn_pointer) =
                 subst.ty(Interner).unwrap().kind(Interner)
             {
-                matches!(fn_pointer.sig.safety, chalk_ir::Safety::Unsafe)
+                matches!(fn_pointer.sig.safety, ra_ap_hir_ty::Safety::Unsafe)
             } else {
                 false
             }
