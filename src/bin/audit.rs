@@ -3,7 +3,7 @@ use cargo_scan::auditing::info::Config;
 use cargo_scan::auditing::reset::reset_annotation;
 use cargo_scan::auditing::review::review_policy;
 use cargo_scan::auditing::util::{hash_dir, is_policy_scan_valid};
-use cargo_scan::effect::{Effect, EffectInstance};
+use cargo_scan::effect::{EffectInstance, EffectType};
 use cargo_scan::policy::*;
 use cargo_scan::scanner;
 
@@ -15,7 +15,6 @@ use std::path::{Path, PathBuf};
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use inquire::{validator::Validation, Text};
-use parse_display::{Display, FromStr};
 use petgraph::dot::Dot;
 
 /// Interactively vet a package policy
@@ -73,35 +72,6 @@ struct Args {
     effect_types: Vec<EffectType>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Display, FromStr)]
-enum EffectType {
-    SinkCall,
-    FFICall,
-    UnsafeCall,
-    RawPointer,
-    UnionField,
-    StaticMut,
-    StaticExt,
-    FnPtrCreation,
-    ClosureCreation,
-}
-
-impl EffectType {
-    pub fn matches_effect(types: &[EffectType], e: &Effect) -> bool {
-        match e {
-            Effect::SinkCall(_) => types.contains(&EffectType::SinkCall),
-            Effect::FFICall(_) => types.contains(&EffectType::FFICall),
-            Effect::UnsafeCall(_) => types.contains(&EffectType::UnsafeCall),
-            Effect::RawPointer(_) => types.contains(&EffectType::RawPointer),
-            Effect::UnionField(_) => types.contains(&EffectType::UnionField),
-            Effect::StaticMut(_) => types.contains(&EffectType::StaticMut),
-            Effect::StaticExt(_) => types.contains(&EffectType::StaticExt),
-            Effect::FnPtrCreation => types.contains(&EffectType::FnPtrCreation),
-            Effect::ClosureCreation => types.contains(&EffectType::ClosureCreation),
-        }
-    }
-}
-
 enum ContinueStatus {
     Continue,
     ExitNow,
@@ -127,21 +97,14 @@ where
 
         policy.audit_trees = scan_effects
             .into_iter()
-            .filter_map(|effect_instance: &EffectInstance| {
-                if EffectType::matches_effect(
-                    &args.effect_types,
-                    effect_instance.eff_type(),
-                ) {
-                    Some((
-                        effect_instance.clone(),
-                        EffectTree::Leaf(
-                            EffectInfo::from_instance(effect_instance),
-                            SafetyAnnotation::Skipped,
-                        ),
-                    ))
-                } else {
-                    None
-                }
+            .map(|effect_instance: &EffectInstance| {
+                (
+                    effect_instance.clone(),
+                    EffectTree::Leaf(
+                        EffectInfo::from_instance(effect_instance),
+                        SafetyAnnotation::Skipped,
+                    ),
+                )
             })
             .collect::<HashMap<_, _>>();
         policy.hash = hash_dir(policy.base_dir.clone())?;
@@ -209,7 +172,7 @@ where
 }
 
 fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
-    let scan_res = scanner::scan_crate(&args.crate_path)?;
+    let scan_res = scanner::scan_crate(&args.crate_path, &args.effect_types)?;
     let scan_effects = scan_res.effects_set();
 
     if let Some(callgraph_file) = &args.dump_callgraph {

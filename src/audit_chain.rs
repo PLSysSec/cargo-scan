@@ -17,6 +17,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use toml;
 
+use crate::effect::EffectType;
 use crate::ident::{CanonicalPath, IdentPath};
 use crate::policy::{DefaultPolicyType, PolicyFile, PolicyVersion};
 use crate::util::{load_cargo_toml, CrateId};
@@ -369,6 +370,7 @@ fn make_new_policy(
     args: &Create,
     crate_path: &Path,
     policy_type: DefaultPolicyType,
+    relevant_effects: &[EffectType],
 ) -> Result<()> {
     let policy_path = PathBuf::from(format!(
         "{}/{}-{}.policy",
@@ -398,7 +400,12 @@ fn make_new_policy(
     }
 
     let sinks = collect_dependency_sinks(chain, &package.dependencies)?;
-    let policy = PolicyFile::new_default_with_sinks(&package_path, sinks, policy_type)?;
+    let policy = PolicyFile::new_default_with_sinks(
+        &package_path,
+        sinks,
+        policy_type,
+        relevant_effects,
+    )?;
     policy.save_to_file(policy_path.clone())?;
 
     chain.add_crate_policy(package, policy_path, policy.version);
@@ -469,6 +476,7 @@ pub fn create_new_audit_chain(
             .get(&CrateId::from(package))
             .context("Unresolved path for a crate")?;
 
+        // TODO: Use the effect types we get from command-line arguments
         make_new_policy(
             &mut chain,
             package,
@@ -476,6 +484,7 @@ pub fn create_new_audit_chain(
             &args,
             crate_download_path,
             policy_type,
+            &EffectType::unsafe_effects(),
         )?;
     }
 

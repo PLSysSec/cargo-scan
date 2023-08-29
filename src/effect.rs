@@ -11,6 +11,7 @@ use super::sink::Sink;
 use super::util::csv;
 
 use log::debug;
+use parse_display::{Display, FromStr};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt;
@@ -159,6 +160,9 @@ pub enum Effect {
     FnPtrCreation,
     /// Closure creation
     ClosureCreation,
+    /// Casting to a raw pointer
+    // NOTE: This effect isn't strictly unsafe, but useful to track sometimes
+    RawPtrCast,
 }
 impl Effect {
     fn sink_pattern(&self) -> Option<&Sink> {
@@ -184,11 +188,59 @@ impl Effect {
             Self::StaticExt(_) => "[StaticExtVar]",
             Self::FnPtrCreation => "[FnPtrCreation]",
             Self::ClosureCreation => "[ClosureCreation]",
+            Self::RawPtrCast => "[RawPtrCast]",
         }
     }
 
     fn to_csv(&self) -> String {
         csv::sanitize_comma(self.simple_str())
+    }
+}
+
+/// This is a field-less copy of Effect for easy pattern matching and passing
+/// command-line arguments.
+#[derive(Debug, Clone, Copy, PartialEq, Display, FromStr)]
+pub enum EffectType {
+    SinkCall,
+    FFICall,
+    UnsafeCall,
+    RawPointer,
+    UnionField,
+    StaticMut,
+    StaticExt,
+    FnPtrCreation,
+    ClosureCreation,
+    RawPtrCast,
+}
+
+impl EffectType {
+    pub fn matches_effect(types: &[EffectType], e: &Effect) -> bool {
+        match e {
+            Effect::SinkCall(_) => types.contains(&EffectType::SinkCall),
+            Effect::FFICall(_) => types.contains(&EffectType::FFICall),
+            Effect::UnsafeCall(_) => types.contains(&EffectType::UnsafeCall),
+            Effect::RawPointer(_) => types.contains(&EffectType::RawPointer),
+            Effect::UnionField(_) => types.contains(&EffectType::UnionField),
+            Effect::StaticMut(_) => types.contains(&EffectType::StaticMut),
+            Effect::StaticExt(_) => types.contains(&EffectType::StaticExt),
+            Effect::FnPtrCreation => types.contains(&EffectType::FnPtrCreation),
+            Effect::ClosureCreation => types.contains(&EffectType::ClosureCreation),
+            Effect::RawPtrCast => types.contains(&EffectType::RawPtrCast),
+        }
+    }
+
+    pub fn unsafe_effects() -> Vec<EffectType> {
+        vec![
+            EffectType::SinkCall,
+            EffectType::FFICall,
+            EffectType::UnsafeCall,
+            EffectType::RawPointer,
+            EffectType::UnionField,
+            EffectType::StaticMut,
+            EffectType::StaticExt,
+            EffectType::FnPtrCreation,
+            EffectType::ClosureCreation,
+        ]
     }
 }
 

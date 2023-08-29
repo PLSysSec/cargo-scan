@@ -6,7 +6,7 @@
     the header or see effect.rs.
 */
 
-use cargo_scan::effect::EffectInstance;
+use cargo_scan::effect::{EffectInstance, EffectType};
 use cargo_scan::loc_tracker::LoCTracker;
 use cargo_scan::{audit_chain, scanner};
 
@@ -55,9 +55,9 @@ fn main() -> Result<()> {
 
         let sinks =
             audit_chain::create_dependency_sinks(create, &args.crate_download_path)?;
-        scanner::scan_crate_with_sinks(&args.crate_path, sinks)?
+        scanner::scan_crate_with_sinks(&args.crate_path, sinks, &EffectType::unsafe_effects())?
     } else {
-        scanner::scan_crate(&args.crate_path)?
+        scanner::scan_crate(&args.crate_path, &EffectType::unsafe_effects())?
     };
 
     println!("{}", EffectInstance::csv_header());

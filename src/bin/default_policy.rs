@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use cargo_scan::policy::PolicyFile;
+use cargo_scan::{policy::PolicyFile, effect::EffectType};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
@@ -29,7 +29,7 @@ fn runner(args: Args) -> Result<()> {
     }
 
     // We can correctly create and save the policy file now
-    let policy = PolicyFile::new_caller_checked_default(&args.crate_path)?;
+    let policy = PolicyFile::new_caller_checked_default(&args.crate_path, &EffectType::unsafe_effects())?;
 
     policy.save_to_file(args.policy_path)?;
 

@@ -5,7 +5,7 @@ use std::path::Path;
 use super::info::Config;
 use super::util::is_policy_scan_valid;
 use crate::auditing::info::print_effect_info;
-use crate::effect::{EffectInstance, SrcLoc};
+use crate::effect::{EffectInstance, SrcLoc, EffectType};
 use crate::ident::CanonicalPath;
 use crate::policy::{EffectInfo, EffectTree, PolicyFile, SafetyAnnotation};
 use crate::scanner;
@@ -57,7 +57,11 @@ pub fn review_policy(
     crate_path: &Path,
     config: &Config,
 ) -> Result<()> {
-    let scan_res = scanner::scan_crate(crate_path)?;
+    // TODO: Change this scan to use the simpler scan when we add it
+    // NOTE: The original scan for the policy we're reviewing wasn't necesarilly created
+    //       with the same set of effects we're scanning for now. However, we only use
+    //       the scan results to get the function locations, so it doesn't matter.
+    let scan_res = scanner::scan_crate(crate_path, &EffectType::unsafe_effects())?;
     if !is_policy_scan_valid(policy, crate_path)? {
         println!("Error: crate has changed since last policy scan.");
         return Err(anyhow!("Invalid policy during review"));

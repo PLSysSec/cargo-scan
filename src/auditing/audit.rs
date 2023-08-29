@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::audit_chain::AuditChain;
 use crate::auditing::info::*;
-use crate::effect::{Effect, EffectInstance};
+use crate::effect::{Effect, EffectInstance, EffectType};
 use crate::ident::CanonicalPath;
 use crate::policy::{EffectInfo, EffectTree};
 use crate::scanner::scan_crate;
@@ -411,7 +411,7 @@ pub fn audit_pub_fn(
     let mut new_policy = prev_policy.clone();
 
     // Find the public function associated with the sink
-    let scan_res = scan_crate(&new_policy.base_dir)?;
+    let scan_res = scan_crate(&new_policy.base_dir, &EffectType::unsafe_effects())?;
     let sink_fn = CanonicalPath::new(sink_ident.as_str());
     loop {
         // Keep looping until we are done with auditing children

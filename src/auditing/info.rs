@@ -137,6 +137,10 @@ pub fn print_effect_src(
             Effect::ClosureCreation => {
                 "closure creation (verify the closure is always safe to call)".to_string()
             }
+            Effect::RawPtrCast => {
+                "Cast to a raw pointer (can't cause unsafe behavior on its own)"
+                    .to_string()
+            }
         }
     } else {
         "call safety marked as callee-checked".to_string()

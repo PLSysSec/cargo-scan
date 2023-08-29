@@ -6,7 +6,7 @@
 use crate::policy::EffectInfo;
 
 use super::effect::{
-    Effect, EffectInstance, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
+    Effect, EffectInstance, EffectType, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
 };
 use super::ident::{CanonicalPath, IdentPath};
 use super::loc_tracker::LoCTracker;
@@ -561,6 +561,17 @@ impl<'a> Scanner<'a> {
                 self.scan_expr_call(&x.func);
             }
             syn::Expr::Cast(x) => {
+                // If we see a cast to a raw pointer, add the effect
+                if let syn::Type::Ptr(_) = *x.ty {
+                    let mut tokens: TokenStream = TokenStream::new();
+                    (*x.expr).to_tokens(&mut tokens);
+                    tokens.into_iter().for_each(|tt| {
+                        if let TokenTree::Ident(i) = tt {
+                            let p = self.resolver.resolve_field(&i);
+                            self.push_effect(x.span(), p, Effect::RawPtrCast)
+                        }
+                    });
+                }
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Closure(x) => {
@@ -963,6 +974,7 @@ pub fn try_scan_file(
 pub fn scan_crate_with_sinks(
     crate_path: &FilePath,
     sinks: HashSet<IdentPath>,
+    relevant_effects: &[EffectType],
 ) -> Result<ScanResults> {
     info!("Scanning crate: {:?}", crate_path);
 
@@ -1016,10 +1028,17 @@ pub fn scan_crate_with_sinks(
         }
     }
 
+    scan_results
+        .effects
+        .retain(|e| EffectType::matches_effect(relevant_effects, e.eff_type()));
+
     Ok(scan_results)
 }
 
 /// Scan the supplied crate
-pub fn scan_crate(crate_path: &FilePath) -> Result<ScanResults> {
-    scan_crate_with_sinks(crate_path, HashSet::new())
+pub fn scan_crate(
+    crate_path: &FilePath,
+    relevant_effects: &[EffectType],
+) -> Result<ScanResults> {
+    scan_crate_with_sinks(crate_path, HashSet::new(), relevant_effects)
 }

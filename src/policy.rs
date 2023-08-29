@@ -1,6 +1,6 @@
 use super::effect::{EffectInstance, SrcLoc};
 use crate::auditing::util::hash_dir;
-use crate::effect::Effect;
+use crate::effect::{Effect, EffectType};
 use crate::ident::CanonicalPath;
 use crate::scanner;
 use crate::scanner::ScanResults;
@@ -342,18 +342,27 @@ impl PolicyFile {
         removed_effects.into_iter().flatten().collect::<Vec<_>>()
     }
 
-    pub fn new_caller_checked_default(crate_path: &FilePath) -> Result<PolicyFile> {
-        Self::new_caller_checked_default_with_sinks(crate_path, HashSet::new())
+    pub fn new_caller_checked_default(
+        crate_path: &FilePath,
+        relevant_effects: &[EffectType],
+    ) -> Result<PolicyFile> {
+        Self::new_caller_checked_default_with_sinks(
+            crate_path,
+            HashSet::new(),
+            relevant_effects,
+        )
     }
 
     pub fn new_caller_checked_default_with_sinks(
         crate_path: &FilePath,
         sinks: HashSet<CanonicalPath>,
+        relevant_effects: &[EffectType],
     ) -> Result<PolicyFile> {
         let mut policy = PolicyFile::empty(crate_path.to_path_buf())?;
         let ident_sinks =
             sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
-        let scan_res = scanner::scan_crate_with_sinks(crate_path, ident_sinks)?;
+        let scan_res =
+            scanner::scan_crate_with_sinks(crate_path, ident_sinks, relevant_effects)?;
         let mut pub_caller_checked = HashMap::new();
         policy.set_base_audit_trees(scan_res.effects_set());
 
@@ -369,11 +378,13 @@ impl PolicyFile {
     pub fn new_empty_default_with_sinks(
         crate_path: &FilePath,
         sinks: HashSet<CanonicalPath>,
+        relevant_effects: &[EffectType],
     ) -> Result<PolicyFile> {
         let mut policy = PolicyFile::empty(crate_path.to_path_buf())?;
         let ident_sinks =
             sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
-        let scan_res = scanner::scan_crate_with_sinks(crate_path, ident_sinks)?;
+        let scan_res =
+            scanner::scan_crate_with_sinks(crate_path, ident_sinks, relevant_effects)?;
         policy.set_base_audit_trees(scan_res.effects_set());
 
         Ok(policy)
@@ -383,13 +394,18 @@ impl PolicyFile {
         crate_path: &FilePath,
         sinks: HashSet<CanonicalPath>,
         policy_type: DefaultPolicyType,
+        relevant_effects: &[EffectType],
     ) -> Result<PolicyFile> {
         match policy_type {
             DefaultPolicyType::CallerChecked => {
-                Self::new_caller_checked_default_with_sinks(crate_path, sinks)
+                Self::new_caller_checked_default_with_sinks(
+                    crate_path,
+                    sinks,
+                    relevant_effects,
+                )
             }
             DefaultPolicyType::Empty => {
-                Self::new_empty_default_with_sinks(crate_path, sinks)
+                Self::new_empty_default_with_sinks(crate_path, sinks, relevant_effects)
             }
             // TODO: belo
             DefaultPolicyType::Safe => unimplemented!(),
