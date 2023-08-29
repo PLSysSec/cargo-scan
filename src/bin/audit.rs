@@ -3,7 +3,7 @@ use cargo_scan::auditing::info::Config;
 use cargo_scan::auditing::reset::reset_annotation;
 use cargo_scan::auditing::review::review_policy;
 use cargo_scan::auditing::util::{hash_dir, is_policy_scan_valid};
-use cargo_scan::effect::EffectInstance;
+use cargo_scan::effect::{Effect, EffectInstance};
 use cargo_scan::policy::*;
 use cargo_scan::scanner;
 
@@ -15,6 +15,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use inquire::{validator::Validation, Text};
+use parse_display::{Display, FromStr};
 use petgraph::dot::Dot;
 
 /// Interactively vet a package policy
@@ -55,6 +56,50 @@ struct Args {
     /// Dump the callgraph to the specified file. Uses the DOT format.
     #[clap(long)]
     dump_callgraph: Option<String>,
+
+    /// The types of Effects the audit should track. Defaults to all unsafe
+    /// behavior.
+    #[clap(long, value_parser, num_args = 1.., default_values_t = [
+        EffectType::SinkCall,
+        EffectType::FFICall,
+        EffectType::UnsafeCall,
+        EffectType::RawPointer,
+        EffectType::UnionField,
+        EffectType::StaticMut,
+        EffectType::StaticExt,
+        EffectType::FnPtrCreation,
+        EffectType::ClosureCreation,
+    ])]
+    effect_types: Vec<EffectType>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Display, FromStr)]
+enum EffectType {
+    SinkCall,
+    FFICall,
+    UnsafeCall,
+    RawPointer,
+    UnionField,
+    StaticMut,
+    StaticExt,
+    FnPtrCreation,
+    ClosureCreation,
+}
+
+impl EffectType {
+    pub fn matches_effect(types: &[EffectType], e: &Effect) -> bool {
+        match e {
+            Effect::SinkCall(_) => types.contains(&EffectType::SinkCall),
+            Effect::FFICall(_) => types.contains(&EffectType::FFICall),
+            Effect::UnsafeCall(_) => types.contains(&EffectType::UnsafeCall),
+            Effect::RawPointer(_) => types.contains(&EffectType::RawPointer),
+            Effect::UnionField(_) => types.contains(&EffectType::UnionField),
+            Effect::StaticMut(_) => types.contains(&EffectType::StaticMut),
+            Effect::StaticExt(_) => types.contains(&EffectType::StaticExt),
+            Effect::FnPtrCreation => types.contains(&EffectType::FnPtrCreation),
+            Effect::ClosureCreation => types.contains(&EffectType::ClosureCreation),
+        }
+    }
 }
 
 enum ContinueStatus {
@@ -69,7 +114,7 @@ fn handle_invalid_policy<'a, I>(
     policy: &mut PolicyFile,
     policy_path: &mut PathBuf,
     scan_effects: I,
-    overwrite_policy: bool,
+    args: &Args,
 ) -> Result<ContinueStatus>
 where
     I: IntoIterator<Item = &'a EffectInstance>,
@@ -77,19 +122,26 @@ where
     // TODO: Colorize
     println!("Crate has changed from last policy audit");
 
-    if overwrite_policy {
+    if args.overwrite_policy {
         println!("Generating new policy file");
 
         policy.audit_trees = scan_effects
             .into_iter()
-            .map(|effect_instance: &EffectInstance| {
-                (
-                    effect_instance.clone(),
-                    EffectTree::Leaf(
-                        EffectInfo::from_instance(effect_instance),
-                        SafetyAnnotation::Skipped,
-                    ),
-                )
+            .filter_map(|effect_instance: &EffectInstance| {
+                if EffectType::matches_effect(
+                    &args.effect_types,
+                    effect_instance.eff_type(),
+                ) {
+                    Some((
+                        effect_instance.clone(),
+                        EffectTree::Leaf(
+                            EffectInfo::from_instance(effect_instance),
+                            SafetyAnnotation::Skipped,
+                        ),
+                    ))
+                } else {
+                    None
+                }
             })
             .collect::<HashMap<_, _>>();
         policy.hash = hash_dir(policy.base_dir.clone())?;
@@ -185,7 +237,7 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
                     &mut pf,
                     &mut policy_path,
                     scan_effects,
-                    args.overwrite_policy,
+                    &args,
                 ) {
                     Ok(ContinueStatus::Continue) => (),
                     Ok(ContinueStatus::ExitNow) => return Ok(()),

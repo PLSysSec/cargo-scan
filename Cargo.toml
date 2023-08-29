@@ -56,3 +56,4 @@ syn = { version = "2.0", features = ["full", "extra-traits"] }
 tar = "0.4.40"
 toml = "0.7.6"
 walkdir = "2.3.3"
+parse-display = "0.8.2"
