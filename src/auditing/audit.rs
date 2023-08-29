@@ -333,12 +333,7 @@ fn update_audit_annotation(
             let new_check_locs = scan_res
                 .get_callers(&curr_effect.caller_path)?
                 .into_iter()
-                .map(|e| {
-                    EffectTree::Leaf(
-                        e,
-                        SafetyAnnotation::Skipped,
-                    )
-                })
+                .map(|e| EffectTree::Leaf(e, SafetyAnnotation::Skipped))
                 .collect::<Vec<_>>();
 
             if new_check_locs.is_empty() {

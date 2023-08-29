@@ -418,13 +418,12 @@ impl<'a> Scanner<'a> {
         }
 
         // If there is a default implementation,
-        // scan the function body as usual. 
-        // Otherwise, just create a node in the 
+        // scan the function body as usual.
+        // Otherwise, just create a node in the
         // call graph for the abstract trait method.
         if let Some(body) = &m.default {
             self.scan_fn(&m.sig, body, vis);
-        }
-        else{
+        } else {
             let f_name = self.resolver.resolve_def(&m.sig.ident);
             // Update call graph
             let node_idx = self.data.call_graph.add_node(f_name.clone());
