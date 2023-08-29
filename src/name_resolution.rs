@@ -1,42 +1,35 @@
 #![allow(unused_variables)]
 
+use anyhow::{anyhow, Result};
+use itertools::Itertools;
+use log::debug;
 use std::fs::canonicalize;
 use std::path::Path;
 
-use anyhow::{anyhow, Result};
-use log::debug;
-use ra_ap_hir_def::db::DefDatabase;
-use ra_ap_hir_def::{FunctionId, Lookup, TypeAliasId};
-use ra_ap_hir_expand::name::AsName;
-use ra_ap_hir_ty::db::HirDatabase;
-use ra_ap_hir_ty::{Interner, TyKind};
-use ra_ap_ide_db::base_db::{SourceDatabase, Upcast};
-use ra_ap_ide_db::FxHashMap;
-use ra_ap_syntax::ast::HasName;
-
-use crate::ident::TypeKind;
-
 use super::effect::SrcLoc;
-use super::ident::{CanonicalPath, CanonicalType, Ident};
+use super::ident::{CanonicalPath, CanonicalType, Ident, TypeKind};
 
 use ra_ap_hir::{
     Adt, AsAssocItem, AssocItemContainer, DefWithBody, GenericParam, HirDisplay, Module,
     ModuleSource, Semantics, TypeRef, VariantDef,
 };
+use ra_ap_hir_def::db::DefDatabase;
+use ra_ap_hir_def::{FunctionId, Lookup, TypeAliasId};
+use ra_ap_hir_expand::name::AsName;
+use ra_ap_hir_ty::db::HirDatabase;
+use ra_ap_hir_ty::{Interner, TyKind};
 use ra_ap_ide::{AnalysisHost, FileId, LineCol, RootDatabase, TextSize};
+use ra_ap_ide_db::base_db::{SourceDatabase, Upcast};
 use ra_ap_ide_db::defs::{Definition, IdentClass};
+use ra_ap_ide_db::FxHashMap;
+use ra_ap_load_cargo::{LoadCargoConfig, ProcMacroServerChoice};
 use ra_ap_paths::AbsPathBuf;
 use ra_ap_project_model::{
     CargoConfig, CargoFeatures, InvocationLocation, InvocationStrategy, RustLibSource,
-    CfgOverrides,
 };
-
-use ra_ap_load_cargo::{LoadCargoConfig, ProcMacroServerChoice};
-
+use ra_ap_syntax::ast::HasName;
 use ra_ap_syntax::{AstNode, SourceFile, SyntaxToken, TokenAtOffset};
 use ra_ap_vfs::{Vfs, VfsPath};
-
-use itertools::Itertools;
 
 // latest rust-analyzer has removed Display for Name, see
 // https://docs.rs/ra_ap_hir/latest/ra_ap_hir/struct.Name.html#
@@ -641,7 +634,8 @@ fn get_canonical_type(
     type_defs.into_iter().for_each(|it| {
         type_ = canonical_path(sems, db, &it).map_or(type_.clone(), |cp| {
             type_.replace(
-                name_to_string(it.name(db).expect("Definition should a have name")).as_str(),
+                name_to_string(it.name(db).expect("Definition should a have name"))
+                    .as_str(),
                 cp.as_str(),
             )
         })
@@ -692,9 +686,10 @@ fn _is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
                 .map(|(_, ty)| {
                     let kind = ty.kind(Interner);
                     match kind {
-                        TyKind::Function(fn_pointer) => {
-                            Ok(matches!(fn_pointer.sig.safety, ra_ap_hir_ty::Safety::Unsafe))
-                        }
+                        TyKind::Function(fn_pointer) => Ok(matches!(
+                            fn_pointer.sig.safety,
+                            ra_ap_hir_ty::Safety::Unsafe
+                        )),
                         TyKind::Adt(
                             ra_ap_hir_ty::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
                             substs,

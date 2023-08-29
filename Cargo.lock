@@ -346,7 +346,6 @@ dependencies = [
  "cargo",
  "cargo-lock",
  "cargo_toml",
- "chalk-ir 0.93.0",
  "clap",
  "codespan-reporting",
  "colored",
@@ -368,7 +367,6 @@ dependencies = [
  "ra_ap_load-cargo",
  "ra_ap_paths",
  "ra_ap_project_model",
- "ra_ap_rust-analyzer",
  "ra_ap_syntax",
  "ra_ap_vfs",
  "semver",
@@ -456,36 +454,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "chalk-derive"
-version = "0.93.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "264726159011fc7f22c23eb51f49021ece6e71bc358b96e7f2e842db0b14162b"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.29",
- "synstructure",
-]
-
-[[package]]
 name = "chalk-ir"
 version = "0.92.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56de2146a8ed0fcd54f4bd50db852f1de4eac9e1efe568494f106c21b77d2a"
 dependencies = [
  "bitflags 1.3.2",
- "chalk-derive 0.92.0",
- "lazy_static",
-]
-
-[[package]]
-name = "chalk-ir"
-version = "0.93.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d65c17407d4c756b8f7f84344acb0fb96364d0298822743219bb25769b6d00df"
-dependencies = [
- "bitflags 1.3.2",
- "chalk-derive 0.93.0",
+ "chalk-derive",
  "lazy_static",
 ]
 
@@ -495,8 +470,8 @@ version = "0.92.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5cc09e6e9531f3544989ef89b189e80fbc7ad9e2f73f1c5e03ddc9ffb0527463"
 dependencies = [
- "chalk-derive 0.92.0",
- "chalk-ir 0.92.0",
+ "chalk-derive",
+ "chalk-ir",
  "chalk-solve",
  "rustc-hash",
  "tracing",
@@ -508,8 +483,8 @@ version = "0.92.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b392e02b4c81ec76d3748da839fc70a5539b83d27c9030668463d34d5110b860"
 dependencies = [
- "chalk-derive 0.92.0",
- "chalk-ir 0.92.0",
+ "chalk-derive",
+ "chalk-ir",
  "ena",
  "indexmap 1.9.3",
  "itertools 0.10.5",
@@ -604,16 +579,6 @@ dependencies = [
  "is-terminal",
  "lazy_static",
  "windows-sys 0.48.0",
-]
-
-[[package]]
-name = "command-group"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5080df6b0f0ecb76cab30808f00d937ba725cebe266a3da8cd89dff92f2a9916"
-dependencies = [
- "nix",
- "winapi",
 ]
 
 [[package]]
@@ -2325,31 +2290,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 
 [[package]]
-name = "lsp-server"
-version = "0.7.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b52dccdf3302eefab8c8a1273047f0a3c3dca4b527c8458d00c09484c8371928"
-dependencies = [
- "crossbeam-channel",
- "log",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "lsp-types"
-version = "0.94.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b63735a13a1f9cd4f4835223d828ed9c2e35c8c5e61837774399f558b6a1237"
-dependencies = [
- "bitflags 1.3.2",
- "serde",
- "serde_json",
- "serde_repr",
- "url",
-]
-
-[[package]]
 name = "maybe-async"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2439,18 +2379,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nix"
-version = "0.26.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfdda3d196821d6af13126e40375cdf7da646a96114af134d5f417a9a1dc8e1a"
-dependencies = [
- "bitflags 1.3.2",
- "cfg-if",
- "libc",
- "static_assertions",
-]
-
-[[package]]
 name = "nohash-hasher"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2482,16 +2410,6 @@ dependencies = [
  "mio",
  "walkdir",
  "windows-sys 0.42.0",
-]
-
-[[package]]
-name = "nu-ansi-term"
-version = "0.46.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77a8165726e8236064dbb45459242600304b42a5ea24ee2948e18e023bf7ba84"
-dependencies = [
- "overload",
- "winapi",
 ]
 
 [[package]]
@@ -2601,12 +2519,6 @@ dependencies = [
  "serde",
  "winapi",
 ]
-
-[[package]]
-name = "overload"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "p384"
@@ -2833,26 +2745,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "protobuf"
-version = "3.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ee4a7d8b91800c8f167a6268d1a1026607368e1adc84e98fe044aeb905302f7"
-dependencies = [
- "once_cell",
- "protobuf-support",
- "thiserror",
-]
-
-[[package]]
-name = "protobuf-support"
-version = "3.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ca157fe12fc7ee2e315f2f735e27df41b3d97cdd70ea112824dac1ffb08ee1c"
-dependencies = [
- "thiserror",
-]
-
-[[package]]
 name = "pulldown-cmark"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2918,24 +2810,6 @@ checksum = "9c81a0fc52925057a5d48e3167a9797e373bbf9d13129232d0e4a812b997ffb4"
 dependencies = [
  "ra_ap_tt",
  "rustc-hash",
-]
-
-[[package]]
-name = "ra_ap_flycheck"
-version = "0.0.171"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ba72d6b6a82f57b32c69e7b168f8bc5c346c4bcc02a02c28d30ed2965338536"
-dependencies = [
- "cargo_metadata",
- "command-group",
- "crossbeam-channel",
- "ra_ap_paths",
- "ra_ap_stdx",
- "ra_ap_toolchain",
- "rustc-hash",
- "serde",
- "serde_json",
- "tracing",
 ]
 
 [[package]]
@@ -3033,8 +2907,8 @@ checksum = "3e5d036114b01abd934e181d840e92033eb027a85b48797387418888789fbc11"
 dependencies = [
  "arrayvec 0.7.4",
  "bitflags 2.3.3",
- "chalk-derive 0.92.0",
- "chalk-ir 0.92.0",
+ "chalk-derive",
+ "chalk-ir",
  "chalk-recursive",
  "chalk-solve",
  "cov-mark",
@@ -3327,57 +3201,6 @@ dependencies = [
  "serde_json",
  "tracing",
  "triomphe",
-]
-
-[[package]]
-name = "ra_ap_rust-analyzer"
-version = "0.0.171"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d9e2cd5adc973134ad5cc9324fc186d25fa840e43647f4ed9c9020eab32e0ab"
-dependencies = [
- "always-assert",
- "anyhow",
- "crossbeam-channel",
- "dissimilar",
- "filetime",
- "itertools 0.10.5",
- "lsp-server",
- "lsp-types",
- "mio",
- "nohash-hasher",
- "num_cpus",
- "oorandom",
- "parking_lot 0.12.1",
- "parking_lot_core 0.9.6",
- "ra_ap_cfg",
- "ra_ap_flycheck",
- "ra_ap_hir",
- "ra_ap_hir_def",
- "ra_ap_hir_ty",
- "ra_ap_ide",
- "ra_ap_ide_db",
- "ra_ap_ide_ssr",
- "ra_ap_load-cargo",
- "ra_ap_proc_macro_api",
- "ra_ap_profile",
- "ra_ap_project_model",
- "ra_ap_stdx",
- "ra_ap_syntax",
- "ra_ap_toolchain",
- "ra_ap_vfs",
- "ra_ap_vfs-notify",
- "rayon",
- "rustc-hash",
- "scip",
- "serde",
- "serde_json",
- "tracing",
- "tracing-log",
- "tracing-subscriber",
- "tracing-tree",
- "triomphe",
- "winapi",
- "xflags",
 ]
 
 [[package]]
@@ -3717,15 +3540,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "scip"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2bfbb10286f69fad7c78db71004b7839bf957788359fe0c479f029f9849136b"
-dependencies = [
- "protobuf",
-]
-
-[[package]]
 name = "scoped-tls"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3805,21 +3619,9 @@ version = "1.0.105"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "693151e1ac27563d6dbcec9dee9fbd5da8539b20fa14ad3752b2e6d363ace360"
 dependencies = [
- "indexmap 2.0.0",
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "serde_repr"
-version = "0.1.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e168eaaf71e8f9bd6037feb05190485708e019f4fd87d161b3c0a0d37daf85e5"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.29",
 ]
 
 [[package]]
@@ -3886,15 +3688,6 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "digest",
-]
-
-[[package]]
-name = "sharded-slab"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "900fba806f70c630b0a382d0d825e17a0f19fcd059a2ade1ff237bcddf446b31"
-dependencies = [
- "lazy_static",
 ]
 
 [[package]]
@@ -4248,43 +4041,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0955b8137a1df6f1a2e9a37d8a6656291ff0297c1a97c24e0d8425fe2312f79a"
 dependencies = [
  "once_cell",
- "valuable",
-]
-
-[[package]]
-name = "tracing-log"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78ddad33d2d10b1ed7eb9d1f518a5674713876e97e5bb9b7345a7984fbb4f922"
-dependencies = [
- "lazy_static",
- "log",
- "tracing-core",
-]
-
-[[package]]
-name = "tracing-subscriber"
-version = "0.3.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30a651bc37f915e81f087d86e62a18eec5f79550c7faff886f7090b4ea757c77"
-dependencies = [
- "sharded-slab",
- "thread_local",
- "tracing-core",
- "tracing-log",
-]
-
-[[package]]
-name = "tracing-tree"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92d6b63348fad3ae0439b8bebf8d38fb5bda0b115d7a8a7e6f165f12790c58c3"
-dependencies = [
- "is-terminal",
- "nu-ansi-term",
- "tracing-core",
- "tracing-log",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -4409,7 +4165,6 @@ dependencies = [
  "form_urlencoded",
  "idna",
  "percent-encoding",
- "serde",
 ]
 
 [[package]]
@@ -4417,12 +4172,6 @@ name = "utf8parse"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
-
-[[package]]
-name = "valuable"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
 
 [[package]]
 name = "vcpkg"
@@ -4716,21 +4465,6 @@ checksum = "f4686009f71ff3e5c4dbcf1a282d0a44db3f021ba69350cd42086b3e5f1c6985"
 dependencies = [
  "libc",
 ]
-
-[[package]]
-name = "xflags"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4554b580522d0ca238369c16b8f6ce34524d61dafe7244993754bbd05f2c2ea"
-dependencies = [
- "xflags-macros",
-]
-
-[[package]]
-name = "xflags-macros"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f58e7b3ca8977093aae6b87b6a7730216fc4c53a6530bab5c43a783cd810c1a8"
 
 [[package]]
 name = "zeroize"
