@@ -38,6 +38,13 @@ use ra_ap_vfs::{Vfs, VfsPath};
 
 use itertools::Itertools;
 
+// latest rust-analyzer has removed Display for Name, see
+// https://docs.rs/ra_ap_hir/latest/ra_ap_hir/struct.Name.html#
+// This is a wrapper function to recover the .to_string() implementation
+fn name_to_string(n: ra_ap_hir::Name) -> String {
+    n.to_smol_str().to_string()
+}
+
 #[derive(Debug)]
 pub struct Resolver {
     host: AnalysisHost,
@@ -375,11 +382,11 @@ fn canonical_path(
     def: &Definition,
 ) -> Option<CanonicalPath> {
     if let Definition::BuiltinType(b) = def {
-        return Some(CanonicalPath::new_owned(b.name().to_string()));
+        return Some(CanonicalPath::new_owned(name_to_string(b.name())));
     }
 
     let container = get_container_name(sems, db, def);
-    let def_name = def.name(db).map(|name| name.to_string());
+    let def_name = def.name(db).map(name_to_string);
     let module = def.module(db)?;
 
     let crate_name = db.crate_graph()[module.krate().into()]
@@ -389,7 +396,7 @@ fn canonical_path(
     let module_path = build_path_to_root(module, db)
         .into_iter()
         .rev()
-        .flat_map(|it| it.name(db).map(|name| name.to_string()));
+        .flat_map(|it| it.name(db).map(name_to_string));
 
     let cp = crate_name
         .into_iter()
@@ -420,7 +427,7 @@ fn get_container_name(
                     get_container_name(sems, db, &Adt::from(u).into())
                 }
             });
-            container_names.push(parent.name(db).to_string())
+            container_names.push(name_to_string(parent.name(db)))
         }
         Definition::Local(l) => {
             let parent = l.parent(db);
@@ -430,9 +437,10 @@ fn get_container_name(
                 DefWithBody::Static(s) => s.into(),
                 DefWithBody::Const(c) => c.into(),
                 DefWithBody::Variant(v) => v.into(),
+                DefWithBody::InTypeConst(_) => unimplemented!("TODO"),
             };
             container_names.append(&mut get_container_name(sems, db, &parent_def));
-            container_names.push(parent_name.map(|n| n.to_string()).unwrap_or_default())
+            container_names.push(parent_name.map(name_to_string).unwrap_or_default())
         }
         Definition::Function(f) => {
             if let Some(item) = f.as_assoc_item(db) {
@@ -440,11 +448,11 @@ fn get_container_name(
                     AssocItemContainer::Trait(t) => {
                         let mut parent_name = get_container_name(sems, db, &t.into());
                         container_names.append(&mut parent_name);
-                        container_names.push(t.name(db).to_string())
+                        container_names.push(name_to_string(t.name(db)))
                     }
                     AssocItemContainer::Impl(i) => {
                         let adt = i.self_ty(db).as_adt();
-                        let name = adt.map(|it| it.name(db).to_string());
+                        let name = adt.map(|it| name_to_string(it.name(db)));
                         let mut parent_names = get_container_name(sems, db, &i.into());
                         container_names.append(&mut parent_names);
                         container_names.push(name.unwrap_or_default())
@@ -467,13 +475,13 @@ fn get_container_name(
                             Some(function.name()?.as_name())
                         })
                     })
-                    .map(|name| name.to_string())
+                    .map(name_to_string)
                     .unwrap_or_default();
                 container_names.push(str);
             }
         }
         Definition::Variant(e) => {
-            container_names.push(e.parent_enum(db).name(db).to_string())
+            container_names.push(name_to_string(e.parent_enum(db).name(db)))
         }
         _ => {
             // If the definition exists inside a function body,
@@ -494,7 +502,7 @@ fn get_container_name(
                             Some(function.name()?.as_name())
                         })
                     })
-                    .map(|name| name.to_string())
+                    .map(name_to_string)
                     .unwrap_or_default();
                 container_names.push(str)
             }
@@ -633,7 +641,7 @@ fn get_canonical_type(
     type_defs.into_iter().for_each(|it| {
         type_ = canonical_path(sems, db, &it).map_or(type_.clone(), |cp| {
             type_.replace(
-                it.name(db).expect("Definition should a have name").to_string().as_str(),
+                name_to_string(it.name(db).expect("Definition should a have name")).as_str(),
                 cp.as_str(),
             )
         })
