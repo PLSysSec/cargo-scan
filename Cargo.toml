@@ -19,41 +19,40 @@ incremental = false
 codegen-units = 16
 
 [dependencies]
-anyhow = "1.0.71"
-clap = { version = "4.2.7", features = ["derive"] }
-codespan-reporting = "0.11.1"
-colored = "2.0.0"
-env_logger = "0.10.0"
-inquire = "0.6.1"
-log = "0.4.17"
-petgraph = "0.6.3"
-proc-macro2 = { version = "1.0.56", features = ["span-locations"] }
-quote = "1.0.27"
-ra_ap_hir = "0.0.149"
-ra_ap_hir_ty = "0.0.149"
-chalk-ir = "0.88.0"
-ra_ap_ide = "0.0.149"
-ra_ap_ide_db = "0.0.149"
-ra_ap_paths = "0.0.149"
-ra_ap_project_model = "0.0.149"
-ra_ap_rust-analyzer = "0.0.149"
-ra_ap_syntax = "0.0.149"
-ra_ap_vfs = "0.0.149"
-serde = { version = "1.0.162", features = ["derive"] }
-serde_json = "1.0.96"
-serde_with = "3.0.0"
-sha2 = "0.10.6"
-syn = { version = "2.0", features = ["full", "extra-traits"] }
-toml = "0.7.3"
-walkdir = "2.3.3"
-itertools = {version = "0.10.5"}
-ra_ap_hir_expand = "0.0.149"
-ra_ap_hir_def = "0.0.149"
-cargo-lock = { version = "9.0.0", features = ["dependency-tree"] }
-curl = "0.4.44"
-flate2 = "1.0.26"
-tar = "0.4.38"
-cargo = "0.72.2"
-cargo_toml = "0.15.2"
-semver = "1.0.18"
+anyhow = "1.0.75"
 assert_cmd = "2.0.12"
+cargo = "0.73.1"
+cargo_toml = "0.15.3"
+cargo-lock = { version = "9.0.0", features = ["dependency-tree"] }
+clap = { version = "4.4.1", features = ["derive"] }
+codespan-reporting = "0.11.1"
+colored = "2.0.4"
+curl = "0.4.44"
+env_logger = "0.10.0"
+flate2 = "1.0.27"
+inquire = "0.6.2"
+itertools = {version = "0.11.0"}
+log = "0.4.20"
+petgraph = "0.6.4"
+proc-macro2 = { version = "1.0.66", features = ["span-locations"] }
+quote = "1.0.33"
+ra_ap_hir = "0.0.171"
+ra_ap_hir_def = "0.0.171"
+ra_ap_hir_expand = "0.0.171"
+ra_ap_hir_ty = "0.0.171"
+ra_ap_ide = "0.0.171"
+ra_ap_ide_db = "0.0.171"
+ra_ap_load-cargo = "0.0.171"
+ra_ap_paths = "0.0.171"
+ra_ap_project_model = "0.0.171"
+ra_ap_syntax = "0.0.171"
+ra_ap_vfs = "0.0.171"
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0.105"
+serde_with = "3.3.0"
+semver = "1.0.18"
+sha2 = "0.10.7"
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+tar = "0.4.40"
+toml = "0.7.6"
+walkdir = "2.3.3"

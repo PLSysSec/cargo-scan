@@ -1,41 +1,42 @@
 #![allow(unused_variables)]
 
+use anyhow::{anyhow, Result};
+use itertools::Itertools;
+use log::debug;
 use std::fs::canonicalize;
 use std::path::Path;
 
-use anyhow::{anyhow, Result};
-use log::debug;
-use ra_ap_hir_def::db::DefDatabase;
-use ra_ap_hir_def::{FunctionId, Lookup, TypeAliasId};
-use ra_ap_hir_expand::name::AsName;
-use ra_ap_hir_ty::db::HirDatabase;
-use ra_ap_hir_ty::{Interner, TyKind};
-use ra_ap_ide_db::base_db::{SourceDatabase, Upcast};
-use ra_ap_ide_db::FxHashMap;
-use ra_ap_syntax::ast::HasName;
-
-use crate::ident::TypeKind;
-
 use super::effect::SrcLoc;
-use super::ident::{CanonicalPath, CanonicalType, Ident};
+use super::ident::{CanonicalPath, CanonicalType, Ident, TypeKind};
 
 use ra_ap_hir::{
     Adt, AsAssocItem, AssocItemContainer, DefWithBody, GenericParam, HirDisplay, Module,
     ModuleSource, Semantics, TypeRef, VariantDef,
 };
+use ra_ap_hir_def::db::DefDatabase;
+use ra_ap_hir_def::{FunctionId, Lookup, TypeAliasId};
+use ra_ap_hir_expand::name::AsName;
+use ra_ap_hir_ty::db::HirDatabase;
+use ra_ap_hir_ty::{Interner, TyKind};
 use ra_ap_ide::{AnalysisHost, FileId, LineCol, RootDatabase, TextSize};
+use ra_ap_ide_db::base_db::{SourceDatabase, Upcast};
 use ra_ap_ide_db::defs::{Definition, IdentClass};
+use ra_ap_ide_db::FxHashMap;
+use ra_ap_load_cargo::{LoadCargoConfig, ProcMacroServerChoice};
 use ra_ap_paths::AbsPathBuf;
 use ra_ap_project_model::{
-    CargoConfig, CargoFeatures, InvocationLocation, InvocationStrategy, RustcSource,
-    UnsetTestCrates,
+    CargoConfig, CargoFeatures, InvocationLocation, InvocationStrategy, RustLibSource,
 };
-
-use ra_ap_rust_analyzer::cli::load_cargo::LoadCargoConfig;
+use ra_ap_syntax::ast::HasName;
 use ra_ap_syntax::{AstNode, SourceFile, SyntaxToken, TokenAtOffset};
 use ra_ap_vfs::{Vfs, VfsPath};
 
-use itertools::Itertools;
+// latest rust-analyzer has removed Display for Name, see
+// https://docs.rs/ra_ap_hir/latest/ra_ap_hir/struct.Name.html#
+// This is a wrapper function to recover the .to_string() implementation
+fn name_to_string(n: ra_ap_hir::Name) -> String {
+    n.to_smol_str().to_string()
+}
 
 #[derive(Debug)]
 pub struct Resolver {
@@ -52,13 +53,10 @@ impl Resolver {
         let target = None;
 
         // Whether to load sysroot crates (`std`, `core` & friends).
-        let sysroot = Some(RustcSource::Discover);
+        let sysroot = Some(RustLibSource::Discover);
 
         // rustc private crate source
         let rustc_source = None;
-
-        // crates to disable `#[cfg(test)]` on
-        let unset_test_crates = UnsetTestCrates::Only(vec![String::from("core")]);
 
         // Setup RUSTC_WRAPPER to point to `rust-analyzer` binary itself.
         let wrap_rustc_in_build_scripts = false;
@@ -71,14 +69,26 @@ impl Resolver {
         let invocation_strategy = InvocationStrategy::PerWorkspace;
         let invocation_location = InvocationLocation::Workspace;
 
+        // TODO: added arguments for newest version of rust-analyzer
+        // Not sure if these are correct, putting in default values
+        let sysroot_src = None;
+        let cfg_overrides = Default::default();
+        let extra_args = Vec::new();
+
+        // crates to disable `#[cfg(test)]` on
+        // TODO
+        // let unset_test_crates = CfgOverrides::Only(vec![String::from("core")]);
+
         CargoConfig {
             features,
             target,
             sysroot,
+            sysroot_src,
             rustc_source,
-            unset_test_crates,
+            cfg_overrides,
             wrap_rustc_in_build_scripts,
             run_build_script_command,
+            extra_args,
             extra_env,
             invocation_strategy,
             invocation_location,
@@ -102,13 +112,16 @@ impl Resolver {
         let cargo_config = &Self::cargo_config();
         let progress = &|p| debug!("Workspace loading progress: {:?}", p);
 
+        // TODO: check options to use here
+        let with_proc_macro_server = ProcMacroServerChoice::Sysroot;
+
         let load_config = LoadCargoConfig {
             load_out_dirs_from_check: true,
-            with_proc_macro: true,
+            with_proc_macro_server,
             prefill_caches: true,
         };
 
-        let (host, vfs, _) = ra_ap_rust_analyzer::cli::load_cargo::load_workspace_at(
+        let (host, vfs, _) = ra_ap_load_cargo::load_workspace_at(
             crate_path,
             cargo_config,
             &load_config,
@@ -322,7 +335,9 @@ fn find_def(
     db: &RootDatabase,
     diagnostics: Vec<String>,
 ) -> Result<Definition> {
-    sems.descend_into_macros(token.clone())
+    // For ra_ap_syntax::TextSize, using default, idk if this is correct
+    let text_size = Default::default();
+    sems.descend_into_macros(token.clone(), text_size)
         .iter()
         .filter_map(|t| {
             // 'IdentClass::classify_token' might return two definitions
@@ -362,11 +377,11 @@ fn canonical_path(
     def: &Definition,
 ) -> Option<CanonicalPath> {
     if let Definition::BuiltinType(b) = def {
-        return Some(CanonicalPath::new_owned(b.name().to_string()));
+        return Some(CanonicalPath::new_owned(name_to_string(b.name())));
     }
 
     let container = get_container_name(sems, db, def);
-    let def_name = def.name(db).map(|name| name.to_string());
+    let def_name = def.name(db).map(name_to_string);
     let module = def.module(db)?;
 
     let crate_name = db.crate_graph()[module.krate().into()]
@@ -376,7 +391,7 @@ fn canonical_path(
     let module_path = build_path_to_root(module, db)
         .into_iter()
         .rev()
-        .flat_map(|it| it.name(db).map(|name| name.to_string()));
+        .flat_map(|it| it.name(db).map(name_to_string));
 
     let cp = crate_name
         .into_iter()
@@ -407,7 +422,7 @@ fn get_container_name(
                     get_container_name(sems, db, &Adt::from(u).into())
                 }
             });
-            container_names.push(parent.name(db).to_string())
+            container_names.push(name_to_string(parent.name(db)))
         }
         Definition::Local(l) => {
             let parent = l.parent(db);
@@ -417,9 +432,10 @@ fn get_container_name(
                 DefWithBody::Static(s) => s.into(),
                 DefWithBody::Const(c) => c.into(),
                 DefWithBody::Variant(v) => v.into(),
+                DefWithBody::InTypeConst(_) => unimplemented!("TODO"),
             };
             container_names.append(&mut get_container_name(sems, db, &parent_def));
-            container_names.push(parent_name.map(|n| n.to_string()).unwrap_or_default())
+            container_names.push(parent_name.map(name_to_string).unwrap_or_default())
         }
         Definition::Function(f) => {
             if let Some(item) = f.as_assoc_item(db) {
@@ -427,11 +443,11 @@ fn get_container_name(
                     AssocItemContainer::Trait(t) => {
                         let mut parent_name = get_container_name(sems, db, &t.into());
                         container_names.append(&mut parent_name);
-                        container_names.push(t.name(db).to_string())
+                        container_names.push(name_to_string(t.name(db)))
                     }
                     AssocItemContainer::Impl(i) => {
                         let adt = i.self_ty(db).as_adt();
-                        let name = adt.map(|it| it.name(db).to_string());
+                        let name = adt.map(|it| name_to_string(it.name(db)));
                         let mut parent_names = get_container_name(sems, db, &i.into());
                         container_names.append(&mut parent_names);
                         container_names.push(name.unwrap_or_default())
@@ -454,13 +470,13 @@ fn get_container_name(
                             Some(function.name()?.as_name())
                         })
                     })
-                    .map(|name| name.to_string())
+                    .map(name_to_string)
                     .unwrap_or_default();
                 container_names.push(str);
             }
         }
         Definition::Variant(e) => {
-            container_names.push(e.parent_enum(db).name(db).to_string())
+            container_names.push(name_to_string(e.parent_enum(db).name(db)))
         }
         _ => {
             // If the definition exists inside a function body,
@@ -481,7 +497,7 @@ fn get_container_name(
                             Some(function.name()?.as_name())
                         })
                     })
-                    .map(|name| name.to_string())
+                    .map(name_to_string)
                     .unwrap_or_default();
                 container_names.push(str)
             }
@@ -620,7 +636,8 @@ fn get_canonical_type(
     type_defs.into_iter().for_each(|it| {
         type_ = canonical_path(sems, db, &it).map_or(type_.clone(), |cp| {
             type_.replace(
-                it.name(db).expect("Definition should a have name").to_string().as_str(),
+                name_to_string(it.name(db).expect("Definition should a have name"))
+                    .as_str(),
                 cp.as_str(),
             )
         })
@@ -651,9 +668,9 @@ fn _is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
             let kind = ty.skip_binders().kind(Interner);
 
             if let TyKind::Function(fn_ptr) = kind {
-                return Ok(matches!(fn_ptr.sig.safety, chalk_ir::Safety::Unsafe));
+                return Ok(matches!(fn_ptr.sig.safety, ra_ap_hir_ty::Safety::Unsafe));
             } else if let TyKind::Adt(
-                chalk_ir::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
+                ra_ap_hir_ty::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
                 substs,
             ) = kind
             {
@@ -667,15 +684,22 @@ fn _is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
             return infer
                 .type_of_pat
                 .iter()
-                .find(|(pat_id, ty)| l == ra_ap_hir::Local::from((def.into(), *pat_id)))
+                // TODO: modified:
+                .find(|(pat_id, ty)| {
+                    // TODO: how to convert pat_id to BindingId?
+                    // Is the below fix correct?
+                    let b = ra_ap_hir_def::hir::BindingId::from_raw(pat_id.into_raw());
+                    l == ra_ap_hir::Local::from((def.into(), b))
+                })
                 .map(|(_, ty)| {
                     let kind = ty.kind(Interner);
                     match kind {
-                        TyKind::Function(fn_pointer) => {
-                            Ok(matches!(fn_pointer.sig.safety, chalk_ir::Safety::Unsafe))
-                        }
+                        TyKind::Function(fn_pointer) => Ok(matches!(
+                            fn_pointer.sig.safety,
+                            ra_ap_hir_ty::Safety::Unsafe
+                        )),
                         TyKind::Adt(
-                            chalk_ir::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
+                            ra_ap_hir_ty::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
                             substs,
                         ) => _is_unsafe_callable_in_smart_ptr(substs),
                         _ => Ok(false),
@@ -695,9 +719,9 @@ fn _is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
             let kind = ty.kind(Interner);
 
             if let TyKind::Function(fn_pointer) = kind {
-                return Ok(matches!(fn_pointer.sig.safety, chalk_ir::Safety::Unsafe));
+                return Ok(matches!(fn_pointer.sig.safety, ra_ap_hir_ty::Safety::Unsafe));
             } else if let TyKind::Adt(
-                chalk_ir::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
+                ra_ap_hir_ty::AdtId(ra_ap_hir_def::AdtId::StructId(_)),
                 substs,
             ) = kind
             {
@@ -722,7 +746,7 @@ fn _is_unsafe_callable_in_smart_ptr(substs: &ra_ap_hir_ty::Substitution) -> Resu
             if let TyKind::Function(fn_pointer) =
                 subst.ty(Interner).unwrap().kind(Interner)
             {
-                matches!(fn_pointer.sig.safety, chalk_ir::Safety::Unsafe)
+                matches!(fn_pointer.sig.safety, ra_ap_hir_ty::Safety::Unsafe)
             } else {
                 false
             }
