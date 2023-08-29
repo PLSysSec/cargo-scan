@@ -335,7 +335,9 @@ fn find_def(
     db: &RootDatabase,
     diagnostics: Vec<String>,
 ) -> Result<Definition> {
-    sems.descend_into_macros(token.clone())
+    // For ra_ap_syntax::TextSize, using default, idk if this is correct
+    let text_size = Default::default();
+    sems.descend_into_macros(token.clone(), text_size)
         .iter()
         .filter_map(|t| {
             // 'IdentClass::classify_token' might return two definitions
@@ -682,7 +684,13 @@ fn _is_unsafe_callable_ty(def: Definition, db: &RootDatabase) -> Result<bool> {
             return infer
                 .type_of_pat
                 .iter()
-                .find(|(pat_id, ty)| l == ra_ap_hir::Local::from((def.into(), *pat_id)))
+                // TODO: modified:
+                .find(|(pat_id, ty)| {
+                    // TODO: how to convert pat_id to BindingId?
+                    // Is the below fix correct?
+                    let b = ra_ap_hir_def::hir::BindingId::from_raw(pat_id.into_raw());
+                    l == ra_ap_hir::Local::from((def.into(), b))
+                })
                 .map(|(_, ty)| {
                     let kind = ty.kind(Interner);
                     match kind {
