@@ -10,8 +10,8 @@ use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 
 use crate::ident::CanonicalPath;
 use crate::{
-    effect::{Effect, EffectInstance, SrcLoc},
     audit_file::EffectInfo,
+    effect::{Effect, EffectInstance, SrcLoc},
 };
 
 #[derive(Parser, Debug)]

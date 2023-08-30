@@ -360,7 +360,8 @@ impl AuditFile {
         sinks: HashSet<CanonicalPath>,
         relevant_effects: &[EffectType],
     ) -> Result<AuditFile> {
-        let mut audit_file = AuditFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
+        let mut audit_file =
+            AuditFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
         let ident_sinks =
             sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
         let scan_res =
@@ -382,7 +383,8 @@ impl AuditFile {
         sinks: HashSet<CanonicalPath>,
         relevant_effects: &[EffectType],
     ) -> Result<AuditFile> {
-        let mut audit_file = AuditFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
+        let mut audit_file =
+            AuditFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
         let ident_sinks =
             sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
         let scan_res =

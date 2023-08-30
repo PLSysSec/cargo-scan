@@ -1,9 +1,9 @@
 use cargo_scan::audit_chain::{create_new_audit_chain, AuditChain, Create};
-use cargo_scan::auditing::audit::{start_audit, audit_pub_fn};
+use cargo_scan::audit_file::AuditFile;
+use cargo_scan::auditing::audit::{audit_pub_fn, start_audit};
 use cargo_scan::auditing::info::Config as AuditConfig;
 use cargo_scan::auditing::review::review_audit;
 use cargo_scan::effect::Effect;
-use cargo_scan::audit_file::AuditFile;
 use cargo_scan::{download_crate, scanner};
 
 use anyhow::{anyhow, Context, Result};
@@ -200,7 +200,10 @@ impl CommandRunner for Audit {
 
                     // Iterate through the crate's dependencies and add the
                     // public functions to the scan sinks
-                    let scan_res = scanner::scan_crate(&crate_path, &orig_audit_file.scanned_effects)?;
+                    let scan_res = scanner::scan_crate(
+                        &crate_path,
+                        &orig_audit_file.scanned_effects,
+                    )?;
 
                     let audit_config = AuditConfig::default();
 

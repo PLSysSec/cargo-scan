@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 
 use crate::audit_chain::AuditChain;
+use crate::audit_file::{EffectInfo, EffectTree};
 use crate::auditing::info::*;
 use crate::effect::{Effect, EffectInstance};
 use crate::ident::CanonicalPath;
-use crate::audit_file::{EffectInfo, EffectTree};
 use crate::scanner::scan_crate;
 use crate::sink::Sink;
 use crate::{
@@ -405,13 +405,15 @@ pub fn audit_pub_fn(
         .first_ident()
         .ok_or_else(|| anyhow!("Missing leading identifier for pattern"))?;
     // TODO: The sink crate we get here may include the version
-    let (sink_crate_id, mut prev_audit_file) = chain
-        .read_audit_file_no_version(sink_crate.as_str())?
-        .ok_or_else(|| anyhow!("Couldn't find audit file for the sink: {}", sink_crate))?;
+    let (sink_crate_id, mut prev_audit_file) =
+        chain.read_audit_file_no_version(sink_crate.as_str())?.ok_or_else(|| {
+            anyhow!("Couldn't find audit file for the sink: {}", sink_crate)
+        })?;
     let mut new_audit_file = prev_audit_file.clone();
 
     // Find the public function associated with the sink
-    let scan_res = scan_crate(&new_audit_file.base_dir, &prev_audit_file.scanned_effects)?;
+    let scan_res =
+        scan_crate(&new_audit_file.base_dir, &prev_audit_file.scanned_effects)?;
     let sink_fn = CanonicalPath::new(sink_ident.as_str());
     loop {
         // Keep looping until we are done with auditing children
@@ -440,9 +442,13 @@ pub fn audit_pub_fn(
                 // We have to reload the new audit file because auditing child
                 // effects may have removed some base effects from the current
                 // crate
-                new_audit_file = chain.read_audit_file(&sink_crate_id)?.ok_or_else(|| {
-                    anyhow!("Couldn't find audit file for the sink: {}", sink_crate_id)
-                })?;
+                new_audit_file =
+                    chain.read_audit_file(&sink_crate_id)?.ok_or_else(|| {
+                        anyhow!(
+                            "Couldn't find audit file for the sink: {}",
+                            sink_crate_id
+                        )
+                    })?;
                 // After we audit the child function, we will recurse until the
                 // user marks everything, or we run out of child functions to
                 // audit.
@@ -477,12 +483,13 @@ fn audit_pub_fn_effect(
     for base_effect in audit_file.pub_caller_checked.get(sink_fn).ok_or_else(|| {
         anyhow!("Couldn't find public function from sink: {:?}", &sink_fn)
     })? {
-        let effect_tree = audit_file.audit_trees.get_mut(base_effect).ok_or_else(|| {
-            anyhow!(
+        let effect_tree =
+            audit_file.audit_trees.get_mut(base_effect).ok_or_else(|| {
+                anyhow!(
                 "Couldn't find tree when auditing public function for effect block: {:?}",
                 base_effect
             )
-        })?;
+            })?;
         let config = Config::default();
         match audit_effect_tree(base_effect, effect_tree, scan_res, &config)? {
             AuditStatus::ContinueAudit => (),

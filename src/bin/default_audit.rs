@@ -29,7 +29,10 @@ fn runner(args: Args) -> Result<()> {
     }
 
     // We can correctly create and save the audit file now
-    let audit_file = AuditFile::new_caller_checked_default(&args.crate_path, &EffectType::unsafe_effects())?;
+    let audit_file = AuditFile::new_caller_checked_default(
+        &args.crate_path,
+        &EffectType::unsafe_effects(),
+    )?;
 
     audit_file.save_to_file(args.audit_file_path)?;
 

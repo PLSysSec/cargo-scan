@@ -1,10 +1,10 @@
+use cargo_scan::audit_file::*;
 use cargo_scan::auditing::audit::start_audit;
 use cargo_scan::auditing::info::Config;
 use cargo_scan::auditing::reset::reset_annotation;
 use cargo_scan::auditing::review::review_audit;
 use cargo_scan::auditing::util::{hash_dir, is_audit_scan_valid};
 use cargo_scan::effect::{EffectInstance, EffectType};
-use cargo_scan::audit_file::*;
 use cargo_scan::scanner;
 
 use std::collections::HashMap;

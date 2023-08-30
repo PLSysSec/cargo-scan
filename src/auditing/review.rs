@@ -4,10 +4,10 @@ use std::path::Path;
 
 use super::info::Config;
 use super::util::is_audit_scan_valid;
+use crate::audit_file::{AuditFile, EffectInfo, EffectTree, SafetyAnnotation};
 use crate::auditing::info::print_effect_info;
 use crate::effect::{EffectInstance, SrcLoc};
 use crate::ident::CanonicalPath;
-use crate::audit_file::{EffectInfo, EffectTree, AuditFile, SafetyAnnotation};
 use crate::scanner;
 
 fn review_effect_tree_info_helper(

@@ -1,6 +1,6 @@
 use crate::{
+    audit_file::{AuditFile, EffectTree, SafetyAnnotation},
     effect::EffectInstance,
-    audit_file::{EffectTree, AuditFile, SafetyAnnotation},
 };
 
 use anyhow::{anyhow, Result};

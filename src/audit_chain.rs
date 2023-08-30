@@ -17,9 +17,9 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use toml;
 
+use crate::audit_file::{AuditFile, AuditVersion, DefaultAuditType};
 use crate::effect::EffectType;
 use crate::ident::{CanonicalPath, IdentPath};
-use crate::audit_file::{DefaultAuditType, AuditFile, AuditVersion};
 use crate::util::{load_cargo_toml, CrateId};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -147,7 +147,11 @@ impl AuditChain {
 
     /// Looks up where the audit file is saved from the full crate name and saves the
     /// given AuditFile to the PathBuf associated with that crate.
-    pub fn save_audit_file(&mut self, crate_id: &CrateId, audit_file: &AuditFile) -> Result<()> {
+    pub fn save_audit_file(
+        &mut self,
+        crate_id: &CrateId,
+        audit_file: &AuditFile,
+    ) -> Result<()> {
         let (audit_file_path, audit_version) = self
             .crate_policies
             .get_mut(crate_id)
@@ -211,13 +215,19 @@ impl AuditChain {
             let mut crate_audit_file = self
                 .read_audit_file(&crate_id)?
                 .context(format!("Couldn't find audit for {}", crate_id))?;
-            let starting_pub_caller_checked =
-                crate_audit_file.pub_caller_checked.keys().cloned().collect::<HashSet<_>>();
+            let starting_pub_caller_checked = crate_audit_file
+                .pub_caller_checked
+                .keys()
+                .cloned()
+                .collect::<HashSet<_>>();
 
             let removed_effect_instances =
                 crate_audit_file.remove_sinks_from_tree(&removed_fns);
-            let package_pub_fns =
-                &crate_audit_file.pub_caller_checked.keys().cloned().collect::<HashSet<_>>();
+            let package_pub_fns = &crate_audit_file
+                .pub_caller_checked
+                .keys()
+                .cloned()
+                .collect::<HashSet<_>>();
             let next_removed_fns = starting_pub_caller_checked
                 .difference(package_pub_fns)
                 .cloned()
