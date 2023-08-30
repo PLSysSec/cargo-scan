@@ -89,19 +89,19 @@ impl EffectTree {
 }
 
 #[derive(Clone, Debug, Copy)]
-pub enum DefaultPolicyType {
+pub enum DefaultAuditType {
     Empty,
     Safe,
     CallerChecked,
 }
 
-pub type PolicyVersion = u32;
+pub type AuditVersion = u32;
 
 // TODO: Include information about crate/version
 // TODO: We should include more information from the ScanResult
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct PolicyFile {
+pub struct AuditFile {
     #[serde_as(as = "Vec<(_, _)>")]
     pub audit_trees: HashMap<EffectInstance, EffectTree>,
     /// Contains a map from public functions marked caller-checked to a set of
@@ -110,14 +110,14 @@ pub struct PolicyFile {
     // TODO: Make the base_dir a crate instead
     pub base_dir: PathBuf,
     pub hash: [u8; 32],
-    pub version: PolicyVersion,
+    pub version: AuditVersion,
     pub scanned_effects: Vec<EffectType>,
 }
 
-impl PolicyFile {
+impl AuditFile {
     pub fn empty(p: PathBuf, relevant_effects: Vec<EffectType>) -> Result<Self> {
         let hash = hash_dir(p.clone())?;
-        Ok(PolicyFile {
+        Ok(AuditFile {
             audit_trees: HashMap::new(),
             pub_caller_checked: HashMap::new(),
             base_dir: p,
@@ -152,16 +152,16 @@ impl PolicyFile {
         Ok(())
     }
 
-    /// Returns Some policy file if it exists, or None if we should create a new one.
-    /// Errors if the policy filepath is invalid or if we can't read an existing
-    /// policy file
-    pub fn read_policy(path: PathBuf) -> Result<Option<PolicyFile>> {
+    /// Returns Some audit file if it exists, or None if we should create a new one.
+    /// Errors if the audit filepath is invalid or if we can't read an existing
+    /// audit file
+    pub fn read_audit_file(path: PathBuf) -> Result<Option<AuditFile>> {
         if path.is_dir() {
-            Err(anyhow!("Policy path is a directory"))
+            Err(anyhow!("Audit path is a directory"))
         } else if path.is_file() {
             let json_string = std::fs::read_to_string(path.as_path())?;
-            let policy = serde_json::from_str(&json_string)?;
-            Ok(Some(policy))
+            let audit_file = serde_json::from_str(&json_string)?;
+            Ok(Some(audit_file))
         } else {
             Ok(None)
         }
@@ -206,7 +206,7 @@ impl PolicyFile {
                     if let EffectTree::Leaf(i, _) = eff {
                         next_callers.push(i.caller_path.clone());
                     }
-                    PolicyFile::mark_caller_checked_recurse(
+                    AuditFile::mark_caller_checked_recurse(
                         base_effect,
                         eff,
                         pub_caller_checked,
@@ -264,7 +264,7 @@ impl PolicyFile {
                         .insert(base_effect.clone());
                 }
                 for t in next_trees {
-                    PolicyFile::recalc_pub_caller_checked_tree(
+                    AuditFile::recalc_pub_caller_checked_tree(
                         base_effect,
                         t,
                         pub_caller_checked,
@@ -276,14 +276,14 @@ impl PolicyFile {
     }
 
     /// Recalculate the list of public functions that should be marked caller-
-    /// checked. This should always be done before a `PolicyFile` is saved to
+    /// checked. This should always be done before a `AuditFile` is saved to
     /// disk, because it assumes the invariant that the list in
     /// `pub_caller_checked` aligns with those in the effect tree.
     pub fn recalc_pub_caller_checked(&mut self, pub_fns: &HashSet<CanonicalPath>) {
         let mut pub_caller_checked =
             HashMap::from_iter(pub_fns.iter().map(|p| (p.clone(), HashSet::new())));
         for (effect, tree) in self.audit_trees.iter() {
-            PolicyFile::recalc_pub_caller_checked_tree(
+            AuditFile::recalc_pub_caller_checked_tree(
                 effect,
                 tree,
                 &mut pub_caller_checked,
@@ -295,7 +295,7 @@ impl PolicyFile {
     }
 
     /// Returns the list of all safe public functions (these include all the
-    /// public functions which have been removed since the last policy update).
+    /// public functions which have been removed since the last audit update).
     pub fn safe_pub_fns(&self) -> HashSet<CanonicalPath> {
         self.pub_caller_checked
             .iter()
@@ -347,7 +347,7 @@ impl PolicyFile {
     pub fn new_caller_checked_default(
         crate_path: &FilePath,
         relevant_effects: &[EffectType],
-    ) -> Result<PolicyFile> {
+    ) -> Result<AuditFile> {
         Self::new_caller_checked_default_with_sinks(
             crate_path,
             HashSet::new(),
@@ -359,64 +359,64 @@ impl PolicyFile {
         crate_path: &FilePath,
         sinks: HashSet<CanonicalPath>,
         relevant_effects: &[EffectType],
-    ) -> Result<PolicyFile> {
-        let mut policy = PolicyFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
+    ) -> Result<AuditFile> {
+        let mut audit_file = AuditFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
         let ident_sinks =
             sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
         let scan_res =
             scanner::scan_crate_with_sinks(crate_path, ident_sinks, relevant_effects)?;
         let mut pub_caller_checked = HashMap::new();
-        policy.set_base_audit_trees(scan_res.effects_set());
+        audit_file.set_base_audit_trees(scan_res.effects_set());
 
-        for (e, t) in policy.audit_trees.iter_mut() {
-            PolicyFile::mark_caller_checked(e, t, &mut pub_caller_checked, &scan_res)?;
+        for (e, t) in audit_file.audit_trees.iter_mut() {
+            AuditFile::mark_caller_checked(e, t, &mut pub_caller_checked, &scan_res)?;
         }
 
-        policy.pub_caller_checked = pub_caller_checked;
+        audit_file.pub_caller_checked = pub_caller_checked;
 
-        Ok(policy)
+        Ok(audit_file)
     }
 
     pub fn new_empty_default_with_sinks(
         crate_path: &FilePath,
         sinks: HashSet<CanonicalPath>,
         relevant_effects: &[EffectType],
-    ) -> Result<PolicyFile> {
-        let mut policy = PolicyFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
+    ) -> Result<AuditFile> {
+        let mut audit_file = AuditFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
         let ident_sinks =
             sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
         let scan_res =
             scanner::scan_crate_with_sinks(crate_path, ident_sinks, relevant_effects)?;
-        policy.set_base_audit_trees(scan_res.effects_set());
+        audit_file.set_base_audit_trees(scan_res.effects_set());
 
-        Ok(policy)
+        Ok(audit_file)
     }
 
     pub fn new_default_with_sinks(
         crate_path: &FilePath,
         sinks: HashSet<CanonicalPath>,
-        policy_type: DefaultPolicyType,
+        audit_type: DefaultAuditType,
         relevant_effects: &[EffectType],
-    ) -> Result<PolicyFile> {
-        match policy_type {
-            DefaultPolicyType::CallerChecked => {
+    ) -> Result<AuditFile> {
+        match audit_type {
+            DefaultAuditType::CallerChecked => {
                 Self::new_caller_checked_default_with_sinks(
                     crate_path,
                     sinks,
                     relevant_effects,
                 )
             }
-            DefaultPolicyType::Empty => {
+            DefaultAuditType::Empty => {
                 Self::new_empty_default_with_sinks(crate_path, sinks, relevant_effects)
             }
             // TODO: belo
-            DefaultPolicyType::Safe => unimplemented!(),
+            DefaultAuditType::Safe => unimplemented!(),
         }
     }
 
     /// Gets the difference between the public functions marked caller-checked
     /// in `p1` and `p2`
-    pub fn pub_diff(p1: &PolicyFile, p2: &PolicyFile) -> HashSet<CanonicalPath> {
+    pub fn pub_diff(p1: &AuditFile, p2: &AuditFile) -> HashSet<CanonicalPath> {
         p1.pub_caller_checked
             .keys()
             .cloned()

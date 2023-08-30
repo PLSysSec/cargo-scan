@@ -1,10 +1,10 @@
-use cargo_scan::auditing::audit::audit_policy;
+use cargo_scan::auditing::audit::start_audit;
 use cargo_scan::auditing::info::Config;
 use cargo_scan::auditing::reset::reset_annotation;
-use cargo_scan::auditing::review::review_policy;
-use cargo_scan::auditing::util::{hash_dir, is_policy_scan_valid};
+use cargo_scan::auditing::review::review_audit;
+use cargo_scan::auditing::util::{hash_dir, is_audit_scan_valid};
 use cargo_scan::effect::{EffectInstance, EffectType};
-use cargo_scan::policy::*;
+use cargo_scan::audit_file::*;
 use cargo_scan::scanner;
 
 use std::collections::HashMap;
@@ -17,24 +17,24 @@ use clap::Parser;
 use inquire::{validator::Validation, Text};
 use petgraph::dot::Dot;
 
-/// Interactively vet a package policy
+/// Interactively vet a package audit
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// path to crate
     crate_path: PathBuf,
-    /// path to the policy file (will create a new one if it doesn't exist)
-    policy_path: PathBuf,
+    /// path to the audit file (will create a new one if it doesn't exist)
+    audit_file_path: PathBuf,
 
     #[clap(flatten)]
     /// Optional config args
     config: Config,
 
-    /// Ovewrite the policy file if a new version of the crate is detected
-    #[clap(long = "overwrite-policy", default_value_t = false)]
-    overwrite_policy: bool,
+    /// Ovewrite the audit file if a new version of the crate is detected
+    #[clap(long = "overwrite-audit", default_value_t = false)]
+    overwrite_audit: bool,
 
-    /// Review the policy file without performing an audit
+    /// Review the audit file without performing an audit
     #[clap(long, short, default_value_t = false)]
     review: bool,
 
@@ -47,7 +47,7 @@ struct Args {
     debug: bool,
 
     /// Ignore the hash of the crate. WARNING: use cautiously - the package files will not be checked
-    /// to ensure they are the same when the policy file was created/last audited, but there may be
+    /// to ensure they are the same when the audit file was created/last audited, but there may be
     /// things like local configuration files that will mess up consistent hashes.
     #[clap(long, default_value_t = false)]
     ignore_hash: bool,
@@ -77,12 +77,12 @@ enum ContinueStatus {
     ExitNow,
 }
 
-// Asks the user how to handle the invalid policy file. If they continue with a
-// new file, will update the policy and policy_path and return Continue;
+// Asks the user how to handle the invalid audit file. If they continue with a
+// new file, will update the audit and audit_path and return Continue;
 // otherwise will return ExitNow.
-fn handle_invalid_policy<'a, I>(
-    policy: &mut PolicyFile,
-    policy_path: &mut PathBuf,
+fn handle_invalid_audit_file<'a, I>(
+    audit_file: &mut AuditFile,
+    audit_file_path: &mut PathBuf,
     scan_effects: I,
     args: &Args,
 ) -> Result<ContinueStatus>
@@ -90,12 +90,12 @@ where
     I: IntoIterator<Item = &'a EffectInstance>,
 {
     // TODO: Colorize
-    println!("Crate has changed from last policy audit");
+    println!("Crate has changed from last audit");
 
-    if args.overwrite_policy {
-        println!("Generating new policy file");
+    if args.overwrite_audit {
+        println!("Generating new audit file");
 
-        policy.audit_trees = scan_effects
+        audit_file.audit_trees = scan_effects
             .into_iter()
             .map(|effect_instance: &EffectInstance| {
                 (
@@ -107,22 +107,22 @@ where
                 )
             })
             .collect::<HashMap<_, _>>();
-        policy.hash = hash_dir(policy.base_dir.clone())?;
+        audit_file.hash = hash_dir(audit_file.base_dir.clone())?;
 
-        let mut policy_string = policy_path
+        let mut audit_string = audit_file_path
             .as_path()
             .to_str()
             .ok_or_else(|| anyhow!("Couldn't convert OS Path to str"))?
             .to_string();
-        policy_string.push_str(".new");
-        println!("New policy file name: {}", &policy_string);
-        *policy_path = PathBuf::from(policy_string);
+        audit_string.push_str(".new");
+        println!("New audit file name: {}", &audit_string);
+        *audit_file_path = PathBuf::from(audit_string);
 
         Ok(ContinueStatus::Continue)
     } else {
         let ans = Text::new(
             r#"Would you like to:
-    (c)ontinue with a new policy file, e(x)it tool w/o changes
+    (c)ontinue with a new audit file, e(x)it tool w/o changes
     "#,
         )
         .with_validator(|x: &str| match x {
@@ -134,10 +134,10 @@ where
 
         match ans.as_str() {
             "c" => {
-                // TODO: Prompt user for new policy path
-                println!("Generating new policy file");
+                // TODO: Prompt user for new audit path
+                println!("Generating new audit file");
 
-                policy.audit_trees = scan_effects
+                audit_file.audit_trees = scan_effects
                     .into_iter()
                     .map(|effect_instance: &EffectInstance| {
                         (
@@ -149,31 +149,31 @@ where
                         )
                     })
                     .collect::<HashMap<_, _>>();
-                policy.hash = hash_dir(policy.base_dir.clone())?;
+                audit_file.hash = hash_dir(audit_file.base_dir.clone())?;
 
-                let mut policy_string = policy_path
+                let mut audit_file_string = audit_file_path
                     .as_path()
                     .to_str()
                     .ok_or_else(|| anyhow!("Couldn't convert OS Path to str"))?
                     .to_string();
-                policy_string.push_str(".new");
-                println!("New policy file name: {}", &policy_string);
-                *policy_path = PathBuf::from(policy_string);
+                audit_file_string.push_str(".new");
+                println!("New audit file name: {}", &audit_file_string);
+                *audit_file_path = PathBuf::from(audit_file_string);
 
                 Ok(ContinueStatus::Continue)
             }
             "x" => {
-                println!("Exiting policy tool");
+                println!("Exiting audit tool");
                 Ok(ContinueStatus::ExitNow)
             }
-            _ => Err(anyhow!("Invalid policy handle selection")),
+            _ => Err(anyhow!("Invalid audit handle selection")),
         }
     }
 }
 
-fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
+fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
     let scan_res = {
-        let relevant_effects = if let Some(p) = &policy_file {
+        let relevant_effects = if let Some(p) = &audit_file {
             &p.scanned_effects
         } else {
             &args.effect_types
@@ -198,15 +198,15 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
         return Ok(());
     }
 
-    let mut policy_path = args.policy_path.clone();
-    let mut policy_file = match policy_file {
+    let mut audit_file_path = args.audit_file_path.clone();
+    let mut audit_file = match audit_file {
         Some(mut pf) => {
-            if !args.ignore_hash && !is_policy_scan_valid(&pf, args.crate_path.clone())? {
-                // TODO: If the policy file diverges from the effects at all, we
+            if !args.ignore_hash && !is_audit_scan_valid(&pf, args.crate_path.clone())? {
+                // TODO: If the audit file diverges from the effects at all, we
                 //       should enter incremental mode and detect what's changed
-                match handle_invalid_policy(
+                match handle_invalid_audit_file(
                     &mut pf,
-                    &mut policy_path,
+                    &mut audit_file_path,
                     scan_effects,
                     &args,
                 ) {
@@ -218,43 +218,43 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
             pf
         }
         None => {
-            // No policy file yet, so make a new one
-            println!("Creating new policy file");
-            File::create(policy_path.clone())?;
+            // No audit file yet, so make a new one
+            println!("Creating new audit file");
+            File::create(audit_file_path.clone())?;
 
-            // Return an empty PolicyFile, we'll add effects to it later
-            let mut pf = PolicyFile::empty(args.crate_path.clone(), args.effect_types)?;
+            // Return an empty AuditFile, we'll add effects to it later
+            let mut pf = AuditFile::empty(args.crate_path.clone(), args.effect_types)?;
             pf.set_base_audit_trees(scan_effects);
             pf
         }
     };
 
-    if audit_policy(&mut policy_file, scan_res, &args.config)?.is_some() {
+    if start_audit(&mut audit_file, scan_res, &args.config)?.is_some() {
         // The user marked that they want to audit a child effect, but we aren't
         // able to do so in this mode.
         return Err(anyhow!("Can't audit dependency crate effects in this binary"));
     }
 
-    policy_file.save_to_file(policy_path)?;
+    audit_file.save_to_file(audit_file_path)?;
 
     Ok(())
 }
 
 fn runner(args: Args) -> Result<()> {
-    let policy_file = PolicyFile::read_policy(args.policy_path.clone())?;
+    let audit_file = AuditFile::read_audit_file(args.audit_file_path.clone())?;
 
     if args.reset_annotation {
-        match policy_file {
-            None => Err(anyhow!("Policy file doesn't exist")),
-            Some(pf) => reset_annotation(pf, args.policy_path),
+        match audit_file {
+            None => Err(anyhow!("Audit file doesn't exist")),
+            Some(pf) => reset_annotation(pf, args.audit_file_path),
         }
     } else if args.review {
-        match policy_file {
-            None => Err(anyhow!("Policy file to review doesn't exist")),
-            Some(pf) => review_policy(&pf, &args.crate_path, &args.config),
+        match audit_file {
+            None => Err(anyhow!("Audit file to review doesn't exist")),
+            Some(pf) => review_audit(&pf, &args.crate_path, &args.config),
         }
     } else {
-        audit_crate(args, policy_file)
+        audit_crate(args, audit_file)
     }
 }
 

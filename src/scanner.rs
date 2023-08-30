@@ -3,7 +3,7 @@
 //! Parse a Rust crate or source file and collect effect blocks, function calls, and
 //! various other information.
 
-use crate::policy::EffectInfo;
+use crate::audit_file::EffectInfo;
 
 use super::effect::{
     Effect, EffectInstance, EffectType, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,

@@ -7,7 +7,7 @@ use cargo_scan::download_crate;
 use cargo_scan::effect::EffectType;
 use cargo_scan::{
     audit_chain::{create_new_audit_chain, Create},
-    auditing::review::review_policy,
+    auditing::review::review_audit,
 };
 use clap::{Parser, ValueEnum};
 
@@ -21,7 +21,7 @@ struct Args {
 
     /// Path to download crates to for auditing
     #[clap(short = 'd', long, default_value = ".stats_policies_tmp")]
-    policy_file_path: String,
+    audit_file_path: String,
 
     /// Download the crate and save it to the crate_path instead of using an
     /// existing crate. If this value is set, requires `download_version` to be
@@ -66,7 +66,7 @@ impl std::fmt::Display for PathType {
     }
 }
 
-// TODO: Figure out who is responsible for clearing the policy path so we don't
+// TODO: Figure out who is responsible for clearing the audit path so we don't
 //       re-use audited policies.
 fn main() -> Result<()> {
     cargo_scan::util::init_logging();
@@ -111,23 +111,23 @@ fn main() -> Result<()> {
 
     let create = Create::new(
         args.crate_path.clone(),
-        format!("{}/crate.manifest", &args.policy_file_path),
-        args.policy_file_path.clone(),
+        format!("{}/crate.manifest", &args.audit_file_path),
+        args.audit_file_path.clone(),
         false,
         None,
         None,
         args.effect_types,
     );
 
-    let mut chain = create_new_audit_chain(create, &args.policy_file_path)?;
+    let mut chain = create_new_audit_chain(create, &args.audit_file_path)?;
     let root_crate = chain.root_crate()?;
-    let root_policy = chain
-        .read_policy(&root_crate)?
-        .ok_or_else(|| anyhow!("Couldn't read root crate from the policy"))?;
+    let root_audit_file = chain
+        .read_audit_file(&root_crate)?
+        .ok_or_else(|| anyhow!("Couldn't read root crate from the audit"))?;
     let review_config = Config::new(0, 0);
-    review_policy(&root_policy, &PathBuf::from(&args.crate_path), &review_config)?;
+    review_audit(&root_audit_file, &PathBuf::from(&args.crate_path), &review_config)?;
 
-    remove_dir_all(&args.policy_file_path)?;
+    remove_dir_all(&args.audit_file_path)?;
 
     Ok(())
 }

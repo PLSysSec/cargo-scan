@@ -4,11 +4,11 @@ use crate::audit_chain::AuditChain;
 use crate::auditing::info::*;
 use crate::effect::{Effect, EffectInstance};
 use crate::ident::CanonicalPath;
-use crate::policy::{EffectInfo, EffectTree};
+use crate::audit_file::{EffectInfo, EffectTree};
 use crate::scanner::scan_crate;
 use crate::sink::Sink;
 use crate::{
-    policy::{PolicyFile, SafetyAnnotation},
+    audit_file::{AuditFile, SafetyAnnotation},
     scanner::ScanResults,
 };
 use anyhow::{anyhow, Result};
@@ -230,10 +230,10 @@ fn total_unaudited_effects(t: &EffectTree) -> usize {
 
 /// Returns the number of unaudited base effects, and the number of unaudited
 /// leaf nodes.
-fn unaudited_effects(policy: &PolicyFile) -> (usize, usize) {
+fn unaudited_effects(audit_file: &AuditFile) -> (usize, usize) {
     let mut unaudited_base = 0;
     let mut unaudited_total = 0;
-    for (_, t) in policy.audit_trees.iter() {
+    for (_, t) in audit_file.audit_trees.iter() {
         let total = total_unaudited_effects(t);
         if total > 0 {
             unaudited_base += 1;
@@ -246,16 +246,16 @@ fn unaudited_effects(policy: &PolicyFile) -> (usize, usize) {
 
 // TODO: When we exit early, we have no way of knowing which effects the user
 //       has already gone through in this audit and marked "skipped" and so we
-//       will re-prompt the user once we resume auditing the policy. We would
+//       will re-prompt the user once we resume auditing the audit file. We would
 //       like to remember that they have already seen these effects during this
 //       audit
-/// Iterate through all the skipped annotations in the policy file and perform
+/// Iterate through all the skipped annotations in the audit file and perform
 /// the auditing process on those effect trees. Will exit early if the user
 /// audits one of the root effects as needing to check its child effects, in
 /// which case we will return Ok with Some EffectInstance which contains the effect
 /// in the dependency crates that need to be audited.
-pub fn audit_policy(
-    policy: &mut PolicyFile,
+pub fn start_audit(
+    audit_file: &mut AuditFile,
     scan_res: ScanResults,
     config: &Config,
 ) -> Result<Option<EffectInstance>> {
@@ -263,14 +263,14 @@ pub fn audit_policy(
     // effect tree and need to now traverse into the dependency packages.
     let mut dependency_audit_effect: Option<EffectInstance> = None;
 
-    let (unaudited_base, unaudited_total) = unaudited_effects(policy);
+    let (unaudited_base, unaudited_total) = unaudited_effects(audit_file);
     if unaudited_base > 0 {
         println!("Total unaudited effects: {}", unaudited_base);
         println!("Total unaudited locations: {}", unaudited_total);
     }
 
     // Iterate through the effects and prompt the user for if they're safe
-    for (e, t) in policy.audit_trees.iter_mut() {
+    for (e, t) in audit_file.audit_trees.iter_mut() {
         match t.get_leaf_annotation() {
             Some(SafetyAnnotation::Skipped) => {
                 match audit_effect_tree(e, t, &scan_res, config)? {
@@ -309,7 +309,7 @@ pub fn audit_policy(
     // NOTE: We recalculate the public functions here so we don't have to keep
     //       track of them during the audit. This is a bit slower, but simplifies
     //       the code dramatically.
-    policy.recalc_pub_caller_checked(&scan_res.pub_fns);
+    audit_file.recalc_pub_caller_checked(&scan_res.pub_fns);
 
     Ok(dependency_audit_effect)
 }
@@ -393,9 +393,9 @@ fn update_audit_from_input(
     }
 }
 
-/// Looks up the policy associated with the crate from `sink_ident` and audit
+/// Looks up the audit associated with the crate from `sink_ident` and audit
 /// the sink public function. This function is responsible for updating the
-/// chain and any policy files on the filesystem from the audit. Returns the set
+/// chain and any audit files on the filesystem from the audit. Returns the set
 /// of removed functions if it succeeds.
 pub fn audit_pub_fn(
     chain: &mut AuditChain,
@@ -405,28 +405,28 @@ pub fn audit_pub_fn(
         .first_ident()
         .ok_or_else(|| anyhow!("Missing leading identifier for pattern"))?;
     // TODO: The sink crate we get here may include the version
-    let (sink_crate_id, mut prev_policy) = chain
-        .read_policy_no_version(sink_crate.as_str())?
-        .ok_or_else(|| anyhow!("Couldn't find policy for the sink: {}", sink_crate))?;
-    let mut new_policy = prev_policy.clone();
+    let (sink_crate_id, mut prev_audit_file) = chain
+        .read_audit_file_no_version(sink_crate.as_str())?
+        .ok_or_else(|| anyhow!("Couldn't find audit file for the sink: {}", sink_crate))?;
+    let mut new_audit_file = prev_audit_file.clone();
 
     // Find the public function associated with the sink
-    let scan_res = scan_crate(&new_policy.base_dir, &prev_policy.scanned_effects)?;
+    let scan_res = scan_crate(&new_audit_file.base_dir, &prev_audit_file.scanned_effects)?;
     let sink_fn = CanonicalPath::new(sink_ident.as_str());
     loop {
         // Keep looping until we are done with auditing children
-        match audit_pub_fn_effect(&mut new_policy, &sink_fn, &scan_res)? {
+        match audit_pub_fn_effect(&mut new_audit_file, &sink_fn, &scan_res)? {
             (AuditStatus::ContinueAudit | AuditStatus::EarlyExit, _) => {
                 // We are done auditing this crate, so break out to clean up
                 break;
             }
             (AuditStatus::AuditChildEffect, Some(child_effect)) => {
-                // Save the current policy,
-                new_policy.recalc_pub_caller_checked(&scan_res.pub_fns);
-                chain.save_policy(&sink_crate_id, &new_policy)?;
-                let removed_fns = PolicyFile::pub_diff(&prev_policy, &new_policy);
+                // Save the current audit,
+                new_audit_file.recalc_pub_caller_checked(&scan_res.pub_fns);
+                chain.save_audit_file(&sink_crate_id, &new_audit_file)?;
+                let removed_fns = AuditFile::pub_diff(&prev_audit_file, &new_audit_file);
                 chain.remove_cross_crate_effects(removed_fns, &sink_crate_id)?;
-                prev_policy = new_policy;
+                prev_audit_file = new_audit_file;
 
                 let child_sink = match child_effect.eff_type() {
                     Effect::SinkCall(s) => s,
@@ -437,11 +437,11 @@ pub fn audit_pub_fn(
                     }
                 };
                 audit_pub_fn(chain, child_sink)?;
-                // We have to reload the new policy because auditing child
+                // We have to reload the new audit file because auditing child
                 // effects may have removed some base effects from the current
                 // crate
-                new_policy = chain.read_policy(&sink_crate_id)?.ok_or_else(|| {
-                    anyhow!("Couldn't find policy for the sink: {}", sink_crate_id)
+                new_audit_file = chain.read_audit_file(&sink_crate_id)?.ok_or_else(|| {
+                    anyhow!("Couldn't find audit file for the sink: {}", sink_crate_id)
                 })?;
                 // After we audit the child function, we will recurse until the
                 // user marks everything, or we run out of child functions to
@@ -458,26 +458,26 @@ pub fn audit_pub_fn(
         }
     }
 
-    // Save the new policy
-    new_policy.recalc_pub_caller_checked(&scan_res.pub_fns);
-    chain.save_policy(&sink_crate_id, &new_policy)?;
+    // Save the new audit fiel
+    new_audit_file.recalc_pub_caller_checked(&scan_res.pub_fns);
+    chain.save_audit_file(&sink_crate_id, &new_audit_file)?;
 
     // update parent crates based off updated effects
-    let removed_fns = PolicyFile::pub_diff(&prev_policy, &new_policy);
+    let removed_fns = AuditFile::pub_diff(&prev_audit_file, &new_audit_file);
     let removed_fns = chain.remove_cross_crate_effects(removed_fns, &sink_crate_id)?;
 
     Ok(removed_fns)
 }
 
 fn audit_pub_fn_effect(
-    policy: &mut PolicyFile,
+    audit_file: &mut AuditFile,
     sink_fn: &CanonicalPath,
     scan_res: &ScanResults,
 ) -> Result<(AuditStatus, Option<EffectInstance>)> {
-    for base_effect in policy.pub_caller_checked.get(sink_fn).ok_or_else(|| {
+    for base_effect in audit_file.pub_caller_checked.get(sink_fn).ok_or_else(|| {
         anyhow!("Couldn't find public function from sink: {:?}", &sink_fn)
     })? {
-        let effect_tree = policy.audit_trees.get_mut(base_effect).ok_or_else(|| {
+        let effect_tree = audit_file.audit_trees.get_mut(base_effect).ok_or_else(|| {
             anyhow!(
                 "Couldn't find tree when auditing public function for effect block: {:?}",
                 base_effect

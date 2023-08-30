@@ -1,9 +1,9 @@
 use cargo_scan::audit_chain::{create_new_audit_chain, AuditChain, Create};
-use cargo_scan::auditing::audit::{audit_policy, audit_pub_fn};
+use cargo_scan::auditing::audit::{start_audit, audit_pub_fn};
 use cargo_scan::auditing::info::Config as AuditConfig;
-use cargo_scan::auditing::review::review_policy;
+use cargo_scan::auditing::review::review_audit;
 use cargo_scan::effect::Effect;
-use cargo_scan::policy::PolicyFile;
+use cargo_scan::audit_file::AuditFile;
 use cargo_scan::{download_crate, scanner};
 
 use anyhow::{anyhow, Context, Result};
@@ -137,7 +137,7 @@ impl CommandRunner for Review {
             }?;
 
         // Don't have to do the usual review process of loading up the crate's
-        // policy if we are just printing out the list of crates for the given
+        // audit file if we are just printing out the list of crates for the given
         // manifest file
         if self.review_info == ReviewInfo::Crates {
             println!("Dependency crates:");
@@ -154,16 +154,16 @@ impl CommandRunner for Review {
         };
 
         for review_crate in crates_to_review {
-            println!("Reviewing policy for {}", review_crate);
-            let policy = chain.read_policy(&review_crate)?.ok_or_else(|| {
+            println!("Reviewing audit for {}", review_crate);
+            let audit_file = chain.read_audit_file(&review_crate)?.ok_or_else(|| {
                 anyhow!(format!(
-                    "Couldn't find policy for crate {} in chain",
+                    "Couldn't find audit for crate {} in chain",
                     review_crate
                 ))
             })?;
             let mut crate_path = PathBuf::from(&args.crate_download_path);
             crate_path.push(format!("{}", review_crate));
-            review_crate_policy(&policy, crate_path, self.review_info)?;
+            review_crate_audit_file(&audit_file, crate_path, self.review_info)?;
         }
         Ok(())
     }
@@ -193,14 +193,14 @@ impl CommandRunner for Audit {
                     None => chain.root_crate()?,
                 };
 
-                // TODO: Handle more than one policy matching a crate
-                if let Some(orig_policy) = chain.read_policy(&crate_id)? {
-                    let mut new_policy = orig_policy.clone();
-                    let crate_path = PathBuf::from(&orig_policy.base_dir);
+                // TODO: Handle more than one audit matching a crate
+                if let Some(orig_audit_file) = chain.read_audit_file(&crate_id)? {
+                    let mut new_audit_file = orig_audit_file.clone();
+                    let crate_path = PathBuf::from(&orig_audit_file.base_dir);
 
                     // Iterate through the crate's dependencies and add the
                     // public functions to the scan sinks
-                    let scan_res = scanner::scan_crate(&crate_path, &orig_policy.scanned_effects)?;
+                    let scan_res = scanner::scan_crate(&crate_path, &orig_audit_file.scanned_effects)?;
 
                     let audit_config = AuditConfig::default();
 
@@ -208,10 +208,10 @@ impl CommandRunner for Audit {
                     // NOTE: audit_res will contain an EffectBlock if the user
                     //       needs to audit a child package's effects
                     let audit_res =
-                        audit_policy(&mut new_policy, scan_res, &audit_config);
-                    // Save the policy immediately after audit so we don't error
+                        start_audit(&mut new_audit_file, scan_res, &audit_config);
+                    // Save the audit immediately after audit so we don't error
                     // out and forget to save
-                    chain.save_policy(&crate_id, &new_policy)?;
+                    chain.save_audit_file(&crate_id, &new_audit_file)?;
                     let removed_fns = if let Some(dep_effect) = audit_res? {
                         // TODO: Print parents of an effect the user audits when
                         //       auditing children
@@ -237,7 +237,7 @@ impl CommandRunner for Audit {
 
                     Ok(())
                 } else {
-                    Err(anyhow!("We require exactly one policy matching the crate name"))
+                    Err(anyhow!("We require exactly one audit matching the crate name"))
                 }
             }
             Ok(None) => Err(anyhow!(
@@ -249,16 +249,16 @@ impl CommandRunner for Audit {
     }
 }
 
-fn review_crate_policy(
-    policy: &PolicyFile,
+fn review_crate_audit_file(
+    audit_file: &AuditFile,
     crate_path: PathBuf,
     review_type: ReviewInfo,
 ) -> Result<()> {
     match review_type {
-        ReviewInfo::All => review_policy(policy, &crate_path, &AuditConfig::default()),
+        ReviewInfo::All => review_audit(audit_file, &crate_path, &AuditConfig::default()),
         ReviewInfo::PubFuns => {
             println!("Public functions marked caller-checked:");
-            for pub_fn in policy.pub_caller_checked.keys() {
+            for pub_fn in audit_file.pub_caller_checked.keys() {
                 // TODO: Print more info
                 println!("  {}", pub_fn);
             }
@@ -266,7 +266,7 @@ fn review_crate_policy(
         }
 
         ReviewInfo::Crates => {
-            Err(anyhow!("Shouldn't review a crate policy when printing crates"))
+            Err(anyhow!("Shouldn't review a crate audit when printing crates"))
         }
     }
 }

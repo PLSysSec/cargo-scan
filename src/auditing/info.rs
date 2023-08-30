@@ -11,7 +11,7 @@ use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use crate::ident::CanonicalPath;
 use crate::{
     effect::{Effect, EffectInstance, SrcLoc},
-    policy::EffectInfo,
+    audit_file::EffectInfo,
 };
 
 #[derive(Parser, Debug)]

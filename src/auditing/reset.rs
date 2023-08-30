@@ -1,6 +1,6 @@
 use crate::{
     effect::EffectInstance,
-    policy::{EffectTree, PolicyFile, SafetyAnnotation},
+    audit_file::{EffectTree, AuditFile, SafetyAnnotation},
 };
 
 use anyhow::{anyhow, Result};
@@ -62,9 +62,9 @@ fn print_blocks(blocks: &[(&EffectInstance, SafetyAnnotation)]) -> Result<()> {
     Ok(())
 }
 
-pub fn reset_annotation(mut policy: PolicyFile, policy_path: PathBuf) -> Result<()> {
-    let mut new_audit_trees = policy.audit_trees.clone();
-    let mut annotated_base_effects = policy
+pub fn reset_annotation(mut audit: AuditFile, audit_path: PathBuf) -> Result<()> {
+    let mut new_audit_trees = audit.audit_trees.clone();
+    let mut annotated_base_effects = audit
         .audit_trees
         .iter()
         .filter_map(|(block, t)| match t {
@@ -97,8 +97,8 @@ pub fn reset_annotation(mut policy: PolicyFile, policy_path: PathBuf) -> Result<
         }
     }
 
-    policy.audit_trees = new_audit_trees;
-    policy.save_to_file(policy_path)?;
+    audit.audit_trees = new_audit_trees;
+    audit.save_to_file(audit_path)?;
 
     println!("No more annotated effects to reset");
 

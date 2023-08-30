@@ -1,4 +1,4 @@
-use crate::policy::PolicyFile;
+use crate::audit_file::AuditFile;
 
 use std::fs::File;
 use std::io::Read;
@@ -28,11 +28,11 @@ where
     Ok(hasher.finalize().into())
 }
 
-pub fn is_policy_scan_valid<P>(policy: &PolicyFile, crate_path: P) -> Result<bool>
+pub fn is_audit_scan_valid<P>(audit_file: &AuditFile, crate_path: P) -> Result<bool>
 where
     P: AsRef<Path>,
 {
     let hash = hash_dir(crate_path)?;
     // TODO: Better way to check hash
-    Ok(policy.hash == hash)
+    Ok(audit_file.hash == hash)
 }
