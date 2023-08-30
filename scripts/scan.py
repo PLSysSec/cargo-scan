@@ -34,9 +34,10 @@ CARGO = ["cargo"]
 CARGO_DOWNLOAD = CARGO + ["download"]
 
 # Uncomment to enable debug checks
-CARGO_SCAN = ["./target/debug/scan"]
+# CARGO_SCAN = ["./target/debug/scan"]
 # Uncomment for release mode
-# CARGO_SCAN = ["./target/release/scan"]
+CARGO_SCAN = ["./target/release/scan"]
+
 CARGO_SCAN_CSV_HEADER = "crate, fn_decl, callee, effect, dir, file, line, col"
 
 check_installed(RUSTC)
