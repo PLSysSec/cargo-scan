@@ -4,6 +4,7 @@ use std::{fs::remove_dir_all, path::PathBuf};
 use anyhow::{anyhow, Context, Result};
 use cargo_scan::auditing::info::Config;
 use cargo_scan::download_crate;
+use cargo_scan::effect::EffectType;
 use cargo_scan::{
     audit_chain::{create_new_audit_chain, Create},
     auditing::review::review_policy,
@@ -32,6 +33,21 @@ struct Args {
     /// `download_root_crate`.
     #[clap(short = 'v', long)]
     pub download_version: Option<String>,
+
+    /// The types of Effects the audit should track. Defaults to all unsafe
+    /// behavior.
+    #[clap(long, value_parser, num_args = 1.., default_values_t = [
+        EffectType::SinkCall,
+        EffectType::FFICall,
+        EffectType::UnsafeCall,
+        EffectType::RawPointer,
+        EffectType::UnionField,
+        EffectType::StaticMut,
+        EffectType::StaticExt,
+        EffectType::FnPtrCreation,
+        EffectType::ClosureCreation,
+    ])]
+    effect_types: Vec<EffectType>,
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
@@ -100,6 +116,7 @@ fn main() -> Result<()> {
         false,
         None,
         None,
+        args.effect_types,
     );
 
     let mut chain = create_new_audit_chain(create, &args.policy_file_path)?;

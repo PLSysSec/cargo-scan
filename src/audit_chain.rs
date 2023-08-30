@@ -28,11 +28,21 @@ pub struct AuditChain {
     manifest_path: PathBuf,
     crate_path: PathBuf,
     crate_policies: HashMap<CrateId, (PathBuf, PolicyVersion)>,
+    scanned_effects: Vec<EffectType>,
 }
 
 impl AuditChain {
-    pub fn new(manifest_path: PathBuf, crate_path: PathBuf) -> AuditChain {
-        AuditChain { manifest_path, crate_path, crate_policies: HashMap::new() }
+    pub fn new(
+        manifest_path: PathBuf,
+        crate_path: PathBuf,
+        scanned_effects: Vec<EffectType>,
+    ) -> AuditChain {
+        AuditChain {
+            manifest_path,
+            crate_path,
+            crate_policies: HashMap::new(),
+            scanned_effects,
+        }
     }
 
     pub fn all_crates(&self) -> Vec<&CrateId> {
@@ -276,6 +286,21 @@ pub struct Create {
     /// `download_root_crate`.
     #[clap(short = 'v', long)]
     pub download_version: Option<String>,
+
+    /// The types of Effects the audit should track. Defaults to all unsafe
+    /// behavior.
+    #[clap(long, value_parser, num_args = 1.., default_values_t = [
+        EffectType::SinkCall,
+        EffectType::FFICall,
+        EffectType::UnsafeCall,
+        EffectType::RawPointer,
+        EffectType::UnionField,
+        EffectType::StaticMut,
+        EffectType::StaticExt,
+        EffectType::FnPtrCreation,
+        EffectType::ClosureCreation,
+    ])]
+    pub effect_types: Vec<EffectType>,
 }
 
 impl Create {
@@ -286,6 +311,7 @@ impl Create {
         force_overwrite: bool,
         download_root_crate: Option<String>,
         download_version: Option<String>,
+        effect_types: Vec<EffectType>,
     ) -> Self {
         Self {
             crate_path,
@@ -294,6 +320,7 @@ impl Create {
             force_overwrite,
             download_root_crate,
             download_version,
+            effect_types,
         }
     }
 }
@@ -421,6 +448,7 @@ pub fn create_new_audit_chain(
     let mut chain = AuditChain::new(
         PathBuf::from(&args.manifest_path),
         PathBuf::from(&args.crate_path),
+        args.effect_types.clone(),
     );
 
     create_audit_chain_dirs(&args, crate_download_path)?;
@@ -476,7 +504,6 @@ pub fn create_new_audit_chain(
             .get(&CrateId::from(package))
             .context("Unresolved path for a crate")?;
 
-        // TODO: Use the effect types we get from command-line arguments
         make_new_policy(
             &mut chain,
             package,
@@ -484,7 +511,7 @@ pub fn create_new_audit_chain(
             &args,
             crate_download_path,
             policy_type,
-            &EffectType::unsafe_effects(),
+            &args.effect_types,
         )?;
     }
 

@@ -31,6 +31,21 @@ struct Args {
     /// Path to download crates to for auditing
     #[clap(short = 'd', long = "crate-download-path", default_value = ".stats_tmp")]
     crate_download_path: String,
+
+    /// The types of Effects the audit should track. Defaults to all unsafe
+    /// behavior.
+    #[clap(long, value_parser, num_args = 1.., default_values_t = [
+        EffectType::SinkCall,
+        EffectType::FFICall,
+        EffectType::UnsafeCall,
+        EffectType::RawPointer,
+        EffectType::UnionField,
+        EffectType::StaticMut,
+        EffectType::StaticExt,
+        EffectType::FnPtrCreation,
+        EffectType::ClosureCreation,
+    ])]
+    effect_types: Vec<EffectType>,
 }
 
 fn main() -> Result<()> {
@@ -51,13 +66,14 @@ fn main() -> Result<()> {
             false,
             None,
             None,
+            args.effect_types.clone(),
         );
 
         let sinks =
             audit_chain::create_dependency_sinks(create, &args.crate_download_path)?;
-        scanner::scan_crate_with_sinks(&args.crate_path, sinks, &EffectType::unsafe_effects())?
+        scanner::scan_crate_with_sinks(&args.crate_path, sinks, &args.effect_types)?
     } else {
-        scanner::scan_crate(&args.crate_path, &EffectType::unsafe_effects())?
+        scanner::scan_crate(&args.crate_path, &args.effect_types)?
     };
 
     println!("{}", EffectInstance::csv_header());

@@ -172,7 +172,15 @@ where
 }
 
 fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
-    let scan_res = scanner::scan_crate(&args.crate_path, &args.effect_types)?;
+    let scan_res = {
+        let relevant_effects = if let Some(p) = &policy_file {
+            &p.scanned_effects
+        } else {
+            &args.effect_types
+        };
+
+        scanner::scan_crate(&args.crate_path, relevant_effects)?
+    };
     let scan_effects = scan_res.effects_set();
 
     if let Some(callgraph_file) = &args.dump_callgraph {
@@ -215,7 +223,7 @@ fn audit_crate(args: Args, policy_file: Option<PolicyFile>) -> Result<()> {
             File::create(policy_path.clone())?;
 
             // Return an empty PolicyFile, we'll add effects to it later
-            let mut pf = PolicyFile::empty(args.crate_path.clone())?;
+            let mut pf = PolicyFile::empty(args.crate_path.clone(), args.effect_types)?;
             pf.set_base_audit_trees(scan_effects);
             pf
         }

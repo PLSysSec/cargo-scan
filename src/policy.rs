@@ -111,10 +111,11 @@ pub struct PolicyFile {
     pub base_dir: PathBuf,
     pub hash: [u8; 32],
     pub version: PolicyVersion,
+    pub scanned_effects: Vec<EffectType>,
 }
 
 impl PolicyFile {
-    pub fn empty(p: PathBuf) -> Result<Self> {
+    pub fn empty(p: PathBuf, relevant_effects: Vec<EffectType>) -> Result<Self> {
         let hash = hash_dir(p.clone())?;
         Ok(PolicyFile {
             audit_trees: HashMap::new(),
@@ -122,6 +123,7 @@ impl PolicyFile {
             base_dir: p,
             hash,
             version: 0,
+            scanned_effects: relevant_effects,
         })
     }
 
@@ -358,7 +360,7 @@ impl PolicyFile {
         sinks: HashSet<CanonicalPath>,
         relevant_effects: &[EffectType],
     ) -> Result<PolicyFile> {
-        let mut policy = PolicyFile::empty(crate_path.to_path_buf())?;
+        let mut policy = PolicyFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
         let ident_sinks =
             sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
         let scan_res =
@@ -380,7 +382,7 @@ impl PolicyFile {
         sinks: HashSet<CanonicalPath>,
         relevant_effects: &[EffectType],
     ) -> Result<PolicyFile> {
-        let mut policy = PolicyFile::empty(crate_path.to_path_buf())?;
+        let mut policy = PolicyFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
         let ident_sinks =
             sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
         let scan_res =

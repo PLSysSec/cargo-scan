@@ -199,7 +199,7 @@ impl Effect {
 
 /// This is a field-less copy of Effect for easy pattern matching and passing
 /// command-line arguments.
-#[derive(Debug, Clone, Copy, PartialEq, Display, FromStr)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Display, FromStr)]
 pub enum EffectType {
     SinkCall,
     FFICall,
