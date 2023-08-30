@@ -1,8 +1,8 @@
 ===== Crate Summary =====
 Number of effects by crate:
-syn: 701
+syn: 702
 libc: 89
-rand: 49
+rand: 51
 autocfg: 45
 proc-macro2: 38
 serde: 36

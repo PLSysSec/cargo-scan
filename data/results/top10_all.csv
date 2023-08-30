@@ -11,6 +11,7 @@ rand, rand::distributions::uniform::UniformChar::sample, core::char::from_u32_un
 rand, rand::distributions::uniform::UniformDuration::new_inclusive, CLOSURE::data::packages::rand::src::distributions::uniform::1096::26, [ClosureCreation], data/packages/rand/src/distributions, uniform.rs, 1096, 26
 rand, rand::distributions::weighted_index::WeightedIndex::sample, CLOSURE::data::packages::rand::src::distributions::weighted_index::231::30, [ClosureCreation], data/packages/rand/src/distributions, weighted_index.rs, 231, 30
 rand, rand::distributions::weighted_index::test::test_weightedindex, CLOSURE::data::packages::rand::src::distributions::weighted_index::295::21, [ClosureCreation], data/packages/rand/src/distributions, weighted_index.rs, 295, 21
+rand, rand::rng::Rng::fill, CLOSURE::data::packages::rand::src::rng::219::43, [ClosureCreation], data/packages/rand/src, rng.rs, 219, 43
 rand, rand::rngs::adapter::read::ReadRng::fill_bytes, CLOSURE::data::packages::rand::src::rngs::adapter::read::60::49, [ClosureCreation], data/packages/rand/src/rngs/adapter, read.rs, 60, 49
 rand, rand::rngs::adapter::read::ReadRng::try_fill_bytes, std::io::Read::read_exact, std::io, data/packages/rand/src/rngs/adapter, read.rs, 74, 13
 rand, rand::rngs::adapter::read::ReadRng::try_fill_bytes, CLOSURE::data::packages::rand::src::rngs::adapter::read::75::21, [ClosureCreation], data/packages/rand/src/rngs/adapter, read.rs, 75, 21
@@ -37,6 +38,7 @@ rand, rand::seq::index::test::test_sample_alg, rand::test::rng, [FnPtrCreation],
 rand, rand::seq::index::test::test_sample_weighted, rand::test::rng, [FnPtrCreation], data/packages/rand/src/seq, index.rs, 627, 23
 rand, rand::seq::index::test::test_sample_weighted, CLOSURE::data::packages::rand::src::seq::index::629::61, [ClosureCreation], data/packages/rand/src/seq, index.rs, 629, 61
 rand, rand::seq::index::test::value_stability_sample, CLOSURE::data::packages::rand::src::seq::index::647::22, [ClosureCreation], data/packages/rand/src/seq, index.rs, 647, 22
+rand, rand::seq::IteratorRandom::choose_stable, CLOSURE::data::packages::rand::src::seq::mod::388::28, [ClosureCreation], data/packages/rand/src/seq, mod.rs, 388, 28
 rand, rand::seq::choose_multiple_weighted, CLOSURE::data::packages::rand::src::seq::mod::579::16, [ClosureCreation], data/packages/rand/src/seq, mod.rs, 579, 16
 rand, rand::seq::SliceChooseIter::next, CLOSURE::data::packages::rand::src::seq::mod::637::32, [ClosureCreation], data/packages/rand/src/seq, mod.rs, 637, 32
 rand, rand::seq::test::test_slice_choose, CLOSURE::data::packages::rand::src::seq::mod::691::35, [ClosureCreation], data/packages/rand/src/seq, mod.rs, 691, 35
@@ -624,6 +626,7 @@ syn, syn::parse::TokenTree::parse, CLOSURE::data::packages::syn::src::parse::109
 syn, syn::parse::Group::parse, CLOSURE::data::packages::syn::src::parse::1103::19, [ClosureCreation], data/packages/syn/src, parse.rs, 1103, 19
 syn, syn::parse::Punct::parse, CLOSURE::data::packages::syn::src::parse::1119::19, [ClosureCreation], data/packages/syn/src, parse.rs, 1119, 19
 syn, syn::parse::Literal::parse, CLOSURE::data::packages::syn::src::parse::1129::19, [ClosureCreation], data/packages/syn/src, parse.rs, 1129, 19
+syn, syn::parse::Parser::__parse_stream, CLOSURE::data::packages::syn::src::parse::1192::31, [ClosureCreation], data/packages/syn/src, parse.rs, 1192, 31
 syn, syn::parse_macro_input::parse, syn::parse_macro_input::ParseMacroInput::parse, [FnPtrCreation], data/packages/syn/src, parse_macro_input.rs, 139, 4
 syn, syn::parse_quote::parse, syn::parse_quote::ParseQuote::parse, [FnPtrCreation], data/packages/syn/src, parse_quote.rs, 117, 17
 syn, syn::parse_quote::parse, syn::parse_quote::parse::parser, [FnPtrCreation], data/packages/syn/src, parse_quote.rs, 118, 10

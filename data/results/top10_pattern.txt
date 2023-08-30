@@ -1,6 +1,6 @@
 ===== Patterns =====
 Total instances of each effect pattern:
-[ClosureCreation]: 447
+[ClosureCreation]: 450
 [FnPtrCreation]: 350
 [UnsafeCall]: 103
 [FFI]: 22
