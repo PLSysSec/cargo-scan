@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Cargo Scan
+Cargo Scan experimental script
 
 Script to download Cargo crate source code and analyze module-level imports.
 """

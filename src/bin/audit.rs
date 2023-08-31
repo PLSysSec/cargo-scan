@@ -35,7 +35,7 @@ struct Args {
     overwrite_audit: bool,
 
     /// Review the audit file without performing an audit
-    #[clap(long, short, default_value_t = false)]
+    #[clap(short, long, default_value_t = false)]
     review: bool,
 
     /// Reset an annotation to "skipped" for a base effect
@@ -49,7 +49,7 @@ struct Args {
     /// Ignore the hash of the crate. WARNING: use cautiously - the package files will not be checked
     /// to ensure they are the same when the audit file was created/last audited, but there may be
     /// things like local configuration files that will mess up consistent hashes.
-    #[clap(long, default_value_t = false)]
+    #[clap(short, long, default_value_t = false)]
     ignore_hash: bool,
 
     /// Dump the callgraph to the specified file. Uses the DOT format.

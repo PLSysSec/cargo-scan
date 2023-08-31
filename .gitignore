@@ -3,7 +3,7 @@ data/packages/
 target
 *.~undo-tree~
 *.swp
-*.policy
+*.audit
 .vscode
 *.audit_crates
 *.audit_policies
