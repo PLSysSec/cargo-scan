@@ -1,5 +1,7 @@
 name
 caller-checked
+dependency-ex
+dependency-parent
 dummy
 fns-closures
 fnv_minimal

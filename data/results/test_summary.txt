@@ -4,11 +4,14 @@ toy-crates: 18
 fns-closures: 13
 unsafe-test: 13
 permissions-ex: 6
+serde_hex_minimal: 5
 caller-checked: 4
 resolution-ex: 4
+dependency-ex: 3
 libc-ex: 2
 num_cpus_minimal: 2
+dependency-parent: 1
 parsing-ex: 1
 ===== Crate Totals =====
-9 crates with 1 or more effects
+12 crates with 1 or more effects
 4 crates with 0 effects
