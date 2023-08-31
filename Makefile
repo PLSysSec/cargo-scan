@@ -1,7 +1,8 @@
 .PHONY: install checks test test-results top10 top100 top1000 top10000 mozilla small medium large clean
 .DEFAULT_GOAL := install
 
-SCAN_PY = ./scripts/scan.py
+SCAN_PY := ./scripts/scan.py
+TEST_CRATES_CHECKSUM := ./scripts/tests_checksum.py
 
 install:
 	- cargo install cargo-download
@@ -13,6 +14,9 @@ checks:
 	cargo fmt
 
 test-results: install
+	# checksum to prevent forgetting adding stuff to test-crates.csv
+	$(TEST_CRATES_CHECKSUM)
+	# Run on the test crates
 	$(SCAN_PY) -t -i data/crate-lists/test-crates.csv -o test -vvv
 
 test: checks test-results
