@@ -746,11 +746,15 @@ impl<'a> Scanner<'a> {
     fn scan_closure(&mut self, x: &'a syn::ExprClosure) {
         self.syn_debug("scanning closure", x);
 
-        let cl_name = self.resolver.resolve_closure(x);
-
-        self.push_effect(x.span(), cl_name, Effect::ClosureCreation);
-
+        let effects_num = self.data.effects.len();
+        // Scan closure's body first. If it does not contain
+        // any effects, the closure is not dangerous and
+        // we do not create a new effect instance for it.
         self.scan_expr(&x.body);
+        if self.data.effects.len() > effects_num {
+            let cl_name = self.resolver.resolve_closure(x);
+            self.push_effect(x.span(), cl_name, Effect::ClosureCreation);
+        }
     }
 
     fn scan_deref(&mut self, x: &'a syn::Expr) {
