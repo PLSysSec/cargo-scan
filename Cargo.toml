@@ -6,7 +6,7 @@ license = "MIT"
 description = "Scan and analyze Cargo dependencies"
 repository = "https://github.com/PLSysSec/cargo-scan"
 readme = "README.md"
-default-run = "scan"
+default-run = "audit"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
