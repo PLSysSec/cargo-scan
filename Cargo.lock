@@ -352,6 +352,7 @@ dependencies = [
  "curl",
  "env_logger",
  "flate2",
+ "home",
  "inquire",
  "itertools 0.11.0",
  "log",

@@ -6,14 +6,16 @@ use cargo_scan::auditing::review::review_audit;
 use cargo_scan::auditing::util::{hash_dir, is_audit_scan_valid};
 use cargo_scan::effect::{EffectInstance, EffectType};
 use cargo_scan::scanner;
+use cargo_scan::util::load_cargo_toml;
 
 use std::collections::HashMap;
-use std::fs::File;
+use std::fs::{File, create_dir_all};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use clap::Parser;
+use home::home_dir;
 use inquire::{validator::Validation, Text};
 use petgraph::dot::Dot;
 
@@ -23,8 +25,10 @@ use petgraph::dot::Dot;
 struct Args {
     /// path to crate
     crate_path: PathBuf,
+
+    #[clap(short, long)]
     /// path to the audit file (will create a new one if it doesn't exist)
-    audit_file_path: PathBuf,
+    audit_file_path: Option<PathBuf>,
 
     #[clap(flatten)]
     /// Optional config args
@@ -198,7 +202,10 @@ fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
         return Ok(());
     }
 
-    let mut audit_file_path = args.audit_file_path.clone();
+    let mut audit_file_path = args
+        .audit_file_path
+        .clone()
+        .context("Error: should have created a default audit file path by now")?;
     let mut audit_file = match audit_file {
         Some(mut pf) => {
             if !args.ignore_hash && !is_audit_scan_valid(&pf, args.crate_path.clone())? {
@@ -220,6 +227,10 @@ fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
         None => {
             // No audit file yet, so make a new one
             println!("Creating new audit file");
+
+            if let Some(parent_dir) = audit_file_path.parent() {
+                create_dir_all(parent_dir)?;
+            }
             File::create(audit_file_path.clone())?;
 
             // Return an empty AuditFile, we'll add effects to it later
@@ -241,12 +252,16 @@ fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
 }
 
 fn runner(args: Args) -> Result<()> {
-    let audit_file = AuditFile::read_audit_file(args.audit_file_path.clone())?;
+    let audit_file_path = args
+        .audit_file_path
+        .clone()
+        .context("Error: should have created a default audit file path already")?;
+    let audit_file = AuditFile::read_audit_file(audit_file_path.clone())?;
 
     if args.reset_annotation {
         match audit_file {
             None => Err(anyhow!("Audit file doesn't exist")),
-            Some(pf) => reset_annotation(pf, args.audit_file_path),
+            Some(pf) => reset_annotation(pf, audit_file_path),
         }
     } else if args.review {
         match audit_file {
@@ -260,7 +275,22 @@ fn runner(args: Args) -> Result<()> {
 
 fn main() {
     cargo_scan::util::init_logging();
-    let args = Args::parse();
+    let mut args = Args::parse();
+    if args.audit_file_path.is_none() {
+        if let Some(mut p) = home_dir() {
+            p.push(".cargo_audits");
+            if let Ok(crate_id) = load_cargo_toml(&args.crate_path) {
+                p.push(format!("{}.audit", crate_id));
+            } else {
+                println!("Error: Couldn't load the Cargo.toml at the crate path");
+                return;
+            }
+            args.audit_file_path = Some(p);
+        }
+    } else {
+        println!("Error: couldn't find the home directory (required for default audit file path)");
+        return;
+    }
 
     match runner(args) {
         Ok(_) => (),
