@@ -3,10 +3,10 @@ Number of effects by crate:
 toy-crates: 17
 unsafe-test: 13
 fns-closures: 11
-cfg-ex: 6
 permissions-ex: 6
 serde_hex_minimal: 5
 caller-checked: 4
+cfg-ex: 3
 dependency-ex: 3
 libc-ex: 2
 num_cpus_minimal: 2

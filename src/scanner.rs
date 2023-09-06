@@ -212,7 +212,9 @@ impl<'a> Scanner<'a> {
     // Quickfix to decide when to skip a CFG attribute
     // TODO: we need to use rust-analyzer or similar to more robustly parse attributes
     pub fn skip_cfg(&self, args: &str) -> bool {
-        args.starts_with("target_os = \"linux\"") || args.starts_with("not (feature =")
+        args.starts_with("target_os = \"linux\"")
+            || args.starts_with("not (feature =")
+            || args.starts_with("test")
     }
 
     // Return true if the attributes imply the code should be skipped

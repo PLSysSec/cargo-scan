@@ -1,7 +1,7 @@
 ===== Patterns =====
 Total instances of each effect pattern:
-std::fs: 14
 [FFI]: 11
+std::fs: 11
 [UnsafeCall]: 10
 std::process: 9
 [PtrDeref]: 6
