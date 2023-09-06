@@ -1,5 +1,6 @@
 name
 caller-checked
+cfg-ex
 dependency-ex
 dependency-parent
 dummy
