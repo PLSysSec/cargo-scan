@@ -5,7 +5,7 @@ use cargo_scan::auditing::reset::reset_annotation;
 use cargo_scan::auditing::review::review_audit;
 use cargo_scan::auditing::util::{hash_dir, is_audit_scan_valid};
 use cargo_scan::effect::{EffectInstance, EffectType};
-use cargo_scan::scanner;
+use cargo_scan::scanner::{self, scan_crate};
 use cargo_scan::util::load_cargo_toml;
 
 use std::collections::HashMap;
@@ -54,6 +54,11 @@ struct Args {
     /// Review the audit file without performing an audit
     #[clap(short, long, default_value_t = false)]
     review: bool,
+
+    /// Preview the effects in a package without performing an audit or saving
+    /// an audit file
+    #[clap(short, long, default_value_t = false)]
+    preview: bool,
 
     /// Reset an annotation to "skipped" for a base effect
     #[clap(long)]
@@ -271,7 +276,13 @@ fn runner(args: Args) -> Result<()> {
         .context("Error: should have created a default audit file path already")?;
     let audit_file = AuditFile::read_audit_file(audit_file_path.clone())?;
 
-    if args.reset_annotation {
+    if args.preview {
+        let res = scan_crate(&args.crate_path, &args.effect_types)?;
+        for effect in res.effects {
+            println!("{}", effect.to_csv());
+        }
+        Ok(())
+    } else if args.reset_annotation {
         match audit_file {
             None => Err(anyhow!("Audit file doesn't exist")),
             Some(pf) => reset_annotation(pf, audit_file_path),
