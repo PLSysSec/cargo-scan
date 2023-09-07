@@ -1,0 +1,32 @@
+name: Makefile CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: configure
+      run: ./configure
+
+    - name: Install dependencies
+      run: make
+
+  test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Run check
+      run: make checks
+
+    - name: Update test results
+      run: make test-results
