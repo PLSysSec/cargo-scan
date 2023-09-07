@@ -1,0 +1,7 @@
+docs:
+  runs-on: ubuntu-latest
+  container: rust:slim
+  steps:
+    - uses: olix0r/cargo-action-fmt/setup@v2
+    - uses: actions/checkout@v2
+    - run: cargo doc --no-deps --message-format=json | cargo-action-fmt
