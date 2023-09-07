@@ -240,6 +240,7 @@ fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
                     Err(e) => return Err(e),
                 };
             }
+            println!("Loaded audit file");
             pf
         }
         None => {
@@ -251,7 +252,6 @@ fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
             }
             File::create(audit_file_path.clone())?;
 
-            // Return an empty AuditFile, we'll add effects to it later
             let mut pf = AuditFile::empty(args.crate_path.clone(), args.effect_types)?;
             pf.set_base_audit_trees(scan_effects);
             pf
@@ -264,6 +264,10 @@ fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
         return Err(anyhow!("Can't audit dependency crate effects in this binary"));
     }
 
+    audit_file.print_audit_stats();
+
+    println!("");
+    println!("Saving audit to file");
     audit_file.save_to_file(audit_file_path)?;
 
     Ok(())

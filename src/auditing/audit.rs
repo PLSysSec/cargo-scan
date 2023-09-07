@@ -213,37 +213,6 @@ fn audit_effect_tree(
     }
 }
 
-/// Returns the total number of unaudited leaf nodes.
-fn total_unaudited_effects(t: &EffectTree) -> usize {
-    let mut total = 0;
-    match t {
-        EffectTree::Leaf(_, SafetyAnnotation::Skipped) => {
-            total += 1;
-        }
-        EffectTree::Leaf(_, _) => (),
-        EffectTree::Branch(_, ts) => {
-            total += ts.iter().fold(0, |total, t| total + total_unaudited_effects(t));
-        }
-    };
-    total
-}
-
-/// Returns the number of unaudited base effects, and the number of unaudited
-/// leaf nodes.
-fn unaudited_effects(audit_file: &AuditFile) -> (usize, usize) {
-    let mut unaudited_base = 0;
-    let mut unaudited_total = 0;
-    for (_, t) in audit_file.audit_trees.iter() {
-        let total = total_unaudited_effects(t);
-        if total > 0 {
-            unaudited_base += 1;
-            unaudited_total += total;
-        }
-    }
-
-    (unaudited_base, unaudited_total)
-}
-
 // TODO: When we exit early, we have no way of knowing which effects the user
 //       has already gone through in this audit and marked "skipped" and so we
 //       will re-prompt the user once we resume auditing the audit file. We would
@@ -263,10 +232,14 @@ pub fn start_audit(
     // effect tree and need to now traverse into the dependency packages.
     let mut dependency_audit_effect: Option<EffectInstance> = None;
 
-    let (unaudited_base, unaudited_total) = unaudited_effects(audit_file);
+    let (unaudited_base, unaudited_total) = audit_file.unaudited_effects();
     if unaudited_base > 0 {
         println!("Total unaudited effects: {}", unaudited_base);
         println!("Total unaudited locations: {}", unaudited_total);
+    }
+
+    if audit_file.has_unsafe_effect() {
+        println!("WARNING: package has been marked as unsafe");
     }
 
     // Iterate through the effects and prompt the user for if they're safe
@@ -305,6 +278,8 @@ pub fn start_audit(
             },
         }
     }
+
+    println!("No more effects to audit");
 
     // NOTE: We recalculate the public functions here so we don't have to keep
     //       track of them during the audit. This is a bit slower, but simplifies

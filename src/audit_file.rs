@@ -245,9 +245,7 @@ impl AuditFile {
         pub_fns: &HashSet<CanonicalPath>,
     ) {
         match tree {
-            EffectTree::Leaf(info, SafetyAnnotation::CallerChecked)
-            | EffectTree::Leaf(info, SafetyAnnotation::Unsafe)
-            | EffectTree::Leaf(info, SafetyAnnotation::Skipped) => {
+            EffectTree::Leaf(info, SafetyAnnotation::CallerChecked) => {
                 if pub_fns.contains(&info.caller_path) {
                     pub_caller_checked
                         .get_mut(&info.caller_path)
@@ -255,7 +253,9 @@ impl AuditFile {
                         .insert(base_effect.clone());
                 }
             }
-            EffectTree::Leaf(_, SafetyAnnotation::Safe) => (),
+            EffectTree::Leaf(_, SafetyAnnotation::Safe)
+            | EffectTree::Leaf(_, SafetyAnnotation::Unsafe)
+            | EffectTree::Leaf(_, SafetyAnnotation::Skipped) => (),
             EffectTree::Branch(info, next_trees) => {
                 if pub_fns.contains(&info.caller_path) {
                     pub_caller_checked
@@ -280,6 +280,8 @@ impl AuditFile {
     /// disk, because it assumes the invariant that the list in
     /// `pub_caller_checked` aligns with those in the effect tree.
     pub fn recalc_pub_caller_checked(&mut self, pub_fns: &HashSet<CanonicalPath>) {
+        // NOTE: initialize everything at the start so we don't have to check for
+        //       entries and clone keys every time
         let mut pub_caller_checked =
             HashMap::from_iter(pub_fns.iter().map(|p| (p.clone(), HashSet::new())));
         for (effect, tree) in self.audit_trees.iter() {
@@ -291,7 +293,9 @@ impl AuditFile {
             );
         }
 
-        self.pub_caller_checked = pub_caller_checked;
+        // Clean up the pub functions that don't have any effects flow into them
+        self.pub_caller_checked =
+            pub_caller_checked.into_iter().filter(|(_, v)| !v.is_empty()).collect();
     }
 
     /// Returns the list of all safe public functions (these include all the
@@ -309,6 +313,85 @@ impl AuditFile {
                 },
             )
             .collect()
+    }
+
+    pub fn has_unsafe_effect(&self) -> bool {
+        fn tree_walk(tree: &EffectTree) -> bool {
+            return match tree {
+                EffectTree::Leaf(_, SafetyAnnotation::Unsafe) => true,
+                EffectTree::Branch(_, ts) => ts.iter().any(tree_walk),
+                _ => false,
+            };
+        }
+        self.audit_trees.values().any(tree_walk)
+    }
+
+    /// Returns the total number of unaudited leaf nodes.
+    fn total_unaudited_effects(t: &EffectTree) -> usize {
+        let mut total = 0;
+        match t {
+            EffectTree::Leaf(_, SafetyAnnotation::Skipped) => {
+                total += 1;
+            }
+            EffectTree::Leaf(_, _) => (),
+            EffectTree::Branch(_, ts) => {
+                total += ts
+                    .iter()
+                    .fold(0, |total, t| total + Self::total_unaudited_effects(t));
+            }
+        };
+        total
+    }
+
+    /// Returns the number of unaudited base effects, and the number of unaudited
+    /// leaf nodes.
+    pub fn unaudited_effects(&self) -> (usize, usize) {
+        let mut unaudited_base = 0;
+        let mut unaudited_total = 0;
+        for (_, t) in self.audit_trees.iter() {
+            let total = Self::total_unaudited_effects(t);
+            if total > 0 {
+                unaudited_base += 1;
+                unaudited_total += total;
+            }
+        }
+
+        (unaudited_base, unaudited_total)
+    }
+
+    /// Print information about the audit:
+    /// - total base effects
+    /// - unaudited
+    /// - unsafe (if any)
+    /// - if fully audited, if package is fully safe and how many caller-checked
+    ///   public functions
+    /// - if not fully audited, current total caller-checked public functions
+    pub fn print_audit_stats(&self) {
+        let (_, unaudited_total) = self.unaudited_effects();
+
+        println!("Audit file info:");
+        println!("  - total base effects: {}", self.audit_trees.len());
+        if self.has_unsafe_effect() {
+            println!("  - package marked UNSAFE");
+        }
+        if unaudited_total == 0 {
+            println!("  - package fully audited");
+            let num_pub_cc = self.pub_caller_checked.len();
+            if num_pub_cc == 0 && !self.has_unsafe_effect() {
+                println!("  - package marked safe");
+            } else {
+                println!(
+                    "  - package safe with {} public functions marked caller-checked",
+                    num_pub_cc
+                )
+            }
+        } else {
+            println!("  - unaudited locations remaining: {}", unaudited_total);
+            println!(
+                "  - public functions marked caller-checked: {}",
+                self.pub_caller_checked.len()
+            );
+        }
     }
 
     /// Removes any effect trees which have the given sink as the root. Returns
