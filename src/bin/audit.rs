@@ -9,7 +9,7 @@ use cargo_scan::scanner;
 use cargo_scan::util::load_cargo_toml;
 
 use std::collections::HashMap;
-use std::fs::{File, create_dir_all};
+use std::fs::{create_dir_all, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
@@ -21,7 +21,20 @@ use petgraph::dot::Dot;
 
 /// Interactively vet a package audit
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[command(
+    author,
+    version,
+    about = "Interactively audit a cargo package.",
+    long_about = "A tool to help auditing a cargo package. Running the \
+                        command on a crate will create a new audit file if one \
+                        does not exist, or reuse the existing one. This audit file \
+                        keeps track of effects that occur within the crate, and \
+                        how the user annotates them. By default, the files are \
+                        saved to the $HOME/.cargo_audits directory. \n\n\
+                        Note that this tool only tracks effects which originate \
+                        within the chosen crate. Effects originating in other \
+                        crates must be separately audited."
+)]
 struct Args {
     /// path to crate
     crate_path: PathBuf,
