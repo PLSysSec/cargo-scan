@@ -20,19 +20,23 @@ pub enum AuditStatus {
     ContinueAudit,
     AuditChildEffect,
     AuditParentEffect,
+    ExpandContext,
 }
 
 // Returns Some SafetyAnnotation if the user selects one, None if the user
 // chooses to exit early, or an Error
-fn get_user_annotation() -> Result<(Option<SafetyAnnotation>, AuditStatus)> {
-    // TODO: Don't let user audit effect origin if we are at a sink
-    let ans = Text::new(
+fn get_user_annotation(
+    allow_effect_origin: bool,
+) -> Result<(Option<SafetyAnnotation>, AuditStatus)> {
+    let ans = Text::new(&format!(
         r#"Select how to mark this effect:
-  (s)afe, (u)nsafe, (c)aller checked, audit (e)ffect origin, ask me (l)ater, e(x)it tool
+  (s)afe, (u)nsafe, (c)aller checked,{} (e)xpand context, ask me (l)ater, e(x)it tool
 "#,
-    )
-    .with_validator(|x: &str| match x {
+        if allow_effect_origin { " audit effect (o)rigin," } else { "" }
+    ))
+    .with_validator(move |x: &str| match x {
         "s" | "u" | "c" | "e" | "l" | "x" => Ok(Validation::Valid),
+        "o" if allow_effect_origin => Ok(Validation::Valid),
         _ => Ok(Validation::Invalid("Invalid input".into())),
     })
     .prompt()
@@ -43,7 +47,8 @@ fn get_user_annotation() -> Result<(Option<SafetyAnnotation>, AuditStatus)> {
         "u" => Ok((Some(SafetyAnnotation::Unsafe), AuditStatus::ContinueAudit)),
         "c" => Ok((Some(SafetyAnnotation::CallerChecked), AuditStatus::ContinueAudit)),
         "l" => Ok((Some(SafetyAnnotation::Skipped), AuditStatus::ContinueAudit)),
-        "e" => Ok((None, AuditStatus::AuditChildEffect)),
+        "o" => Ok((None, AuditStatus::AuditChildEffect)),
+        "e" => Ok((None, AuditStatus::ExpandContext)),
         "x" => Ok((None, AuditStatus::EarlyExit)),
         _ => Err(anyhow!("Invalid annotation selection")),
     }
@@ -72,14 +77,27 @@ fn print_and_update_audit<'a>(
         println!("Error printing effect information. Trying to continue...");
     }
 
-    update_audit_from_input(
+    match update_audit_from_input(
         orig_effect,
         scan_res,
         effect_tree,
         effect_history,
         curr_effect,
         config,
-    )
+    ) {
+        Ok(AuditStatus::ExpandContext) => {
+            let mut config = config.clone();
+            config.expand_context();
+            print_and_update_audit(
+                orig_effect,
+                effect_tree,
+                effect_history,
+                scan_res,
+                &config,
+            )
+        }
+        res => res,
+    }
 }
 
 fn audit_leaf<'a>(
@@ -118,14 +136,27 @@ fn update_audit_child<'a>(
         println!("Error printing effect information. Trying to continue...");
     }
 
-    update_audit_from_input(
+    match update_audit_from_input(
         orig_effect,
         scan_res,
         effect_tree,
         effect_history,
         curr_effect,
         config,
-    )
+    ) {
+        Ok(AuditStatus::ExpandContext) => {
+            let mut config = config.clone();
+            config.expand_context();
+            update_audit_child(
+                orig_effect,
+                effect_tree,
+                effect_history,
+                scan_res,
+                &config,
+            )
+        }
+        res => res,
+    }
 }
 
 fn audit_branch<'a>(
@@ -339,7 +370,7 @@ fn update_audit_from_input(
     curr_effect: EffectInfo,
     config: &Config,
 ) -> Result<AuditStatus> {
-    match get_user_annotation() {
+    match get_user_annotation(config.allow_effect_origin) {
         Ok((Some(a), AuditStatus::ContinueAudit)) => {
             let update_status =
                 update_audit_annotation(a, scan_res, effect_tree, curr_effect)?;
@@ -349,11 +380,12 @@ fn update_audit_from_input(
                 Ok(AuditStatus::ContinueAudit)
             }
         }
-        Ok((_, s @ AuditStatus::AuditChildEffect)) => Ok(s),
         Ok((None, AuditStatus::ContinueAudit)) => Err(anyhow!(
             "Should never return ContinueAudit if we don't have an annotation"
         )),
-        Ok((_, s @ AuditStatus::EarlyExit)) => Ok(s),
+        Ok((_, s @ AuditStatus::AuditChildEffect))
+        | Ok((_, s @ AuditStatus::EarlyExit))
+        | Ok((_, s @ AuditStatus::ExpandContext)) => Ok(s),
         Ok((_, AuditStatus::AuditParentEffect)) => {
             // TODO: This is for the case where we are walking down the effect
             //       stack for auditing child effects and the user decides they
@@ -375,6 +407,7 @@ fn update_audit_from_input(
 pub fn audit_pub_fn(
     chain: &mut AuditChain,
     sink_ident: &Sink,
+    config: &Config,
 ) -> Result<HashSet<CanonicalPath>> {
     let sink_crate = sink_ident
         .first_ident()
@@ -392,7 +425,12 @@ pub fn audit_pub_fn(
     let sink_fn = CanonicalPath::new(sink_ident.as_str());
     loop {
         // Keep looping until we are done with auditing children
-        match audit_pub_fn_effect(&mut new_audit_file, &sink_fn, &scan_res)? {
+        match audit_pub_fn_effect(
+            &mut new_audit_file,
+            &sink_fn,
+            &scan_res,
+            config.clone(),
+        )? {
             (AuditStatus::ContinueAudit | AuditStatus::EarlyExit, _) => {
                 // We are done auditing this crate, so break out to clean up
                 break;
@@ -413,7 +451,7 @@ pub fn audit_pub_fn(
                         ))
                     }
                 };
-                audit_pub_fn(chain, child_sink)?;
+                audit_pub_fn(chain, child_sink, config)?;
                 // We have to reload the new audit file because auditing child
                 // effects may have removed some base effects from the current
                 // crate
@@ -436,10 +474,13 @@ pub fn audit_pub_fn(
             (AuditStatus::AuditParentEffect, _) => {
                 return Err(anyhow!("Cannot audit parent effect in this context"));
             }
+            (AuditStatus::ExpandContext, _) => {
+                return Err(anyhow!("Shouldn't return ExpandContext when auditing public function effects"));
+            }
         }
     }
 
-    // Save the new audit fiel
+    // Save the new audit file
     new_audit_file.recalc_pub_caller_checked(&scan_res.pub_fns);
     chain.save_audit_file(&sink_crate_id, &new_audit_file)?;
 
@@ -454,6 +495,7 @@ fn audit_pub_fn_effect(
     audit_file: &mut AuditFile,
     sink_fn: &CanonicalPath,
     scan_res: &ScanResults,
+    mut config: Config,
 ) -> Result<(AuditStatus, Option<EffectInstance>)> {
     for base_effect in audit_file.pub_caller_checked.get(sink_fn).ok_or_else(|| {
         anyhow!("Couldn't find public function from sink: {:?}", &sink_fn)
@@ -465,19 +507,26 @@ fn audit_pub_fn_effect(
                 base_effect
             )
             })?;
-        let config = Config::default();
-        match audit_effect_tree(base_effect, effect_tree, scan_res, &config)? {
-            AuditStatus::ContinueAudit => (),
-            s @ AuditStatus::EarlyExit => {
-                return Ok((s, None));
-            }
-            s @ AuditStatus::AuditChildEffect => {
-                return Ok((s, Some(base_effect.clone())));
-            }
-            AuditStatus::AuditParentEffect => {
-                return Err(anyhow!("Cannot audit parent effect in this context"));
+
+        loop {
+            let res = audit_effect_tree(base_effect, effect_tree, scan_res, &config)?;
+            match res {
+                AuditStatus::ContinueAudit => break,
+                s @ AuditStatus::EarlyExit => {
+                    return Ok((s, None));
+                }
+                s @ AuditStatus::AuditChildEffect => {
+                    return Ok((s, Some(base_effect.clone())));
+                }
+                AuditStatus::AuditParentEffect => {
+                    return Err(anyhow!("Cannot audit parent effect in this context"));
+                }
+                AuditStatus::ExpandContext => {
+                    config.expand_context();
+                }
             }
         }
     }
+
     Ok((AuditStatus::ContinueAudit, None))
 }

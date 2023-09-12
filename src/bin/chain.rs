@@ -205,7 +205,8 @@ impl CommandRunner for Audit {
                         &orig_audit_file.scanned_effects,
                     )?;
 
-                    let audit_config = AuditConfig::default();
+                    let mut audit_config = AuditConfig::default();
+                    audit_config.allow_effect_origin = true;
 
                     // TODO: Mechanism for re-auditing the default policies
                     // NOTE: audit_res will contain an EffectBlock if the user
@@ -220,7 +221,7 @@ impl CommandRunner for Audit {
                         //       auditing children
                         match dep_effect.eff_type() {
                             Effect::SinkCall(sink_ident) => {
-                                audit_pub_fn(&mut chain, sink_ident)?
+                                audit_pub_fn(&mut chain, sink_ident, &audit_config)?
                             }
                             _ => {
                                 return Err(anyhow!(

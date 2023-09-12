@@ -14,7 +14,7 @@ use crate::{
     effect::{Effect, EffectInstance, SrcLoc},
 };
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 pub struct Config {
     #[clap(long = "lines-before", default_value_t = 4)]
     /// The number of lines before an effect to show
@@ -24,18 +24,33 @@ pub struct Config {
     /// The number of lines after an effect to show
     lines_after_effect: u8,
     // TODO: Add flag for if we can traverse to child packages (maybe always
-    //           can now that chains are our primary auditing mechanism?)
+    //       can now that chains are our primary auditing mechanism?)
+    #[clap(default_value_t = false)]
+    pub allow_effect_origin: bool,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Config { lines_before_effect: 4, lines_after_effect: 1 }
+        Config {
+            lines_before_effect: 4,
+            lines_after_effect: 1,
+            allow_effect_origin: false,
+        }
     }
 }
 
 impl Config {
-    pub fn new(lines_before: u8, lines_after: u8) -> Self {
-        Self { lines_before_effect: lines_before, lines_after_effect: lines_after }
+    pub fn new(lines_before: u8, lines_after: u8, allow_effect_origin: bool) -> Self {
+        Self {
+            lines_before_effect: lines_before,
+            lines_after_effect: lines_after,
+            allow_effect_origin,
+        }
+    }
+
+    pub fn expand_context(&mut self) {
+        self.lines_before_effect += 5;
+        self.lines_after_effect += 5;
     }
 }
 
@@ -152,10 +167,14 @@ pub fn print_effect_src(
     let diag = Diagnostic::help().with_code("Audit location").with_labels(labels);
 
     let writer = StandardStream::stderr(ColorChoice::Always);
-    let config = codespan_reporting::term::Config::default();
+    let codespan_config = codespan_reporting::term::Config {
+        start_context_lines: config.lines_before_effect as usize,
+        end_context_lines: config.lines_after_effect as usize,
+        ..Default::default()
+    };
 
     // Print the information to the user
-    term::emit(&mut writer.lock(), &config, &files, &diag)?;
+    term::emit(&mut writer.lock(), &codespan_config, &files, &diag)?;
 
     Ok(())
 }

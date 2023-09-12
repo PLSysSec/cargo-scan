@@ -124,7 +124,7 @@ fn main() -> Result<()> {
     let root_audit_file = chain
         .read_audit_file(&root_crate)?
         .ok_or_else(|| anyhow!("Couldn't read root crate from the audit"))?;
-    let review_config = Config::new(0, 0);
+    let review_config = Config::new(0, 0, false);
     review_audit(&root_audit_file, &PathBuf::from(&args.crate_path), &review_config)?;
 
     remove_dir_all(&args.audit_file_path)?;

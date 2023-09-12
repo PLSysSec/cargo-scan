@@ -266,7 +266,7 @@ fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
 
     audit_file.print_audit_stats();
 
-    println!("");
+    println!();
     println!("Saving audit to file");
     audit_file.save_to_file(audit_file_path)?;
 
