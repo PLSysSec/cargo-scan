@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term;
@@ -13,24 +13,6 @@ use crate::{
     audit_file::EffectInfo,
     effect::{Effect, EffectInstance, SrcLoc},
 };
-
-#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ReviewInfo {
-    Crates,
-    PubFuns,
-    All,
-}
-
-impl std::fmt::Display for ReviewInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            ReviewInfo::Crates => "crates",
-            ReviewInfo::PubFuns => "pub-funs",
-            ReviewInfo::All => "all",
-        };
-        write!(f, "{}", s)
-    }
-}
 
 #[derive(Parser, Debug, Clone)]
 pub struct Config {

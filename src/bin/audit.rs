@@ -1,6 +1,6 @@
 use cargo_scan::audit_file::*;
 use cargo_scan::auditing::audit::start_audit;
-use cargo_scan::auditing::info::{Config, ReviewInfo};
+use cargo_scan::auditing::info::Config;
 use cargo_scan::auditing::reset::reset_annotation;
 use cargo_scan::auditing::review::review_audit;
 use cargo_scan::auditing::util::{hash_dir, is_audit_scan_valid};
@@ -14,7 +14,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Context, Result};
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use home::home_dir;
 use inquire::{validator::Validation, Text};
 use petgraph::dot::Dot;
@@ -96,6 +96,22 @@ struct Args {
         EffectType::ClosureCreation,
     ])]
     effect_types: Vec<EffectType>,
+}
+
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
+enum ReviewInfo {
+    PubFuns,
+    All,
+}
+
+impl std::fmt::Display for ReviewInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            ReviewInfo::All => "all",
+            ReviewInfo::PubFuns => "pub-funs",
+        };
+        write!(f, "{}", s)
+    }
 }
 
 enum ContinueStatus {
@@ -313,11 +329,6 @@ fn runner(args: Args) -> Result<()> {
                             println!("  {}", pub_fn);
                         }
                         Ok(())
-                    }
-                    ReviewInfo::Crates => {
-                        // TODO: Change this to using the audit file's crate once
-                        //       we add that info
-                        unimplemented!("TODO: Add crate info to audit file")
                     }
                 }
             }
