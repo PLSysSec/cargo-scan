@@ -158,7 +158,7 @@ pub fn print_effect_src(
             }
         }
     } else {
-        "call safety marked as callee-checked".to_string()
+        "call safety marked as caller-checked".to_string()
     };
     let l = labels.remove(0);
     labels.insert(0, l.with_message(label_msg));

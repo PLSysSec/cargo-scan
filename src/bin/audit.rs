@@ -144,11 +144,11 @@ where
     } else {
         let ans = Text::new(
             r#"Would you like to:
-    (c)ontinue with a new audit file, e(x)it tool w/o changes
+    (c)ontinue with a new audit file, e(x)it tool w/o changes, (f)orce continue with existing audit [WARNING: crate contents may have changed since last audit]
     "#,
         )
         .with_validator(|x: &str| match x {
-            "c" | "x" => Ok(Validation::Valid),
+            "c" | "x" | "f" => Ok(Validation::Valid),
             _ => Ok(Validation::Invalid("Invalid input".into())),
         })
         .prompt()
@@ -187,6 +187,9 @@ where
             "x" => {
                 println!("Exiting audit tool");
                 Ok(ContinueStatus::ExitNow)
+            }
+            "f" => {
+                Ok(ContinueStatus::Continue)
             }
             _ => Err(anyhow!("Invalid audit handle selection")),
         }
