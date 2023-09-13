@@ -188,9 +188,7 @@ where
                 println!("Exiting audit tool");
                 Ok(ContinueStatus::ExitNow)
             }
-            "f" => {
-                Ok(ContinueStatus::Continue)
-            }
+            "f" => Ok(ContinueStatus::Continue),
             _ => Err(anyhow!("Invalid audit handle selection")),
         }
     }
@@ -204,6 +202,7 @@ fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
             &args.effect_types
         };
 
+        printnl!("Scanning crate...");
         scanner::scan_crate(&args.crate_path, relevant_effects)?
     };
     let scan_effects = scan_res.effects_set();
@@ -284,6 +283,9 @@ fn runner(args: Args) -> Result<()> {
     let audit_file = AuditFile::read_audit_file(audit_file_path.clone())?;
 
     if args.preview {
+        println!("Previewing crate effects.");
+        println!("Scanning crate...");
+
         let res = scan_crate(&args.crate_path, &args.effect_types)?;
         for effect in res.effects {
             println!("{}", effect.to_csv());
