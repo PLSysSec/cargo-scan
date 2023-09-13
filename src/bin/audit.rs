@@ -1,6 +1,6 @@
 use cargo_scan::audit_file::*;
 use cargo_scan::auditing::audit::start_audit;
-use cargo_scan::auditing::info::Config;
+use cargo_scan::auditing::info::{Config, ReviewInfo};
 use cargo_scan::auditing::reset::reset_annotation;
 use cargo_scan::auditing::review::review_audit;
 use cargo_scan::auditing::util::{hash_dir, is_audit_scan_valid};
@@ -54,6 +54,10 @@ struct Args {
     /// Review the audit file without performing an audit
     #[clap(short, long, default_value_t = false)]
     review: bool,
+
+    /// Which info to review
+    #[clap(long, default_value_t = ReviewInfo::PubFuns)]
+    review_info: ReviewInfo,
 
     /// Preview the effects in a package without performing an audit or saving
     /// an audit file
@@ -202,7 +206,7 @@ fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
             &args.effect_types
         };
 
-        printnl!("Scanning crate...");
+        println!("Scanning crate...");
         scanner::scan_crate(&args.crate_path, relevant_effects)?
     };
     let scan_effects = scan_res.effects_set();
@@ -299,7 +303,24 @@ fn runner(args: Args) -> Result<()> {
     } else if args.review {
         match audit_file {
             None => Err(anyhow!("Audit file to review doesn't exist")),
-            Some(pf) => review_audit(&pf, &args.crate_path, &args.config),
+            Some(af) => {
+                match args.review_info {
+                    ReviewInfo::All => review_audit(&af, &args.crate_path, &args.config),
+                    ReviewInfo::PubFuns => {
+                        println!("Public functions marked caller-checked:");
+                        for pub_fn in af.pub_caller_checked.keys() {
+                            // TODO: Print more info
+                            println!("  {}", pub_fn);
+                        }
+                        Ok(())
+                    }
+                    ReviewInfo::Crates => {
+                        // TODO: Change this to using the audit file's crate once
+                        //       we add that info
+                        unimplemented!("TODO: Add crate info to audit file")
+                    }
+                }
+            }
         }
     } else {
         audit_crate(args, audit_file)

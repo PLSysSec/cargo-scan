@@ -1,13 +1,13 @@
 use cargo_scan::audit_chain::{create_new_audit_chain, AuditChain, Create};
 use cargo_scan::audit_file::AuditFile;
 use cargo_scan::auditing::audit::{audit_pub_fn, start_audit};
-use cargo_scan::auditing::info::Config as AuditConfig;
+use cargo_scan::auditing::info::{Config as AuditConfig, ReviewInfo};
 use cargo_scan::auditing::review::review_audit;
 use cargo_scan::effect::Effect;
 use cargo_scan::{download_crate, scanner};
 
 use anyhow::{anyhow, Context, Result};
-use clap::{Args as ClapArgs, Parser, Subcommand, ValueEnum};
+use clap::{Args as ClapArgs, Parser, Subcommand};
 use std::collections::HashSet;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
@@ -104,24 +104,6 @@ struct Review {
     review_info: ReviewInfo,
     /// What crate to review, defaults to all crates.
     review_target: Option<String>,
-}
-
-#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
-enum ReviewInfo {
-    Crates,
-    PubFuns,
-    All,
-}
-
-impl std::fmt::Display for ReviewInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            ReviewInfo::Crates => "crates",
-            ReviewInfo::PubFuns => "pub-funs",
-            ReviewInfo::All => "all",
-        };
-        write!(f, "{}", s)
-    }
 }
 
 impl CommandRunner for Review {
