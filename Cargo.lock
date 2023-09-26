@@ -360,6 +360,7 @@ dependencies = [
  "petgraph 0.6.4",
  "proc-macro2",
  "quote",
+ "ra_ap_cfg",
  "ra_ap_hir",
  "ra_ap_hir_def",
  "ra_ap_hir_expand",

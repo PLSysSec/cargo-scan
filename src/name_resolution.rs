@@ -3,6 +3,7 @@
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use log::debug;
+use ra_ap_cfg::CfgDiff;
 use std::fs::canonicalize;
 use std::path::Path;
 
@@ -10,8 +11,8 @@ use super::effect::SrcLoc;
 use super::ident::{CanonicalPath, CanonicalType, Ident, TypeKind};
 
 use ra_ap_hir::{
-    Adt, AsAssocItem, AssocItemContainer, DefWithBody, GenericParam, HirDisplay, Module,
-    ModuleSource, Semantics, TypeRef, VariantDef,
+    Adt, AsAssocItem, AssocItemContainer, CfgAtom, DefWithBody, GenericParam, HirDisplay,
+    Module, ModuleSource, Semantics, TypeRef, VariantDef,
 };
 use ra_ap_hir_def::db::DefDatabase;
 use ra_ap_hir_def::{FunctionId, Lookup, TypeAliasId};
@@ -23,9 +24,9 @@ use ra_ap_ide_db::base_db::{SourceDatabase, Upcast};
 use ra_ap_ide_db::defs::{Definition, IdentClass};
 use ra_ap_ide_db::FxHashMap;
 use ra_ap_load_cargo::{LoadCargoConfig, ProcMacroServerChoice};
-use ra_ap_paths::AbsPathBuf;
 use ra_ap_project_model::{
-    CargoConfig, CargoFeatures, InvocationLocation, InvocationStrategy, RustLibSource,
+    CargoConfig, CargoFeatures, CfgOverrides, InvocationLocation, InvocationStrategy,
+    RustLibSource,
 };
 use ra_ap_syntax::ast::HasName;
 use ra_ap_syntax::{AstNode, SourceFile, SyntaxToken, TokenAtOffset};
@@ -59,7 +60,7 @@ impl Resolver {
         let rustc_source = None;
 
         // Setup RUSTC_WRAPPER to point to `rust-analyzer` binary itself.
-        let wrap_rustc_in_build_scripts = false;
+        let wrap_rustc_in_build_scripts = true;
 
         let run_build_script_command = None;
 
@@ -69,15 +70,14 @@ impl Resolver {
         let invocation_strategy = InvocationStrategy::PerWorkspace;
         let invocation_location = InvocationLocation::Workspace;
 
-        // TODO: added arguments for newest version of rust-analyzer
-        // Not sure if these are correct, putting in default values
         let sysroot_src = None;
-        let cfg_overrides = Default::default();
         let extra_args = Vec::new();
 
-        // crates to disable `#[cfg(test)]` on
-        // TODO
-        // let unset_test_crates = CfgOverrides::Only(vec![String::from("core")]);
+        // Disable '#[cfg(test)]' in all crates of the workspace
+        let disabled_cfgs =
+            CfgDiff::new(vec![], vec![CfgAtom::Flag("test".into())]).unwrap_or_default();
+        let cfg_overrides =
+            CfgOverrides { global: disabled_cfgs, selective: Default::default() };
 
         CargoConfig {
             features,
@@ -98,8 +98,6 @@ impl Resolver {
     pub fn new(crate_path: &Path) -> Result<Resolver> {
         debug!("Creating resolver with path {:?}", crate_path);
 
-        let canon_path = canonicalize(crate_path)?;
-        let abs_path = AbsPathBuf::assert(canon_path);
         // Make sure the path is a crate
         if !crate_path.is_dir() {
             return Err(anyhow!(
@@ -112,7 +110,6 @@ impl Resolver {
         let cargo_config = &Self::cargo_config();
         let progress = &|p| debug!("Workspace loading progress: {:?}", p);
 
-        // TODO: check options to use here
         let with_proc_macro_server = ProcMacroServerChoice::Sysroot;
 
         let load_config = LoadCargoConfig {
