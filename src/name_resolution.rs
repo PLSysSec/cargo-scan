@@ -11,8 +11,8 @@ use super::effect::SrcLoc;
 use super::ident::{CanonicalPath, CanonicalType, Ident, TypeKind};
 
 use ra_ap_hir::{
-    Adt, AsAssocItem, AssocItemContainer, CfgAtom, DefWithBody, GenericParam, HirDisplay,
-    Module, ModuleSource, Semantics, TypeRef, VariantDef,
+    Adt, AsAssocItem, AssocItem, AssocItemContainer, CfgAtom, DefWithBody, GenericParam,
+    HirDisplay, Impl, Module, ModuleSource, Semantics, TypeRef, VariantDef,
 };
 use ra_ap_hir_def::db::DefDatabase;
 use ra_ap_hir_def::{FunctionId, Lookup, TypeAliasId};
@@ -295,6 +295,42 @@ impl Resolver {
         };
 
         Ok(matches!(def, Definition::Const(_)) || is_immutable_static(def))
+    }
+
+    pub fn all_impl_methods_for_trait_method(
+        &self,
+        s: SrcLoc,
+        i: Ident,
+        m: String,
+    ) -> Result<Vec<CanonicalPath>> {
+        let db = self.get_db();
+        let sems = self.get_semantics();
+        let file_id = self.get_file_id(&s, &sems)?;
+        let token = self.token(&sems, file_id, i.clone(), s)?;
+        let diags = self.get_ra_diagnostics(file_id, &token);
+        let def = find_def(&token, &sems, db, diags)?;
+
+        let mut impl_methods_for_trait_method: Vec<CanonicalPath> = Vec::new();
+        let filter_ = |x: AssocItem| match x {
+            AssocItem::Function(f) if name_to_string(f.name(db)) == m => {
+                canonical_path(&sems, db, &Definition::from(f))
+            }
+            _ => None,
+        };
+
+        if let Definition::Trait(tr) = def {
+            Impl::all_for_trait(db, tr).iter().for_each(|impl_| {
+                impl_
+                    .items(db)
+                    .iter()
+                    .filter_map(|&i| filter_(i))
+                    .for_each(|x| impl_methods_for_trait_method.push(x))
+            });
+        } else {
+            return Err(anyhow!("No trait definition found for token {:?}. Can not look for impl methods.", i.to_string()));
+        }
+
+        Ok(impl_methods_for_trait_method)
     }
 }
 
