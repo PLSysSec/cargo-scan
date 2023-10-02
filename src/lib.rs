@@ -13,3 +13,6 @@ pub mod util;
 pub mod hacky_resolver;
 pub mod name_resolution;
 pub mod resolve;
+
+// Attribute parser
+mod attr_parser;
