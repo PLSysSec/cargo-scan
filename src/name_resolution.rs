@@ -4,6 +4,7 @@ use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use log::debug;
 use ra_ap_cfg::CfgDiff;
+use std::collections::HashMap;
 use std::fs::canonicalize;
 use std::path::Path;
 
@@ -11,8 +12,8 @@ use super::effect::SrcLoc;
 use super::ident::{CanonicalPath, CanonicalType, Ident, TypeKind};
 
 use ra_ap_hir::{
-    Adt, AsAssocItem, AssocItem, AssocItemContainer, CfgAtom, DefWithBody, GenericParam,
-    HirDisplay, Impl, Module, ModuleSource, Semantics, TypeRef, VariantDef,
+    Adt, AsAssocItem, AssocItem, AssocItemContainer, CfgAtom, Crate, DefWithBody,
+    GenericParam, HirDisplay, Impl, Module, ModuleSource, Semantics, TypeRef, VariantDef,
 };
 use ra_ap_hir_def::db::DefDatabase;
 use ra_ap_hir_def::{FunctionId, Lookup, TypeAliasId};
@@ -331,6 +332,31 @@ impl Resolver {
         }
 
         Ok(impl_methods_for_trait_method)
+    }
+
+    pub fn get_cfg_options_for_crate(
+        &self,
+        name: &String,
+    ) -> Result<HashMap<String, Vec<String>>> {
+        let db = self.get_db();
+        let mut crate_opts: HashMap<String, Vec<String>> = HashMap::default();
+
+        let crate_ = Crate::all(db).into_iter().find(|x| match x.display_name(db) {
+            Some(crate_name) => name.eq(&crate_name.to_string()),
+            None => false,
+        });
+
+        if let Some(crate_) = crate_ {
+            let enabled_opts = crate_.cfg(db);
+            for key in enabled_opts.get_cfg_keys() {
+                let cfg_values = enabled_opts.get_cfg_values(key).map(|x| x.to_string());
+                crate_opts.insert(key.to_string(), Vec::from_iter(cfg_values));
+            }
+        } else {
+            return Err(anyhow!("Could not get cfg options for crate: {:?}", name));
+        }
+
+        Ok(crate_opts)
     }
 }
 
