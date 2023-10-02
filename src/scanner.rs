@@ -3,6 +3,7 @@
 //! Parse a Rust crate or source file and collect effect blocks, function calls, and
 //! various other information.
 
+use crate::attr_parser::CfgPred;
 use crate::audit_file::EffectInfo;
 
 use super::effect::{
@@ -135,6 +136,9 @@ pub struct Scanner<'a> {
 
     /// The list of sinks to look for
     sinks: HashSet<IdentPath>,
+
+    /// The set of enabled cfg options for this crate.
+    enabled_cfg: &'a HashMap<String, Vec<String>>,
 }
 
 impl<'a> Scanner<'a> {
@@ -147,6 +151,7 @@ impl<'a> Scanner<'a> {
         filepath: &'a FilePath,
         resolver: FileResolver<'a>,
         data: &'a mut ScanResults,
+        enabled_cfg: &'a HashMap<String, Vec<String>>,
     ) -> Self {
         Self {
             filepath,
@@ -157,6 +162,7 @@ impl<'a> Scanner<'a> {
             scope_fns: Vec::new(),
             data,
             sinks: Sink::default_sinks(),
+            enabled_cfg,
         }
     }
 
@@ -210,11 +216,9 @@ impl<'a> Scanner<'a> {
     }
 
     // Quickfix to decide when to skip a CFG attribute
-    // TODO: we need to use rust-analyzer or similar to more robustly parse attributes
-    pub fn skip_cfg(&self, args: &str) -> bool {
-        args.starts_with("target_os = \"linux\"")
-            || args.starts_with("not (feature =")
-            || args.starts_with("test")
+    pub fn skip_cfg(&self, args: &TokenStream) -> bool {
+        let cfg_pred = CfgPred::parse(args);
+        !cfg_pred.is_enabled(self.enabled_cfg)
     }
 
     // Return true if the attributes imply the code should be skipped
@@ -224,7 +228,7 @@ impl<'a> Scanner<'a> {
         if path.is_ident("cfg") {
             let syn::Meta::List(l) = &attr.meta else { return false };
             let args = &l.tokens;
-            if self.skip_cfg(args.to_string().as_str()) {
+            if self.skip_cfg(args) {
                 info!("Skipping cfg attribute: {}", args);
                 return true;
             } else {
@@ -507,6 +511,11 @@ impl<'a> Scanner<'a> {
     }
 
     fn scan_fn_local(&mut self, l: &'a syn::Local) {
+        if self.skip_attrs(&l.attrs) {
+            self.data.skipped_conditional_code.add(l);
+            return;
+        }
+
         if let Some(let_expr) = &l.init {
             self.scan_expr(&let_expr.expr);
             if let Some((_, else_expr)) = &let_expr.diverge {
@@ -546,6 +555,11 @@ impl<'a> Scanner<'a> {
                 self.scan_expr(&x.right);
             }
             syn::Expr::Block(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 for s in &x.block.stmts {
                     self.scan_fn_statement(s);
                 }
@@ -663,6 +677,11 @@ impl<'a> Scanner<'a> {
                 self.scan_expr(&x.len);
             }
             syn::Expr::Return(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 if let Some(y) = &x.expr {
                     self.scan_expr(y);
                 }
@@ -941,6 +960,7 @@ pub fn scan_file(
     resolver: &Resolver,
     scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
+    enabled_cfg: &HashMap<String, Vec<String>>,
 ) -> Result<()> {
     info!("Scanning file: {:?}", filepath);
 
@@ -952,7 +972,7 @@ pub fn scan_file(
 
     // Initialize data structures
     let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
-    let mut scanner = Scanner::new(filepath, file_resolver, scan_results);
+    let mut scanner = Scanner::new(filepath, file_resolver, scan_results, enabled_cfg);
     scanner.add_sinks(sinks);
 
     // Scan file contents
@@ -968,12 +988,12 @@ pub fn try_scan_file(
     resolver: &Resolver,
     scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
+    enabled_cfg: &HashMap<String, Vec<String>>,
 ) {
-    scan_file(crate_name, filepath, resolver, scan_results, sinks).unwrap_or_else(
-        |err| {
+    scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg)
+        .unwrap_or_else(|err| {
             warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
-        },
-    );
+        });
 }
 
 /// Scan the supplied crate with an additional list of sinks
@@ -1001,6 +1021,8 @@ pub fn scan_crate_with_sinks(
 
     let mut scan_results = ScanResults::new();
 
+    let enabled_cfg = resolver.get_cfg_options_for_crate(&crate_name).unwrap_or_default();
+
     // TODO: For now, only walking through the src dir, but might want to
     //       include others (e.g. might codegen in other dirs)
     let src_dir = crate_path.join(FilePath::new("src"));
@@ -1012,6 +1034,7 @@ pub fn scan_crate_with_sinks(
                 &resolver,
                 &mut scan_results,
                 sinks.clone(),
+                &enabled_cfg,
             );
         }
     } else {
@@ -1024,6 +1047,7 @@ pub fn scan_crate_with_sinks(
                 &resolver,
                 &mut scan_results,
                 sinks,
+                &enabled_cfg,
             );
         } else {
             warn!(
