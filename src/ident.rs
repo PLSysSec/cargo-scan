@@ -9,6 +9,8 @@ use log::warn;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display};
 
+use crate::effect::SrcLoc;
+
 use super::util::iter::FreshIter;
 
 fn replace_hyphens(s: &mut String) {
@@ -217,16 +219,20 @@ impl Default for IdentPath {
 /// i.e. from the root
 /// Should not be empty.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct CanonicalPath(IdentPath);
+pub struct CanonicalPath {
+    ident_path: IdentPath,
+    src_loc: SrcLoc,
+}
+
 impl Display for CanonicalPath {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
+        self.ident_path.fmt(f)
     }
 }
 
 impl CanonicalPath {
     pub fn invariant(&self) -> bool {
-        self.0.invariant() && !self.0.is_empty()
+        self.ident_path.invariant() && !self.ident_path.is_empty()
     }
 
     pub fn check_invariant(&self) {
@@ -236,55 +242,65 @@ impl CanonicalPath {
     }
 
     pub fn new(s: &str) -> Self {
-        Self::from_path(IdentPath::new(s))
+        Self::from_path(IdentPath::new(s), SrcLoc::default())
     }
 
-    pub fn new_owned(s: String) -> Self {
-        Self::from_path(IdentPath::new_owned(s))
+    pub fn new_owned(s: String, l: SrcLoc) -> Self {
+        Self::from_path(IdentPath::new_owned(s), l)
     }
 
-    pub fn from_path(p: IdentPath) -> Self {
-        let result = Self(p);
+    pub fn from_path(p: IdentPath, s: SrcLoc) -> Self {
+        let result = Self { ident_path: p, src_loc: s };
         result.check_invariant();
         result
     }
 
     pub fn push_ident(&mut self, i: &Ident) {
-        self.0.push_ident(i);
+        self.ident_path.push_ident(i);
         self.check_invariant();
     }
 
     pub fn pop_ident(&mut self) -> Option<Ident> {
-        let result = self.0.pop_ident();
+        let result = self.ident_path.pop_ident();
         self.check_invariant();
         result
     }
 
     pub fn append_path(&mut self, other: &IdentPath) {
-        self.0.append(other);
+        self.ident_path.append(other);
         self.check_invariant();
     }
 
     pub fn crate_name(&self) -> Ident {
-        self.0.idents().next().unwrap()
+        self.ident_path.idents().next().unwrap()
     }
 
     pub fn to_path(self) -> IdentPath {
-        self.0
+        self.ident_path
     }
 
     pub fn as_path(&self) -> &IdentPath {
-        &self.0
+        &self.ident_path
     }
 
     pub fn as_str(&self) -> &str {
-        self.0.as_str()
+        self.ident_path.as_str()
     }
 
     // NOTE: The matches definition should align with whatever definition format
     //       we use for our default sinks
     pub fn matches(&self, pattern: &Pattern) -> bool {
-        self.0.matches(pattern)
+        self.ident_path.matches(pattern)
+    }
+
+    pub fn remove_src_loc(&mut self) {
+        self.src_loc = SrcLoc::default();
+    }
+
+    pub fn add_src_loc(&mut self, src_loc: SrcLoc) -> Self {
+        self.src_loc = src_loc;
+
+        self.to_owned()
     }
 }
 

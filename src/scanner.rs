@@ -93,14 +93,24 @@ impl ScanResults {
         let fn_name = f.fn_name;
 
         // Update call graph
-        let node_idx = self.call_graph.add_node(fn_name.clone());
-        self.node_idxs.insert(fn_name.clone(), node_idx);
+        self.update_call_graph(fn_name.to_owned());
 
         // Save function info
         if let Visibility::Public = f.vis {
             self.pub_fns.insert(fn_name.clone());
         }
         self.fn_locs.insert(fn_name, f.src_loc);
+    }
+
+    fn update_call_graph(&mut self, method: CanonicalPath) -> NodeIndex {
+        if let Some(node_idx) = self.node_idxs.get(&method) {
+            return node_idx.to_owned();
+        }
+
+        let node_idx = self.call_graph.add_node(method.clone());
+        self.node_idxs.insert(method.clone(), node_idx);
+
+        node_idx
     }
 }
 
@@ -327,7 +337,10 @@ impl<'a> Scanner<'a> {
         for item in &t.items {
             match item {
                 syn::TraitItem::Fn(m) => {
-                    self.scan_trait_method(m, &t.vis);
+                    let impl_methods = self
+                        .resolver
+                        .resolve_all_impl_methods(&t.ident, m.sig.ident.to_string());
+                    self.scan_trait_method(m, &t.vis, impl_methods);
                 }
                 syn::TraitItem::Macro(m) => {
                     self.data.skipped_macros.add(m);
@@ -417,23 +430,48 @@ impl<'a> Scanner<'a> {
         self.scan_fn(&f.sig, &f.block, &f.vis);
     }
 
-    fn scan_trait_method(&mut self, m: &'a syn::TraitItemFn, vis: &'a syn::Visibility) {
+    fn scan_trait_method(
+        &mut self,
+        m: &'a syn::TraitItemFn,
+        vis: &'a syn::Visibility,
+        impl_methods: Vec<CanonicalPath>,
+    ) {
         if self.skip_attrs(&m.attrs) {
             self.data.skipped_conditional_code.add(m);
             return;
         }
 
-        // If there is a default implementation,
-        // scan the function body as usual.
-        // Otherwise, just create a node in the
-        // call graph for the abstract trait method.
+        // If there is a default implementation, scan the function body as usual.
+        // Otherwise, just create a node in the call graph for the abstract trait method.
+        let f_name = self.resolver.resolve_def(&m.sig.ident);
         if let Some(body) = &m.default {
             self.scan_fn(&m.sig, body, vis);
         } else {
-            let f_name = self.resolver.resolve_def(&m.sig.ident);
             // Update call graph
-            let node_idx = self.data.call_graph.add_node(f_name.clone());
-            self.data.node_idxs.insert(f_name, node_idx);
+            self.data.update_call_graph(f_name.clone());
+        }
+
+        // Add edges in the call graph from all impl methods to their corresponding abstract trait method
+        let node_indices = self.data.node_idxs.clone();
+        if let Some(trait_meth_node_idx) = node_indices.get(&f_name) {
+            impl_methods.iter().for_each(|impl_meth| match node_indices.get(impl_meth) {
+                Some(impl_meth_node_idx) => {
+                    self.data.call_graph.add_edge(
+                        *impl_meth_node_idx,
+                        *trait_meth_node_idx,
+                        SrcLoc::from_span(self.filepath, &m.span()),
+                    );
+                }
+                None => {
+                    let impl_meth_node_idx =
+                        self.data.update_call_graph(impl_meth.to_owned());
+                    self.data.call_graph.add_edge(
+                        impl_meth_node_idx,
+                        *trait_meth_node_idx,
+                        SrcLoc::from_span(self.filepath, &m.span()),
+                    );
+                }
+            });
         }
     }
 

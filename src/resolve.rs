@@ -42,6 +42,11 @@ pub trait Resolve<'a>: Sized {
     fn resolve_ffi(&self, p: &'a syn::Path) -> Option<CanonicalPath>;
     fn resolve_unsafe_path(&self, p: &'a syn::Path) -> bool;
     fn resolve_unsafe_ident(&self, p: &'a syn::Ident) -> bool;
+    fn resolve_all_impl_methods(
+        &self,
+        i: &'a syn::Ident,
+        m: String,
+    ) -> Vec<CanonicalPath>;
 
     /*
         Field and expression resolution
@@ -139,6 +144,19 @@ impl<'a> FileResolver<'a> {
         s.add1();
         let i = ident_from_syn(i);
         self.resolver.is_const_or_immutable_static_ident(s, i)
+    }
+
+    fn resolve_all_impl_methods_core(
+        &self,
+        i: &syn::Ident,
+        m: String,
+    ) -> Result<Vec<CanonicalPath>> {
+        let mut s = SrcLoc::from_span(self.filepath, i);
+        debug!("Resolving all impl methods for trait method: {}. Trait: {}", m, i);
+        // Add 1 to column to avoid weird off-by-one errors
+        s.add1();
+        let i = ident_from_syn(i);
+        self.resolver.all_impl_methods_for_trait_method(s, i, m)
     }
 
     fn resolve_or_else<S, R, F, T>(&self, i: &S, try_resolve: R, fallback: F) -> T
@@ -285,6 +303,18 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
             i,
             || self.resolve_const_or_static_core(i),
             || self.backup.resolve_const_or_static(p),
+        )
+    }
+
+    fn resolve_all_impl_methods(
+        &self,
+        i: &'a syn::Ident,
+        m: String,
+    ) -> Vec<CanonicalPath> {
+        self.resolve_or_else(
+            i,
+            || self.resolve_all_impl_methods_core(i, m.clone()),
+            || self.backup.resolve_all_impl_methods(i, m.clone()),
         )
     }
 }

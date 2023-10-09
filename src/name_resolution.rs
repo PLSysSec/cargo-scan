@@ -4,6 +4,7 @@ use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use log::debug;
 use ra_ap_cfg::CfgDiff;
+use ra_ap_hir_expand::InFile;
 use std::collections::HashMap;
 use std::fs::canonicalize;
 use std::path::Path;
@@ -13,7 +14,8 @@ use super::ident::{CanonicalPath, CanonicalType, Ident, TypeKind};
 
 use ra_ap_hir::{
     Adt, AsAssocItem, AssocItem, AssocItemContainer, CfgAtom, Crate, DefWithBody,
-    GenericParam, HirDisplay, Impl, Module, ModuleSource, Semantics, TypeRef, VariantDef,
+    GenericParam, HasSource, HirDisplay, Impl, Module, ModuleSource, Semantics, TypeRef,
+    VariantDef,
 };
 use ra_ap_hir_def::db::DefDatabase;
 use ra_ap_hir_def::{FunctionId, Lookup, TypeAliasId};
@@ -30,7 +32,7 @@ use ra_ap_project_model::{
     RustLibSource,
 };
 use ra_ap_syntax::ast::HasName;
-use ra_ap_syntax::{AstNode, SourceFile, SyntaxToken, TokenAtOffset};
+use ra_ap_syntax::{AstNode, SourceFile, SyntaxNode, SyntaxToken, TokenAtOffset};
 use ra_ap_vfs::{Vfs, VfsPath};
 
 // latest rust-analyzer has removed Display for Name, see
@@ -171,6 +173,64 @@ impl Resolver {
         }
     }
 
+    fn syntax_node_from_def(
+        &self,
+        def: &Definition,
+        db: &RootDatabase,
+        sems: &Semantics<RootDatabase>,
+    ) -> Option<InFile<SyntaxNode>> {
+        match def {
+            Definition::Function(x) => x.source(db)?.syntax().original_syntax_node(db),
+            Definition::Adt(x) => x.source(db)?.syntax().original_syntax_node(db),
+            Definition::Variant(x) => x.source(db)?.syntax().original_syntax_node(db),
+            Definition::Const(x) => x.source(db)?.syntax().original_syntax_node(db),
+            Definition::Static(x) => x.source(db)?.syntax().original_syntax_node(db),
+            Definition::Trait(x) => x.source(db)?.syntax().original_syntax_node(db),
+            Definition::TraitAlias(x) => x.source(db)?.syntax().original_syntax_node(db),
+            Definition::TypeAlias(x) => x.source(db)?.syntax().original_syntax_node(db),
+            Definition::SelfType(x) => x.source(db)?.syntax().original_syntax_node(db),
+            Definition::Local(x) => {
+                x.primary_source(db).source(db)?.syntax().original_syntax_node(db)
+            }
+            Definition::Label(x) => x.source(db).syntax().original_syntax_node(db),
+            Definition::ExternCrateDecl(x) => {
+                x.source(db)?.syntax().original_syntax_node(db)
+            }
+            _ => None,
+        }
+    }
+
+    fn def_source_loc(
+        &self,
+        def: &Definition,
+        db: &RootDatabase,
+        sems: &Semantics<RootDatabase>,
+    ) -> Option<SrcLoc> {
+        let node = self.syntax_node_from_def(def, db, sems)?;
+
+        // If it does not have a `FileId`, then it was produced
+        // by a macro call and we want to skip those cases.
+        let file_id = node.file_id.file_id()?;
+        sems.parse(file_id);
+        let range = sems.original_range(&node.value).range;
+        let vfs_path = self.vfs.file_path(file_id);
+        let str_path = vfs_path.to_string();
+        let filepath = Path::new(&str_path);
+
+        let line_index = self.host.analysis().file_line_index(file_id).ok()?;
+        // LineCol is zero-based in RA
+        let start_line_col = line_index.line_col(range.start());
+        let end_line_col = line_index.line_col(range.end());
+        let src_loc = SrcLoc::new(
+            filepath,
+            start_line_col.line as usize + 1,
+            start_line_col.col as usize + 1,
+            end_line_col.line as usize + 1,
+            end_line_col.col as usize + 1,
+        );
+        Some(src_loc)
+    }
+
     fn token(
         &self,
         sems: &Semantics<RootDatabase>,
@@ -188,12 +248,17 @@ impl Resolver {
         let db = self.get_db();
         let sems = self.get_semantics();
         let file_id = self.get_file_id(&s, &sems)?;
-        let token = self.token(&sems, file_id, i, s)?;
+        let token = self.token(&sems, file_id, i, s.clone())?;
         let diags = self.get_ra_diagnostics(file_id, &token);
         let def = find_def(&token, &sems, db, diags)?;
+        let def_loc = self.def_source_loc(&def, db, &sems);
 
         canonical_path(&sems, db, &def)
             .ok_or_else(|| anyhow!("Could not construct canonical path for '{:?}'", def))
+            .map(|mut cp| match def_loc {
+                Some(loc) => cp.add_src_loc(loc),
+                None => cp.add_src_loc(s),
+            })
     }
 
     pub fn resolve_type(&self, s: SrcLoc, i: Ident) -> Result<CanonicalType> {
@@ -307,14 +372,16 @@ impl Resolver {
         let db = self.get_db();
         let sems = self.get_semantics();
         let file_id = self.get_file_id(&s, &sems)?;
-        let token = self.token(&sems, file_id, i.clone(), s)?;
+        let token = self.token(&sems, file_id, i.clone(), s.clone())?;
         let diags = self.get_ra_diagnostics(file_id, &token);
         let def = find_def(&token, &sems, db, diags)?;
 
         let mut impl_methods_for_trait_method: Vec<CanonicalPath> = Vec::new();
         let filter_ = |x: AssocItem| match x {
             AssocItem::Function(f) if name_to_string(f.name(db)) == m => {
-                canonical_path(&sems, db, &Definition::from(f))
+                let cp = canonical_path(&sems, db, &Definition::from(f));
+                let def_loc = self.def_source_loc(&f.into(), db, &sems)?;
+                cp.map(|mut cp| cp.add_src_loc(def_loc))
             }
             _ => None,
         };
@@ -436,7 +503,7 @@ fn canonical_path(
     def: &Definition,
 ) -> Option<CanonicalPath> {
     if let Definition::BuiltinType(b) = def {
-        return Some(CanonicalPath::new_owned(name_to_string(b.name())));
+        return Some(CanonicalPath::new(name_to_string(b.name()).as_str()));
     }
 
     let container = get_container_name(sems, db, def);
@@ -459,7 +526,7 @@ fn canonical_path(
         .chain(def_name)
         .join("::");
 
-    Some(CanonicalPath::new_owned(cp))
+    Some(CanonicalPath::new(cp.as_str()))
 }
 
 fn get_container_name(

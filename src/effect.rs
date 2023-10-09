@@ -25,7 +25,7 @@ use syn::spanned::Spanned;
 */
 
 /// Data representing a source code location for some identifier, block, or expression
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
 pub struct SrcLoc {
     /// Directory in which the expression occurs
     dir: FilePathBuf,
@@ -47,7 +47,8 @@ impl SrcLoc {
         end_col: usize,
     ) -> Self {
         // TBD: use unwrap_or_else
-        let dir = filepath.parent().unwrap().to_owned();
+        let mut dir = filepath.parent().unwrap().to_owned();
+        dir = dir.canonicalize().unwrap_or(dir);
         let file = FilePathBuf::from(filepath.file_name().unwrap());
         Self { dir, file, start_line, start_col, end_line, end_col }
     }
@@ -302,6 +303,7 @@ impl EffectInstance {
             }
             Some(Effect::FFICall(ffi))
         } else if let Some(pat) = Sink::new_match(&callee, sinks) {
+            // callee.remove_src_loc();
             Some(Effect::SinkCall(pat))
         } else if is_unsafe {
             Some(Effect::UnsafeCall(callee.clone()))
