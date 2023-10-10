@@ -44,6 +44,7 @@ pub struct ScanResults {
     // Saved function declarations
     pub pub_fns: HashSet<CanonicalPath>,
     pub fn_locs: HashMap<CanonicalPath, SrcLoc>,
+    pub trait_meths: HashSet<CanonicalPath>,
 
     pub call_graph: DiGraph<CanonicalPath, SrcLoc>,
     pub node_idxs: HashMap<CanonicalPath, NodeIndex>,
@@ -449,6 +450,7 @@ impl<'a> Scanner<'a> {
         } else {
             // Update call graph
             self.data.update_call_graph(f_name.clone());
+            self.data.trait_meths.insert(f_name.clone());
         }
 
         // Add edges in the call graph from all impl methods to their corresponding abstract trait method
