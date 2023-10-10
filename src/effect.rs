@@ -47,8 +47,7 @@ impl SrcLoc {
         end_col: usize,
     ) -> Self {
         // TBD: use unwrap_or_else
-        let mut dir = filepath.parent().unwrap().to_owned();
-        dir = dir.canonicalize().unwrap_or(dir);
+        let dir = filepath.parent().unwrap().to_owned();
         let file = FilePathBuf::from(filepath.file_name().unwrap());
         Self { dir, file, start_line, start_col, end_line, end_col }
     }
