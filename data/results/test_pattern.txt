@@ -1,8 +1,8 @@
 ===== Patterns =====
 Total instances of each effect pattern:
-[FFI]: 11
 std::fs: 11
 [UnsafeCall]: 10
+[FFI]: 9
 std::process: 9
 [PtrDeref]: 6
 [FnPtrCreation]: 6

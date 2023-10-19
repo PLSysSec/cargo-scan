@@ -4,7 +4,7 @@ caller_checked, caller_checked::unsafe_effect, caller_checked::unsafe_effect::x,
 caller_checked, caller_checked::sub::effect, libc::unix::sysconf, [FFI], data/test-packages/caller-checked/src, sub.rs, 6, 8
 caller_checked, caller_checked::sub::effect, libc::unix::bsd::apple::sysctl, [FFI], data/test-packages/caller-checked/src, sub.rs, 8, 8
 cfg_ex, cfg_ex::foo1, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 14, 4
-cfg_ex, cfg_ex::foo2, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 19, 4
+cfg_ex, cfg_ex::foo2, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 24, 4
 cfg_ex, cfg_ex::test_2, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 41, 4
 dependency_ex, dependency_ex::read_fn, std::fs::File::open, std::fs, data/test-packages/dependency-ex/src, lib.rs, 5, 24
 dependency_ex, dependency_ex::read_fn, std::fs::File::read_to_end, std::fs, data/test-packages/dependency-ex/src, lib.rs, 8, 17
@@ -38,8 +38,6 @@ serde_hex, serde_hex::SerHexOpt::serialize, core::str::converts::from_utf8_unche
 serde_hex, serde_hex::SerHexSeq::serialize, core::str::converts::from_utf8_unchecked, [UnsafeCall], data/test-packages/serde_hex_minimal/src, lib.rs, 258, 25
 serde_hex, serde_hex::utils::writehex, std::io::Write::write_all, std::io, data/test-packages/serde_hex_minimal/src, utils.rs, 69, 12
 serde_hex, serde_hex::utils::writehexcaps, std::io::Write::write_all, std::io, data/test-packages/serde_hex_minimal/src, utils.rs, 84, 12
-toy_crates, toy_crates::num_cpus::get_num_physical_cpus, libc::unix::bsd::apple::sysctlbyname, [FFI], data/test-packages/toy-crates/src, num_cpus.rs, 18, 8
-toy_crates, toy_crates::num_cpus::get_num_cpus, libc::unix::sysconf, [FFI], data/test-packages/toy-crates/src, num_cpus.rs, 32, 24
 toy_crates, toy_crates::rustc_version::version_meta_for_command, std::process::Command::arg, std::process, data/test-packages/toy-crates/src, rustc_version.rs, 11, 18
 toy_crates, toy_crates::rustc_version::version_meta_for_command, std::process::Command::output, std::process, data/test-packages/toy-crates/src, rustc_version.rs, 11, 29
 toy_crates, toy_crates::rustc_version::version_meta, std::env::var_os, std::env, data/test-packages/toy-crates/src, rustc_version.rs, 16, 14
