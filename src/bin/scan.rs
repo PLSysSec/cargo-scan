@@ -6,9 +6,9 @@
     the header or see effect.rs.
 */
 
-use cargo_scan::effect::{EffectInstance, EffectType};
+use cargo_scan::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 use cargo_scan::loc_tracker::LoCTracker;
-use cargo_scan::{audit_chain, scanner};
+use cargo_scan::{audit_file::AuditFile, scanner};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
@@ -24,27 +24,17 @@ struct Args {
     #[arg(short, long, default_value_t = false)]
     verbose: bool,
 
-    /// Include transitive effects in dependency crates
-    #[arg(short, long, default_value_t = false)]
-    transitive: bool,
-
+    // Turned off for now -- chain binary not being used
+    // /// Include transitive effects in dependency crates
+    // #[arg(short, long, default_value_t = false)]
+    // transitive: bool,
     /// Path to download crates to for auditing
     #[clap(short = 'd', long = "crate-download-path", default_value = ".stats_tmp")]
     crate_download_path: String,
 
     /// The types of Effects the audit should track. Defaults to all unsafe
     /// behavior.
-    #[clap(long, value_parser, num_args = 1.., default_values_t = [
-        EffectType::SinkCall,
-        EffectType::FFICall,
-        EffectType::UnsafeCall,
-        EffectType::RawPointer,
-        EffectType::UnionField,
-        EffectType::StaticMut,
-        EffectType::StaticExt,
-        EffectType::FnPtrCreation,
-        EffectType::ClosureCreation,
-    ])]
+    #[clap(long, value_parser, num_args = 1.., default_values_t = DEFAULT_EFFECT_TYPES)]
     effect_types: Vec<EffectType>,
 }
 
@@ -52,34 +42,20 @@ fn main() -> Result<()> {
     cargo_scan::util::init_logging();
     let args = Args::parse();
 
-    let results = if args.transitive {
-        let crate_path = args
-            .crate_path
-            .as_os_str()
-            .to_str()
-            .ok_or(anyhow!("crate path was not valid UTF-8"))?
-            .to_owned();
-        let create = audit_chain::Create::new(
-            crate_path,
-            format!("{}/crate.manifest", &args.crate_download_path),
-            args.crate_download_path.clone(),
-            false,
-            None,
-            None,
-            args.effect_types.clone(),
-        );
+    let (default_audit, results) = AuditFile::new_caller_checked_default_with_results(
+        &args.crate_path,
+        &args.effect_types,
+    )?;
 
-        let sinks =
-            audit_chain::create_dependency_sinks(create, &args.crate_download_path)?;
-        scanner::scan_crate_with_sinks(&args.crate_path, sinks, &args.effect_types)?
-    } else {
-        scanner::scan_crate(&args.crate_path, &args.effect_types)?
-    };
+    // Note: old version without default_audit:
+    // scanner::scan_crate(&args.crate_path, &args.effect_types)?
 
     println!("{}", EffectInstance::csv_header());
     for effect in results.effects {
         println!("{}", effect.to_csv());
     }
+
+    // TODO: print out all the metadata to stderr :-)
 
     if args.verbose {
         eprintln!("Total LoC scanned: {}", results.total_loc.as_loc());

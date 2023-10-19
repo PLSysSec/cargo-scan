@@ -4,7 +4,7 @@ use cargo_scan::auditing::info::Config;
 use cargo_scan::auditing::reset::reset_annotation;
 use cargo_scan::auditing::review::review_audit;
 use cargo_scan::auditing::util::{hash_dir, is_audit_scan_valid};
-use cargo_scan::effect::{EffectInstance, EffectType};
+use cargo_scan::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 use cargo_scan::scanner::{self, scan_crate};
 use cargo_scan::util::load_cargo_toml;
 
@@ -84,17 +84,7 @@ struct Args {
 
     /// The types of Effects the audit should track. Defaults to all unsafe
     /// behavior.
-    #[clap(long, value_parser, num_args = 1.., default_values_t = [
-        EffectType::SinkCall,
-        EffectType::FFICall,
-        EffectType::UnsafeCall,
-        EffectType::RawPointer,
-        EffectType::UnionField,
-        EffectType::StaticMut,
-        EffectType::StaticExt,
-        EffectType::FnPtrCreation,
-        EffectType::ClosureCreation,
-    ])]
+    #[clap(long, value_parser, num_args = 1.., default_values_t = DEFAULT_EFFECT_TYPES)]
     effect_types: Vec<EffectType>,
 }
 

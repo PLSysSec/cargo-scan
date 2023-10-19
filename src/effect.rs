@@ -160,8 +160,9 @@ pub enum Effect {
     FnPtrCreation,
     /// Closure creation
     ClosureCreation,
-    /// Casting to a raw pointer
-    // NOTE: This effect isn't strictly unsafe, but useful to track sometimes
+    /// Casting *to* a raw pointer
+    /// Note: This effect isn't unsafe, and is turned off by default (not included
+    /// in the default list of effects to care about)
     RawPtrCast,
 }
 impl Effect {
@@ -243,6 +244,20 @@ impl EffectType {
         ]
     }
 }
+
+// Default effect types that we care about
+// Excludes: RawPtrCast as it is not unsafe
+pub const DEFAULT_EFFECT_TYPES: &[EffectType] = &[
+    EffectType::SinkCall,
+    EffectType::FFICall,
+    EffectType::UnsafeCall,
+    EffectType::RawPointer,
+    EffectType::UnionField,
+    EffectType::StaticMut,
+    EffectType::StaticExt,
+    EffectType::FnPtrCreation,
+    EffectType::ClosureCreation,
+];
 
 /// Type representing an Effect instance, with complete context.
 /// This includes a field for which Effect it is an instance of.

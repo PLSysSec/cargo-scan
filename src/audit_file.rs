@@ -438,11 +438,35 @@ impl AuditFile {
         )
     }
 
+    pub fn new_caller_checked_default_with_results(
+        crate_path: &FilePath,
+        relevant_effects: &[EffectType],
+    ) -> Result<(AuditFile, ScanResults)> {
+        Self::new_caller_checked_default_with_sinks_and_results(
+            crate_path,
+            HashSet::new(),
+            relevant_effects,
+        )
+    }
+
     pub fn new_caller_checked_default_with_sinks(
         crate_path: &FilePath,
         sinks: HashSet<CanonicalPath>,
         relevant_effects: &[EffectType],
     ) -> Result<AuditFile> {
+        Self::new_caller_checked_default_with_sinks_and_results(
+            crate_path,
+            sinks,
+            relevant_effects,
+        )
+        .map(|x| x.0)
+    }
+
+    pub fn new_caller_checked_default_with_sinks_and_results(
+        crate_path: &FilePath,
+        sinks: HashSet<CanonicalPath>,
+        relevant_effects: &[EffectType],
+    ) -> Result<(AuditFile, ScanResults)> {
         let mut audit_file =
             AuditFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
         let ident_sinks =
@@ -458,7 +482,7 @@ impl AuditFile {
 
         audit_file.pub_caller_checked = pub_caller_checked;
 
-        Ok(audit_file)
+        Ok((audit_file, scan_res))
     }
 
     pub fn new_empty_default_with_sinks(
