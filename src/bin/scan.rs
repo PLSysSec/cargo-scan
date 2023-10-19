@@ -6,11 +6,11 @@
     the header or see effect.rs.
 */
 
+use cargo_scan::audit_file::AuditFile;
 use cargo_scan::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 use cargo_scan::loc_tracker::LoCTracker;
-use cargo_scan::{audit_file::AuditFile, scanner};
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -42,7 +42,7 @@ fn main() -> Result<()> {
     cargo_scan::util::init_logging();
     let args = Args::parse();
 
-    let (default_audit, results) = AuditFile::new_caller_checked_default_with_results(
+    let (_audit, results) = AuditFile::new_caller_checked_default_with_results(
         &args.crate_path,
         &args.effect_types,
     )?;
