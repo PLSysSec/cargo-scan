@@ -181,7 +181,7 @@ impl AuditFile {
             if scan_res.pub_fns.contains(&effect_info.caller_path) {
                 pub_caller_checked
                     .entry(effect_info.caller_path.clone())
-                    .or_insert_with(HashSet::new)
+                    .or_default()
                     .insert(base_effect.clone());
             }
 

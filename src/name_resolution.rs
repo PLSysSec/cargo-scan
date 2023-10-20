@@ -331,7 +331,7 @@ impl Resolver {
         );
 
         diags
-            .unwrap_or(Vec::new())
+            .unwrap_or_default()
             .iter()
             .filter(|d| {
                 d.range.contains_range(token.text_range())
