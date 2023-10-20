@@ -1,8 +1,8 @@
 crate, fn_decl, callee, effect, dir, file, line, col
-caller_checked, caller_checked::local_effect, libc::unix::bsd::apple::sysctl, [FFI], data/test-packages/caller-checked/src, main.rs, 9, 8
+caller_checked, caller_checked::local_effect, libc::unix::linux_like::linux::gnu::b64::x86_64::not_x32::sysctl, [FFI], data/test-packages/caller-checked/src, main.rs, 9, 8
 caller_checked, caller_checked::unsafe_effect, caller_checked::unsafe_effect::x, [PtrDeref], data/test-packages/caller-checked/src, main.rs, 24, 9
 caller_checked, caller_checked::sub::effect, libc::unix::sysconf, [FFI], data/test-packages/caller-checked/src, sub.rs, 6, 8
-caller_checked, caller_checked::sub::effect, libc::unix::bsd::apple::sysctl, [FFI], data/test-packages/caller-checked/src, sub.rs, 8, 8
+caller_checked, caller_checked::sub::effect, libc::unix::linux_like::linux::gnu::b64::x86_64::not_x32::sysctl, [FFI], data/test-packages/caller-checked/src, sub.rs, 8, 8
 cfg_ex, cfg_ex::foo1, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 14, 4
 cfg_ex, cfg_ex::foo2, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 24, 4
 cfg_ex, cfg_ex::test_2, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 41, 4
@@ -22,9 +22,9 @@ fns_closures, fns_closures::consts::terrible_code_execution_attack, std::process
 fns_closures, fns_closures::consts::terrible_code_execution_attack, std::process::Command::output, std::process, data/test-packages/fns-closures/src, consts.rs, 40, 50
 fns_closures, fns_closures::unsafe_fn_pointers::bar, fns_closures::unsafe_fn_pointers::foo, [FnPtrCreation], data/test-packages/fns-closures/src, unsafe_fn_pointers.rs, 10, 4
 libc_ex, libc_ex::main, libc::unix::sysconf, [FFI], data/test-packages/libc-ex/src, main.rs, 6, 8
-libc_ex, libc_ex::main, libc::unix::bsd::apple::sysctlbyname, [FFI], data/test-packages/libc-ex/src, main.rs, 8, 8
+libc_ex, libc_ex::main, libc::sysctlbyname, libc, data/test-packages/libc-ex/src, main.rs, 8, 8
 num_cpus_minimal, num_cpus_minimal::get_num_cpus, libc::unix::sysconf, [FFI], data/test-packages/num_cpus_minimal/src, main.rs, 13, 24
-num_cpus_minimal, num_cpus_minimal::get_num_physical_cpus, libc::unix::bsd::apple::sysctlbyname, [FFI], data/test-packages/num_cpus_minimal/src, main.rs, 28, 26
+num_cpus_minimal, num_cpus_minimal::get_num_physical_cpus, libc::sysctlbyname, libc, data/test-packages/num_cpus_minimal/src, main.rs, 28, 26
 permissions_ex, permissions_ex::remove, std::process::Command::new, std::process, data/test-packages/permissions-ex/src, lib.rs, 12, 4
 permissions_ex, permissions_ex::remove, std::process::Command::arg, std::process, data/test-packages/permissions-ex/src, lib.rs, 12, 23
 permissions_ex, permissions_ex::remove, std::process::Command::arg, std::process, data/test-packages/permissions-ex/src, lib.rs, 12, 33
