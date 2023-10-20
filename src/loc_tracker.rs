@@ -7,7 +7,7 @@
 //! Important note:
 //! - Assumes that code excerpts do not overlap.
 //! - If multiple code excerpts start and end on the same line, this
-//!   may result in an overapproximation as as_loc() counts zero
+//!   may result in an overapproximation as get_loc() counts zero
 //!   sized excerpts as one line each.
 
 use syn::spanned::Spanned;
@@ -44,10 +44,28 @@ impl LoCTracker {
         self.instances == 0
     }
 
-    /// Attempt to summarize the tracker as a single "lines of code" number
-    ///
-    /// This overapproximates by counting zero-sized lines as a full line.
-    pub fn as_loc(&self) -> usize {
+    /// Get number of instances added
+    pub fn get_instances(&self) -> usize {
+        self.instances
+    }
+
+    /// Get lines of code lower bound
+    pub fn get_loc_lb(&self) -> usize {
+        self.lines
+    }
+
+    /// Get lines of code upper bound
+    pub fn get_loc_ub(&self) -> usize {
         self.lines + self.zero_size_lines
+    }
+
+    /// Summary as a CSV
+    pub fn as_csv(&self) -> String {
+        format!("{}, {}, {}", self.get_instances(), self.get_loc_lb(), self.get_loc_ub())
+    }
+
+    /// Header for CSV output
+    pub fn csv_header() -> &'static str {
+        "Instances, LoC (lower bound), LoC (upper bound)"
     }
 }

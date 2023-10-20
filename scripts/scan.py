@@ -3,7 +3,7 @@
 """
 Cargo Scan experimental script
 
-Script to download Cargo crate source code and analyze module-level imports.
+Script to run the Cargo Scan tool on a single crate or a list of crates.
 """
 
 import argparse
