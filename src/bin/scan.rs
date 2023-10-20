@@ -57,7 +57,7 @@ fn main() -> Result<()> {
     }
 
     if args.verbose {
-        eprintln!("Tracked Item, {}", LoCTracker::csv_header());
+        eprintln!("Tracked item, {}", LoCTracker::csv_header());
 
         eprintln!("Total scanned, {}", results.total_loc.as_csv());
         eprintln!("Skipped macros, {}", results.skipped_macros.as_csv());
@@ -65,29 +65,8 @@ fn main() -> Result<()> {
         eprintln!("Skipped function calls, {}", results.skipped_fn_calls.as_csv());
         eprintln!("Skipped function pointers, {}", results.skipped_fn_ptrs.as_csv());
         eprintln!("Skipped other, {}", results.skipped_other.as_csv());
-
-        // fn print_ignored_items<T>(ignored: &[T], msg: &str) {
-        //     if !ignored.is_empty() {
-        //         eprintln!("Note: analysis ignored {} {}", ignored.len(), msg);
-        //     }
-        // }
-        // fn print_skipped_loc(loc: &LoCTracker, msg: &str) {
-        //     if !loc.is_empty() {
-        //         eprintln!("Note: analysis skipped {} LoC of {}", loc.get_loc_ub(), msg);
-        //     }
-        // }
-
-        // print_ignored_items(&results.unsafe_traits, "unsafe traits");
-        // print_ignored_items(&results.unsafe_impls, "unsafe trait impls");
-        // print_skipped_loc(&results.skipped_macros, "macro invocations");
-        // print_skipped_loc(&results.skipped_conditional_code, "conditional code");
-        // print_skipped_loc(
-        //     &results.skipped_fn_calls,
-        //     "function calls (closures or other \
-        //     complex expressions called as functions)",
-        // );
-        // print_skipped_loc(&results.skipped_fn_ptrs, "function pointers");
-        // print_skipped_loc(&results.skipped_other, "other unsupported code");
+        eprintln!("Unsafe trait keywords, {}", results.unsafe_traits.as_csv());
+        eprintln!("Unsafe trait impl keywords, {}", results.unsafe_impls.as_csv());
     }
 
     Ok(())

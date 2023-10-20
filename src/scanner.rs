@@ -6,9 +6,7 @@
 use crate::attr_parser::CfgPred;
 use crate::audit_file::EffectInfo;
 
-use super::effect::{
-    Effect, EffectInstance, EffectType, FnDec, SrcLoc, TraitDec, TraitImpl, Visibility,
-};
+use super::effect::{Effect, EffectInstance, EffectType, FnDec, SrcLoc, Visibility};
 use super::ident::{CanonicalPath, IdentPath};
 use super::loc_tracker::LoCTracker;
 use super::resolve::{FileResolver, Resolve, Resolver};
@@ -38,9 +36,6 @@ use syn::spanned::Spanned;
 pub struct ScanResults {
     pub effects: Vec<EffectInstance>,
 
-    pub unsafe_traits: Vec<TraitDec>,
-    pub unsafe_impls: Vec<TraitImpl>,
-
     // Saved function declarations
     pub pub_fns: HashSet<CanonicalPath>,
     pub fn_locs: HashMap<CanonicalPath, SrcLoc>,
@@ -56,10 +51,11 @@ pub struct ScanResults {
     pub skipped_fn_calls: LoCTracker,
     pub skipped_fn_ptrs: LoCTracker,
     pub skipped_other: LoCTracker,
+    pub unsafe_traits: LoCTracker,
+    pub unsafe_impls: LoCTracker,
 
     // TODO other cases:
     pub _effects_loc: LoCTracker,
-    pub _skipped_attributes: LoCTracker,
     pub _skipped_build_rs: LoCTracker,
 }
 
@@ -328,11 +324,11 @@ impl<'a> Scanner<'a> {
             return;
         }
 
-        let t_name = self.resolver.resolve_def(&t.ident);
+        // let t_name = self.resolver.resolve_def(&t.ident);
         let t_unsafety = t.unsafety;
         if t_unsafety.is_some() {
             // we found an `unsafe trait` declaration
-            self.data.unsafe_traits.push(TraitDec::new(t, self.filepath, t_name));
+            self.data.unsafe_traits.add(&t.ident);
         }
 
         for item in &t.items {
@@ -391,28 +387,23 @@ impl<'a> Scanner<'a> {
     fn scan_impl_trait_path(&mut self, tr: &'a syn::Path, imp: &'a syn::ItemImpl) {
         if imp.unsafety.is_some() {
             // we found an `unsafe impl` declaration
-            let tr_name = self.resolver.resolve_path(tr);
-            let self_ty = imp
-                .self_ty
-                .to_token_stream()
-                .into_iter()
-                .filter_map(|token| match token {
-                    TokenTree::Ident(i) => Some(i),
-                    _ => None,
-                })
-                .last();
-            // resolve the implementing type of the trait, if there is one
-            let tr_type = match &self_ty {
-                Some(ident) => Some(self.resolver.resolve_ident(ident)),
-                _ => None,
-            };
+            // let tr_name = self.resolver.resolve_path(tr);
+            // let self_ty = imp
+            //     .self_ty
+            //     .to_token_stream()
+            //     .into_iter()
+            //     .filter_map(|token| match token {
+            //         TokenTree::Ident(i) => Some(i),
+            //         _ => None,
+            //     })
+            //     .last();
+            // // resolve the implementing type of the trait, if there is one
+            // let tr_type = match &self_ty {
+            //     Some(ident) => Some(self.resolver.resolve_ident(ident)),
+            //     _ => None,
+            // };
 
-            self.data.unsafe_impls.push(TraitImpl::new(
-                imp,
-                self.filepath,
-                tr_name,
-                tr_type,
-            ));
+            self.data.unsafe_impls.add(tr);
         }
     }
 

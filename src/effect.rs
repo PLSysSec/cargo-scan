@@ -438,49 +438,6 @@ impl FnDec {
     }
 }
 
-/// Trait implementations
-/// Since an unsafe trait impl cannot itself have any unsafe code,
-/// we do not consider it to be an effect block.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct TraitImpl {
-    src_loc: SrcLoc,
-    tr_name: CanonicalPath,
-    self_type: Option<CanonicalPath>,
-}
-
-impl TraitImpl {
-    pub fn new<S>(
-        impl_span: &S,
-        filepath: &FilePath,
-        tr_name: CanonicalPath,
-        self_type: Option<CanonicalPath>,
-    ) -> Self
-    where
-        S: Spanned,
-    {
-        let src_loc = SrcLoc::from_span(filepath, impl_span);
-        Self { src_loc, tr_name, self_type }
-    }
-}
-
-/// Trait declarations
-/// Since an unsafe trait declaration cannot itself have any unsafe code,
-/// we do not consider it to be an effect block.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct TraitDec {
-    src_loc: SrcLoc,
-    tr_name: CanonicalPath,
-}
-impl TraitDec {
-    pub fn new<S>(trait_span: &S, filepath: &FilePath, tr_name: CanonicalPath) -> Self
-    where
-        S: Spanned,
-    {
-        let src_loc = SrcLoc::from_span(filepath, trait_span);
-        Self { src_loc, tr_name }
-    }
-}
-
 /*
     Unit tests
 */
