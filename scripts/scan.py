@@ -39,6 +39,7 @@ CARGO_DOWNLOAD = CARGO + ["download"]
 CARGO_SCAN = ["./target/release/scan"]
 
 CARGO_SCAN_CSV_HEADER = "crate, fn_decl, callee, effect, dir, file, line, col"
+CARGO_SCAN_METADATA_HEADER = "Tracked Item, Instances, LoC (lower bound), LoC (upper bound)"
 
 check_installed(RUSTC)
 check_installed(CARGO)
@@ -63,6 +64,7 @@ RESULTS_DIR = "data/results"
 RESULTS_ALL_SUFFIX = "_all.csv"
 RESULTS_PATTERN_SUFFIX = "_pattern.txt"
 RESULTS_SUMMARY_SUFFIX = "_summary.txt"
+RESULTS_METADATA_SUFFIX = "_metadata.txt"
 
 # ===== Utility =====
 
@@ -76,13 +78,6 @@ def copy_file(src, dst):
 
 def make_path(dir, prefix, suffix):
     return os.path.join(dir, f"{prefix}{suffix}")
-
-def truncate_str(s, n):
-    assert n >= 3
-    if len(s) <= n:
-        return s
-    else:
-        return s[:(n-3)] + "..."
 
 # ===== Crate lists and cargo download =====
 
@@ -142,7 +137,16 @@ def make_crate_summary(crate_summary):
     result += "===== Crate Totals =====\n"
     result += f"{num_nonzero} crates with 1 or more effects\n"
     result += f"{num_zero} crates with 0 effects\n"
+    return result
 
+def make_metadata_summary(metadata_summary):
+    result = ""
+    result += "===== Metadata Summary =====\n"
+    result += "Metadata by crate:\n"
+    metadata_sorted = sort_summary_dict(metadata_summary)
+    for m in metadata_sorted:
+        result += m
+        result += "\n"
     return result
 
 # ===== Syn backend =====
@@ -151,18 +155,33 @@ def scan_crate(crate, crate_dir, add_args):
     logging.debug(f"Scanning crate: {crate}")
     command = CARGO_SCAN + [crate_dir] + add_args
     logging.debug(f"Running: {command}")
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    # read CSV lines, skipping header row
-    first_line = True
-    for line in iter(proc.stdout.readline, b""):
+    stdout_lines = iter(proc.stdout.readline, b"")
+    effects = []
+    metadata = []
+
+    # read header row
+    assert next(stdout_lines) == CARGO_SCAN_CSV_HEADER
+
+    # read effect CSV lines
+    for line in stdout_lines:
         effect_csv = line.strip().decode("utf-8")
-        if first_line:
-            assert effect_csv == CARGO_SCAN_CSV_HEADER
-            first_line = False
+        if effect_csv == "":
+            break
         else:
             effect_pat = effect_csv.split(", ")[3]
-            yield effect_pat, effect_csv
+            effects.append((effect_pat, effect_csv))
+
+    # read header row again
+    assert next(stdout_lines) == CARGO_SCAN_METADATA_HEADER
+
+    # read metadata CSV lines
+    for line in stdout_lines:
+        metadata_csv = line.strip().decode("utf-8")
+        metadata.append(metadata_csv)
+
+    return effects, metadata
 
 # ===== Entrypoint =====
 
@@ -212,6 +231,7 @@ def main():
     results = []
     crate_summary = {c: 0 for c in crates}
     pattern_summary = {}
+    metadata_summary = {c: "" for c in crates}
     progress_inc = num_crates // PROGRESS_INCS
 
     for i, crate in enumerate(crates):
@@ -226,13 +246,16 @@ def main():
             sys.exit(1)
 
         crate_dir = os.path.join(crates_dir, crate)
-        for eff_pat, eff_csv in scan_crate(crate, crate_dir, add_args):
+        effects, metadata = scan_crate(crate, crate_dir, add_args)
+        for eff_pat, eff_csv in effects:
             logging.debug(f"effect found: {eff_csv}")
             results.append(eff_csv)
             # Update summaries
             crate_summary[crate] += 1
             pattern_summary.setdefault(eff_pat, 0)
             pattern_summary[eff_pat] += 1
+
+        metadata_summary[crate] = metadata.join(";")
 
     # Sanity check
     if sum(crate_summary.values()) != sum(pattern_summary.values()):
@@ -241,14 +264,9 @@ def main():
     logging.info("=== Results ===")
 
     if args.output_prefix is None:
-        if num_crates == 1:
-            results_str = "===== All results =====\n" + '\n'.join(results)
-            logging.info(results_str)
-
-        else:
-            logging.info(make_pattern_summary(pattern_summary).rstrip())
-
-        logging.info(make_crate_summary(crate_summary))
+        logging.info(make_pattern_summary(pattern_summary).rstrip())
+        logging.info(make_crate_summary(crate_summary).rstrip())
+        logging.info(make_metadata_summary(metadata_summary))
     else:
         logging.info(f"=== Saving results ===")
 
@@ -256,9 +274,11 @@ def main():
         results_path = make_path(RESULTS_DIR, prefix, RESULTS_ALL_SUFFIX)
         pattern_path = make_path(RESULTS_DIR, prefix, RESULTS_PATTERN_SUFFIX)
         summary_path = make_path(RESULTS_DIR, prefix, RESULTS_SUMMARY_SUFFIX)
+        metadata_path = make_path(RESULTS_DIR, prefix, RESULTS_METADATA_SUFFIX)
 
         pat_str = make_pattern_summary(pattern_summary)
         crate_str = make_crate_summary(crate_summary)
+        metadata_str = make_metadata_summary(metadata_summary)
 
         logging.info(f"Saving all results to {results_path}")
         with open(results_path, 'w') as fh:
@@ -273,6 +293,10 @@ def main():
         logging.info(f"Saving summary to {summary_path}")
         with open(summary_path, 'w') as fh:
             fh.write(crate_str)
+
+        logging.info(f"Saving metadata to {metadata_path}")
+        with open(metadata_path, 'w') as fh:
+            fh.write(metadata_str)
 
 if __name__ == "__main__":
     main()

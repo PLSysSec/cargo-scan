@@ -23,7 +23,7 @@ struct Args {
     /// Verbose output:
     /// In addition to effects, print metadata about total LoC scanned and ignored
     #[arg(short, long, default_value_t = false)]
-    verbose: bool,
+    extras: bool,
 
     // Turned off for now -- chain binary not being used
     // /// Include transitive effects in dependency crates
@@ -56,17 +56,18 @@ fn main() -> Result<()> {
         println!("{}", effect.to_csv());
     }
 
-    if args.verbose {
-        eprintln!("Tracked item, {}", LoCTracker::csv_header());
+    if args.extras {
+        println!();
+        println!("Tracked Item, {}", LoCTracker::csv_header());
 
-        eprintln!("Total scanned, {}", results.total_loc.as_csv());
-        eprintln!("Skipped macros, {}", results.skipped_macros.as_csv());
-        eprintln!("Skipped cond. code, {}", results.skipped_conditional_code.as_csv());
-        eprintln!("Skipped function calls, {}", results.skipped_fn_calls.as_csv());
-        eprintln!("Skipped function pointers, {}", results.skipped_fn_ptrs.as_csv());
-        eprintln!("Skipped other, {}", results.skipped_other.as_csv());
-        eprintln!("Unsafe trait keywords, {}", results.unsafe_traits.as_csv());
-        eprintln!("Unsafe trait impl keywords, {}", results.unsafe_impls.as_csv());
+        println!("Total scanned, {}", results.total_loc.as_csv());
+        println!("Skipped macros, {}", results.skipped_macros.as_csv());
+        println!("Skipped cond. code, {}", results.skipped_conditional_code.as_csv());
+        println!("Skipped function calls, {}", results.skipped_fn_calls.as_csv());
+        println!("Skipped function pointers, {}", results.skipped_fn_ptrs.as_csv());
+        println!("Skipped other, {}", results.skipped_other.as_csv());
+        println!("Unsafe trait keywords, {}", results.unsafe_traits.as_csv());
+        println!("Unsafe trait impl keywords, {}", results.unsafe_impls.as_csv());
     }
 
     Ok(())
