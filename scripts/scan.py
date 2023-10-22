@@ -40,7 +40,7 @@ CARGO_SCAN = ["./target/release/scan"]
 CARGO_SCAN_ADD_ARGS = ["-e"]
 
 CARGO_SCAN_CSV_HEADER = "crate, fn_decl, callee, effect, dir, file, line, col"
-CARGO_SCAN_METADATA_HEADER = "Tracked Item, Instances, LoC (lower bound), LoC (upper bound)"
+CARGO_SCAN_METADATA_HEADER = "total, loc_lb, loc_ub, macros, loc_lb, loc_ub, conditional_code, loc_lb, loc_ub, skipped_calls, loc_lb, loc_ub, skipped_fn_ptrs, loc_lb, loc_ub, skipped_other, loc_lb, loc_ub, unsafe_trait, loc_lb, loc_ub, unsafe_impl, loc_lb, loc_ub"
 
 check_installed(RUSTC)
 check_installed(CARGO)
@@ -65,7 +65,7 @@ RESULTS_DIR = "data/results"
 RESULTS_ALL_SUFFIX = "_all.csv"
 RESULTS_PATTERN_SUFFIX = "_pattern.txt"
 RESULTS_SUMMARY_SUFFIX = "_summary.txt"
-RESULTS_METADATA_SUFFIX = "_metadata.txt"
+RESULTS_METADATA_SUFFIX = "_metadata.csv"
 
 # ===== Utility =====
 
@@ -140,14 +140,11 @@ def make_crate_summary(crate_summary):
     result += f"{num_zero} crates with 0 effects\n"
     return result
 
-def make_metadata_summary(metadata_summary):
-    result = ""
-    result += "===== Metadata Summary =====\n"
-    result += "Metadata by crate:\n"
+def make_metadata_csv(metadata_summary):
+    result = f"crate, {CARGO_SCAN_METADATA_HEADER}\n"
     metadata_sorted = sort_summary_dict(metadata_summary)
-    for _, m in metadata_sorted:
-        result += '\n'.join(m)
-        result += "\n"
+    for k, m in metadata_sorted:
+        result += f"{k}, {m}\n"
     return result
 
 # ===== Syn backend =====
@@ -160,7 +157,6 @@ def scan_crate(crate, crate_dir):
 
     stdout_lines = map(lambda x: x.strip().decode("utf-8"), iter(proc.stdout.readline, b""))
     effects = []
-    metadata = []
 
     # read header row
     assert next(stdout_lines) == CARGO_SCAN_CSV_HEADER
@@ -173,12 +169,11 @@ def scan_crate(crate, crate_dir):
             effect_pat = effect_csv.split(", ")[3]
             effects.append((effect_pat, effect_csv))
 
-    # read header row again
+    # read metadata
     assert next(stdout_lines) == CARGO_SCAN_METADATA_HEADER
-
-    # read metadata CSV lines
-    for metadata_csv in stdout_lines:
-        metadata.append(metadata_csv)
+    metadata = next(stdout_lines)
+    for _ in stdout_lines:
+        assert False, "Unexpected extra output from scan"
 
     return effects, metadata
 
@@ -261,7 +256,7 @@ def main():
     if args.output_prefix is None:
         logging.info(make_pattern_summary(pattern_summary).rstrip())
         logging.info(make_crate_summary(crate_summary).rstrip())
-        logging.info(make_metadata_summary(metadata_summary))
+        logging.info(make_metadata_csv(metadata_summary))
     else:
         logging.info(f"=== Saving results ===")
 
@@ -273,7 +268,7 @@ def main():
 
         pat_str = make_pattern_summary(pattern_summary)
         crate_str = make_crate_summary(crate_summary)
-        metadata_str = make_metadata_summary(metadata_summary)
+        metadata_str = make_metadata_csv(metadata_summary)
 
         logging.info(f"Saving all results to {results_path}")
         with open(results_path, 'w') as fh:

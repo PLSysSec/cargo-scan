@@ -8,7 +8,6 @@
 
 use cargo_scan::audit_file::AuditFile;
 use cargo_scan::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
-use cargo_scan::loc_tracker::LoCTracker;
 
 use anyhow::Result;
 use clap::Parser;
@@ -58,16 +57,38 @@ fn main() -> Result<()> {
 
     if args.extras {
         println!();
-        println!("Tracked Item, {}", LoCTracker::csv_header());
+        println!(
+            "\
+            total, loc_lb, loc_ub, \
+            macros, loc_lb, loc_ub, \
+            conditional_code, loc_lb, loc_ub, \
+            skipped_calls, loc_lb, loc_ub, \
+            skipped_fn_ptrs, loc_lb, loc_ub, \
+            skipped_other, loc_lb, loc_ub, \
+            unsafe_trait, loc_lb, loc_ub, \
+            unsafe_impl, loc_lb, loc_ub\
+            "
+        );
+        println!(
+            "{}, {}, {}, {}, {}, {}, {}, {}",
+            results.total_loc.as_csv(),
+            results.skipped_macros.as_csv(),
+            results.skipped_conditional_code.as_csv(),
+            results.skipped_fn_calls.as_csv(),
+            results.skipped_fn_ptrs.as_csv(),
+            results.skipped_other.as_csv(),
+            results.unsafe_traits.as_csv(),
+            results.unsafe_impls.as_csv(),
+        )
 
-        println!("Total scanned, {}", results.total_loc.as_csv());
-        println!("Skipped macros, {}", results.skipped_macros.as_csv());
-        println!("Skipped cond. code, {}", results.skipped_conditional_code.as_csv());
-        println!("Skipped function calls, {}", results.skipped_fn_calls.as_csv());
-        println!("Skipped function pointers, {}", results.skipped_fn_ptrs.as_csv());
-        println!("Skipped other, {}", results.skipped_other.as_csv());
-        println!("Unsafe trait keywords, {}", results.unsafe_traits.as_csv());
-        println!("Unsafe trait impl keywords, {}", results.unsafe_impls.as_csv());
+        // println!("Total scanned, {}", results.total_loc.as_csv());
+        // println!("Skipped macros, {}", results.skipped_macros.as_csv());
+        // println!("Skipped cond. code, {}", results.skipped_conditional_code.as_csv());
+        // println!("Skipped function calls, {}", results.skipped_fn_calls.as_csv());
+        // println!("Skipped function pointers, {}", results.skipped_fn_ptrs.as_csv());
+        // println!("Skipped other, {}", results.skipped_other.as_csv());
+        // println!("Unsafe trait keywords, {}", results.unsafe_traits.as_csv());
+        // println!("Unsafe trait impl keywords, {}", results.unsafe_impls.as_csv());
     }
 
     Ok(())
