@@ -37,6 +37,7 @@ CARGO_DOWNLOAD = CARGO + ["download"]
 # CARGO_SCAN = ["./target/debug/scan"]
 # Uncomment for release mode
 CARGO_SCAN = ["./target/release/scan"]
+CARGO_SCAN_ADD_ARGS = ["-e"]
 
 CARGO_SCAN_CSV_HEADER = "crate, fn_decl, callee, effect, dir, file, line, col"
 CARGO_SCAN_METADATA_HEADER = "Tracked Item, Instances, LoC (lower bound), LoC (upper bound)"
@@ -144,20 +145,20 @@ def make_metadata_summary(metadata_summary):
     result += "===== Metadata Summary =====\n"
     result += "Metadata by crate:\n"
     metadata_sorted = sort_summary_dict(metadata_summary)
-    for m in metadata_sorted:
-        result += m
+    for _, m in metadata_sorted:
+        result += '\n'.join(m)
         result += "\n"
     return result
 
 # ===== Syn backend =====
 
-def scan_crate(crate, crate_dir, add_args):
+def scan_crate(crate, crate_dir):
     logging.debug(f"Scanning crate: {crate}")
-    command = CARGO_SCAN + [crate_dir] + add_args
+    command = CARGO_SCAN + [crate_dir] + CARGO_SCAN_ADD_ARGS
     logging.debug(f"Running: {command}")
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    stdout_lines = iter(proc.stdout.readline, b"")
+    stdout_lines = map(lambda x: x.strip().decode("utf-8"), iter(proc.stdout.readline, b""))
     effects = []
     metadata = []
 
@@ -165,8 +166,7 @@ def scan_crate(crate, crate_dir, add_args):
     assert next(stdout_lines) == CARGO_SCAN_CSV_HEADER
 
     # read effect CSV lines
-    for line in stdout_lines:
-        effect_csv = line.strip().decode("utf-8")
+    for effect_csv in stdout_lines:
         if effect_csv == "":
             break
         else:
@@ -177,8 +177,7 @@ def scan_crate(crate, crate_dir, add_args):
     assert next(stdout_lines) == CARGO_SCAN_METADATA_HEADER
 
     # read metadata CSV lines
-    for line in stdout_lines:
-        metadata_csv = line.strip().decode("utf-8")
+    for metadata_csv in stdout_lines:
         metadata.append(metadata_csv)
 
     return effects, metadata
@@ -222,10 +221,6 @@ def main():
     if args.output_prefix is None and num_crates > 1:
         logging.warning("No results prefix specified; results of this run will not be saved")
 
-    add_args = []
-    if args.verbose >= 4:
-        add_args = ["-v"]
-
     logging.info(f"=== Scanning {crates_infostr} in {crates_dir} ===")
 
     results = []
@@ -246,7 +241,7 @@ def main():
             sys.exit(1)
 
         crate_dir = os.path.join(crates_dir, crate)
-        effects, metadata = scan_crate(crate, crate_dir, add_args)
+        effects, metadata = scan_crate(crate, crate_dir)
         for eff_pat, eff_csv in effects:
             logging.debug(f"effect found: {eff_csv}")
             results.append(eff_csv)
@@ -255,7 +250,7 @@ def main():
             pattern_summary.setdefault(eff_pat, 0)
             pattern_summary[eff_pat] += 1
 
-        metadata_summary[crate] = metadata.join(";")
+        metadata_summary[crate] = metadata
 
     # Sanity check
     if sum(crate_summary.values()) != sum(pattern_summary.values()):
