@@ -42,7 +42,7 @@ fn main() -> Result<()> {
     cargo_scan::util::init_logging();
     let args = Args::parse();
 
-    let (_audit, results) = AuditFile::new_caller_checked_default_with_results(
+    let (audit, results) = AuditFile::new_caller_checked_default_with_results(
         &args.crate_path,
         &args.effect_types,
     )?;
@@ -56,6 +56,16 @@ fn main() -> Result<()> {
     }
 
     if args.extras {
+        let pub_fns = audit.pub_caller_checked.len();
+        let mut pub_fns_with_effects = 0;
+        let mut pub_total_effects = 0;
+        for (_, v) in audit.pub_caller_checked {
+            if !v.is_empty() {
+                pub_fns_with_effects += 1;
+                pub_total_effects += v.len();
+            }
+        }
+
         println!();
         println!(
             "\
@@ -66,11 +76,12 @@ fn main() -> Result<()> {
             skipped_fn_ptrs, loc_lb, loc_ub, \
             skipped_other, loc_lb, loc_ub, \
             unsafe_trait, loc_lb, loc_ub, \
-            unsafe_impl, loc_lb, loc_ub\
+            unsafe_impl, loc_lb, loc_ub, \
+            pub_fns, pub_fns_with_effects, pub_total_effects\
             "
         );
         println!(
-            "{}, {}, {}, {}, {}, {}, {}, {}",
+            "{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}",
             results.total_loc.as_csv(),
             results.skipped_macros.as_csv(),
             results.skipped_conditional_code.as_csv(),
@@ -79,6 +90,9 @@ fn main() -> Result<()> {
             results.skipped_other.as_csv(),
             results.unsafe_traits.as_csv(),
             results.unsafe_impls.as_csv(),
+            pub_fns,
+            pub_fns_with_effects,
+            pub_total_effects,
         )
 
         // println!("Total scanned, {}", results.total_loc.as_csv());

@@ -40,7 +40,7 @@ CARGO_SCAN = ["./target/release/scan"]
 CARGO_SCAN_ADD_ARGS = ["-e"]
 
 CARGO_SCAN_CSV_HEADER = "crate, fn_decl, callee, effect, dir, file, line, col"
-CARGO_SCAN_METADATA_HEADER = "total, loc_lb, loc_ub, macros, loc_lb, loc_ub, conditional_code, loc_lb, loc_ub, skipped_calls, loc_lb, loc_ub, skipped_fn_ptrs, loc_lb, loc_ub, skipped_other, loc_lb, loc_ub, unsafe_trait, loc_lb, loc_ub, unsafe_impl, loc_lb, loc_ub"
+CARGO_SCAN_METADATA_HEADER = "total, loc_lb, loc_ub, macros, loc_lb, loc_ub, conditional_code, loc_lb, loc_ub, skipped_calls, loc_lb, loc_ub, skipped_fn_ptrs, loc_lb, loc_ub, skipped_other, loc_lb, loc_ub, unsafe_trait, loc_lb, loc_ub, unsafe_impl, loc_lb, loc_ub, pub_fns, pub_fns_with_effects, pub_total_effects"
 
 check_installed(RUSTC)
 check_installed(CARGO)
