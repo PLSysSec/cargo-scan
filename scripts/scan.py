@@ -159,7 +159,8 @@ def scan_crate(crate, crate_dir):
     effects = []
 
     # read header row
-    assert next(stdout_lines) == CARGO_SCAN_CSV_HEADER
+    hdr = next(stdout_lines)
+    assert hdr == CARGO_SCAN_CSV_HEADER, f"Unexpected header row from scan: {hdr}"
 
     # read effect CSV lines
     for effect_csv in stdout_lines:
@@ -170,7 +171,9 @@ def scan_crate(crate, crate_dir):
             effects.append((effect_pat, effect_csv))
 
     # read metadata
-    assert next(stdout_lines) == CARGO_SCAN_METADATA_HEADER
+    hdr = next(stdout_lines)
+    assert hdr == CARGO_SCAN_METADATA_HEADER, f"Unexpected metadata header from scan: {hdr}"
+
     metadata = next(stdout_lines)
     for _ in stdout_lines:
         assert False, "Unexpected extra output from scan"

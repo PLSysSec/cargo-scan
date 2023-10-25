@@ -4,6 +4,7 @@ cfg-ex
 dependency-ex
 dependency-parent
 dummy
+ffi-ex
 fns-closures
 fnv_minimal
 inline-ex
