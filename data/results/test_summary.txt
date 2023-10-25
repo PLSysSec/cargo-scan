@@ -14,4 +14,4 @@ resolution-ex: 2
 dependency-parent: 1
 ===== Crate Totals =====
 12 crates with 1 or more effects
-5 crates with 0 effects
+6 crates with 0 effects
