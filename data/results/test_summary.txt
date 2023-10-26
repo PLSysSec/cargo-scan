@@ -4,8 +4,8 @@ toy-crates: 15
 unsafe-test: 13
 fns-closures: 11
 permissions-ex: 6
+caller-checked: 5
 serde_hex_minimal: 5
-caller-checked: 4
 cfg-ex: 3
 dependency-ex: 3
 libc-ex: 2

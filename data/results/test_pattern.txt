@@ -3,7 +3,7 @@ Total instances of each effect pattern:
 std::fs: 11
 [UnsafeCall]: 10
 std::process: 9
-[FFI]: 7
+[FFI]: 8
 [PtrDeref]: 6
 [FnPtrCreation]: 6
 [ClosureCreation]: 3
