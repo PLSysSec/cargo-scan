@@ -6,10 +6,11 @@
     the header or see effect.rs.
 */
 
-use cargo_scan::audit_file::AuditFile;
+use cargo_scan::audit_file::{AuditFile, EffectTree};
 use cargo_scan::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 
 use anyhow::Result;
+use cargo_scan::scanner::ScanResults;
 use clap::Parser;
 use log::info;
 use std::path::PathBuf;
@@ -50,6 +51,9 @@ fn main() -> Result<()> {
 
     // Note: old version without default_audit:
     // scanner::scan_crate(&args.crate_path, &args.effect_types)?
+
+    let (fns, loc) = get_auditing_metrics(&audit, &results);
+    info!("total fns: {:?} loc {:?} to audit", fns, loc);
 
     println!("{}", EffectInstance::csv_header());
     for effect in results.effects {
@@ -114,4 +118,44 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+// Calculates the total number of functions and the total lines of code that will be audited.
+// Note that some functions might be counted multiple times, if many effects flow to them.
+fn get_auditing_metrics(audit: &AuditFile, results: &ScanResults) -> (usize, usize) {
+    let mut total_fns = 0;
+    let mut total_loc = 0;
+
+    for tree in audit.audit_trees.values() {
+        let (fns, loc) = counter(tree, results);
+        total_loc += loc;
+        total_fns += fns;
+    }
+
+    (total_fns, total_loc)
+}
+
+fn counter(tree: &EffectTree, results: &ScanResults) -> (usize, usize) {
+    let mut fns = 0;
+    let mut lines = 0;
+
+    match tree {
+        EffectTree::Leaf(info, _) => {
+            let tracker = results.fn_loc_tracker.get(&info.caller_path).unwrap();
+            lines += tracker.get_loc_lb();
+            fns += 1;
+        }
+        EffectTree::Branch(info, branch) => {
+            let tracker = results.fn_loc_tracker.get(&info.caller_path).unwrap();
+            let (callers, loc) = branch.iter().fold((0, 0), |(f, l), tree| {
+                let (callers, loc) = counter(tree, results);
+                (f + callers, l + loc)
+            });
+
+            fns += callers + 1;
+            lines += loc + tracker.get_loc_lb();
+        }
+    };
+
+    (fns, lines)
 }

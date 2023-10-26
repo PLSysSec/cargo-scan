@@ -53,6 +53,7 @@ pub struct ScanResults {
     pub skipped_other: LoCTracker,
     pub unsafe_traits: LoCTracker,
     pub unsafe_impls: LoCTracker,
+    pub fn_loc_tracker: HashMap<CanonicalPath, LoCTracker>,
 
     // TODO other cases:
     pub _effects_loc: LoCTracker,
@@ -488,6 +489,11 @@ impl<'a> Scanner<'a> {
         let f_ident = &f_sig.ident;
         let f_name = self.resolver.resolve_def(f_ident);
         let fn_dec = FnDec::new(self.filepath, f_sig, f_name.clone(), vis);
+
+        // Get the total lines of code of this function
+        let mut fn_loc = LoCTracker::new();
+        fn_loc.add(body.span());
+        self.data.fn_loc_tracker.insert(f_name.clone(), fn_loc);
 
         // Always push the new function declaration before scanning the
         // body so we have access to the function its in
