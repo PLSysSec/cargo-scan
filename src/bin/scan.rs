@@ -11,6 +11,7 @@ use cargo_scan::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 
 use anyhow::Result;
 use clap::Parser;
+use log::info;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -65,7 +66,8 @@ fn main() -> Result<()> {
         // Get data from AuditFile
         let mut pub_fns_with_effects = 0;
         let mut pub_total_effects = 0;
-        for (_, v) in audit.pub_caller_checked {
+        for (k, v) in audit.pub_caller_checked {
+            info!("found public function {} with {} effects", k, v.len());
             if !v.is_empty() {
                 pub_fns_with_effects += 1;
                 pub_total_effects += v.len();

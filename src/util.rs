@@ -11,8 +11,11 @@ pub fn init_logging() {
 
     // wish there was a nicer way to do this, env_logger doesn't make it easy
     // to disable non-cargo_scan logging
-    let filters = "warn,cargo_scan=".to_string()
-        + env::var("RUST_LOG").as_deref().unwrap_or("warn");
+    let level = env::var("RUST_LOG").as_deref().unwrap_or("warn").to_string();
+    let filters = format!(
+        "warn,cargo_scan={},scan={},audit={},chain={}",
+        level, level, level, level
+    );
 
     Builder::new().parse_filters(&filters).init();
 }
