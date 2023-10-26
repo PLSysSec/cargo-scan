@@ -91,7 +91,7 @@ impl ScanResults {
         let fn_name = f.fn_name;
 
         // Update call graph
-        self.update_call_graph(fn_name.to_owned());
+        self.update_call_graph(&fn_name);
 
         // Save function info
         if let Visibility::Public = f.vis {
@@ -100,8 +100,8 @@ impl ScanResults {
         self.fn_locs.insert(fn_name, f.src_loc);
     }
 
-    fn update_call_graph(&mut self, method: CanonicalPath) -> NodeIndex {
-        if let Some(node_idx) = self.node_idxs.get(&method) {
+    fn update_call_graph(&mut self, method: &CanonicalPath) -> NodeIndex {
+        if let Some(node_idx) = self.node_idxs.get(method) {
             return node_idx.to_owned();
         }
 
@@ -109,6 +109,12 @@ impl ScanResults {
         self.node_idxs.insert(method.clone(), node_idx);
 
         node_idx
+    }
+
+    fn add_call(&mut self, caller: &CanonicalPath, callee: &CanonicalPath, loc: SrcLoc) {
+        let caller_idx = self.update_call_graph(caller);
+        let callee_idx = self.update_call_graph(callee);
+        self.call_graph.add_edge(caller_idx, callee_idx, loc);
     }
 }
 
@@ -441,31 +447,13 @@ impl<'a> Scanner<'a> {
             self.scan_fn(&m.sig, body, vis);
         } else {
             // Update call graph
-            self.data.update_call_graph(f_name.clone());
+            self.data.update_call_graph(&f_name);
             self.data.trait_meths.insert(f_name.clone());
         }
 
         // Add edges in the call graph from all impl methods to their corresponding abstract trait method
-        let node_indices = self.data.node_idxs.clone();
-        if let Some(trait_meth_node_idx) = node_indices.get(&f_name) {
-            impl_methods.iter().for_each(|impl_meth| match node_indices.get(impl_meth) {
-                Some(impl_meth_node_idx) => {
-                    self.data.call_graph.add_edge(
-                        *impl_meth_node_idx,
-                        *trait_meth_node_idx,
-                        SrcLoc::from_span(self.filepath, &m.span()),
-                    );
-                }
-                None => {
-                    let impl_meth_node_idx =
-                        self.data.update_call_graph(impl_meth.to_owned());
-                    self.data.call_graph.add_edge(
-                        impl_meth_node_idx,
-                        *trait_meth_node_idx,
-                        SrcLoc::from_span(self.filepath, &m.span()),
-                    );
-                }
-            });
+        for impl_meth in &impl_methods {
+            self.data.add_call(&f_name, impl_meth, SrcLoc::from_span(self.filepath, &m.span()));
         }
     }
 
@@ -1070,16 +1058,7 @@ impl<'a> Scanner<'a> {
     {
         let containing_fn = self.scope_fns.last().expect("not inside a function!");
         let caller = &containing_fn.fn_name;
-
-        if let Some(caller_node_idx) = self.data.node_idxs.get(caller) {
-            if let Some(callee_node_idx) = self.data.node_idxs.get(&callee) {
-                self.data.call_graph.add_edge(
-                    *caller_node_idx,
-                    *callee_node_idx,
-                    SrcLoc::from_span(self.filepath, &callee_span.span()),
-                );
-            }
-        }
+        self.data.add_call(caller, &callee, SrcLoc::from_span(self.filepath, &callee_span.span()));
 
         let Some(eff) = EffectInstance::new_call(
             self.filepath,
