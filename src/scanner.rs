@@ -563,25 +563,50 @@ impl<'a> Scanner<'a> {
     fn scan_expr(&mut self, e: &'a syn::Expr) {
         match e {
             syn::Expr::Array(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 for y in x.elems.iter() {
                     self.scan_expr(y);
                 }
             }
             syn::Expr::Assign(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scope_assign_lhs = true;
                 self.scan_expr(&x.left);
                 self.scope_assign_lhs = false;
                 self.scan_expr(&x.right);
             }
             syn::Expr::Async(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 for s in &x.block.stmts {
                     self.scan_fn_statement(s);
                 }
             }
             syn::Expr::Await(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.base);
             }
             syn::Expr::Binary(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.left);
                 self.scan_expr(&x.right);
             }
@@ -596,11 +621,20 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Break(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 if let Some(y) = &x.expr {
                     self.scan_expr(y);
                 }
             }
             syn::Expr::Call(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
                 // ***** THE FIRST IMPORTANT CASE *****
                 // Arguments
                 self.scan_expr_call_args(&x.args);
@@ -608,6 +642,11 @@ impl<'a> Scanner<'a> {
                 self.scan_expr_call(&x.func);
             }
             syn::Expr::Cast(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 // If we see a cast to a raw pointer, add the effect
                 if let syn::Type::Ptr(_) = *x.ty {
                     let mut tokens: TokenStream = TokenStream::new();
@@ -622,6 +661,11 @@ impl<'a> Scanner<'a> {
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Closure(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 // TBD: closures are a bit weird!
                 // Note that the body expression doesn't get evaluated yet,
                 // and may be evaluated somewhere else.
@@ -630,19 +674,39 @@ impl<'a> Scanner<'a> {
             }
             syn::Expr::Continue(_) => (),
             syn::Expr::Field(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.base);
                 self.scan_field_access(x);
             }
             syn::Expr::ForLoop(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
                 for s in &x.body.stmts {
                     self.scan_fn_statement(s);
                 }
             }
             syn::Expr::Group(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
             }
             syn::Expr::If(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.cond);
                 for s in &x.then_branch.stmts {
                     self.scan_fn_statement(s);
@@ -652,14 +716,29 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Index(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
                 self.scan_expr(&x.index);
             }
             syn::Expr::Let(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Lit(_) => (),
             syn::Expr::Loop(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 for s in &x.body.stmts {
                     self.scan_fn_statement(s);
                 }
@@ -668,8 +747,18 @@ impl<'a> Scanner<'a> {
                 self.data.skipped_macros.add(m);
             }
             syn::Expr::Match(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
                 for a in &x.arms {
+                    if self.skip_attrs(&a.attrs) {
+                        self.data.skipped_conditional_code.add(a);
+                        return;
+                    }
+
                     if let Some((_, y)) = &a.guard {
                         self.scan_expr(y);
                     }
@@ -677,6 +766,11 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::MethodCall(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 // ***** THE SECOND IMPORTANT CASE *****
                 // Receiver object
                 self.scan_expr(&x.receiver);
@@ -686,13 +780,28 @@ impl<'a> Scanner<'a> {
                 self.scan_expr_call_method(&x.method);
             }
             syn::Expr::Paren(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Path(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 // typically a local variable
                 self.scan_path(&x.path);
             }
             syn::Expr::Range(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 if let Some(y) = &x.start {
                     self.scan_expr(y);
                 }
@@ -701,9 +810,19 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Reference(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Repeat(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
                 self.scan_expr(&x.len);
             }
@@ -718,7 +837,17 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Struct(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 for y in x.fields.iter() {
+                    if self.skip_attrs(&y.attrs) {
+                        self.data.skipped_conditional_code.add(y);
+                        return;
+                    }
+
                     self.scan_expr(&y.expr);
                 }
                 if let Some(y) = &x.rest {
@@ -726,26 +855,51 @@ impl<'a> Scanner<'a> {
                 }
             }
             syn::Expr::Try(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
             }
             syn::Expr::TryBlock(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.syn_warning("encountered try block (unstable feature)", x);
                 for y in &x.block.stmts {
                     self.scan_fn_statement(y);
                 }
             }
             syn::Expr::Tuple(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 for y in x.elems.iter() {
                     self.scan_expr(y);
                 }
             }
             syn::Expr::Unary(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 if let syn::UnOp::Deref(_) = x.op {
                     self.scan_deref(&x.expr);
                 }
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Unsafe(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 // ***** THE THIRD IMPORTANT CASE *****
                 self.scan_unsafe_block(x);
             }
@@ -753,12 +907,22 @@ impl<'a> Scanner<'a> {
                 self.syn_warning("skipping Verbatim expression", v);
             }
             syn::Expr::While(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.cond);
                 for s in &x.body.stmts {
                     self.scan_fn_statement(s);
                 }
             }
             syn::Expr::Yield(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.syn_warning("encountered yield expression (unstable feature)", x);
                 if let Some(y) = &x.expr {
                     self.scan_expr(y);
