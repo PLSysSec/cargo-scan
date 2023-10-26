@@ -94,7 +94,7 @@ impl ScanResults {
         self.update_call_graph(&fn_name);
 
         // Save function info
-        if let Visibility::Public = f.vis {
+        if f.vis == Visibility::Public || fn_name.is_main() {
             self.pub_fns.insert(fn_name.clone());
         }
         self.fn_locs.insert(fn_name, f.src_loc);
