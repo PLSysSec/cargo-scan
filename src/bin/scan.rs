@@ -56,7 +56,13 @@ fn main() -> Result<()> {
     }
 
     if args.extras {
-        let pub_fns = audit.pub_caller_checked.len();
+        // Get data from ScanResults
+        // Note that this is not the same as audit.pub_caller_checked.len(),
+        // which only includes public functions which show up in the AuditFile
+        // (i.e., have at least one effect)
+        let pub_fns = results.pub_fns.len();
+
+        // Get data from AuditFile
         let mut pub_fns_with_effects = 0;
         let mut pub_total_effects = 0;
         for (_, v) in audit.pub_caller_checked {
