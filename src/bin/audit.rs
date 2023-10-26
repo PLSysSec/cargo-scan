@@ -341,10 +341,10 @@ fn main() {
                 return;
             }
             args.audit_file_path = Some(p);
+        } else {
+            println!("Error: couldn't find the home directory (required for default audit file path)");
+            return;
         }
-    } else {
-        println!("Error: couldn't find the home directory (required for default audit file path)");
-        return;
     }
 
     match runner(args) {
