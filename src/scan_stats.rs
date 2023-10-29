@@ -11,7 +11,6 @@ use super::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 use super::scanner::ScanResults;
 
 use anyhow::Result;
-use log::info;
 use std::path::PathBuf;
 
 #[derive(Debug)]
@@ -90,8 +89,8 @@ pub fn get_crate_stats(
     let pub_fns = results.pub_fns.len();
     let mut pub_fns_with_effects = 0;
     let mut pub_total_effects = 0;
-    for (k, v) in &audit.pub_caller_checked {
-        info!("found public function {} with {} effects", k, v.len());
+    for (_k, v) in &audit.pub_caller_checked {
+        // println!("found public function {} with {} effects", k, v.len());
         if !v.is_empty() {
             pub_fns_with_effects += 1;
             pub_total_effects += v.len();

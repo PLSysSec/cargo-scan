@@ -10,7 +10,7 @@ use super::hacky_resolver::HackyResolver;
 use super::ident::{CanonicalPath, CanonicalType, Ident};
 
 use anyhow::Result;
-use log::{debug, info, warn};
+use log::{debug, warn};
 use std::fmt::Display;
 use std::path::Path as FilePath;
 use syn::{self, spanned::Spanned};
@@ -169,7 +169,7 @@ impl<'a> FileResolver<'a> {
             let s = SrcLoc::from_span(self.filepath, i);
             // Temporarily suppressing this warning.
             // TODO: Bump this back up to warn! once a fix is pushed
-            info!("Resolution failed (using fallback) for: {} ({}) ({})", i, s, err);
+            debug!("Resolution failed (using fallback) for: {} ({}) ({})", i, s, err);
             fallback()
         })
     }
@@ -293,7 +293,7 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
 
     fn resolve_closure(&self, cl: &'a syn::ExprClosure) -> CanonicalPath {
         let s = SrcLoc::from_span(self.filepath, cl);
-        info!("Skipping closure resolution (using fallback) for {:?} ({})", cl, s);
+        debug!("Skipping closure resolution (using fallback) for {:?} ({})", cl, s);
         self.backup.resolve_closure(cl)
     }
 

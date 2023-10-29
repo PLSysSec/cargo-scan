@@ -243,7 +243,7 @@ impl<'a> Scanner<'a> {
             let syn::Meta::List(l) = &attr.meta else { return false };
             let args = &l.tokens;
             if self.skip_cfg(args) {
-                info!("Skipping cfg attribute: {}", args);
+                debug!("Skipping cfg attribute: {}", args);
                 return true;
             } else {
                 debug!("Scanning cfg attribute: {}", args);
@@ -1142,7 +1142,7 @@ pub fn scan_file(
     sinks: HashSet<IdentPath>,
     enabled_cfg: &HashMap<String, Vec<String>>,
 ) -> Result<()> {
-    info!("Scanning file: {:?}", filepath);
+    debug!("Scanning file: {:?}", filepath);
 
     // Load file contents
     let mut file = File::open(filepath)?;
