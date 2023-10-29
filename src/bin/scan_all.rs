@@ -28,8 +28,7 @@ const TEST_CRATES_DIR: &str = "data/test-packages";
 // Results
 const RESULTS_DIR: &str = "data/results";
 const RESULTS_ALL_SUFFIX: &str = "_all.csv";
-const RESULTS_PATTERN_SUFFIX: &str = "_pattern.txt";
-const RESULTS_SUMMARY_SUFFIX: &str = "_summary.txt";
+const RESULTS_PATTERNS_SUFFIX: &str = "_pattern.txt";
 const RESULTS_METADATA_SUFFIX: &str = "_metadata.csv";
 
 /*
@@ -85,6 +84,8 @@ fn crate_stats(crt: &str, download_loc: PathBuf, test_run: bool) -> CrateStats {
 struct AllStats {
     crates: Vec<String>,
     crate_stats: HashMap<String, CrateStats>,
+    patterns: HashMap<String, usize>,
+    crate_patterns: HashMap<String, HashMap<String, usize>>,
 }
 
 impl AllStats {
@@ -92,8 +93,20 @@ impl AllStats {
         Self { crates, ..Default::default() }
     }
     fn push_stats(&mut self, crt: String, c: CrateStats) {
+        for eff in &c.effects {
+            let pat = eff.eff_type().to_csv();
+            *self.patterns.entry(pat.clone()).or_default() += 1;
+            *self.crate_patterns.entry(crt.clone()).or_default().entry(pat).or_default() += 1;
+        }
         self.crate_stats.insert(crt, c);
     }
+
+    // fn iter_effects(&self) -> impl Iterator<Item = &EffectInstance> {
+    //     self.crates.iter().flat_map(|crt| {
+    //         let stats = self.crate_stats.get(crt).unwrap();
+    //         stats.effects.iter()
+    //     })
+    // }
 
     fn dump_all(&self, path: &Path) {
         let mut f = util::fs::path_writer(path);
@@ -105,12 +118,28 @@ impl AllStats {
             }
         }
     }
-    fn dump_pattern(&self, _path: &Path) {
-        // TODO
+
+    fn dump_patterns(&self, path: &Path) {
+        let mut f = util::fs::path_writer(path);
+        writeln!(f, "crate, {}", CrateStats::metadata_csv_header()).unwrap();
+        let mut patterns: Vec<String> = self.patterns.keys().cloned().collect();
+        patterns.sort();
+
+        write!(f, "crate").unwrap();
+        for pat in &patterns {
+            write!(f, ", {}", pat).unwrap();
+        }
+        writeln!(f).unwrap();
+        for crt in &self.crates {
+            write!(f, "{}", crt).unwrap();
+            for pat in &patterns {
+                let count = self.crate_patterns.get(crt).unwrap().get(pat).unwrap();
+                write!(f, ", {}", count).unwrap();
+            }
+            writeln!(f).unwrap();
+        }
     }
-    fn dump_summary(&self, _path: &Path) {
-        // TODO
-    }
+
     fn dump_metadata(&self, path: &Path) {
         let mut f = util::fs::path_writer(path);
         writeln!(f, "crate, {}", CrateStats::metadata_csv_header()).unwrap();
@@ -188,12 +217,10 @@ fn main() {
     let base = Path::new(RESULTS_DIR);
     let pref = args.output_prefix;
     let output_all = base.join(pref.to_string() + RESULTS_ALL_SUFFIX);
-    let output_pattern = base.join(pref.to_string() + RESULTS_PATTERN_SUFFIX);
-    let output_summary = base.join(pref.to_string() + RESULTS_SUMMARY_SUFFIX);
+    let output_pattern = base.join(pref.to_string() + RESULTS_PATTERNS_SUFFIX);
     let output_metadata = base.join(pref.to_string() + RESULTS_METADATA_SUFFIX);
 
     all_stats.dump_all(&output_all);
-    all_stats.dump_pattern(&output_pattern);
-    all_stats.dump_summary(&output_summary);
+    all_stats.dump_patterns(&output_pattern);
     all_stats.dump_metadata(&output_metadata);
 }

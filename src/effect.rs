@@ -193,7 +193,7 @@ impl Effect {
         }
     }
 
-    fn to_csv(&self) -> String {
+    pub fn to_csv(&self) -> String {
         csv::sanitize_comma(self.simple_str())
     }
 }
