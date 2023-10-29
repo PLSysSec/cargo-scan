@@ -4,7 +4,7 @@ use cargo_scan::scan_stats::{self, CrateStats};
 
 use anyhow::Result;
 use clap::Parser;
-use serde::Deserialize;
+use log::{info, error};
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::process::Command;
@@ -17,54 +17,52 @@ struct Args {
     /// Path to a csv file to iterate through
     crates_csv: PathBuf,
 
-    /// Temp directory for crate downloads
-    #[clap(short, long, default_value = "./.eco_crates_tmp")]
+    /// Directory to place crate downloads
+    #[clap(short, long, default_value = "data/packages")]
     download_loc: PathBuf,
 
     /// Maximum number of threads to spawn
-    #[clap(short, long, default_value_t = 4)]
+    #[clap(short, long, default_value_t = 8)]
     num_threads: usize,
 }
 
-#[derive(Debug, Deserialize)]
-struct Record {
-    name: String,
-    _downloads: usize,
-    _description: String,
-    _created_at: String,
-    _updated_at: String,
-    _documentation: String,
-    _homepage: String,
-    _repository: String,
-    _id: usize,
-}
-
-fn crate_stats(record: Record, download_dir: String) -> Result<CrateStats> {
-    println!("Getting stats for: {}", &record.name);
-    let output_dir = format!("{}/{}", download_dir, &record.name);
+fn crate_stats(crt: PathBuf, download_loc: PathBuf) -> Result<CrateStats> {
+    info!("Getting stats for: {}", crt.to_string_lossy());
+    let output_dir = download_loc.join(&crt);
     let _output = Command::new("cargo")
         .arg("download")
         .arg("-x")
-        .arg(&record.name)
-        .args(["-o", &output_dir])
+        .arg(&crt)
+        .arg("-o")
+        .arg(&output_dir)
         .output()?;
 
-    let stats = scan_stats::get_crate_stats_default(PathBuf::from(record.name))?;
+    let stats = scan_stats::get_crate_stats_default(output_dir)?;
 
     // TODO: disabled for running locally; consider uncommenting again
     // remove_dir_all(output_dir)?;
+
+    // dbg!(&stats);
+    info!("Done scanning: {}", crt.to_string_lossy());
 
     Ok(stats)
 }
 
 fn main() -> Result<()> {
+    cargo_scan::util::init_logging();
     let args = Args::parse();
-
-    // let csv_contents = read_to_string(args.crates_csv)?;
 
     let mut rdr = csv::Reader::from_path(&args.crates_csv)?;
     let _headers = rdr.headers()?;
-    let records = rdr.deserialize::<Record>().flatten();
+
+    let mut crates: Vec<String> = Vec::new();
+    for record in rdr.records() {
+        crates.push(record?[0].to_string())
+    }
+    let num_crates = crates.len();
+
+    info!("Scanning {} crates: {:?}", num_crates, crates);
+
     let mut stats = Vec::new();
 
     // Make sure the download location exists
@@ -74,17 +72,15 @@ fn main() -> Result<()> {
 
     let pool = ThreadPool::new(args.num_threads);
     let (tx, rx) = channel();
-    let download_loc_path = args.download_loc.as_path();
-    let download_loc = download_loc_path.to_string_lossy();
 
-    for r in records {
+    for crt in &crates {
         let tx = tx.clone();
-        let d: String = download_loc.to_string();
+        let crt = PathBuf::from(crt);
+        let download_loc = args.download_loc.clone();
         pool.execute(move || {
-            if let Ok(res) = crate_stats(r, d) {
-                if let Err(e) = tx.send(res) {
-                    println!("Error sending result: {:?}", e);
-                }
+            let res = crate_stats(crt, download_loc).expect("failed to get crate stats");
+            if let Err(e) = tx.send(res) {
+                error!("Error sending result: {:?}", e);
             }
         });
 
@@ -96,6 +92,8 @@ fn main() -> Result<()> {
 
     // Drop our last channel so we don't block forever waiting for it to finish
     drop(tx);
+
+    info!("Waiting for jobs to complete...");
 
     // Get the last waiting messages
     for msg in rx.iter() {
