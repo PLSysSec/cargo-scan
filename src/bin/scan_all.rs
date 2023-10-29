@@ -128,10 +128,15 @@ impl AllStats {
     fn dump_summary(&self, path: &Path) {
         let mut f = util::fs::path_writer(path);
         writeln!(f, "crate, effects").unwrap();
-        let mut crates_total: Vec<(String, usize)> = self.crates.iter().map(|k| {
-            let stats = self.crate_stats.get(k).unwrap();
-            (k.to_string(), stats.effects.len())
-        }).filter(|(_, v)| *v != 0).collect();
+        let mut crates_total: Vec<(String, usize)> = self
+            .crates
+            .iter()
+            .map(|k| {
+                let stats = self.crate_stats.get(k).unwrap();
+                (k.to_string(), stats.effects.len())
+            })
+            .filter(|(_, v)| *v != 0)
+            .collect();
         crates_total.sort_by_key(|(_, v)| *v);
         for (k, v) in crates_total {
             writeln!(f, "{}, {}", k, v).unwrap();
