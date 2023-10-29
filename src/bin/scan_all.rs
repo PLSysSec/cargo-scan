@@ -28,7 +28,8 @@ const TEST_CRATES_DIR: &str = "data/test-packages";
 // Results
 const RESULTS_DIR: &str = "data/results";
 const RESULTS_ALL_SUFFIX: &str = "_all.csv";
-const RESULTS_PATTERNS_SUFFIX: &str = "_pattern.txt";
+const RESULTS_SUMMARY_SUFFIX: &str = "_summary.csv";
+const RESULTS_PATTERNS_SUFFIX: &str = "_patterns.csv";
 const RESULTS_METADATA_SUFFIX: &str = "_metadata.csv";
 
 /*
@@ -121,6 +122,19 @@ impl AllStats {
             for eff in &stats.effects {
                 writeln!(f, "{}", eff.to_csv()).unwrap();
             }
+        }
+    }
+
+    fn dump_summary(&self, path: &Path) {
+        let mut f = util::fs::path_writer(path);
+        writeln!(f, "crate, effects").unwrap();
+        let mut crates_total: Vec<(String, usize)> = self.crates.iter().map(|k| {
+            let stats = self.crate_stats.get(k).unwrap();
+            (k.to_string(), stats.effects.len())
+        }).filter(|(_, v)| *v != 0).collect();
+        crates_total.sort_by_key(|(_, v)| *v);
+        for (k, v) in crates_total {
+            writeln!(f, "{}, {}", k, v).unwrap();
         }
     }
 
@@ -225,10 +239,12 @@ fn main() {
     let base = Path::new(RESULTS_DIR);
     let pref = args.output_prefix;
     let output_all = base.join(pref.to_string() + RESULTS_ALL_SUFFIX);
+    let output_summary = base.join(pref.to_string() + RESULTS_SUMMARY_SUFFIX);
     let output_pattern = base.join(pref.to_string() + RESULTS_PATTERNS_SUFFIX);
     let output_metadata = base.join(pref.to_string() + RESULTS_METADATA_SUFFIX);
 
     all_stats.dump_all(&output_all);
+    all_stats.dump_summary(&output_summary);
     all_stats.dump_patterns(&output_pattern);
     all_stats.dump_metadata(&output_metadata);
 }
