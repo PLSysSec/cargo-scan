@@ -1,5 +1,6 @@
 //! Run a scan for a list of crates in parallel.
 
+use cargo_scan::effect::EffectInstance;
 use cargo_scan::scan_stats::{self, CrateStats};
 use cargo_scan::util;
 
@@ -96,6 +97,7 @@ impl AllStats {
 
     fn dump_all(&self, path: &Path) {
         let mut f = util::fs::path_writer(path);
+        writeln!(f, "{}", EffectInstance::csv_header()).unwrap();
         for crt in &self.crates {
             let stats = self.crate_stats.get(crt).unwrap();
             for eff in &stats.effects {
@@ -104,13 +106,18 @@ impl AllStats {
         }
     }
     fn dump_pattern(&self, _path: &Path) {
-        todo!()
+        // TODO
     }
     fn dump_summary(&self, _path: &Path) {
-        todo!()
+        // TODO
     }
-    fn dump_metadata(&self, _path: &Path) {
-        todo!()
+    fn dump_metadata(&self, path: &Path) {
+        let mut f = util::fs::path_writer(path);
+        writeln!(f, "{}", CrateStats::metadata_csv_header()).unwrap();
+        for crt in &self.crates {
+            let stats = self.crate_stats.get(crt).unwrap();
+            writeln!(f, "{}", stats.metadata_csv()).unwrap();
+        }
     }
 
 }
