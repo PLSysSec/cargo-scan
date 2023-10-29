@@ -13,7 +13,6 @@ num_cpus_minimal
 parsing-ex
 permissions-ex
 resolution-ex
-serde_hex_minimal
 toy-crates
 trait-ex
 unsafe-test
