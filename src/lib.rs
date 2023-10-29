@@ -5,6 +5,7 @@ pub mod download_crate;
 pub mod effect;
 pub mod ident;
 pub mod loc_tracker;
+pub mod scan_stats;
 pub mod scanner;
 pub mod sink;
 pub mod util;

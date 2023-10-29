@@ -1,13 +1,13 @@
-use std::fs::{create_dir_all, remove_dir_all};
-use std::path::PathBuf;
-use std::process::Command;
+//! Run a scan for a list of crates in parallel.
+
+use cargo_scan::scan_stats::{self, CrateStats};
 
 use anyhow::Result;
-use cargo_scan::audit_file::AuditFile;
-use cargo_scan::effect::DEFAULT_EFFECT_TYPES;
-// use cargo_scan::scanner::ScanResults;
 use clap::Parser;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use std::fs::create_dir_all;
+use std::path::PathBuf;
+use std::process::Command;
 use std::sync::mpsc::channel;
 use threadpool::ThreadPool;
 
@@ -15,7 +15,7 @@ use threadpool::ThreadPool;
 #[command(author, version, about)]
 struct Args {
     /// Path to a csv file to iterate through
-    csv_file: PathBuf,
+    crates_csv: PathBuf,
 
     /// Temp directory for crate downloads
     #[clap(short, long, default_value = "./.eco_crates_tmp")]
@@ -29,22 +29,14 @@ struct Args {
 #[derive(Debug, Deserialize)]
 struct Record {
     name: String,
-    downloads: usize,
-    description: String,
-    created_at: String,
-    updated_at: String,
-    documentation: String,
-    homepage: String,
-    repository: String,
-    id: usize,
-}
-
-// TODO: populate with stats from the python script
-#[derive(Debug, Serialize)]
-struct CrateStats {
-    crate_name: String,
-    num_pub_funs: usize,
-    num_pub_funs_caller_checked: usize,
+    _downloads: usize,
+    _description: String,
+    _created_at: String,
+    _updated_at: String,
+    _documentation: String,
+    _homepage: String,
+    _repository: String,
+    _id: usize,
 }
 
 fn crate_stats(record: Record, download_dir: String) -> Result<CrateStats> {
@@ -57,19 +49,10 @@ fn crate_stats(record: Record, download_dir: String) -> Result<CrateStats> {
         .args(["-o", &output_dir])
         .output()?;
 
-    let (audit, results) = AuditFile::new_caller_checked_default_with_results(
-        &PathBuf::from(&output_dir),
-        &DEFAULT_EFFECT_TYPES,
-    )?;
+    let stats = scan_stats::get_crate_stats_default(PathBuf::from(record.name))?;
 
-    // TODO: Populate more crate stats
-    let stats = CrateStats {
-        crate_name: record.name,
-        num_pub_funs: results.pub_fns.len(),
-        num_pub_funs_caller_checked: audit.pub_caller_checked.len(),
-    };
-
-    remove_dir_all(output_dir)?;
+    // TODO: disabled for running locally; consider uncommenting again
+    // remove_dir_all(output_dir)?;
 
     Ok(stats)
 }
@@ -77,9 +60,9 @@ fn crate_stats(record: Record, download_dir: String) -> Result<CrateStats> {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    // let csv_contents = read_to_string(args.csv_file)?;
+    // let csv_contents = read_to_string(args.crates_csv)?;
 
-    let mut rdr = csv::Reader::from_path(&args.csv_file)?;
+    let mut rdr = csv::Reader::from_path(&args.crates_csv)?;
     let _headers = rdr.headers()?;
     let records = rdr.deserialize::<Record>().flatten();
     let mut stats = Vec::new();
@@ -106,8 +89,7 @@ fn main() -> Result<()> {
         });
 
         // Clean up our waiting threads
-        let mut iter = rx.try_iter();
-        while let Some(msg) = iter.next() {
+        for msg in rx.try_iter() {
             stats.push(msg);
         }
     }
@@ -116,8 +98,7 @@ fn main() -> Result<()> {
     drop(tx);
 
     // Get the last waiting messages
-    let mut iter = rx.iter();
-    while let Some(msg) = iter.next() {
+    for msg in rx.iter() {
         stats.push(msg);
     }
 
