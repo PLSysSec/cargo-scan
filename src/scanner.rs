@@ -453,7 +453,11 @@ impl<'a> Scanner<'a> {
 
         // Add edges in the call graph from all impl methods to their corresponding abstract trait method
         for impl_meth in &impl_methods {
-            self.data.add_call(&f_name, impl_meth, SrcLoc::from_span(self.filepath, &m.span()));
+            self.data.add_call(
+                &f_name,
+                impl_meth,
+                SrcLoc::from_span(self.filepath, &m.span()),
+            );
         }
     }
 
@@ -1058,7 +1062,11 @@ impl<'a> Scanner<'a> {
     {
         let containing_fn = self.scope_fns.last().expect("not inside a function!");
         let caller = &containing_fn.fn_name;
-        self.data.add_call(caller, &callee, SrcLoc::from_span(self.filepath, &callee_span.span()));
+        self.data.add_call(
+            caller,
+            &callee,
+            SrcLoc::from_span(self.filepath, &callee_span.span()),
+        );
 
         let Some(eff) = EffectInstance::new_call(
             self.filepath,

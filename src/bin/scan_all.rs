@@ -96,7 +96,12 @@ impl AllStats {
         for eff in &c.effects {
             let pat = eff.eff_type().to_csv();
             *self.patterns.entry(pat.clone()).or_default() += 1;
-            *self.crate_patterns.entry(crt.clone()).or_default().entry(pat).or_default() += 1;
+            *self
+                .crate_patterns
+                .entry(crt.clone())
+                .or_default()
+                .entry(pat)
+                .or_default() += 1;
         }
         self.crate_stats.insert(crt, c);
     }
@@ -121,7 +126,6 @@ impl AllStats {
 
     fn dump_patterns(&self, path: &Path) {
         let mut f = util::fs::path_writer(path);
-        writeln!(f, "crate, {}", CrateStats::metadata_csv_header()).unwrap();
         let mut patterns: Vec<String> = self.patterns.keys().cloned().collect();
         patterns.sort();
 
@@ -133,7 +137,11 @@ impl AllStats {
         for crt in &self.crates {
             write!(f, "{}", crt).unwrap();
             for pat in &patterns {
-                let count = self.crate_patterns.get(crt).unwrap().get(pat).unwrap();
+                let count = self
+                    .crate_patterns
+                    .get(crt)
+                    .and_then(|x| x.get(pat).cloned())
+                    .unwrap_or_default();
                 write!(f, ", {}", count).unwrap();
             }
             writeln!(f).unwrap();
