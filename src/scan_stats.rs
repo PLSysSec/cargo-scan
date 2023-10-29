@@ -4,13 +4,13 @@
 //! - scanner for ScanResults (list of effects)
 //! - audit_file for AuditFile (caller-checked results)
 
-use crate::loc_tracker::LoCTracker;
-
 use super::audit_file::{AuditFile, EffectTree};
 use super::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
+use super::loc_tracker::LoCTracker;
 use super::scanner::ScanResults;
 
 use anyhow::Result;
+use log::info;
 use std::path::PathBuf;
 
 #[derive(Debug)]
@@ -141,19 +141,25 @@ fn counter(tree: &EffectTree, results: &ScanResults) -> (usize, usize) {
 
     match tree {
         EffectTree::Leaf(info, _) => {
-            let tracker = results.fn_loc_tracker.get(&info.caller_path).unwrap();
-            lines += tracker.get_loc_lb();
-            fns += 1;
+            if let Some(tracker) = results.fn_loc_tracker.get(&info.caller_path) {
+                lines += tracker.get_loc_lb();
+                fns += 1;
+            } else {
+                info!("failed to find tracker node");
+            }
         }
         EffectTree::Branch(info, branch) => {
-            let tracker = results.fn_loc_tracker.get(&info.caller_path).unwrap();
-            let (callers, loc) = branch.iter().fold((0, 0), |(f, l), tree| {
-                let (callers, loc) = counter(tree, results);
-                (f + callers, l + loc)
-            });
+            if let Some(tracker) = results.fn_loc_tracker.get(&info.caller_path) {
+                let (callers, loc) = branch.iter().fold((0, 0), |(f, l), tree| {
+                    let (callers, loc) = counter(tree, results);
+                    (f + callers, l + loc)
+                });
 
-            fns += callers + 1;
-            lines += loc + tracker.get_loc_lb();
+                fns += callers + 1;
+                lines += loc + tracker.get_loc_lb();
+            } else {
+                info!("failed to find tracker node");
+            }
         }
     };
 
