@@ -1,15 +1,40 @@
 //! Run a scan for a list of crates in parallel.
 
 use cargo_scan::scan_stats::{self, CrateStats};
+use cargo_scan::util;
 
-use anyhow::Result;
 use clap::Parser;
 use log::{info, error};
-use std::fs::create_dir_all;
-use std::path::PathBuf;
+use std::collections::HashMap;
+use std::fs;
+use std::io::Write;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::mpsc::channel;
 use threadpool::ThreadPool;
+
+/*
+    Constants
+*/
+
+// Number of progress tracking messages to display
+// TODO
+// const PROGRESS_INCS: usize = 10;
+
+// Source lists
+const CRATES_DIR: &str = "data/packages";
+const TEST_CRATES_DIR: &str = "data/test-packages";
+
+// Results
+const RESULTS_DIR: &str = "data/results";
+const RESULTS_ALL_SUFFIX: &str = "_all.csv";
+const RESULTS_PATTERN_SUFFIX: &str = "_pattern.txt";
+const RESULTS_SUMMARY_SUFFIX: &str = "_summary.txt";
+const RESULTS_METADATA_SUFFIX: &str = "_metadata.csv";
+
+/*
+    CLI
+*/
 
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -17,57 +42,104 @@ struct Args {
     /// Path to a csv file to iterate through
     crates_csv: PathBuf,
 
-    /// Directory to place crate downloads
-    #[clap(short, long, default_value = "data/packages")]
-    download_loc: PathBuf,
+    /// Output prefix to save output
+    output_prefix: PathBuf,
+
+    /// Test run
+    #[clap(short, long, default_value_t = false)]
+    test_run: bool,
 
     /// Maximum number of threads to spawn
     #[clap(short, long, default_value_t = 8)]
     num_threads: usize,
 }
 
-fn crate_stats(crt: PathBuf, download_loc: PathBuf) -> Result<CrateStats> {
-    info!("Getting stats for: {}", crt.to_string_lossy());
-    let output_dir = download_loc.join(&crt);
-    let _output = Command::new("cargo")
-        .arg("download")
-        .arg("-x")
-        .arg(&crt)
-        .arg("-o")
-        .arg(&output_dir)
-        .output()?;
+fn crate_stats(crt: &str, download_loc: PathBuf, test_run: bool) -> CrateStats {
+    info!("Getting stats for: {}", crt);
+    let output_dir = download_loc.join(Path::new(crt));
 
-    let stats = scan_stats::get_crate_stats_default(output_dir)?;
+    if !test_run {
+        let _output = Command::new("cargo")
+            .arg("download")
+            .arg("-x")
+            .arg(crt)
+            .arg("-o")
+            .arg(&output_dir)
+            .output()
+            .expect("failed to run cargo download");
+    }
+
+    let stats = scan_stats::get_crate_stats_default(output_dir).expect("Failed to get crate stats");
 
     // TODO: disabled for running locally; consider uncommenting again
     // remove_dir_all(output_dir)?;
 
     // dbg!(&stats);
-    info!("Done scanning: {}", crt.to_string_lossy());
+    info!("Done scanning: {}", crt);
 
-    Ok(stats)
+    stats
 }
 
-fn main() -> Result<()> {
+#[derive(Debug, Default)]
+struct AllStats {
+    crates: Vec<String>,
+    crate_stats: HashMap<String, CrateStats>,
+}
+
+impl AllStats {
+    fn new(crates: Vec<String>) -> Self {
+        let mut result: Self = Default::default();
+        result.crates = crates;
+        result
+    }
+    fn push_stats(&mut self, crt: String, c: CrateStats) {
+        self.crate_stats.insert(crt, c);
+    }
+
+    fn dump_all(&self, path: &Path) {
+        let mut f = util::fs::path_writer(path);
+        for crt in &self.crates {
+            let stats = self.crate_stats.get(crt).unwrap();
+            for eff in &stats.effects {
+                writeln!(f, "{}", eff.to_csv()).unwrap();
+            }
+        }
+    }
+    fn dump_pattern(&self, _path: &Path) {
+        todo!()
+    }
+    fn dump_summary(&self, _path: &Path) {
+        todo!()
+    }
+    fn dump_metadata(&self, _path: &Path) {
+        todo!()
+    }
+
+}
+
+fn main() {
     cargo_scan::util::init_logging();
     let args = Args::parse();
 
-    let mut rdr = csv::Reader::from_path(&args.crates_csv)?;
-    let _headers = rdr.headers()?;
+    let mut rdr = csv::Reader::from_path(&args.crates_csv).expect("Failed to open CSV");
+    let _headers = rdr.headers().expect("Failed to read CSV header");
 
     let mut crates: Vec<String> = Vec::new();
-    for record in rdr.records() {
-        crates.push(record?[0].to_string())
+    for row in rdr.records() {
+        let record = row.expect("Failed to read CSV row");
+        crates.push(record[0].to_string())
     }
     let num_crates = crates.len();
 
     info!("Scanning {} crates: {:?}", num_crates, crates);
 
-    let mut stats = Vec::new();
-
-    // Make sure the download location exists
-    if !args.download_loc.exists() {
-        create_dir_all(&args.download_loc)?;
+    let download_loc = if args.test_run {
+        Path::new(TEST_CRATES_DIR)
+    } else {
+        Path::new(CRATES_DIR)
+    };
+    if !download_loc.exists() {
+        fs::create_dir_all(&download_loc).expect("Failed to create download location");
     }
 
     let pool = ThreadPool::new(args.num_threads);
@@ -75,19 +147,23 @@ fn main() -> Result<()> {
 
     for crt in &crates {
         let tx = tx.clone();
-        let crt = PathBuf::from(crt);
-        let download_loc = args.download_loc.clone();
+        let crt = crt.clone();
+        let download_loc = download_loc.to_owned();
+        let test_run = args.test_run;
         pool.execute(move || {
-            let res = crate_stats(crt, download_loc).expect("failed to get crate stats");
-            if let Err(e) = tx.send(res) {
+            let res = crate_stats(&crt, download_loc, test_run);
+            if let Err(e) = tx.send((crt, res)) {
                 error!("Error sending result: {:?}", e);
             }
         });
 
+        // TODO: is this line necessary?
+        assert!(rx.try_iter().next().is_none());
+        // Old:
         // Clean up our waiting threads
-        for msg in rx.try_iter() {
-            stats.push(msg);
-        }
+        // for (crt, stats) in rx.try_iter() {
+        //     stats.push(msg);
+        // }
     }
 
     // Drop our last channel so we don't block forever waiting for it to finish
@@ -95,13 +171,23 @@ fn main() -> Result<()> {
 
     info!("Waiting for jobs to complete...");
 
-    // Get the last waiting messages
-    for msg in rx.iter() {
-        stats.push(msg);
+    // Collect the messages
+    let mut all_stats = AllStats::new(crates);
+    for (crt, stats) in rx.iter() {
+        all_stats.push_stats(crt, stats);
     }
 
-    // TODO: Do your thing with stats
-    dbg!(&stats);
+    // dbg!(&stats);
 
-    Ok(())
+    // Save Results
+    let prefix = Path::new(RESULTS_DIR).join(args.output_prefix);
+    let output_all = prefix.join(RESULTS_ALL_SUFFIX);
+    let output_pattern = prefix.join(RESULTS_PATTERN_SUFFIX);
+    let output_summary = prefix.join(RESULTS_SUMMARY_SUFFIX);
+    let output_metadata = prefix.join(RESULTS_METADATA_SUFFIX);
+
+    all_stats.dump_all(&output_all);
+    all_stats.dump_pattern(&output_pattern);
+    all_stats.dump_summary(&output_summary);
+    all_stats.dump_metadata(&output_metadata);
 }
