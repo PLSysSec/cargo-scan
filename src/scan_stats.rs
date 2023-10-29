@@ -89,7 +89,7 @@ pub fn get_crate_stats(
     let pub_fns = results.pub_fns.len();
     let mut pub_fns_with_effects = 0;
     let mut pub_total_effects = 0;
-    for (_k, v) in &audit.pub_caller_checked {
+    for v in audit.pub_caller_checked.values() {
         // println!("found public function {} with {} effects", k, v.len());
         if !v.is_empty() {
             pub_fns_with_effects += 1;

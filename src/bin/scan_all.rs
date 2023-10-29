@@ -88,9 +88,7 @@ struct AllStats {
 
 impl AllStats {
     fn new(crates: Vec<String>) -> Self {
-        let mut result: Self = Default::default();
-        result.crates = crates;
-        result
+        Self { crates, ..Default::default() }
     }
     fn push_stats(&mut self, crt: String, c: CrateStats) {
         self.crate_stats.insert(crt, c);
@@ -139,7 +137,7 @@ fn main() {
         Path::new(CRATES_DIR)
     };
     if !download_loc.exists() {
-        fs::create_dir_all(&download_loc).expect("Failed to create download location");
+        fs::create_dir_all(download_loc).expect("Failed to create download location");
     }
 
     let pool = ThreadPool::new(args.num_threads);
