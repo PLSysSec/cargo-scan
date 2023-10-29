@@ -5,7 +5,7 @@ use cargo_scan::scan_stats::{self, CrateStats};
 use cargo_scan::util;
 
 use clap::Parser;
-use log::{info, error};
+use log::{error, info};
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
@@ -69,7 +69,8 @@ fn crate_stats(crt: &str, download_loc: PathBuf, test_run: bool) -> CrateStats {
             .expect("failed to run cargo download");
     }
 
-    let stats = scan_stats::get_crate_stats_default(output_dir).expect("Failed to get crate stats");
+    let stats = scan_stats::get_crate_stats_default(output_dir)
+        .expect("Failed to get crate stats");
 
     // TODO: disabled for running locally; consider uncommenting again
     // remove_dir_all(output_dir)?;
@@ -112,13 +113,12 @@ impl AllStats {
     }
     fn dump_metadata(&self, path: &Path) {
         let mut f = util::fs::path_writer(path);
-        writeln!(f, "{}", CrateStats::metadata_csv_header()).unwrap();
+        writeln!(f, "crate, {}", CrateStats::metadata_csv_header()).unwrap();
         for crt in &self.crates {
             let stats = self.crate_stats.get(crt).unwrap();
-            writeln!(f, "{}", stats.metadata_csv()).unwrap();
+            writeln!(f, "{}, {}", crt, stats.metadata_csv()).unwrap();
         }
     }
-
 }
 
 fn main() {
@@ -137,11 +137,8 @@ fn main() {
 
     info!("Scanning {} crates: {:?}", num_crates, crates);
 
-    let download_loc = if args.test_run {
-        Path::new(TEST_CRATES_DIR)
-    } else {
-        Path::new(CRATES_DIR)
-    };
+    let download_loc =
+        if args.test_run { Path::new(TEST_CRATES_DIR) } else { Path::new(CRATES_DIR) };
     if !download_loc.exists() {
         fs::create_dir_all(download_loc).expect("Failed to create download location");
     }
@@ -180,7 +177,7 @@ fn main() {
     let progress_inc = num_crates / PROGRESS_INCS;
     for (i, (crt, stats)) in rx.iter().enumerate() {
         if i > 0 && i % progress_inc == 0 {
-            println!("{:.0}% complete", ((100 * i) as f64) / (num_crates as f64) );
+            println!("{:.0}% complete", ((100 * i) as f64) / (num_crates as f64));
         }
         all_stats.push_stats(crt, stats);
     }
