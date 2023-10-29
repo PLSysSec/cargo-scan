@@ -19,8 +19,7 @@ use threadpool::ThreadPool;
 */
 
 // Number of progress tracking messages to display
-// TODO
-// const PROGRESS_INCS: usize = 10;
+const PROGRESS_INCS: usize = 10;
 
 // Source lists
 const CRATES_DIR: &str = "data/packages";
@@ -44,7 +43,7 @@ struct Args {
     crates_csv: PathBuf,
 
     /// Output prefix to save output
-    output_prefix: PathBuf,
+    output_prefix: String,
 
     /// Test run
     #[clap(short, long, default_value_t = false)]
@@ -178,18 +177,23 @@ fn main() {
 
     // Collect the messages
     let mut all_stats = AllStats::new(crates);
-    for (crt, stats) in rx.iter() {
+    let progress_inc = num_crates / PROGRESS_INCS;
+    for (i, (crt, stats)) in rx.iter().enumerate() {
+        if i > 0 && i % progress_inc == 0 {
+            println!("{:.0}% complete", ((100 * i) as f64) / (num_crates as f64) );
+        }
         all_stats.push_stats(crt, stats);
     }
 
     // dbg!(&stats);
 
     // Save Results
-    let prefix = Path::new(RESULTS_DIR).join(args.output_prefix);
-    let output_all = prefix.join(RESULTS_ALL_SUFFIX);
-    let output_pattern = prefix.join(RESULTS_PATTERN_SUFFIX);
-    let output_summary = prefix.join(RESULTS_SUMMARY_SUFFIX);
-    let output_metadata = prefix.join(RESULTS_METADATA_SUFFIX);
+    let base = Path::new(RESULTS_DIR);
+    let pref = args.output_prefix;
+    let output_all = base.join(pref.to_string() + RESULTS_ALL_SUFFIX);
+    let output_pattern = base.join(pref.to_string() + RESULTS_PATTERN_SUFFIX);
+    let output_summary = base.join(pref.to_string() + RESULTS_SUMMARY_SUFFIX);
+    let output_metadata = base.join(pref.to_string() + RESULTS_METADATA_SUFFIX);
 
     all_stats.dump_all(&output_all);
     all_stats.dump_pattern(&output_pattern);
