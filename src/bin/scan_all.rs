@@ -137,7 +137,7 @@ impl AllStats {
             })
             .filter(|(_, v)| *v != 0)
             .collect();
-        crates_total.sort_by_key(|(_, v)| *v);
+        crates_total.sort_by_key(|(_, v)| -(*v as isize));
         for (k, v) in crates_total {
             writeln!(f, "{}, {}", k, v).unwrap();
         }
