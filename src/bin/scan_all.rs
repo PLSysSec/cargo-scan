@@ -176,10 +176,10 @@ fn main() {
     let mut all_stats = AllStats::new(crates);
     let progress_inc = num_crates / PROGRESS_INCS;
     for (i, (crt, stats)) in rx.iter().enumerate() {
-        if i > 0 && i % progress_inc == 0 {
-            println!("{:.0}% complete", ((100 * i) as f64) / (num_crates as f64));
-        }
         all_stats.push_stats(crt, stats);
+        if (i + 1) % progress_inc == 0 {
+            println!("{:.0}% complete", ((100 * (i + 1)) as f64) / (num_crates as f64));
+        }
     }
 
     // dbg!(&stats);
