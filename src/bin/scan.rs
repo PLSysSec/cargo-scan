@@ -48,7 +48,7 @@ fn main() -> Result<()> {
     let (audit, results) = AuditFile::new_caller_checked_default_with_results(
         &args.crate_path,
         &args.effect_types,
-        &args.quick_mode
+        args.quick_mode
     )?;
 
     // Note: old version without default_audit:

@@ -191,12 +191,12 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         CanonicalPath::new_owned(format!("UNKNOWN_METHOD::{}", i), src_loc)
     }
 
-    fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath {
+    fn resolve_field(&self, i: &syn::Ident) -> CanonicalPath {
         let src_loc = SrcLoc::from_span(self.filepath, &i.span());
         CanonicalPath::new_owned(format!("UNKNOWN_FIELD::{}", i), src_loc)
     }
 
-    fn resolve_field_type(&self, i: &'a syn::Ident) -> CanonicalType {
+    fn resolve_field_type(&self, i: &syn::Ident) -> CanonicalType {
         CanonicalType::new_owned_string(format!("UNKNOWN_TYPE::{}", i))
     }
 
