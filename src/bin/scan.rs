@@ -36,6 +36,9 @@ struct Args {
     /// behavior.
     #[clap(long, value_parser, num_args = 1.., default_values_t = DEFAULT_EFFECT_TYPES)]
     effect_types: Vec<EffectType>,
+
+    #[clap(short, long)]
+    quick_mode: bool,
 }
 
 fn main() -> Result<()> {
@@ -45,6 +48,7 @@ fn main() -> Result<()> {
     let (audit, results) = AuditFile::new_caller_checked_default_with_results(
         &args.crate_path,
         &args.effect_types,
+        &args.quick_mode
     )?;
 
     // Note: old version without default_audit:

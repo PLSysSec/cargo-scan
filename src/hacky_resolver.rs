@@ -266,6 +266,22 @@ impl<'a> HackyResolver<'a> {
         })
     }
 
+    pub fn new_empty() -> Self {
+        //just a placeholder
+        Self {
+            filepath: &FilePath::new(""),
+            modpath: CanonicalPath::new(""),
+            scope_use: Vec::new(),
+            scope_mods: Vec::new(),
+            scope_fun: Vec::new(),
+            scope_fun_lens: Vec::new(),
+            scope_impl_adds: Vec::new(),
+            use_names: HashMap::new(),
+            ffi_decls: HashMap::new(),
+            use_globs: Vec::new(),
+        }
+    }
+
     /// Reusable warning logger
     fn syn_warning<S: Spanned + Debug>(&self, msg: &str, syn_node: S) {
         let loc = SrcLoc::from_span(self.filepath, &syn_node);

@@ -6,7 +6,6 @@
 use crate::attr_parser::CfgPred;
 use crate::audit_file::EffectInfo;
 use crate::hacky_resolver::{HackyResolver, self};
-use crate::ident::CanonicalType;
 
 use super::effect::{Effect, EffectInstance, EffectType, FnDec, SrcLoc, Visibility};
 use super::ident::{CanonicalPath, IdentPath};
@@ -22,7 +21,6 @@ use petgraph::visit::EdgeRef;
 use petgraph::Direction;
 use proc_macro2::{TokenStream, TokenTree};
 use quote::ToTokens;
-use ra_ap_ide_db::items_locator::DEFAULT_QUERY_SEARCH_LIMIT;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -114,195 +112,15 @@ impl ScanResults {
     }
 }
 
-#[derive(Debug)]
-enum MultiResolver<'a> {
-    File(FileResolver<'a>),
-    Hacky(HackyResolver<'a>),
-}
-
 /// Stateful object to scan Rust source code for effects (fn calls of interest)
-
-impl MultiResolver<'_> {
-    fn push_mod(&mut self, ident: &syn::Ident) {
-        match self {
-            MultiResolver::File(file_resolver) => {
-                file_resolver.push_mod(ident);
-            }
-            MultiResolver::Hacky(hacky_resolver) => {
-                hacky_resolver.push_mod(ident);
-            }
-        }
-    }
-
-    fn pop_mod(&mut self) {
-        match self {
-            MultiResolver::File(file_resolver) => {
-                file_resolver.pop_mod();
-            }
-            MultiResolver::Hacky(hacky_resolver) => {
-                hacky_resolver.pop_mod();
-            }
-        }
-    }
-
-    fn push_fn(&mut self, ident: &syn::Ident) {
-        match self {
-            MultiResolver::File(file_resolver) => {
-                file_resolver.push_fn(ident);
-            }
-            MultiResolver::Hacky(hacky_resolver) => {
-                hacky_resolver.push_fn(ident);
-            }
-        }
-    }
-
-    fn pop_fn(&mut self) {
-        match self {
-            MultiResolver::File(file_resolver) => {
-                file_resolver.pop_fn();
-            }
-            MultiResolver::Hacky(hacky_resolver) => {
-                hacky_resolver.pop_fn();
-            }
-        }
-    }
-
-    fn resolve_path(&self, path: &syn::Path) -> CanonicalPath {
-        match self {
-            MultiResolver::File(file_resolver) => {
-                file_resolver.resolve_path(path)
-            }
-            MultiResolver::Hacky(hacky_resolver) => {
-                hacky_resolver.resolve_path(path)
-            }
-        }
-    }
-
-    fn resolve_field(&self, ident: &syn::Ident) -> CanonicalPath {
-        match self {
-            MultiResolver::File(file_resolver) => {
-                file_resolver.resolve_field(ident)
-            }
-            MultiResolver::Hacky(hacky_resolver) => {
-                hacky_resolver.resolve_field(ident)
-            }
-        }
-    }
-
-    fn resolve_closure(&self, closure: &syn::ExprClosure) -> CanonicalPath {
-        match self {
-            MultiResolver::File(resolver) => resolver.resolve_closure(closure),
-            MultiResolver::Hacky(resolver) => resolver.resolve_closure(closure),
-        }
-    }
-
-    fn resolve_field_type(&self, ident: &syn::Ident) -> CanonicalType {
-        match self {
-            MultiResolver::File(resolver) => resolver.resolve_field_type(ident),
-            MultiResolver::Hacky(resolver) => resolver.resolve_field_type(ident),
-        }
-    }
-    
-    fn resolve_path_type(&self, path: &syn::Path) -> CanonicalType {
-        match self {
-            MultiResolver::File(resolver) => resolver.resolve_path_type(path),
-            MultiResolver::Hacky(resolver) => resolver.resolve_path_type(path),
-        }
-    }
-
-    fn resolve_const_or_static(&self, path: &syn::Path) -> bool {
-        match self {
-            MultiResolver::File(resolver) => resolver.resolve_const_or_static(path),
-            MultiResolver::Hacky(resolver) => resolver.resolve_const_or_static(path),
-        }
-    }
-
-    fn resolve_ffi(&self, path: &syn::Path) -> Option<CanonicalPath> {
-        match self {
-            MultiResolver::File(resolver) => resolver.resolve_ffi(path),
-            MultiResolver::Hacky(resolver) => resolver.resolve_ffi(path),
-        }
-    }
-
-    fn resolve_unsafe_ident(&self, ident: &syn::Ident) -> bool {
-        match self {
-            MultiResolver::File(resolver) => resolver.resolve_unsafe_ident(ident),
-            MultiResolver::Hacky(resolver) => resolver.resolve_unsafe_ident(ident),
-        }
-    }
-
-    fn resolve_field_index(&self, index: &syn::Index) -> CanonicalPath {
-        match self {
-            MultiResolver::File(resolver) => resolver.resolve_field_index(index),
-            MultiResolver::Hacky(resolver) => resolver.resolve_field_index(index),
-        }
-    }
-
-    fn resolve_unsafe_path(&self, path: &syn::Path) -> bool {
-        match self {
-            MultiResolver::File(resolver) => resolver.resolve_unsafe_path(path),
-            MultiResolver::Hacky(resolver) => resolver.resolve_unsafe_path(path),
-        }
-    }
-
-    fn resolve_method(&self, ident: &syn::Ident) -> CanonicalPath {
-        match self {
-            MultiResolver::File(resolver) => resolver.resolve_method(ident),
-            MultiResolver::Hacky(resolver) => resolver.resolve_method(ident),
-        }
-    }
-
-    fn resolve_def(&self, ident: &syn::Ident) -> CanonicalPath {
-        match self {
-            MultiResolver::File(file_resolver) => file_resolver.resolve_def(ident),
-            MultiResolver::Hacky(hacky_resolver) => hacky_resolver.resolve_def(ident),
-        }
-    }
-
-    fn push_impl(&mut self, imp: &syn::ItemImpl) {
-        match self {
-            MultiResolver::File(file_resolver) => file_resolver.push_impl(imp),
-            MultiResolver::Hacky(hacky_resolver) => hacky_resolver.push_impl(imp),
-        }
-    }
-
-    fn pop_impl(&mut self) {
-        match self {
-            MultiResolver::File(file_resolver) => file_resolver.pop_impl(),
-            MultiResolver::Hacky(hacky_resolver) => hacky_resolver.pop_impl(),
-        }
-    }
-
-    fn resolve_all_impl_methods(&self, trait_ident: &syn::Ident, method_name: String) -> Vec<CanonicalPath> {
-        match self {
-            MultiResolver::File(file_resolver) => file_resolver.resolve_all_impl_methods(trait_ident, method_name),
-            MultiResolver::Hacky(hacky_resolver) => hacky_resolver.resolve_all_impl_methods(trait_ident, method_name),
-        }
-    }
-
-    fn scan_foreign_fn(&mut self, f: &syn::ForeignItemFn) {
-        match self {
-            MultiResolver::File(file_resolver) => file_resolver.scan_foreign_fn(f),
-            MultiResolver::Hacky(hacky_resolver) => hacky_resolver.scan_foreign_fn(f),
-        }
-    }
-
-    fn scan_use(&mut self, use_item: &syn::ItemUse) {
-        match self {
-            MultiResolver::File(file_resolver) => file_resolver.scan_use(use_item),
-            MultiResolver::Hacky(hacky_resolver) => hacky_resolver.scan_use(use_item),
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct Scanner<'a> {
     /// filepath that the scanner is being run on
     filepath: &'a FilePath,
 
     /// Name resolution resolver
-    resolver: MultiResolver<'a>,
-    // hacky_resolver : HackyResolver<'a>,
+    // resolver: HackyResolver<'a>,
+    resolver: HackyResolver<'a>,
 
     /// Number of unsafe keywords the current scope is nested inside
     /// (always 0 at top level)
@@ -340,7 +158,7 @@ impl<'a> Scanner<'a> {
     /// Create a new scanner tied to a crate and file
     pub fn new(
         filepath: &'a FilePath,
-        resolver: MultiResolver<'a>,
+        resolver: HackyResolver<'a>,
         data: &'a mut ScanResults,
         enabled_cfg: &'a HashMap<String, Vec<String>>,
     ) -> Self {
@@ -357,19 +175,9 @@ impl<'a> Scanner<'a> {
         }
     }
 
-
-
     /// Top-level invariant -- called before consuming results
     pub fn assert_top_level_invariant(&self) {
-        match &self.resolver {
-            MultiResolver::File(file_resolver) => {
-                file_resolver.assert_top_level_invariant();
-            }
-            MultiResolver::Hacky(hacky_resolver) => {
-                hacky_resolver.assert_top_level_invariant();
-            }
-        }
-        // self.resolver.assert_top_level_invariant();
+        self.resolver.assert_top_level_invariant();
         debug_assert!(self.scope_fns.is_empty());
         debug_assert_eq!(self.scope_unsafe, 0);
         debug_assert_eq!(self.scope_unsafe_effects, 0);
@@ -445,47 +253,18 @@ impl<'a> Scanner<'a> {
         attrs.iter().any(|x| self.skip_attr(x))
     }
 
-    // pub fn scan_mod(&mut self, m: &'a syn::ItemMod) {
-    //     if self.skip_attrs(&m.attrs) {
-    //         self.data.skipped_conditional_code.add(m);
-    //         return;
-    //     }
-
-    //     if let Some((_, items)) = &m.content {
-    //         self.resolver.push_mod(&m.ident);
-    //         for i in items {
-    //             self.scan_item(i);
-    //         }
-    //         self.resolver.pop_mod();
-    //     }
-    // }
-
     pub fn scan_mod(&mut self, m: &'a syn::ItemMod) {
         if self.skip_attrs(&m.attrs) {
             self.data.skipped_conditional_code.add(m);
             return;
         }
-    
+
         if let Some((_, items)) = &m.content {
-            match &mut self.resolver {
-                MultiResolver::File(file_resolver) => {
-                    file_resolver.push_mod(&m.ident);
-                }
-                MultiResolver::Hacky(hacky_resolver) => {
-                    hacky_resolver.push_mod(&m.ident);
-                }
-            }
+            self.resolver.push_mod(&m.ident);
             for i in items {
                 self.scan_item(i);
             }
-            match &mut self.resolver {
-                MultiResolver::File(file_resolver) => {
-                    file_resolver.pop_mod();
-                }
-                MultiResolver::Hacky(hacky_resolver) => {
-                    hacky_resolver.pop_mod();
-                }
-            }
+            self.resolver.pop_mod();
         }
     }
 
@@ -1182,7 +961,7 @@ impl<'a> Scanner<'a> {
             }
         }
     }
-        
+
     fn scan_expr_call_field(&mut self, m: &'a syn::Member) {
         match m {
             syn::Member::Named(i) => {
@@ -1215,7 +994,6 @@ pub fn scan_file(
     scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
     enabled_cfg: &HashMap<String, Vec<String>>,
-    quick_mode: &bool
 ) -> Result<()> {
     info!("Scanning file: {:?}", filepath);
 
@@ -1226,18 +1004,9 @@ pub fn scan_file(
     let syntax_tree = syn::parse_file(&src)?;
 
     // Initialize data structures
-    let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
+    // let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
     let hacky_resolver = HackyResolver::new(crate_name, filepath);
-    
-    let resolver = if *quick_mode {
-        MultiResolver::Hacky(HackyResolver::new(crate_name, filepath)?)
-    } else {
-        MultiResolver::File(FileResolver::new(crate_name, resolver, filepath)?)
-    };
-    
-    let mut scanner = Scanner::new(filepath, resolver, scan_results, enabled_cfg);
-
-    // let mut scanner = Scanner::new(filepath, file_resolver, scan_results, enabled_cfg);
+    let mut scanner = Scanner::new(filepath, hacky_resolver.unwrap(), scan_results, enabled_cfg);
     scanner.add_sinks(sinks);
 
     // Scan file contents
@@ -1254,9 +1023,8 @@ pub fn try_scan_file(
     scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
     enabled_cfg: &HashMap<String, Vec<String>>,
-    quick_mode: &bool
 ) {
-    scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg , quick_mode)
+    scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg)
         .unwrap_or_else(|err| {
             warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
         });
@@ -1267,7 +1035,6 @@ pub fn scan_crate_with_sinks(
     crate_path: &FilePath,
     sinks: HashSet<IdentPath>,
     relevant_effects: &[EffectType],
-    quick_mode: &bool,
 ) -> Result<ScanResults> {
     info!("Scanning crate: {:?}", crate_path);
 
@@ -1283,7 +1050,7 @@ pub fn scan_crate_with_sinks(
     }
 
     let crate_name = util::load_cargo_toml(crate_path)?.crate_name;
-
+    // println !("Crate name: {}", crate_name);
     let resolver = Resolver::new(crate_path)?;
 
     let mut scan_results = ScanResults::new();
@@ -1302,7 +1069,6 @@ pub fn scan_crate_with_sinks(
                 &mut scan_results,
                 sinks.clone(),
                 &enabled_cfg,
-                quick_mode
             );
         }
     } else {
@@ -1316,7 +1082,6 @@ pub fn scan_crate_with_sinks(
                 &mut scan_results,
                 sinks,
                 &enabled_cfg,
-                quick_mode
             );
         } else {
             warn!(
@@ -1339,5 +1104,5 @@ pub fn scan_crate(
     crate_path: &FilePath,
     relevant_effects: &[EffectType],
 ) -> Result<ScanResults> {
-    scan_crate_with_sinks(crate_path, HashSet::new(), relevant_effects , &false)
+    scan_crate_with_sinks(crate_path, HashSet::new(), relevant_effects)
 }
