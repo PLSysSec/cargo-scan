@@ -16,6 +16,7 @@ use super::sink::Sink;
 use super::util;
 
 use anyhow::{anyhow, Context, Result};
+use cargo::util::Queue;
 use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
@@ -1017,8 +1018,19 @@ pub fn scan_file_quick(
     sinks: HashSet<IdentPath>,
     enabled_cfg: &HashMap<String, Vec<String>>,
 ) -> Result<()> {
-    // TODO
-    todo!()
+    let mut file = File::open(filepath)?;
+    let mut src = String::new();
+    file.read_to_string(&mut src)?;
+    let syntax_tree = syn::parse_file(&src)?;
+
+    let hacky_resolver = HackyResolver::new(crate_name, filepath);
+
+    let mut scanner = Scanner::new(filepath, hacky_resolver.unwrap(), scan_results, enabled_cfg);
+    scanner.add_sinks(sinks);
+
+    scanner.scan_file(&syntax_tree);
+
+    Ok(())
 }
 
 /// Load the Rust file at the filepath and scan it
@@ -1039,7 +1051,7 @@ pub fn scan_file(
     let syntax_tree = syn::parse_file(&src)?;
 
     // Initialize resolver data structures
-    let hacky_resolver = HackyResolver::new(crate_name, filepath);
+    // let hacky_resolver = HackyResolver::new(crate_name, filepath);
 
     // Initialize resolver
     let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
@@ -1064,10 +1076,18 @@ pub fn try_scan_file(
     enabled_cfg: &HashMap<String, Vec<String>>,
     quick_mode: bool,
 ) {
-    scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg)
+    if quick_mode{
+        scan_file_quick(crate_name, filepath, scan_results, sinks, enabled_cfg)
+        .unwrap_or_else(|err| {
+            warn!("Failed to scan file {} ({})", filepath.to_string_lossy(), err);
+        })
+    }
+    else {    
+        scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg)
         .unwrap_or_else(|err| {
             warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
         });
+    }
 }
 
 /// Scan the supplied crate with an additional list of sinks
