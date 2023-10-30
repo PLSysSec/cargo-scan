@@ -14,6 +14,10 @@ def run_shell(cmd):
 
 ## Automatically update the data in TEST_CRATES_CSV
 
+# first delete empty directories, since git doesn't track them
+run_shell(f"find {TEST_CRATES_DIR} -maxdepth 1 -empty -delete")
+
+# now use ls to update the crate list
 run_shell(f"echo name > {TEST_CRATES_CSV}")
 run_shell(f"ls -1 {TEST_CRATES_DIR} >> {TEST_CRATES_CSV}")
 
