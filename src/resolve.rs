@@ -51,7 +51,7 @@ pub trait Resolve<'a>: Sized {
     /*
         Field and expression resolution
     */
-    fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath;
+    fn resolve_field(&self, i: &syn::Ident) -> CanonicalPath;
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath;
     fn resolve_closure(&self, cl: &'a syn::ExprClosure) -> CanonicalPath;
     fn resolve_const_or_static(&self, p: &'a syn::Path) -> bool;
@@ -60,7 +60,7 @@ pub trait Resolve<'a>: Sized {
         Type resolution
     */
     fn resolve_path_type(&self, i: &'a syn::Path) -> CanonicalType;
-    fn resolve_field_type(&self, i: &'a syn::Ident) -> CanonicalType;
+    fn resolve_field_type(&self, i: &syn::Ident) -> CanonicalType;
 
     /*
         Optional helper functions to inform the resolver of the scope
@@ -274,7 +274,7 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
         self.resolve_ident_or_else(i, || self.backup.resolve_method(i))
     }
 
-    fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath {
+    fn resolve_field(&self, i: &syn::Ident) -> CanonicalPath {
         self.resolve_ident_or_else(i, || self.backup.resolve_field(i))
     }
 
@@ -287,7 +287,7 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
         self.backup.resolve_field_index(idx)
     }
 
-    fn resolve_field_type(&self, i: &'a syn::Ident) -> CanonicalType {
+    fn resolve_field_type(&self, i: &syn::Ident) -> CanonicalType {
         self.resolve_type_or_else(i, || self.backup.resolve_field_type(i))
     }
 
