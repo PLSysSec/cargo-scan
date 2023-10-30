@@ -5,7 +5,7 @@ use cargo_scan::scan_stats::{self, CrateStats};
 use cargo_scan::util;
 
 use clap::Parser;
-use log::{error, info};
+use log::{debug, error, info};
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
@@ -31,6 +31,9 @@ const RESULTS_ALL_SUFFIX: &str = "_all.csv";
 const RESULTS_SUMMARY_SUFFIX: &str = "_summary.csv";
 const RESULTS_PATTERNS_SUFFIX: &str = "_patterns.csv";
 const RESULTS_METADATA_SUFFIX: &str = "_metadata.csv";
+
+// Whether to remove and re-download old downloaded packages
+const UPDATE_DOWNLOADS: bool = false;
 
 /*
     CLI
@@ -59,21 +62,28 @@ fn crate_stats(crt: &str, download_loc: PathBuf, test_run: bool) -> CrateStats {
     let output_dir = download_loc.join(Path::new(crt));
 
     if !test_run {
-        let _output = Command::new("cargo")
-            .arg("download")
-            .arg("-x")
-            .arg(crt)
-            .arg("-o")
-            .arg(&output_dir)
-            .output()
-            .expect("failed to run cargo download");
+        if UPDATE_DOWNLOADS {
+            fs::remove_dir_all(&output_dir).expect("failed to remove old dir");
+        }
+
+        if !output_dir.is_dir() {
+            info!("Downloading {} to: {:?}", crt, output_dir);
+
+            let _output = Command::new("cargo")
+                .arg("download")
+                .arg("-x")
+                .arg(crt)
+                .arg("-o")
+                .arg(&output_dir)
+                .output()
+                .expect("failed to run cargo download");
+        }
     }
+
+    debug!("Downloaded");
 
     let stats = scan_stats::get_crate_stats_default(output_dir)
         .expect("Failed to get crate stats");
-
-    // TODO: disabled for running locally; consider uncommenting again
-    // remove_dir_all(output_dir)?;
 
     // dbg!(&stats);
     info!("Done scanning: {}", crt);
