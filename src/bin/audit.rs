@@ -355,7 +355,20 @@ fn runner(args: Args) -> Result<()> {
 fn main() {
     cargo_scan::util::init_logging();
     let mut args = Args::parse();
-    if args.audit_file_path.is_none() {
+
+    if let Some(audit_file_path) = &mut args.audit_file_path {
+        // If the user-chosen audit file path is a directory, make the audit path
+        // the default audit name in that directory
+        if audit_file_path.is_dir() {
+            if let Ok(crate_id) = load_cargo_toml(&args.crate_path) {
+                audit_file_path.push(format!("{}.audit", crate_id));
+            } else {
+                println!("Error: Couldn't load the Cargo.toml at the crate path");
+                return;
+            }
+        }
+    } else {
+        // If the user didn't enter an audit file path, default to "~/.cargo_audits".
         if let Some(mut p) = home_dir() {
             p.push(".cargo_audits");
             if let Ok(crate_id) = load_cargo_toml(&args.crate_path) {
@@ -364,6 +377,7 @@ fn main() {
                 println!("Error: Couldn't load the Cargo.toml at the crate path");
                 return;
             }
+
             args.audit_file_path = Some(p);
         } else {
             println!("Error: couldn't find the home directory (required for default audit file path)");
