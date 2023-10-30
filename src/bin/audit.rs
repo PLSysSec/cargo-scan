@@ -5,11 +5,12 @@ use cargo_scan::auditing::reset::reset_annotation;
 use cargo_scan::auditing::review::review_audit;
 use cargo_scan::auditing::util::{hash_dir, is_audit_scan_valid};
 use cargo_scan::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
+use cargo_scan::ident::IdentPath;
 use cargo_scan::scanner::{self, scan_crate};
 use cargo_scan::util::load_cargo_toml;
 
-use std::collections::HashMap;
-use std::fs::{create_dir_all, File};
+use std::collections::{HashMap, HashSet};
+use std::fs::{self, create_dir_all, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
@@ -86,6 +87,13 @@ struct Args {
     /// behavior.
     #[clap(long, value_parser, num_args = 1.., default_values_t = DEFAULT_EFFECT_TYPES)]
     effect_types: Vec<EffectType>,
+
+    /// TESTING ONLY: Import all caller-checked public functions from audits in
+    /// a folder as additional sinks for an audit. This functionality should
+    /// eventuallly be replaced by the chain binary, but is included here for
+    /// eval purposes only.
+    #[clap(long)]
+    sinks_folder: Option<String>,
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
@@ -204,6 +212,18 @@ where
     }
 }
 
+fn get_sinks(sinks_folder: Option<&String>) -> Result<HashSet<IdentPath>> {
+    let mut idents = HashSet::new();
+
+    for path in fs::read_dir(sinks_folder.context("No sinks folder value")?)? {
+        let audit =
+            AuditFile::read_audit_file(path?.path())?.context("Missing audit file")?;
+        idents.extend(audit.pub_caller_checked.keys().map(|x| x.clone().to_path()));
+    }
+
+    Ok(idents)
+}
+
 fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
     let scan_res = {
         let relevant_effects = if let Some(p) = &audit_file {
@@ -212,8 +232,12 @@ fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
             &args.effect_types
         };
 
+        // Load extra sinks if we have any
+        let sinks =
+            get_sinks(args.sinks_folder.as_ref()).unwrap_or_else(|_| HashSet::new());
+
         println!("Scanning crate...");
-        scanner::scan_crate(&args.crate_path, relevant_effects)?
+        scanner::scan_crate_with_sinks(&args.crate_path, sinks, relevant_effects)?
     };
     let scan_effects = scan_res.effects_set();
 
