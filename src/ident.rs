@@ -255,6 +255,14 @@ impl CanonicalPath {
         result
     }
 
+    /// Returns true if the CanonicalPath is the top-level `main` function
+    pub fn is_main(&self) -> bool {
+        let Some((s1, s2)) = self.ident_path.0.rsplit_once("::") else {
+            return false;
+        };
+        s2 == "main" && s1 == self.crate_name().as_str()
+    }
+
     pub fn push_ident(&mut self, i: &Ident) {
         self.ident_path.push_ident(i);
         self.check_invariant();

@@ -10,7 +10,7 @@ use super::hacky_resolver::HackyResolver;
 use super::ident::{CanonicalPath, CanonicalType, Ident};
 
 use anyhow::Result;
-use log::{debug, info, warn};
+use log::{debug, warn};
 use std::fmt::Display;
 use std::path::Path as FilePath;
 use syn::{self, spanned::Spanned};
@@ -40,6 +40,7 @@ pub trait Resolve<'a>: Sized {
     fn resolve_path(&self, p: &'a syn::Path) -> CanonicalPath;
     fn resolve_def(&self, i: &'a syn::Ident) -> CanonicalPath;
     fn resolve_ffi(&self, p: &'a syn::Path) -> Option<CanonicalPath>;
+    fn resolve_ffi_ident(&self, i: &'a syn::Ident) -> Option<CanonicalPath>;
     fn resolve_unsafe_path(&self, p: &'a syn::Path) -> bool;
     fn resolve_unsafe_ident(&self, p: &'a syn::Ident) -> bool;
     fn resolve_all_impl_methods(
@@ -169,7 +170,7 @@ impl<'a> FileResolver<'a> {
             let s = SrcLoc::from_span(self.filepath, i);
             // Temporarily suppressing this warning.
             // TODO: Bump this back up to warn! once a fix is pushed
-            info!("Resolution failed (using fallback) for: {} ({}) ({})", i, s, err);
+            debug!("Resolution failed (using fallback) for: {} ({}) ({})", i, s, err);
             fallback()
         })
     }
@@ -212,13 +213,17 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
         self.resolve_ident_or_else(i, || self.backup.resolve_def(i))
     }
 
-    fn resolve_ffi(&self, p: &syn::Path) -> Option<CanonicalPath> {
-        let i = &p.segments.last().unwrap().ident;
+    fn resolve_ffi_ident(&self, i: &syn::Ident) -> Option<CanonicalPath> {
         self.resolve_or_else(
             i,
             || self.resolve_ffi_core(i),
-            || self.backup.resolve_ffi(p),
+            || self.backup.resolve_ffi_ident(i),
         )
+    }
+
+    fn resolve_ffi(&self, p: &syn::Path) -> Option<CanonicalPath> {
+        let i = &p.segments.last().unwrap().ident;
+        self.resolve_ffi_ident(i)
     }
 
     fn resolve_unsafe_path(&self, p: &syn::Path) -> bool {
@@ -293,7 +298,7 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
 
     fn resolve_closure(&self, cl: &'a syn::ExprClosure) -> CanonicalPath {
         let s = SrcLoc::from_span(self.filepath, cl);
-        info!("Skipping closure resolution (using fallback) for {:?} ({})", cl, s);
+        debug!("Skipping closure resolution (using fallback) for {:?} ({})", cl, s);
         self.backup.resolve_closure(cl)
     }
 

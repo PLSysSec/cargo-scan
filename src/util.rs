@@ -11,8 +11,11 @@ pub fn init_logging() {
 
     // wish there was a nicer way to do this, env_logger doesn't make it easy
     // to disable non-cargo_scan logging
-    let filters = "warn,cargo_scan=".to_string()
-        + env::var("RUST_LOG").as_deref().unwrap_or("warn");
+    let level = env::var("RUST_LOG").as_deref().unwrap_or("warn").to_string();
+    let filters = format!(
+        "warn,cargo_scan={},scan={},audit={},chain={}",
+        level, level, level, level
+    );
 
     Builder::new().parse_filters(&filters).init();
 }
@@ -69,9 +72,10 @@ pub mod iter {
 
 /// Filesystem util
 pub mod fs {
+    use std::fmt::Debug;
     use std::fs::File;
-    use std::io::{BufRead, BufReader};
-    use std::path::PathBuf;
+    use std::io::{BufRead, BufReader, BufWriter};
+    use std::path::{Path, PathBuf};
     use walkdir::{DirEntry, WalkDir};
 
     pub fn walk_files(p: &PathBuf) -> impl Iterator<Item = PathBuf> {
@@ -96,6 +100,15 @@ pub mod fs {
         let file = File::open(p).unwrap();
         let reader = BufReader::new(file).lines();
         reader.map(|line| line.unwrap())
+    }
+
+    pub fn path_writer<P>(path: P) -> BufWriter<File>
+    where
+        P: AsRef<Path> + Debug,
+    {
+        BufWriter::new(File::create(&path).unwrap_or_else(|err| {
+            panic!("Could not open file for writing: {:?} -- {}", path, err)
+        }))
     }
 }
 

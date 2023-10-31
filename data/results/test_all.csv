@@ -1,4 +1,5 @@
 crate, fn_decl, callee, effect, dir, file, line, col
+caller_checked, caller_checked::has_direct_effect, libc::unix::sysconf, [FFI], data/test-packages/caller-checked/src, lib.rs, 9, 8
 caller_checked, caller_checked::local_effect, libc::unix::linux_like::linux::gnu::b64::x86_64::not_x32::sysctl, [FFI], data/test-packages/caller-checked/src, main.rs, 9, 8
 caller_checked, caller_checked::unsafe_effect, caller_checked::unsafe_effect::x, [PtrDeref], data/test-packages/caller-checked/src, main.rs, 24, 9
 caller_checked, caller_checked::sub::effect, libc::unix::sysconf, [FFI], data/test-packages/caller-checked/src, sub.rs, 6, 8

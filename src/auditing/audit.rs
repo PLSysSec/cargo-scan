@@ -273,8 +273,24 @@ pub fn start_audit(
         println!("WARNING: package has been marked as unsafe");
     }
 
+    // Sort the base audit locs before presenting them to the user so they don't
+    // have to jump between files as much
+    let mut audit_locs: Vec<(&EffectInstance, &mut EffectTree)> =
+        audit_file.audit_trees.iter_mut().collect();
+    audit_locs.sort_by(|(a, _), (b, _)| {
+        let a_loc = a.call_loc();
+        let b_loc = b.call_loc();
+        let a_path = a_loc.filepath_string();
+        let b_path = b_loc.filepath_string();
+
+        a_path
+            .cmp(&b_path)
+            .then_with(|| a_loc.start_line().cmp(&b_loc.start_line()))
+            .then_with(|| a_loc.start_col().cmp(&b_loc.start_col()))
+    });
+
     // Iterate through the effects and prompt the user for if they're safe
-    for (e, t) in audit_file.audit_trees.iter_mut() {
+    for (e, t) in audit_locs {
         match t.get_leaf_annotation() {
             Some(SafetyAnnotation::Skipped) => {
                 match audit_effect_tree(e, t, &scan_res, config)? {

@@ -164,6 +164,8 @@ pub enum Effect {
     /// Note: This effect isn't unsafe, and is turned off by default (not included
     /// in the default list of effects to care about)
     RawPtrCast,
+    /// Declaration of a foreign function
+    FFIDecl(CanonicalPath),
 }
 impl Effect {
     fn sink_pattern(&self) -> Option<&Sink> {
@@ -181,7 +183,7 @@ impl Effect {
     fn simple_str(&self) -> &str {
         match self {
             Self::SinkCall(s) => s.as_str(),
-            Self::FFICall(_) => "[FFI]",
+            Self::FFICall(_) => "[FFI Call]",
             Self::UnsafeCall(_) => "[UnsafeCall]",
             Self::RawPointer(_) => "[PtrDeref]",
             Self::UnionField(_) => "[UnionField]",
@@ -190,11 +192,16 @@ impl Effect {
             Self::FnPtrCreation => "[FnPtrCreation]",
             Self::ClosureCreation => "[ClosureCreation]",
             Self::RawPtrCast => "[RawPtrCast]",
+            Self::FFIDecl(_) => "[FFI Declaration]",
         }
     }
 
-    fn to_csv(&self) -> String {
+    pub fn to_csv(&self) -> String {
         csv::sanitize_comma(self.simple_str())
+    }
+
+    pub fn is_ffi_decl(&self) -> bool {
+        matches!(self, Self::FFIDecl(_))
     }
 }
 
@@ -212,6 +219,7 @@ pub enum EffectType {
     FnPtrCreation,
     ClosureCreation,
     RawPtrCast,
+    FFIDecl,
 }
 
 impl EffectType {
@@ -227,6 +235,7 @@ impl EffectType {
             Effect::FnPtrCreation => types.contains(&EffectType::FnPtrCreation),
             Effect::ClosureCreation => types.contains(&EffectType::ClosureCreation),
             Effect::RawPtrCast => types.contains(&EffectType::RawPtrCast),
+            Effect::FFIDecl(_) => types.contains(&EffectType::FFIDecl),
         }
     }
 
@@ -241,6 +250,7 @@ impl EffectType {
             EffectType::StaticExt,
             EffectType::FnPtrCreation,
             EffectType::ClosureCreation,
+            EffectType::FFIDecl,
         ]
     }
 }
@@ -257,6 +267,7 @@ pub const DEFAULT_EFFECT_TYPES: &[EffectType] = &[
     EffectType::StaticExt,
     EffectType::FnPtrCreation,
     EffectType::ClosureCreation,
+    EffectType::FFIDecl,
 ];
 
 /// Type representing an Effect instance, with complete context.

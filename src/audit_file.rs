@@ -106,6 +106,7 @@ pub struct AuditFile {
     pub audit_trees: HashMap<EffectInstance, EffectTree>,
     /// Contains a map from public functions marked caller-checked to a set of
     /// all base EffectInstances that flow into that function
+    #[serde_as(as = "Vec<(_, _)>")]
     pub pub_caller_checked: HashMap<CanonicalPath, HashSet<EffectInstance>>,
     // TODO: Make the base_dir a crate instead
     pub base_dir: PathBuf,

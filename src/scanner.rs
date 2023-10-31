@@ -31,6 +31,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path as FilePath;
 use syn::spanned::Spanned;
+use syn::ForeignItemFn;
 
 /// Results of a scan
 ///
@@ -57,6 +58,7 @@ pub struct ScanResults {
     pub skipped_other: LoCTracker,
     pub unsafe_traits: LoCTracker,
     pub unsafe_impls: LoCTracker,
+    pub fn_loc_tracker: HashMap<CanonicalPath, LoCTracker>,
 
     // TODO other cases:
     pub _effects_loc: LoCTracker,
@@ -94,17 +96,17 @@ impl ScanResults {
         let fn_name = f.fn_name;
 
         // Update call graph
-        self.update_call_graph(fn_name.to_owned());
+        self.update_call_graph(&fn_name);
 
         // Save function info
-        if let Visibility::Public = f.vis {
+        if f.vis == Visibility::Public || fn_name.is_main() {
             self.pub_fns.insert(fn_name.clone());
         }
         self.fn_locs.insert(fn_name, f.src_loc);
     }
 
-    fn update_call_graph(&mut self, method: CanonicalPath) -> NodeIndex {
-        if let Some(node_idx) = self.node_idxs.get(&method) {
+    fn update_call_graph(&mut self, method: &CanonicalPath) -> NodeIndex {
+        if let Some(node_idx) = self.node_idxs.get(method) {
             return node_idx.to_owned();
         }
 
@@ -112,6 +114,12 @@ impl ScanResults {
         self.node_idxs.insert(method.clone(), node_idx);
 
         node_idx
+    }
+
+    fn add_call(&mut self, caller: &CanonicalPath, callee: &CanonicalPath, loc: SrcLoc) {
+        let caller_idx = self.update_call_graph(caller);
+        let callee_idx = self.update_call_graph(callee);
+        self.call_graph.add_edge(caller_idx, callee_idx, loc);
     }
 }
 
@@ -247,7 +255,7 @@ where
             let syn::Meta::List(l) = &attr.meta else { return false };
             let args = &l.tokens;
             if self.skip_cfg(args) {
-                info!("Skipping cfg attribute: {}", args);
+                debug!("Skipping cfg attribute: {}", args);
                 return true;
             } else {
                 debug!("Scanning cfg attribute: {}", args);
@@ -328,7 +336,7 @@ where
 
     fn scan_foreign_item(&mut self, i: &'a syn::ForeignItem) {
         match i {
-            syn::ForeignItem::Fn(f) => self.resolver.scan_foreign_fn(f),
+            syn::ForeignItem::Fn(f) => self.scan_foreign_fn(f),
             syn::ForeignItem::Macro(m) => {
                 self.data.skipped_macros.add(m);
             }
@@ -338,6 +346,35 @@ where
         }
         // Ignored: Static, Type, Macro, Verbatim
         // https://docs.rs/syn/latest/syn/enum.ForeignItem.html
+    }
+
+    fn scan_foreign_fn(&mut self, f: &'a ForeignItemFn) {
+        if self.skip_attrs(&f.attrs) {
+            self.data.skipped_conditional_code.add(f);
+            return;
+        }
+
+        // Notify HackyResolver for this declaration
+        self.resolver.scan_foreign_fn(f);
+        // Resolve FFI declaration
+        let Some(cp) = self.resolver.resolve_ffi_ident(&f.sig.ident) else { return; };
+        let ffi_dec = FnDec::new(self.filepath, &f, cp.clone(), &f.vis);
+
+        // If it is not a public FFI declaration
+        // do not update ScanResults
+        if ffi_dec.vis != Visibility::Public {
+            return;
+        }
+
+        // Get the total lines of code of this declaration
+        let mut ffi_loc = LoCTracker::new();
+        ffi_loc.add(f);
+        self.data.fn_loc_tracker.insert(cp.clone(), ffi_loc);
+
+        // Notify ScanResults
+        self.data.add_fn_dec(ffi_dec);
+
+        self.push_effect(f.span(), cp.clone(), Effect::FFIDecl(cp));
     }
 
     /*
@@ -466,31 +503,17 @@ where
             self.scan_fn(&m.sig, body, vis);
         } else {
             // Update call graph
-            self.data.update_call_graph(f_name.clone());
+            self.data.update_call_graph(&f_name);
             self.data.trait_meths.insert(f_name.clone());
         }
 
         // Add edges in the call graph from all impl methods to their corresponding abstract trait method
-        let node_indices = self.data.node_idxs.clone();
-        if let Some(trait_meth_node_idx) = node_indices.get(&f_name) {
-            impl_methods.iter().for_each(|impl_meth| match node_indices.get(impl_meth) {
-                Some(impl_meth_node_idx) => {
-                    self.data.call_graph.add_edge(
-                        *impl_meth_node_idx,
-                        *trait_meth_node_idx,
-                        SrcLoc::from_span(self.filepath, &m.span()),
-                    );
-                }
-                None => {
-                    let impl_meth_node_idx =
-                        self.data.update_call_graph(impl_meth.to_owned());
-                    self.data.call_graph.add_edge(
-                        impl_meth_node_idx,
-                        *trait_meth_node_idx,
-                        SrcLoc::from_span(self.filepath, &m.span()),
-                    );
-                }
-            });
+        for impl_meth in &impl_methods {
+            self.data.add_call(
+                &f_name,
+                impl_meth,
+                SrcLoc::from_span(self.filepath, &m.span()),
+            );
         }
     }
 
@@ -514,6 +537,11 @@ where
         let f_ident = &f_sig.ident;
         let f_name = self.resolver.resolve_def(f_ident);
         let fn_dec = FnDec::new(self.filepath, f_sig, f_name.clone(), vis);
+
+        // Get the total lines of code of this function
+        let mut fn_loc = LoCTracker::new();
+        fn_loc.add(body.span());
+        self.data.fn_loc_tracker.insert(f_name.clone(), fn_loc);
 
         // Always push the new function declaration before scanning the
         // body so we have access to the function its in
@@ -589,25 +617,50 @@ where
     fn scan_expr(&mut self, e: &'a syn::Expr) {
         match e {
             syn::Expr::Array(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 for y in x.elems.iter() {
                     self.scan_expr(y);
                 }
             }
             syn::Expr::Assign(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scope_assign_lhs = true;
                 self.scan_expr(&x.left);
                 self.scope_assign_lhs = false;
                 self.scan_expr(&x.right);
             }
             syn::Expr::Async(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 for s in &x.block.stmts {
                     self.scan_fn_statement(s);
                 }
             }
             syn::Expr::Await(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.base);
             }
             syn::Expr::Binary(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.left);
                 self.scan_expr(&x.right);
             }
@@ -622,11 +675,20 @@ where
                 }
             }
             syn::Expr::Break(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 if let Some(y) = &x.expr {
                     self.scan_expr(y);
                 }
             }
             syn::Expr::Call(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
                 // ***** THE FIRST IMPORTANT CASE *****
                 // Arguments
                 self.scan_expr_call_args(&x.args);
@@ -634,6 +696,11 @@ where
                 self.scan_expr_call(&x.func);
             }
             syn::Expr::Cast(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 // If we see a cast to a raw pointer, add the effect
                 if let syn::Type::Ptr(_) = *x.ty {
                     let mut tokens: TokenStream = TokenStream::new();
@@ -648,6 +715,11 @@ where
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Closure(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 // TBD: closures are a bit weird!
                 // Note that the body expression doesn't get evaluated yet,
                 // and may be evaluated somewhere else.
@@ -656,19 +728,39 @@ where
             }
             syn::Expr::Continue(_) => (),
             syn::Expr::Field(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.base);
                 self.scan_field_access(x);
             }
             syn::Expr::ForLoop(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
                 for s in &x.body.stmts {
                     self.scan_fn_statement(s);
                 }
             }
             syn::Expr::Group(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
             }
             syn::Expr::If(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.cond);
                 for s in &x.then_branch.stmts {
                     self.scan_fn_statement(s);
@@ -678,14 +770,29 @@ where
                 }
             }
             syn::Expr::Index(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
                 self.scan_expr(&x.index);
             }
             syn::Expr::Let(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Lit(_) => (),
             syn::Expr::Loop(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 for s in &x.body.stmts {
                     self.scan_fn_statement(s);
                 }
@@ -694,8 +801,18 @@ where
                 self.data.skipped_macros.add(m);
             }
             syn::Expr::Match(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
                 for a in &x.arms {
+                    if self.skip_attrs(&a.attrs) {
+                        self.data.skipped_conditional_code.add(a);
+                        return;
+                    }
+
                     if let Some((_, y)) = &a.guard {
                         self.scan_expr(y);
                     }
@@ -703,6 +820,11 @@ where
                 }
             }
             syn::Expr::MethodCall(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 // ***** THE SECOND IMPORTANT CASE *****
                 // Receiver object
                 self.scan_expr(&x.receiver);
@@ -712,13 +834,28 @@ where
                 self.scan_expr_call_method(&x.method);
             }
             syn::Expr::Paren(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Path(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 // typically a local variable
                 self.scan_path(&x.path);
             }
             syn::Expr::Range(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 if let Some(y) = &x.start {
                     self.scan_expr(y);
                 }
@@ -727,9 +864,19 @@ where
                 }
             }
             syn::Expr::Reference(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Repeat(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
                 self.scan_expr(&x.len);
             }
@@ -744,7 +891,17 @@ where
                 }
             }
             syn::Expr::Struct(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 for y in x.fields.iter() {
+                    if self.skip_attrs(&y.attrs) {
+                        self.data.skipped_conditional_code.add(y);
+                        return;
+                    }
+
                     self.scan_expr(&y.expr);
                 }
                 if let Some(y) = &x.rest {
@@ -752,26 +909,51 @@ where
                 }
             }
             syn::Expr::Try(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.expr);
             }
             syn::Expr::TryBlock(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.syn_warning("encountered try block (unstable feature)", x);
                 for y in &x.block.stmts {
                     self.scan_fn_statement(y);
                 }
             }
             syn::Expr::Tuple(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 for y in x.elems.iter() {
                     self.scan_expr(y);
                 }
             }
             syn::Expr::Unary(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 if let syn::UnOp::Deref(_) = x.op {
                     self.scan_deref(&x.expr);
                 }
                 self.scan_expr(&x.expr);
             }
             syn::Expr::Unsafe(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 // ***** THE THIRD IMPORTANT CASE *****
                 self.scan_unsafe_block(x);
             }
@@ -779,12 +961,22 @@ where
                 self.syn_warning("skipping Verbatim expression", v);
             }
             syn::Expr::While(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.scan_expr(&x.cond);
                 for s in &x.body.stmts {
                     self.scan_fn_statement(s);
                 }
             }
             syn::Expr::Yield(x) => {
+                if self.skip_attrs(&x.attrs) {
+                    self.data.skipped_conditional_code.add(x);
+                    return;
+                }
+
                 self.syn_warning("encountered yield expression (unstable feature)", x);
                 if let Some(y) = &x.expr {
                     self.scan_expr(y);
@@ -897,8 +1089,12 @@ where
     where
         S: Debug + Spanned,
     {
-        let containing_fn = self.scope_fns.last().expect("not inside a function!");
-        let caller = &containing_fn.fn_name;
+        let caller = if eff_type.is_ffi_decl() {
+            &callee
+        } else {
+            let containing_fn = self.scope_fns.last().expect("not inside a function!");
+            &containing_fn.fn_name
+        };
 
         let eff = EffectInstance::new_effect(
             self.filepath,
@@ -926,16 +1122,11 @@ where
     {
         let containing_fn = self.scope_fns.last().expect("not inside a function!");
         let caller = &containing_fn.fn_name;
-
-        if let Some(caller_node_idx) = self.data.node_idxs.get(caller) {
-            if let Some(callee_node_idx) = self.data.node_idxs.get(&callee) {
-                self.data.call_graph.add_edge(
-                    *caller_node_idx,
-                    *callee_node_idx,
-                    SrcLoc::from_span(self.filepath, &callee_span.span()),
-                );
-            }
-        }
+        self.data.add_call(
+            caller,
+            &callee,
+            SrcLoc::from_span(self.filepath, &callee_span.span()),
+        );
 
         let Some(eff) = EffectInstance::new_call(
             self.filepath,
@@ -1042,7 +1233,7 @@ pub fn scan_file(
     sinks: HashSet<IdentPath>,
     enabled_cfg: &HashMap<String, Vec<String>>,
 ) -> Result<()> {
-    info!("Scanning file: {:?}", filepath);
+    debug!("Scanning file: {:?}", filepath);
 
     // Load file contents
     let mut file = File::open(filepath)?;
