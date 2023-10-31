@@ -5,8 +5,7 @@
 
 use crate::attr_parser::CfgPred;
 use crate::audit_file::EffectInfo;
-use crate::hacky_resolver::{HackyResolver, self};
-use crate::ident::CanonicalType;
+use crate::hacky_resolver::HackyResolver;
 
 use super::effect::{Effect, EffectInstance, EffectType, FnDec, SrcLoc, Visibility};
 use super::ident::{CanonicalPath, IdentPath};
@@ -16,14 +15,12 @@ use super::sink::Sink;
 use super::util;
 
 use anyhow::{anyhow, Context, Result};
-use cargo::util::Queue;
 use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
 use petgraph::Direction;
 use proc_macro2::{TokenStream, TokenTree};
 use quote::ToTokens;
-use ra_ap_ide_db::items_locator::DEFAULT_QUERY_SEARCH_LIMIT;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -190,8 +187,6 @@ where
         }
     }
 
-
-
     /// Top-level invariant -- called before consuming results
     pub fn assert_top_level_invariant(&self) {
         self.resolver.assert_top_level_invariant();
@@ -357,7 +352,9 @@ where
         // Notify HackyResolver for this declaration
         self.resolver.scan_foreign_fn(f);
         // Resolve FFI declaration
-        let Some(cp) = self.resolver.resolve_ffi_ident(&f.sig.ident) else { return; };
+        let Some(cp) = self.resolver.resolve_ffi_ident(&f.sig.ident) else {
+            return;
+        };
         let ffi_dec = FnDec::new(self.filepath, &f, cp.clone(), &f.vis);
 
         // If it is not a public FFI declaration
@@ -1216,7 +1213,8 @@ pub fn scan_file_quick(
 
     let hacky_resolver = HackyResolver::new(crate_name, filepath);
 
-    let mut scanner = Scanner::new(filepath, hacky_resolver.unwrap(), scan_results, enabled_cfg);
+    let mut scanner =
+        Scanner::new(filepath, hacky_resolver.unwrap(), scan_results, enabled_cfg);
     scanner.add_sinks(sinks);
 
     scanner.scan_file(&syntax_tree);
@@ -1267,17 +1265,16 @@ pub fn try_scan_file(
     enabled_cfg: &HashMap<String, Vec<String>>,
     quick_mode: bool,
 ) {
-    if quick_mode{
+    if quick_mode {
         scan_file_quick(crate_name, filepath, scan_results, sinks, enabled_cfg)
-        .unwrap_or_else(|err| {
-            warn!("Failed to scan file {} ({})", filepath.to_string_lossy(), err);
-        })
-    }
-    else {    
+            .unwrap_or_else(|err| {
+                warn!("Failed to scan file {} ({})", filepath.to_string_lossy(), err);
+            })
+    } else {
         scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg)
-        .unwrap_or_else(|err| {
-            warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
-        });
+            .unwrap_or_else(|err| {
+                warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
+            });
     }
 }
 
@@ -1322,7 +1319,7 @@ pub fn scan_crate_with_sinks(
                 &mut scan_results,
                 sinks.clone(),
                 &enabled_cfg,
-                quick_mode
+                quick_mode,
             );
         }
     } else {
@@ -1336,7 +1333,7 @@ pub fn scan_crate_with_sinks(
                 &mut scan_results,
                 sinks,
                 &enabled_cfg,
-                quick_mode
+                quick_mode,
             );
         } else {
             warn!(

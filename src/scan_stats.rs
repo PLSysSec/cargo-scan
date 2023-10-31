@@ -75,16 +75,23 @@ impl CrateStats {
     }
 }
 
-pub fn get_crate_stats_default(crate_path: PathBuf) -> Result<CrateStats> {
-    get_crate_stats(crate_path, DEFAULT_EFFECT_TYPES)
+pub fn get_crate_stats_default(
+    crate_path: PathBuf,
+    quick_mode: bool,
+) -> Result<CrateStats> {
+    get_crate_stats(crate_path, DEFAULT_EFFECT_TYPES, quick_mode)
 }
 
 pub fn get_crate_stats(
     crate_path: PathBuf,
     effect_types: &[EffectType],
+    quick_mode: bool,
 ) -> Result<CrateStats> {
-    let (audit, results) =
-        AuditFile::new_caller_checked_default_with_results(&crate_path, effect_types)?;
+    let (audit, results) = AuditFile::new_caller_checked_default_with_results(
+        &crate_path,
+        effect_types,
+        quick_mode,
+    )?;
 
     let pub_fns = results.pub_fns.len();
     let mut pub_fns_with_effects = 0;

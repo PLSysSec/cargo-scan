@@ -55,9 +55,18 @@ struct Args {
     /// Maximum number of threads to spawn
     #[clap(short, long, default_value_t = 8)]
     num_threads: usize,
+
+    // Run in quick mode (turns off RustAnalyzer)
+    #[clap(short, long, default_value_t = false)]
+    quick_mode: bool,
 }
 
-fn crate_stats(crt: &str, download_loc: PathBuf, test_run: bool) -> CrateStats {
+fn crate_stats(
+    crt: &str,
+    download_loc: PathBuf,
+    test_run: bool,
+    quick_mode: bool,
+) -> CrateStats {
     info!("Getting stats for: {}", crt);
     let output_dir = download_loc.join(Path::new(crt));
 
@@ -82,7 +91,7 @@ fn crate_stats(crt: &str, download_loc: PathBuf, test_run: bool) -> CrateStats {
 
     debug!("Downloaded");
 
-    let stats = scan_stats::get_crate_stats_default(output_dir)
+    let stats = scan_stats::get_crate_stats_default(output_dir, quick_mode)
         .expect("Failed to get crate stats");
 
     // dbg!(&stats);
@@ -218,7 +227,7 @@ fn main() {
         let download_loc = download_loc.to_owned();
         let test_run = args.test_run;
         pool.execute(move || {
-            let res = crate_stats(&crt, download_loc, test_run);
+            let res = crate_stats(&crt, download_loc, test_run, args.quick_mode);
             if let Err(e) = tx.send((crt, res)) {
                 error!("Error sending result: {:?}", e);
             }

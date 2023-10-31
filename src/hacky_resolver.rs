@@ -272,7 +272,7 @@ impl<'a> HackyResolver<'a> {
     pub fn new_empty() -> Self {
         //just a placeholder
         Self {
-            filepath: &FilePath::new(""),
+            filepath: FilePath::new(""),
             modpath: CanonicalPath::new(""),
             scope_use: Vec::new(),
             scope_mods: Vec::new(),

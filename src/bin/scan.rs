@@ -25,7 +25,8 @@ struct Args {
     #[clap(short = 'd', long = "crate-download-path", default_value = ".stats_tmp")]
     crate_download_path: String,
 
-    #[clap(short, long)]
+    // Run in quick mode (turns off RustAnalyzer)
+    #[clap(short, long, default_value_t = false)]
     quick_mode: bool,
 }
 
@@ -33,15 +34,9 @@ fn main() -> Result<()> {
     cargo_scan::util::init_logging();
     let args = Args::parse();
 
-    let (audit, results) = AuditFile::new_caller_checked_default_with_results(
-        &args.crate_path,
-        &args.effect_types,
-        args.quick_mode
-    )?;
-
     // Note: old version without default_audit:
     // scanner::scan_crate(&args.crate_path, &args.effect_types)?
-    let stats = scan_stats::get_crate_stats_default(args.crate_path)?;
+    let stats = scan_stats::get_crate_stats_default(args.crate_path, args.quick_mode)?;
 
     println!("{}", EffectInstance::csv_header());
     for effect in &stats.effects {

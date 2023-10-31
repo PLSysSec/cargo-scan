@@ -237,7 +237,7 @@ fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
             get_sinks(args.sinks_folder.as_ref()).unwrap_or_else(|_| HashSet::new());
 
         println!("Scanning crate...");
-        scanner::scan_crate_with_sinks(&args.crate_path, sinks, relevant_effects)?
+        scanner::scan_crate_with_sinks(&args.crate_path, sinks, relevant_effects, false)?
     };
     let scan_effects = scan_res.effects_set();
 
