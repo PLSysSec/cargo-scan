@@ -5,6 +5,8 @@
 
 use crate::attr_parser::CfgPred;
 use crate::audit_file::EffectInfo;
+use crate::hacky_resolver::{HackyResolver, self};
+use crate::ident::CanonicalType;
 
 use super::effect::{Effect, EffectInstance, EffectType, FnDec, SrcLoc, Visibility};
 use super::ident::{CanonicalPath, IdentPath};
@@ -14,12 +16,14 @@ use super::sink::Sink;
 use super::util;
 
 use anyhow::{anyhow, Context, Result};
+use cargo::util::Queue;
 use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
 use petgraph::Direction;
 use proc_macro2::{TokenStream, TokenTree};
 use quote::ToTokens;
+use ra_ap_ide_db::items_locator::DEFAULT_QUERY_SEARCH_LIMIT;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -119,14 +123,16 @@ impl ScanResults {
     }
 }
 
-/// Stateful object to scan Rust source code for effects (fn calls of interest)
 #[derive(Debug)]
-pub struct Scanner<'a> {
+pub struct Scanner<'a, R>
+where
+    R: Resolve<'a>,
+{
     /// filepath that the scanner is being run on
     filepath: &'a FilePath,
 
     /// Name resolution resolver
-    resolver: FileResolver<'a>,
+    resolver: R,
 
     /// Number of unsafe keywords the current scope is nested inside
     /// (always 0 at top level)
@@ -156,7 +162,10 @@ pub struct Scanner<'a> {
     enabled_cfg: &'a HashMap<String, Vec<String>>,
 }
 
-impl<'a> Scanner<'a> {
+impl<'a, R> Scanner<'a, R>
+where
+    R: Resolve<'a>,
+{
     /*
         Main public API
     */
@@ -164,7 +173,7 @@ impl<'a> Scanner<'a> {
     /// Create a new scanner tied to a crate and file
     pub fn new(
         filepath: &'a FilePath,
-        resolver: FileResolver<'a>,
+        resolver: R,
         data: &'a mut ScanResults,
         enabled_cfg: &'a HashMap<String, Vec<String>>,
     ) -> Self {
@@ -180,6 +189,8 @@ impl<'a> Scanner<'a> {
             enabled_cfg,
         }
     }
+
+
 
     /// Top-level invariant -- called before consuming results
     pub fn assert_top_level_invariant(&self) {
@@ -258,6 +269,21 @@ impl<'a> Scanner<'a> {
     pub fn skip_attrs(&self, attrs: &'a [syn::Attribute]) -> bool {
         attrs.iter().any(|x| self.skip_attr(x))
     }
+
+    // pub fn scan_mod(&mut self, m: &'a syn::ItemMod) {
+    //     if self.skip_attrs(&m.attrs) {
+    //         self.data.skipped_conditional_code.add(m);
+    //         return;
+    //     }
+
+    //     if let Some((_, items)) = &m.content {
+    //         self.resolver.push_mod(&m.ident);
+    //         for i in items {
+    //             self.scan_item(i);
+    //         }
+    //         self.resolver.pop_mod();
+    //     }
+    // }
 
     pub fn scan_mod(&mut self, m: &'a syn::ItemMod) {
         if self.skip_attrs(&m.attrs) {
@@ -1175,6 +1201,29 @@ impl<'a> Scanner<'a> {
     }
 }
 
+/// Load the Rust file at the filepath and scan it (quick mode)
+pub fn scan_file_quick(
+    crate_name: &str,
+    filepath: &FilePath,
+    scan_results: &mut ScanResults,
+    sinks: HashSet<IdentPath>,
+    enabled_cfg: &HashMap<String, Vec<String>>,
+) -> Result<()> {
+    let mut file = File::open(filepath)?;
+    let mut src = String::new();
+    file.read_to_string(&mut src)?;
+    let syntax_tree = syn::parse_file(&src)?;
+
+    let hacky_resolver = HackyResolver::new(crate_name, filepath);
+
+    let mut scanner = Scanner::new(filepath, hacky_resolver.unwrap(), scan_results, enabled_cfg);
+    scanner.add_sinks(sinks);
+
+    scanner.scan_file(&syntax_tree);
+
+    Ok(())
+}
+
 /// Load the Rust file at the filepath and scan it
 pub fn scan_file(
     crate_name: &str,
@@ -1192,8 +1241,13 @@ pub fn scan_file(
     file.read_to_string(&mut src)?;
     let syntax_tree = syn::parse_file(&src)?;
 
-    // Initialize data structures
+    // Initialize resolver data structures
+    // let hacky_resolver = HackyResolver::new(crate_name, filepath);
+
+    // Initialize resolver
     let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
+
+    // Initialize scanner
     let mut scanner = Scanner::new(filepath, file_resolver, scan_results, enabled_cfg);
     scanner.add_sinks(sinks);
 
@@ -1211,11 +1265,20 @@ pub fn try_scan_file(
     scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
     enabled_cfg: &HashMap<String, Vec<String>>,
+    quick_mode: bool,
 ) {
-    scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg)
+    if quick_mode{
+        scan_file_quick(crate_name, filepath, scan_results, sinks, enabled_cfg)
+        .unwrap_or_else(|err| {
+            warn!("Failed to scan file {} ({})", filepath.to_string_lossy(), err);
+        })
+    }
+    else {    
+        scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg)
         .unwrap_or_else(|err| {
             warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
         });
+    }
 }
 
 /// Scan the supplied crate with an additional list of sinks
@@ -1223,6 +1286,7 @@ pub fn scan_crate_with_sinks(
     crate_path: &FilePath,
     sinks: HashSet<IdentPath>,
     relevant_effects: &[EffectType],
+    quick_mode: bool,
 ) -> Result<ScanResults> {
     info!("Scanning crate: {:?}", crate_path);
 
@@ -1239,6 +1303,7 @@ pub fn scan_crate_with_sinks(
 
     let crate_name = util::load_cargo_toml(crate_path)?.crate_name;
 
+    // TODO: this should *not* be created in the quick-mode case
     let resolver = Resolver::new(crate_path)?;
 
     let mut scan_results = ScanResults::new();
@@ -1257,6 +1322,7 @@ pub fn scan_crate_with_sinks(
                 &mut scan_results,
                 sinks.clone(),
                 &enabled_cfg,
+                quick_mode
             );
         }
     } else {
@@ -1270,6 +1336,7 @@ pub fn scan_crate_with_sinks(
                 &mut scan_results,
                 sinks,
                 &enabled_cfg,
+                quick_mode
             );
         } else {
             warn!(
@@ -1292,5 +1359,5 @@ pub fn scan_crate(
     crate_path: &FilePath,
     relevant_effects: &[EffectType],
 ) -> Result<ScanResults> {
-    scan_crate_with_sinks(crate_path, HashSet::new(), relevant_effects)
+    scan_crate_with_sinks(crate_path, HashSet::new(), relevant_effects, false)
 }

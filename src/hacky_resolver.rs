@@ -194,12 +194,12 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         CanonicalPath::new_owned(format!("UNKNOWN_METHOD::{}", i), src_loc)
     }
 
-    fn resolve_field(&self, i: &'a syn::Ident) -> CanonicalPath {
+    fn resolve_field(&self, i: &syn::Ident) -> CanonicalPath {
         let src_loc = SrcLoc::from_span(self.filepath, &i.span());
         CanonicalPath::new_owned(format!("UNKNOWN_FIELD::{}", i), src_loc)
     }
 
-    fn resolve_field_type(&self, i: &'a syn::Ident) -> CanonicalType {
+    fn resolve_field_type(&self, i: &syn::Ident) -> CanonicalType {
         CanonicalType::new_owned_string(format!("UNKNOWN_TYPE::{}", i))
     }
 
@@ -267,6 +267,22 @@ impl<'a> HackyResolver<'a> {
             ffi_decls: HashMap::new(),
             use_globs: Vec::new(),
         })
+    }
+
+    pub fn new_empty() -> Self {
+        //just a placeholder
+        Self {
+            filepath: &FilePath::new(""),
+            modpath: CanonicalPath::new(""),
+            scope_use: Vec::new(),
+            scope_mods: Vec::new(),
+            scope_fun: Vec::new(),
+            scope_fun_lens: Vec::new(),
+            scope_impl_adds: Vec::new(),
+            use_names: HashMap::new(),
+            ffi_decls: HashMap::new(),
+            use_globs: Vec::new(),
+        }
     }
 
     /// Reusable warning logger
