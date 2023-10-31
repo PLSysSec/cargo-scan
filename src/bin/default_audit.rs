@@ -1,9 +1,10 @@
-use std::path::PathBuf;
+use std::{collections::HashSet, path::PathBuf};
 
 use cargo_scan::{audit_file::AuditFile, effect::EffectType};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
+use parse_display::{Display, FromStr};
 
 /// Interactively vet a package audit
 #[derive(Parser, Debug)]
@@ -18,6 +19,17 @@ struct Args {
     /// Ovewrite the audit file if a new version of the crate is detected
     #[clap(short = 'o', long = "overwrite-audit", default_value_t = false)]
     overwrite_audit: bool,
+
+    /// Default audit type
+    #[clap(short, long, default_value_t = AuditType::CallerChecked)]
+    audit_type: AuditType,
+}
+
+// TODO: Combine this with DefaultAuditType once we implement every version
+#[derive(Debug, Clone, Copy, PartialEq, Display, FromStr)]
+enum AuditType {
+    CallerChecked,
+    Safe,
 }
 
 fn runner(args: Args) -> Result<()> {
@@ -28,11 +40,19 @@ fn runner(args: Args) -> Result<()> {
         return Err(anyhow!("Audit file already exists"));
     }
 
+    let audit_file = match args.audit_type {
+        AuditType::CallerChecked => AuditFile::new_caller_checked_default(
+            &args.crate_path,
+            &EffectType::unsafe_effects(),
+        )?,
+        AuditType::Safe => AuditFile::new_safe_default_with_sinks(
+            &args.crate_path,
+            HashSet::new(),
+            &EffectType::unsafe_effects(),
+        )?,
+    };
+
     // We can correctly create and save the audit file now
-    let audit_file = AuditFile::new_caller_checked_default(
-        &args.crate_path,
-        &EffectType::unsafe_effects(),
-    )?;
 
     audit_file.save_to_file(args.audit_file_path)?;
 

@@ -428,6 +428,23 @@ impl AuditFile {
         removed_effects.into_iter().flatten().collect::<Vec<_>>()
     }
 
+    fn scan_with_sinks(
+        crate_path: &FilePath,
+        sinks: HashSet<CanonicalPath>,
+        relevant_effects: &[EffectType],
+        quick: bool,
+    ) -> Result<(AuditFile, ScanResults)> {
+        let mut audit_file =
+            AuditFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
+        let ident_sinks =
+            sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
+        let scan_res =
+            scanner::scan_crate_with_sinks(crate_path, ident_sinks, relevant_effects, quick)?;
+        audit_file.set_base_audit_trees(scan_res.effects_set());
+
+        Ok((audit_file, scan_res))
+    }
+
     pub fn new_caller_checked_default(
         crate_path: &FilePath,
         relevant_effects: &[EffectType],
@@ -472,19 +489,10 @@ impl AuditFile {
         relevant_effects: &[EffectType],
         quick: bool,
     ) -> Result<(AuditFile, ScanResults)> {
-        let mut audit_file =
-            AuditFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
-        let ident_sinks =
-            sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
-        let scan_res = scanner::scan_crate_with_sinks(
-            crate_path,
-            ident_sinks,
-            relevant_effects,
-            quick,
-        )?;
-        let mut pub_caller_checked = HashMap::new();
-        audit_file.set_base_audit_trees(scan_res.effects_set());
+        let (mut audit_file, scan_res) =
+            Self::scan_with_sinks(crate_path, sinks, relevant_effects, quick)?;
 
+        let mut pub_caller_checked = HashMap::new();
         for (e, t) in audit_file.audit_trees.iter_mut() {
             AuditFile::mark_caller_checked(e, t, &mut pub_caller_checked, &scan_res)?;
         }
@@ -514,6 +522,22 @@ impl AuditFile {
         Ok(audit_file)
     }
 
+    pub fn new_safe_default_with_sinks(
+        crate_path: &FilePath,
+        sinks: HashSet<CanonicalPath>,
+        relevant_effects: &[EffectType],
+    ) -> Result<AuditFile> {
+        let (mut audit_file, _scan_res) =
+            Self::scan_with_sinks(crate_path, sinks, relevant_effects, false)?;
+        for (_, mut t) in audit_file.audit_trees.iter_mut() {
+            if let EffectTree::Leaf(_, a) = &mut t {
+                *a = SafetyAnnotation::Safe;
+            }
+        }
+
+        Ok(audit_file)
+    }
+
     pub fn new_default_with_sinks(
         crate_path: &FilePath,
         sinks: HashSet<CanonicalPath>,
@@ -531,8 +555,9 @@ impl AuditFile {
             DefaultAuditType::Empty => {
                 Self::new_empty_default_with_sinks(crate_path, sinks, relevant_effects)
             }
-            // TODO: belo
-            DefaultAuditType::Safe => unimplemented!(),
+            DefaultAuditType::Safe => {
+                Self::new_safe_default_with_sinks(crate_path, sinks, relevant_effects)
+            }
         }
     }
 
