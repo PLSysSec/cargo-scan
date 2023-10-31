@@ -145,10 +145,8 @@ pub fn print_effect_src(
             Effect::UnionField(union) => format!("union access: {}", union),
             Effect::StaticMut(var) => format!("static mut access: {}", var),
             Effect::StaticExt(var) => format!("static ffi variable access: {}", var),
-            Effect::FnPtrCreation => {
-                "function pointer creation (verify the function is always safe to call)"
-                    .to_string()
-            }
+            Effect::FnPtrCreation =>
+                format!("function pointer creation: {} - (verify the function is always safe to call)", &effect_origin.callee()),
             Effect::ClosureCreation => {
                 "closure creation (verify the closure is always safe to call)".to_string()
             }
@@ -207,7 +205,7 @@ fn fn_decl_info(fn_loc: &SrcLoc) -> Result<CallStackInfo> {
     // TODO: Capture just the function name
     let res = CallStackInfo::new(
         Some(src_fn_loc.split('{').next().unwrap().trim().to_string()),
-        format!("{}", fn_loc.dir().to_string_lossy()),
+        format!("{}/{}", fn_loc.dir().to_string_lossy(), fn_loc.file().to_string_lossy()),
         fn_loc.start_line(),
     );
     Ok(res)
