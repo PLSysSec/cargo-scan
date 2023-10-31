@@ -156,6 +156,7 @@ pub fn print_effect_src(
                 "Cast to a raw pointer (can't cause unsafe behavior on its own)"
                     .to_string()
             }
+            Effect::FFIDecl(decl) => format!("ffi declaration: {}", decl),
         }
     } else {
         "call safety marked as caller-checked".to_string()

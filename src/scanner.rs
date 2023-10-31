@@ -27,6 +27,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path as FilePath;
 use syn::spanned::Spanned;
+use syn::ForeignItemFn;
 
 /// Results of a scan
 ///
@@ -309,7 +310,7 @@ impl<'a> Scanner<'a> {
 
     fn scan_foreign_item(&mut self, i: &'a syn::ForeignItem) {
         match i {
-            syn::ForeignItem::Fn(f) => self.resolver.scan_foreign_fn(f),
+            syn::ForeignItem::Fn(f) => self.scan_foreign_fn(f),
             syn::ForeignItem::Macro(m) => {
                 self.data.skipped_macros.add(m);
             }
@@ -319,6 +320,35 @@ impl<'a> Scanner<'a> {
         }
         // Ignored: Static, Type, Macro, Verbatim
         // https://docs.rs/syn/latest/syn/enum.ForeignItem.html
+    }
+
+    fn scan_foreign_fn(&mut self, f: &'a ForeignItemFn) {
+        if self.skip_attrs(&f.attrs) {
+            self.data.skipped_conditional_code.add(f);
+            return;
+        }
+
+        // Notify HackyResolver for this declaration
+        self.resolver.scan_foreign_fn(f);
+        // Resolve FFI declaration
+        let Some(cp) = self.resolver.resolve_ffi_ident(&f.sig.ident) else { return; };
+        let ffi_dec = FnDec::new(self.filepath, &f, cp.clone(), &f.vis);
+
+        // If it is not a public FFI declaration
+        // do not update ScanResults
+        if ffi_dec.vis != Visibility::Public {
+            return;
+        }
+
+        // Get the total lines of code of this declaration
+        let mut ffi_loc = LoCTracker::new();
+        ffi_loc.add(f);
+        self.data.fn_loc_tracker.insert(cp.clone(), ffi_loc);
+
+        // Notify ScanResults
+        self.data.add_fn_dec(ffi_dec);
+
+        self.push_effect(f.span(), cp.clone(), Effect::FFIDecl(cp));
     }
 
     /*
@@ -1033,8 +1063,12 @@ impl<'a> Scanner<'a> {
     where
         S: Debug + Spanned,
     {
-        let containing_fn = self.scope_fns.last().expect("not inside a function!");
-        let caller = &containing_fn.fn_name;
+        let caller = if eff_type.is_ffi_decl() {
+            &callee
+        } else {
+            let containing_fn = self.scope_fns.last().expect("not inside a function!");
+            &containing_fn.fn_name
+        };
 
         let eff = EffectInstance::new_effect(
             self.filepath,

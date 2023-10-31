@@ -179,11 +179,14 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         result
     }
 
+    fn resolve_ffi_ident(&self, i: &'a syn::Ident) -> Option<CanonicalPath> {
+        self.ffi_decls.get(i).cloned()
+    }
+
     fn resolve_ffi(&self, ffi: &syn::Path) -> Option<CanonicalPath> {
         // TBD lookup
         let span = &ffi.segments.last().unwrap().ident;
-
-        self.ffi_decls.get(span).cloned()
+        self.resolve_ffi_ident(span)
     }
 
     fn resolve_method(&self, i: &'a syn::Ident) -> CanonicalPath {
