@@ -4,6 +4,8 @@
 //! - scanner for ScanResults (list of effects)
 //! - audit_file for AuditFile (caller-checked results)
 
+use crate::ident::CanonicalPath;
+
 use super::audit_file::{AuditFile, EffectTree};
 use super::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 use super::loc_tracker::LoCTracker;
@@ -11,6 +13,7 @@ use super::scanner::ScanResults;
 
 use anyhow::Result;
 use log::info;
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 #[derive(Debug)]
@@ -128,47 +131,44 @@ pub fn get_crate_stats(
 }
 
 // Calculates the total number of functions and the total lines of code that will be audited.
-// Note that some functions might be counted multiple times, if many effects flow to them.
 fn get_auditing_metrics(audit: &AuditFile, results: &ScanResults) -> (usize, usize) {
-    let mut total_fns = 0;
     let mut total_loc = 0;
+    let mut total_fns: HashSet<&CanonicalPath> = HashSet::new();
 
     for tree in audit.audit_trees.values() {
-        let (fns, loc) = counter(tree, results);
-        total_loc += loc;
-        total_fns += fns;
+        total_fns.extend(counter(tree, results));
     }
 
-    (total_fns, total_loc)
+    for f in &total_fns {   
+        if let Some(tracker) = results.fn_loc_tracker.get(f) {
+            total_loc += tracker.get_loc_lb();
+        }
+        else {
+            info!("failed to find tracker node");
+        }
+    }
+
+    (total_fns.len(), total_loc)
 }
 
-fn counter(tree: &EffectTree, results: &ScanResults) -> (usize, usize) {
-    let mut fns = 0;
-    let mut lines = 0;
+fn counter<'a>(tree: &'a EffectTree, results: &'a ScanResults) -> HashSet<&'a CanonicalPath>{
+    let mut set: HashSet<&CanonicalPath> = HashSet::new();
 
     match tree {
         EffectTree::Leaf(info, _) => {
-            if let Some(tracker) = results.fn_loc_tracker.get(&info.caller_path) {
-                lines += tracker.get_loc_lb();
-                fns += 1;
-            } else {
-                info!("failed to find tracker node");
-            }
+            set.insert(&info.caller_path);
         }
         EffectTree::Branch(info, branch) => {
-            if let Some(tracker) = results.fn_loc_tracker.get(&info.caller_path) {
-                let (callers, loc) = branch.iter().fold((0, 0), |(f, l), tree| {
-                    let (callers, loc) = counter(tree, results);
-                    (f + callers, l + loc)
-                });
+            let s = branch.iter().fold(HashSet::new(), |mut set, tree| {
+                set.extend(counter(tree, results));
 
-                fns += callers + 1;
-                lines += loc + tracker.get_loc_lb();
-            } else {
-                info!("failed to find tracker node");
-            }
+                set
+            });
+
+            set.insert(&info.caller_path);
+            set.extend(s);
         }
     };
 
-    (fns, lines)
+    set
 }
