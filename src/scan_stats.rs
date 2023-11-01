@@ -136,14 +136,13 @@ fn get_auditing_metrics(audit: &AuditFile, results: &ScanResults) -> (usize, usi
     let mut total_fns: HashSet<&CanonicalPath> = HashSet::new();
 
     for tree in audit.audit_trees.values() {
-        total_fns.extend(counter(tree, results));
+        total_fns.extend(counter(tree));
     }
 
-    for f in &total_fns {   
+    for f in &total_fns {
         if let Some(tracker) = results.fn_loc_tracker.get(f) {
             total_loc += tracker.get_loc_lb();
-        }
-        else {
+        } else {
             info!("failed to find tracker node");
         }
     }
@@ -151,7 +150,7 @@ fn get_auditing_metrics(audit: &AuditFile, results: &ScanResults) -> (usize, usi
     (total_fns.len(), total_loc)
 }
 
-fn counter<'a>(tree: &'a EffectTree, results: &'a ScanResults) -> HashSet<&'a CanonicalPath>{
+fn counter(tree: &EffectTree) -> HashSet<&CanonicalPath> {
     let mut set: HashSet<&CanonicalPath> = HashSet::new();
 
     match tree {
@@ -160,7 +159,7 @@ fn counter<'a>(tree: &'a EffectTree, results: &'a ScanResults) -> HashSet<&'a Ca
         }
         EffectTree::Branch(info, branch) => {
             let s = branch.iter().fold(HashSet::new(), |mut set, tree| {
-                set.extend(counter(tree, results));
+                set.extend(counter(tree));
 
                 set
             });
