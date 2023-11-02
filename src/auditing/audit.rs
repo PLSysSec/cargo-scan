@@ -437,8 +437,11 @@ pub fn audit_pub_fn(
     let mut new_audit_file = prev_audit_file.clone();
 
     // Find the public function associated with the sink
-    let scan_res =
-        scan_crate(&new_audit_file.base_dir, &prev_audit_file.scanned_effects, quick_mode)?;
+    let scan_res = scan_crate(
+        &new_audit_file.base_dir,
+        &prev_audit_file.scanned_effects,
+        quick_mode,
+    )?;
     let sink_fn = CanonicalPath::new(sink_ident.as_str());
     loop {
         // Keep looping until we are done with auditing children

@@ -224,9 +224,12 @@ impl CommandRunner for Audit {
                         // TODO: Print parents of an effect the user audits when
                         //       auditing children
                         match dep_effect.eff_type() {
-                            Effect::SinkCall(sink_ident) => {
-                                audit_pub_fn(&mut chain, sink_ident, &audit_config, args.quick_mode)?
-                            }
+                            Effect::SinkCall(sink_ident) => audit_pub_fn(
+                                &mut chain,
+                                sink_ident,
+                                &audit_config,
+                                args.quick_mode,
+                            )?,
                             _ => {
                                 return Err(anyhow!(
                                     "Can only audit dependency effects for sinks"
