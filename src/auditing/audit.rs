@@ -28,19 +28,28 @@ pub enum AuditStatus {
 fn get_user_annotation(
     allow_effect_origin: bool,
 ) -> Result<(Option<SafetyAnnotation>, AuditStatus)> {
-    let ans = Text::new(&format!(
-        r#"Select how to mark this effect:
+    let ans;
+    loop {
+        match Text::new(&format!(
+            r#"Select how to mark this effect:
   (s)afe, (u)nsafe, (c)aller checked,{} (e)xpand context, ask me (l)ater, e(x)it tool
 "#,
-        if allow_effect_origin { " audit effect (o)rigin," } else { "" }
-    ))
-    .with_validator(move |x: &str| match x {
-        "s" | "u" | "c" | "e" | "l" | "x" => Ok(Validation::Valid),
-        "o" if allow_effect_origin => Ok(Validation::Valid),
-        _ => Ok(Validation::Invalid("Invalid input".into())),
-    })
-    .prompt()
-    .unwrap();
+            if allow_effect_origin { " audit effect (o)rigin," } else { "" }
+        ))
+        .with_validator(move |x: &str| match x {
+            "s" | "u" | "c" | "e" | "l" | "x" => Ok(Validation::Valid),
+            "o" if allow_effect_origin => Ok(Validation::Valid),
+            _ => Ok(Validation::Invalid("Invalid input".into())),
+        })
+        .prompt()
+        {
+            Ok(a) => {
+                ans = a;
+                break;
+            }
+            _ => (),
+        }
+    }
 
     match ans.as_str() {
         "s" => Ok((Some(SafetyAnnotation::Safe), AuditStatus::ContinueAudit)),
