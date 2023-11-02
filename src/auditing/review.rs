@@ -56,13 +56,15 @@ pub fn review_audit(
     audit_file: &AuditFile,
     crate_path: &Path,
     config: &Config,
+    quick_mode: bool,
 ) -> Result<()> {
     // TODO: Change this scan to use the simpler scan when we add it
     // NOTE: The original scan for the audit we're reviewing wasn't necesarilly created
     //       with the same set of effects we're scanning for now. However, we only use
     //       the scan results to get the function locations, so it doesn't matter.
     println!("Scanning crate...");
-    let scan_res = scanner::scan_crate(crate_path, &audit_file.scanned_effects)?;
+    let scan_res =
+        scanner::scan_crate(crate_path, &audit_file.scanned_effects, quick_mode)?;
     if !is_audit_scan_valid(audit_file, crate_path)? {
         println!("Error: crate has changed since last audit file scan.");
         return Err(anyhow!("Invalid audit file during review"));

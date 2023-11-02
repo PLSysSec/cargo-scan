@@ -452,11 +452,13 @@ impl AuditFile {
     pub fn new_caller_checked_default(
         crate_path: &FilePath,
         relevant_effects: &[EffectType],
+        quick_mode: bool,
     ) -> Result<AuditFile> {
         Self::new_caller_checked_default_with_sinks(
             crate_path,
             HashSet::new(),
             relevant_effects,
+            quick_mode,
         )
     }
 
@@ -477,12 +479,13 @@ impl AuditFile {
         crate_path: &FilePath,
         sinks: HashSet<CanonicalPath>,
         relevant_effects: &[EffectType],
+        quick: bool,
     ) -> Result<AuditFile> {
         Self::new_caller_checked_default_with_sinks_and_results(
             crate_path,
             sinks,
             relevant_effects,
-            false,
+            quick,
         )
         .map(|x| x.0)
     }
@@ -510,6 +513,7 @@ impl AuditFile {
         crate_path: &FilePath,
         sinks: HashSet<CanonicalPath>,
         relevant_effects: &[EffectType],
+        quick: bool,
     ) -> Result<AuditFile> {
         let mut audit_file =
             AuditFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
@@ -519,7 +523,7 @@ impl AuditFile {
             crate_path,
             ident_sinks,
             relevant_effects,
-            false,
+            quick,
         )?;
         audit_file.set_base_audit_trees(scan_res.effects_set());
 
@@ -530,9 +534,10 @@ impl AuditFile {
         crate_path: &FilePath,
         sinks: HashSet<CanonicalPath>,
         relevant_effects: &[EffectType],
+        quick: bool,
     ) -> Result<AuditFile> {
         let (mut audit_file, _scan_res) =
-            Self::scan_with_sinks(crate_path, sinks, relevant_effects, false)?;
+            Self::scan_with_sinks(crate_path, sinks, relevant_effects, quick)?;
         for (_, mut t) in audit_file.audit_trees.iter_mut() {
             if let EffectTree::Leaf(_, a) = &mut t {
                 *a = SafetyAnnotation::Safe;
@@ -547,6 +552,7 @@ impl AuditFile {
         sinks: HashSet<CanonicalPath>,
         audit_type: DefaultAuditType,
         relevant_effects: &[EffectType],
+        quick: bool,
     ) -> Result<AuditFile> {
         match audit_type {
             DefaultAuditType::CallerChecked => {
@@ -554,14 +560,21 @@ impl AuditFile {
                     crate_path,
                     sinks,
                     relevant_effects,
+                    quick,
                 )
             }
-            DefaultAuditType::Empty => {
-                Self::new_empty_default_with_sinks(crate_path, sinks, relevant_effects)
-            }
-            DefaultAuditType::Safe => {
-                Self::new_safe_default_with_sinks(crate_path, sinks, relevant_effects)
-            }
+            DefaultAuditType::Empty => Self::new_empty_default_with_sinks(
+                crate_path,
+                sinks,
+                relevant_effects,
+                quick,
+            ),
+            DefaultAuditType::Safe => Self::new_safe_default_with_sinks(
+                crate_path,
+                sinks,
+                relevant_effects,
+                quick,
+            ),
         }
     }
 

@@ -1361,6 +1361,7 @@ pub fn scan_crate_with_sinks(
 pub fn scan_crate(
     crate_path: &FilePath,
     relevant_effects: &[EffectType],
+    quick_mode: bool,
 ) -> Result<ScanResults> {
-    scan_crate_with_sinks(crate_path, HashSet::new(), relevant_effects, false)
+    scan_crate_with_sinks(crate_path, HashSet::new(), relevant_effects, quick_mode)
 }

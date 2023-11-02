@@ -94,6 +94,10 @@ struct Args {
     /// eval purposes only.
     #[clap(long)]
     sinks_folder: Option<String>,
+
+    /// TESTING ONLY: Use the quick-mode scan option
+    #[clap(long, default_value_t = false)]
+    quick_mode: bool,
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
@@ -237,7 +241,12 @@ fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
             get_sinks(args.sinks_folder.as_ref()).unwrap_or_else(|_| HashSet::new());
 
         println!("Scanning crate...");
-        scanner::scan_crate_with_sinks(&args.crate_path, sinks, relevant_effects, false)?
+        scanner::scan_crate_with_sinks(
+            &args.crate_path,
+            sinks,
+            relevant_effects,
+            args.quick_mode,
+        )?
     };
     let scan_effects = scan_res.effects_set();
 
@@ -320,7 +329,7 @@ fn runner(args: Args) -> Result<()> {
         println!("Previewing crate effects.");
         println!("Scanning crate...");
 
-        let res = scan_crate(&args.crate_path, &args.effect_types)?;
+        let res = scan_crate(&args.crate_path, &args.effect_types, args.quick_mode)?;
         for effect in res.effects {
             println!("{}", effect.to_csv());
         }
@@ -335,7 +344,9 @@ fn runner(args: Args) -> Result<()> {
             None => Err(anyhow!("Audit file to review doesn't exist")),
             Some(af) => {
                 match args.review_info {
-                    ReviewInfo::All => review_audit(&af, &args.crate_path, &args.config),
+                    ReviewInfo::All => {
+                        review_audit(&af, &args.crate_path, &args.config, args.quick_mode)
+                    }
                     ReviewInfo::PubFuns => {
                         println!("Public functions marked caller-checked:");
                         for pub_fn in af.pub_caller_checked.keys() {
