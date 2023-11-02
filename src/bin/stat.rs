@@ -119,13 +119,18 @@ fn main() -> Result<()> {
         args.effect_types,
     );
 
-    let mut chain = create_new_audit_chain(create, &args.audit_file_path)?;
+    let mut chain = create_new_audit_chain(create, &args.audit_file_path, false)?;
     let root_crate = chain.root_crate()?;
     let root_audit_file = chain
         .read_audit_file(&root_crate)?
         .ok_or_else(|| anyhow!("Couldn't read root crate from the audit"))?;
     let review_config = Config::new(0, 0, false);
-    review_audit(&root_audit_file, &PathBuf::from(&args.crate_path), &review_config)?;
+    review_audit(
+        &root_audit_file,
+        &PathBuf::from(&args.crate_path),
+        &review_config,
+        false,
+    )?;
 
     remove_dir_all(&args.audit_file_path)?;
 

@@ -400,6 +400,7 @@ fn collect_dependency_sinks(
 
 /// Creates a new default audit file for the given package and returns the path to
 /// the saved audit file
+#[allow(clippy::too_many_arguments)]
 fn make_new_audit_file(
     chain: &mut AuditChain,
     package: &Package,
@@ -408,6 +409,7 @@ fn make_new_audit_file(
     crate_path: &Path,
     audit_type: DefaultAuditType,
     relevant_effects: &[EffectType],
+    quick_mode: bool,
 ) -> Result<()> {
     let audit_file_path = PathBuf::from(format!(
         "{}/{}-{}.audit",
@@ -442,6 +444,7 @@ fn make_new_audit_file(
         sinks,
         audit_type,
         relevant_effects,
+        quick_mode,
     )?;
     audit_file.save_to_file(audit_file_path.clone())?;
 
@@ -453,6 +456,7 @@ fn make_new_audit_file(
 pub fn create_new_audit_chain(
     args: Create,
     crate_download_path: &str,
+    quick_mode: bool,
 ) -> Result<AuditChain> {
     println!("Creating audit chain");
     let mut chain = AuditChain::new(
@@ -522,6 +526,7 @@ pub fn create_new_audit_chain(
             crate_download_path,
             audit_type,
             &args.effect_types,
+            quick_mode,
         )?;
     }
 

@@ -18,6 +18,9 @@ struct OuterArgs {
     /// Path to download crates to for auditing
     #[clap(short = 'd', long = "crate-download-path", default_value = ".audit_crates")]
     crate_download_path: String,
+
+    #[clap(long, default_value_t = false)]
+    quick_mode: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -89,7 +92,7 @@ impl CommandRunner for Create {
             std::fs::rename(&tmp_path, &self.crate_path)?;
         }
 
-        let chain = create_new_audit_chain(self, &args.crate_download_path)?;
+        let chain = create_new_audit_chain(self, &args.crate_download_path, false)?;
         chain.save_to_file()?;
         Ok(())
     }
@@ -183,7 +186,7 @@ struct Audit {
 
 // TODO: print more info during auding (e.g. saving files)
 impl CommandRunner for Audit {
-    fn run_command(self, _args: OuterArgs) -> Result<()> {
+    fn run_command(self, args: OuterArgs) -> Result<()> {
         match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path)) {
             Ok(Some(mut chain)) => {
                 let crate_id = match self.crate_name {
@@ -203,6 +206,7 @@ impl CommandRunner for Audit {
                     let scan_res = scanner::scan_crate(
                         &crate_path,
                         &orig_audit_file.scanned_effects,
+                        false,
                     )?;
 
                     let mut audit_config = AuditConfig::default();
@@ -221,7 +225,7 @@ impl CommandRunner for Audit {
                         //       auditing children
                         match dep_effect.eff_type() {
                             Effect::SinkCall(sink_ident) => {
-                                audit_pub_fn(&mut chain, sink_ident, &audit_config)?
+                                audit_pub_fn(&mut chain, sink_ident, &audit_config, args.quick_mode)?
                             }
                             _ => {
                                 return Err(anyhow!(
@@ -259,7 +263,9 @@ fn review_crate_audit_file(
     review_type: ReviewInfo,
 ) -> Result<()> {
     match review_type {
-        ReviewInfo::All => review_audit(audit_file, &crate_path, &AuditConfig::default()),
+        ReviewInfo::All => {
+            review_audit(audit_file, &crate_path, &AuditConfig::default(), false)
+        }
         ReviewInfo::PubFuns => {
             println!("Public functions marked caller-checked:");
             for pub_fn in audit_file.pub_caller_checked.keys() {
