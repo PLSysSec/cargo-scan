@@ -12,7 +12,7 @@ pub mod util;
 
 // Name resolution
 pub mod hacky_resolver;
-pub mod name_resolution;
+pub mod resolution;
 pub mod resolve;
 
 // Attribute parser

@@ -6,11 +6,12 @@
 use crate::attr_parser::CfgPred;
 use crate::audit_file::EffectInfo;
 use crate::hacky_resolver::HackyResolver;
+use crate::resolution::name_resolution::Resolver;
 
 use super::effect::{Effect, EffectInstance, EffectType, FnDec, SrcLoc, Visibility};
 use super::ident::{CanonicalPath, IdentPath};
 use super::loc_tracker::LoCTracker;
-use super::resolve::{FileResolver, Resolve, Resolver};
+use super::resolve::{FileResolver, Resolve};
 use super::sink::Sink;
 use super::util;
 
@@ -391,13 +392,18 @@ where
             self.data.unsafe_traits.add(&t.ident);
         }
 
+        let all_impls = self.resolver.resolve_all_impl_methods(&t.ident);
         for item in &t.items {
             match item {
                 syn::TraitItem::Fn(m) => {
-                    let impl_methods = self
-                        .resolver
-                        .resolve_all_impl_methods(&t.ident, m.sig.ident.to_string());
-                    self.scan_trait_method(m, &t.vis, impl_methods);
+                    let impls_for_meth = all_impls
+                        .iter()
+                        .filter(|cp| match cp.as_path().last_ident() {
+                            Some(ident) => m.sig.ident == ident.to_string(),
+                            _ => false,
+                        })
+                        .collect::<Vec<&CanonicalPath>>();
+                    self.scan_trait_method(m, &t.vis, impls_for_meth);
                 }
                 syn::TraitItem::Macro(m) => {
                     self.data.skipped_macros.add(m);
@@ -486,7 +492,7 @@ where
         &mut self,
         m: &'a syn::TraitItemFn,
         vis: &'a syn::Visibility,
-        impl_methods: Vec<CanonicalPath>,
+        impl_methods: Vec<&CanonicalPath>,
     ) {
         if self.skip_attrs(&m.attrs) {
             self.data.skipped_conditional_code.add(m);

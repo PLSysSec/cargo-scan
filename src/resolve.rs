@@ -1,9 +1,9 @@
 //! Interface for name resolution for Rust identifiers.
 //!
-//! The type FileResolver is a wrapper around Resolver from name_resolution.rs
+//! The type FileResolver is a wrapper around ResolverImpl from name_resolution.rs
 //! with the needed functionality.
 
-pub use super::name_resolution::Resolver;
+use crate::resolution::name_resolution::{Resolver, ResolverImpl};
 
 use super::effect::SrcLoc;
 use super::hacky_resolver::HackyResolver;
@@ -43,11 +43,7 @@ pub trait Resolve<'a>: Sized {
     fn resolve_ffi_ident(&self, i: &'a syn::Ident) -> Option<CanonicalPath>;
     fn resolve_unsafe_path(&self, p: &'a syn::Path) -> bool;
     fn resolve_unsafe_ident(&self, p: &'a syn::Ident) -> bool;
-    fn resolve_all_impl_methods(
-        &self,
-        i: &'a syn::Ident,
-        m: String,
-    ) -> Vec<CanonicalPath>;
+    fn resolve_all_impl_methods(&self, i: &'a syn::Ident) -> Vec<CanonicalPath>;
 
     /*
         Field and expression resolution
@@ -79,7 +75,7 @@ pub trait Resolve<'a>: Sized {
 #[derive(Debug)]
 pub struct FileResolver<'a> {
     filepath: &'a FilePath,
-    resolver: &'a Resolver,
+    resolver: ResolverImpl<'a>,
     backup: HackyResolver<'a>,
 }
 
@@ -91,7 +87,8 @@ impl<'a> FileResolver<'a> {
     ) -> Result<Self> {
         debug!("Creating FileResolver for file: {:?}", filepath);
         let backup = HackyResolver::new(crate_name, filepath)?;
-        Ok(Self { filepath, resolver, backup })
+        let imp = ResolverImpl::new(resolver, filepath)?;
+        Ok(Self { filepath, resolver: imp, backup })
     }
 
     fn resolve_core(&self, i: &syn::Ident) -> Result<CanonicalPath> {
@@ -150,14 +147,13 @@ impl<'a> FileResolver<'a> {
     fn resolve_all_impl_methods_core(
         &self,
         i: &syn::Ident,
-        m: String,
     ) -> Result<Vec<CanonicalPath>> {
         let mut s = SrcLoc::from_span(self.filepath, i);
-        debug!("Resolving all impl methods for trait method: {}. Trait: {}", m, i);
+        debug!("Resolving all impl methods for trait: {}", i);
         // Add 1 to column to avoid weird off-by-one errors
         s.add1();
         let i = ident_from_syn(i);
-        self.resolver.all_impl_methods_for_trait_method(s, i, m)
+        self.resolver.all_impl_methods_for_trait(s, i)
     }
 
     fn resolve_or_else<S, R, F, T>(&self, i: &S, try_resolve: R, fallback: F) -> T
@@ -311,15 +307,11 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
         )
     }
 
-    fn resolve_all_impl_methods(
-        &self,
-        i: &'a syn::Ident,
-        m: String,
-    ) -> Vec<CanonicalPath> {
+    fn resolve_all_impl_methods(&self, i: &'a syn::Ident) -> Vec<CanonicalPath> {
         self.resolve_or_else(
             i,
-            || self.resolve_all_impl_methods_core(i, m.clone()),
-            || self.backup.resolve_all_impl_methods(i, m.clone()),
+            || self.resolve_all_impl_methods_core(i),
+            || self.backup.resolve_all_impl_methods(i),
         )
     }
 }

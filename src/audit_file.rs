@@ -438,8 +438,12 @@ impl AuditFile {
             AuditFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
         let ident_sinks =
             sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
-        let scan_res =
-            scanner::scan_crate_with_sinks(crate_path, ident_sinks, relevant_effects, quick)?;
+        let scan_res = scanner::scan_crate_with_sinks(
+            crate_path,
+            ident_sinks,
+            relevant_effects,
+            quick,
+        )?;
         audit_file.set_base_audit_trees(scan_res.effects_set());
 
         Ok((audit_file, scan_res))

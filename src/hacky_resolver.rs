@@ -238,11 +238,7 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         false
     }
 
-    fn resolve_all_impl_methods(
-        &self,
-        _: &'a syn::Ident,
-        _: String,
-    ) -> Vec<CanonicalPath> {
+    fn resolve_all_impl_methods(&self, _: &'a syn::Ident) -> Vec<CanonicalPath> {
         Vec::new()
     }
 }
