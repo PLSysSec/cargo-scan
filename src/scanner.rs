@@ -5,13 +5,13 @@
 
 use crate::attr_parser::CfgPred;
 use crate::audit_file::EffectInfo;
-use crate::hacky_resolver::HackyResolver;
+use crate::resolution::hacky_resolver::HackyResolver;
 use crate::resolution::name_resolution::Resolver;
 
 use super::effect::{Effect, EffectInstance, EffectType, FnDec, SrcLoc, Visibility};
 use super::ident::{CanonicalPath, IdentPath};
 use super::loc_tracker::LoCTracker;
-use super::resolve::{FileResolver, Resolve};
+use crate::resolution::resolve::{FileResolver, Resolve};
 use super::sink::Sink;
 use super::util;
 

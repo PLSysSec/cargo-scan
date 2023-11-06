@@ -5,9 +5,9 @@
 
 use crate::resolution::name_resolution::{Resolver, ResolverImpl};
 
-use super::effect::SrcLoc;
+use crate::effect::SrcLoc;
 use super::hacky_resolver::HackyResolver;
-use super::ident::{CanonicalPath, CanonicalType, Ident};
+use crate::ident::{CanonicalPath, CanonicalType, Ident};
 
 use anyhow::Result;
 use log::{debug, warn};

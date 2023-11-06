@@ -11,9 +11,7 @@ pub mod sink;
 pub mod util;
 
 // Name resolution
-pub mod hacky_resolver;
 pub mod resolution;
-pub mod resolve;
 
 // Attribute parser
 mod attr_parser;

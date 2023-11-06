@@ -1,7 +1,7 @@
 //! A hacky in-house resolver for Rust identifiers
 
-use super::effect::SrcLoc;
-use super::ident::{CanonicalPath, CanonicalType, IdentPath};
+use crate::effect::SrcLoc;
+use crate::ident::{CanonicalPath, CanonicalType, IdentPath};
 use super::resolve::{ident_from_syn, Resolve};
 
 use anyhow::Result;
