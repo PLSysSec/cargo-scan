@@ -3,7 +3,11 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use cargo_scan::{effect::SrcLoc, ident::Ident, name_resolution::Resolver};
+use cargo_scan::{
+    effect::SrcLoc,
+    ident::Ident,
+    resolution::name_resolution::{Resolver, ResolverImpl},
+};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -25,9 +29,12 @@ pub fn main() -> Result<()> {
     cargo_scan::util::init_logging();
     let args = Args::parse();
 
-    let res = Resolver::new(&args.crate_path).unwrap();
+    let crate_name = cargo_scan::util::load_cargo_toml(&args.crate_path)?.crate_name;
     let mut filepath = std::path::PathBuf::from(&args.crate_path);
     filepath.push(&args.file);
+
+    let resolver = Resolver::new(&args.crate_path)?;
+    let file_resolver = ResolverImpl::new(&resolver, &filepath)?;
 
     let s = SrcLoc::new(filepath.as_path(), args.line, args.col, args.line, args.col);
     let i = Ident::new(&args.name);
@@ -44,12 +51,12 @@ pub fn main() -> Result<()> {
     out.push('}');
 
     if !args.resolve_type {
-        match res.resolve_ident(s, i) {
+        match file_resolver.resolve_ident(s, i) {
             Ok(r) => println!("{:?} ===> {:?}", out, r.to_path().to_string()),
             Err(r) => println!("{:?}", r),
         }
     } else {
-        match res.resolve_type(s, i) {
+        match file_resolver.resolve_type(s, i) {
             Ok(r) => println!("{:?} ===> {:?}", out, r.to_string()),
             Err(r) => println!("{:?}", r),
         }
