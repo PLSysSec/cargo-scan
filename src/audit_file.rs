@@ -175,7 +175,7 @@ impl AuditFile {
         tree: &mut EffectTree,
         pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectInstance>>,
         scan_res: &ScanResults,
-        prev_callers: Vec<CanonicalPath>,
+        prev_callers: &mut HashSet<CanonicalPath>,
     ) -> Result<()> {
         if let EffectTree::Leaf(effect_info, annotation) = tree {
             // Add the function to the list of sinks if it is public
@@ -201,19 +201,24 @@ impl AuditFile {
                 *annotation = SafetyAnnotation::CallerChecked;
             } else {
                 for eff in callers.iter_mut() {
-                    let mut next_callers = prev_callers.clone();
                     // NOTE: This will always be a leaf since it is only created
                     //       from the map above
-                    if let EffectTree::Leaf(i, _) = eff {
-                        next_callers.push(i.caller_path.clone());
-                    }
+                    let next_caller = if let EffectTree::Leaf(i, _) = eff {
+                        i.caller_path.clone()
+                    } else {
+                        return Err(anyhow!(
+                            "Terminal node of effect tree should be a leaf"
+                        ));
+                    };
+                    prev_callers.insert(next_caller.clone());
                     AuditFile::mark_caller_checked_recurse(
                         base_effect,
                         eff,
                         pub_caller_checked,
                         scan_res,
-                        next_callers,
+                        prev_callers,
                     )?;
+                    prev_callers.remove(&next_caller);
                 }
                 *tree = EffectTree::Branch(effect_info.clone(), callers);
             }
@@ -229,13 +234,14 @@ impl AuditFile {
         pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectInstance>>,
         scan_res: &ScanResults,
     ) -> Result<()> {
-        let callers = vec![base_effect.caller().clone()];
+        let mut callers = HashSet::new();
+        callers.insert(base_effect.caller().clone());
         Self::mark_caller_checked_recurse(
             base_effect,
             tree,
             pub_caller_checked,
             scan_res,
-            callers,
+            &mut callers,
         )
     }
 

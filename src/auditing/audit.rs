@@ -30,7 +30,7 @@ fn get_user_annotation(
 ) -> Result<(Option<SafetyAnnotation>, AuditStatus)> {
     let ans;
     loop {
-        match Text::new(&format!(
+        if let Ok(a) = Text::new(&format!(
             r#"Select how to mark this effect:
   (s)afe, (u)nsafe, (c)aller checked,{} (e)xpand context, ask me (l)ater, e(x)it tool
 "#,
@@ -43,12 +43,9 @@ fn get_user_annotation(
         })
         .prompt()
         {
-            Ok(a) => {
-                ans = a;
-                break;
-            }
-            _ => (),
-        }
+            ans = a;
+            break;
+        };
     }
 
     match ans.as_str() {
