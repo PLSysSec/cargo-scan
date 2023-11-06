@@ -5,12 +5,13 @@
 
 use crate::attr_parser::CfgPred;
 use crate::audit_file::EffectInfo;
-use crate::hacky_resolver::HackyResolver;
+use crate::resolution::hacky_resolver::HackyResolver;
+use crate::resolution::name_resolution::Resolver;
 
 use super::effect::{Effect, EffectInstance, EffectType, FnDec, SrcLoc, Visibility};
 use super::ident::{CanonicalPath, IdentPath};
 use super::loc_tracker::LoCTracker;
-use super::resolve::{FileResolver, Resolve, Resolver};
+use crate::resolution::resolve::{FileResolver, Resolve};
 use super::sink::Sink;
 use super::util;
 
@@ -391,13 +392,18 @@ where
             self.data.unsafe_traits.add(&t.ident);
         }
 
+        let all_impls = self.resolver.resolve_all_impl_methods(&t.ident);
         for item in &t.items {
             match item {
                 syn::TraitItem::Fn(m) => {
-                    let impl_methods = self
-                        .resolver
-                        .resolve_all_impl_methods(&t.ident, m.sig.ident.to_string());
-                    self.scan_trait_method(m, &t.vis, impl_methods);
+                    let impls_for_meth = all_impls
+                        .iter()
+                        .filter(|cp| match cp.as_path().last_ident() {
+                            Some(ident) => m.sig.ident == ident.to_string(),
+                            _ => false,
+                        })
+                        .collect::<Vec<&CanonicalPath>>();
+                    self.scan_trait_method(m, &t.vis, impls_for_meth);
                 }
                 syn::TraitItem::Macro(m) => {
                     self.data.skipped_macros.add(m);
@@ -486,7 +492,7 @@ where
         &mut self,
         m: &'a syn::TraitItemFn,
         vis: &'a syn::Visibility,
-        impl_methods: Vec<CanonicalPath>,
+        impl_methods: Vec<&CanonicalPath>,
     ) {
         if self.skip_attrs(&m.attrs) {
             self.data.skipped_conditional_code.add(m);
@@ -1239,9 +1245,6 @@ pub fn scan_file(
     file.read_to_string(&mut src)?;
     let syntax_tree = syn::parse_file(&src)?;
 
-    // Initialize resolver data structures
-    // let hacky_resolver = HackyResolver::new(crate_name, filepath);
-
     // Initialize resolver
     let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
 
@@ -1259,22 +1262,21 @@ pub fn scan_file(
 pub fn try_scan_file(
     crate_name: &str,
     filepath: &FilePath,
-    resolver: &Resolver,
+    resolver: Option<&Resolver>,
     scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
     enabled_cfg: &HashMap<String, Vec<String>>,
-    quick_mode: bool,
 ) {
-    if quick_mode {
-        scan_file_quick(crate_name, filepath, scan_results, sinks, enabled_cfg)
-            .unwrap_or_else(|err| {
-                warn!("Failed to scan file {} ({})", filepath.to_string_lossy(), err);
-            })
-    } else {
+    if let Some(resolver) = resolver {
         scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg)
             .unwrap_or_else(|err| {
                 warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
             });
+    } else {
+        scan_file_quick(crate_name, filepath, scan_results, sinks, enabled_cfg)
+            .unwrap_or_else(|err| {
+                warn!("Failed to scan file {} ({})", filepath.to_string_lossy(), err);
+            })
     }
 }
 
@@ -1300,12 +1302,18 @@ pub fn scan_crate_with_sinks(
 
     let crate_name = util::load_cargo_toml(crate_path)?.crate_name;
 
-    // TODO: this should *not* be created in the quick-mode case
-    let resolver = Resolver::new(crate_path)?;
+    // Resolver should not be created in the quick-mode case
+    let (resolver, enabled_cfg) = if !quick_mode {
+        let res = Resolver::new(crate_path)?;
+        let cfg = res.get_cfg_options_for_crate(&crate_name).unwrap_or_default();
+
+        (Some(res), cfg)
+    } else {
+        let cfg: HashMap<String, Vec<String>> = HashMap::new();
+        (None, cfg)
+    };
 
     let mut scan_results = ScanResults::new();
-
-    let enabled_cfg = resolver.get_cfg_options_for_crate(&crate_name).unwrap_or_default();
 
     // TODO: For now, only walking through the src dir, but might want to
     //       include others (e.g. might codegen in other dirs)
@@ -1315,11 +1323,10 @@ pub fn scan_crate_with_sinks(
             try_scan_file(
                 &crate_name,
                 entry.as_path(),
-                &resolver,
+                resolver.as_ref(),
                 &mut scan_results,
                 sinks.clone(),
                 &enabled_cfg,
-                quick_mode,
             );
         }
     } else {
@@ -1329,11 +1336,10 @@ pub fn scan_crate_with_sinks(
             try_scan_file(
                 &crate_name,
                 lib_file.as_path(),
-                &resolver,
+                resolver.as_ref(),
                 &mut scan_results,
                 sinks,
                 &enabled_cfg,
-                quick_mode,
             );
         } else {
             warn!(
