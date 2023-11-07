@@ -11,9 +11,9 @@ use crate::resolution::name_resolution::Resolver;
 use super::effect::{Effect, EffectInstance, EffectType, FnDec, SrcLoc, Visibility};
 use super::ident::{CanonicalPath, IdentPath};
 use super::loc_tracker::LoCTracker;
-use crate::resolution::resolve::{FileResolver, Resolve};
 use super::sink::Sink;
 use super::util;
+use crate::resolution::resolve::{FileResolver, Resolve};
 
 use anyhow::{anyhow, Context, Result};
 use log::{debug, info, warn};

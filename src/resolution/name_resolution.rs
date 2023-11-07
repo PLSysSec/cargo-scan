@@ -122,7 +122,7 @@ impl Resolver {
     }
 
     fn find_file_id(&self, filepath: &Path) -> Result<FileId> {
-        let abs_path = canonicalize(filepath.clone())?;
+        let abs_path = canonicalize(filepath)?;
         let vfs_path = VfsPath::new_real_path(abs_path.display().to_string());
 
         match self.vfs.file_id(&vfs_path) {
