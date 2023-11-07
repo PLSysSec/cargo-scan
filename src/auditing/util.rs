@@ -36,3 +36,9 @@ where
     // TODO: Better way to check hash
     Ok(audit_file.hash == hash)
 }
+
+/// The maximum size for an effect tree when creating a default caller-checked policy
+pub const MAX_CALLER_CHECKED_TREE_SIZE: i32 = 10_000_000;
+
+/// The maximum sum of sizes of effect trees when createing a default caller-checked policy
+pub const MAX_AUDIT_FILE_SIZE: i32 = 20_000_000;

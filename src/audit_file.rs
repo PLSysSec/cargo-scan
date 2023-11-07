@@ -1,5 +1,5 @@
 use super::effect::{EffectInstance, SrcLoc};
-use crate::auditing::util::hash_dir;
+use crate::auditing::util::{hash_dir, MAX_CALLER_CHECKED_TREE_SIZE, MAX_AUDIT_FILE_SIZE};
 use crate::effect::{Effect, EffectType};
 use crate::ident::CanonicalPath;
 use crate::scanner;
@@ -176,7 +176,12 @@ impl AuditFile {
         pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectInstance>>,
         scan_res: &ScanResults,
         prev_callers: &mut HashSet<CanonicalPath>,
+        tree_size: &mut i32,
     ) -> Result<()> {
+        // TODO: Make this configurable/obsolete
+        if *tree_size > MAX_CALLER_CHECKED_TREE_SIZE {
+            return Err(anyhow!("exceeded maximum effect tree size"));
+        }
         if let EffectTree::Leaf(effect_info, annotation) = tree {
             // Add the function to the list of sinks if it is public
             if scan_res.pub_fns.contains(&effect_info.caller_path) {
@@ -201,6 +206,7 @@ impl AuditFile {
                 *annotation = SafetyAnnotation::CallerChecked;
             } else {
                 for eff in callers.iter_mut() {
+                    *tree_size += 1;
                     // NOTE: This will always be a leaf since it is only created
                     //       from the map above
                     let next_caller = if let EffectTree::Leaf(i, _) = eff {
@@ -210,6 +216,7 @@ impl AuditFile {
                             "Terminal node of effect tree should be a leaf"
                         ));
                     };
+
                     prev_callers.insert(next_caller.clone());
                     AuditFile::mark_caller_checked_recurse(
                         base_effect,
@@ -217,6 +224,7 @@ impl AuditFile {
                         pub_caller_checked,
                         scan_res,
                         prev_callers,
+                        tree_size,
                     )?;
                     prev_callers.remove(&next_caller);
                 }
@@ -233,6 +241,7 @@ impl AuditFile {
         tree: &mut EffectTree,
         pub_caller_checked: &mut HashMap<CanonicalPath, HashSet<EffectInstance>>,
         scan_res: &ScanResults,
+        tree_size: &mut i32,
     ) -> Result<()> {
         let mut callers = HashSet::new();
         callers.insert(base_effect.caller().clone());
@@ -242,6 +251,7 @@ impl AuditFile {
             pub_caller_checked,
             scan_res,
             &mut callers,
+            tree_size,
         )
     }
 
@@ -505,9 +515,16 @@ impl AuditFile {
         let (mut audit_file, scan_res) =
             Self::scan_with_sinks(crate_path, sinks, relevant_effects, quick)?;
 
+        let mut total_size = 0i32;
         let mut pub_caller_checked = HashMap::new();
         for (e, t) in audit_file.audit_trees.iter_mut() {
-            AuditFile::mark_caller_checked(e, t, &mut pub_caller_checked, &scan_res)?;
+            let mut tree_size = 0;
+            AuditFile::mark_caller_checked(e, t, &mut pub_caller_checked, &scan_res, &mut tree_size)?;
+            total_size += tree_size;
+            // TODO: Make this configurable/obsolete
+            if total_size > MAX_AUDIT_FILE_SIZE {
+                return Err(anyhow!("total size of audit file is too big"));
+            }
         }
 
         audit_file.pub_caller_checked = pub_caller_checked;
