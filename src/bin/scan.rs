@@ -7,7 +7,6 @@
 use cargo_scan::effect::EffectInstance;
 use cargo_scan::scan_stats::{self, CrateStats};
 
-use anyhow::Result;
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -30,13 +29,13 @@ struct Args {
     quick_mode: bool,
 }
 
-fn main() -> Result<()> {
+fn main() {
     cargo_scan::util::init_logging();
     let args = Args::parse();
 
     // Note: old version without default_audit:
     // scanner::scan_crate(&args.crate_path, &args.effect_types)?
-    let stats = scan_stats::get_crate_stats_default(args.crate_path, args.quick_mode)?;
+    let stats = scan_stats::get_crate_stats_default(args.crate_path, args.quick_mode);
 
     println!("{}", EffectInstance::csv_header());
     for effect in &stats.effects {
@@ -46,6 +45,4 @@ fn main() -> Result<()> {
     println!();
     println!("{}", CrateStats::metadata_csv_header());
     println!("{}", stats.metadata_csv());
-
-    Ok(())
 }

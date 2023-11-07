@@ -12,11 +12,11 @@ use super::loc_tracker::LoCTracker;
 use super::scanner::ScanResults;
 
 use anyhow::Result;
-use log::info;
+use log::{info, warn};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CrateStats {
     pub crate_path: PathBuf,
 
@@ -81,8 +81,11 @@ impl CrateStats {
 pub fn get_crate_stats_default(
     crate_path: PathBuf,
     quick_mode: bool,
-) -> Result<CrateStats> {
-    get_crate_stats(crate_path, DEFAULT_EFFECT_TYPES, quick_mode)
+) -> CrateStats {
+    get_crate_stats(crate_path.clone(), DEFAULT_EFFECT_TYPES, quick_mode).unwrap_or_else(|_| {
+        warn!("Scan crashed, skipping crate: {}", crate_path.to_string_lossy());
+        CrateStats { crate_path, ..Default::default() }
+    })
 }
 
 pub fn get_crate_stats(

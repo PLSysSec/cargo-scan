@@ -91,8 +91,7 @@ fn crate_stats(
 
     debug!("Downloaded");
 
-    let stats = scan_stats::get_crate_stats_default(output_dir, quick_mode)
-        .expect("Failed to get crate stats");
+    let stats = scan_stats::get_crate_stats_default(output_dir, quick_mode);
 
     // dbg!(&stats);
     info!("Done scanning: {}", crt);
