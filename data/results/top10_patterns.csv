@@ -1,15 +1,11 @@
-===== Patterns =====
-Total instances of each effect pattern:
-[FnPtrCreation]: 324
-[UnsafeCall]: 131
-[FFI]: 23
-std::process: 15
-std::path: 10
-[PtrDeref]: 9
-std::env: 8
-std::io: 7
-[ClosureCreation]: 4
-std::fs: 3
-std::panic: 1
-std::os: 1
-std::ffi: 1
+crate, [ClosureCreation], [FFI Call], [FFI Declaration], [FnPtrCreation], [PtrDeref], [UnsafeCall], std::env, std::ffi, std::fs, std::io, std::os, std::panic, std::path, std::process
+rand, 1, 1, 0, 3, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0
+syn, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+rand_core, 0, 0, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 0
+libc, 0, 19, 5849, 0, 0, 85, 0, 0, 0, 0, 0, 0, 0, 0
+cfg-if, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+quote, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+proc-macro2, 0, 0, 0, 3, 0, 8, 0, 0, 0, 0, 0, 1, 1, 0
+unicode-xid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+serde, 0, 0, 0, 12, 0, 2, 0, 1, 0, 0, 1, 0, 5, 0
+autocfg, 3, 0, 0, 4, 0, 0, 8, 0, 3, 3, 0, 0, 4, 15

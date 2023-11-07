@@ -1,13 +1,8 @@
-===== Crate Summary =====
-Number of effects by crate:
-syn: 337
-libc: 104
-autocfg: 40
-serde: 21
-rand: 16
-proc-macro2: 13
-rand_core: 5
-quote: 1
-===== Crate Totals =====
-8 crates with 1 or more effects
-2 crates with 0 effects
+crate, effects
+libc, 5953
+autocfg, 40
+serde, 21
+rand, 16
+proc-macro2, 13
+rand_core, 5
+quote, 1
