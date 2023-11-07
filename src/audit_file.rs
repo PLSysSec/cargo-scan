@@ -1,5 +1,7 @@
 use super::effect::{EffectInstance, SrcLoc};
-use crate::auditing::util::{hash_dir, MAX_CALLER_CHECKED_TREE_SIZE, MAX_AUDIT_FILE_SIZE};
+use crate::auditing::util::{
+    hash_dir, MAX_AUDIT_FILE_SIZE, MAX_CALLER_CHECKED_TREE_SIZE,
+};
 use crate::effect::{Effect, EffectType};
 use crate::ident::CanonicalPath;
 use crate::scanner;
@@ -519,7 +521,13 @@ impl AuditFile {
         let mut pub_caller_checked = HashMap::new();
         for (e, t) in audit_file.audit_trees.iter_mut() {
             let mut tree_size = 0;
-            AuditFile::mark_caller_checked(e, t, &mut pub_caller_checked, &scan_res, &mut tree_size)?;
+            AuditFile::mark_caller_checked(
+                e,
+                t,
+                &mut pub_caller_checked,
+                &scan_res,
+                &mut tree_size,
+            )?;
             total_size += tree_size;
             // TODO: Make this configurable/obsolete
             if total_size > MAX_AUDIT_FILE_SIZE {
