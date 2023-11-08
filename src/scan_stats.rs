@@ -78,14 +78,13 @@ impl CrateStats {
     }
 }
 
-pub fn get_crate_stats_default(
-    crate_path: PathBuf,
-    quick_mode: bool,
-) -> CrateStats {
-    get_crate_stats(crate_path.clone(), DEFAULT_EFFECT_TYPES, quick_mode).unwrap_or_else(|_| {
-        warn!("Scan crashed, skipping crate: {}", crate_path.to_string_lossy());
-        CrateStats { crate_path, ..Default::default() }
-    })
+pub fn get_crate_stats_default(crate_path: PathBuf, quick_mode: bool) -> CrateStats {
+    get_crate_stats(crate_path.clone(), DEFAULT_EFFECT_TYPES, quick_mode).unwrap_or_else(
+        |_| {
+            warn!("Scan crashed, skipping crate: {}", crate_path.to_string_lossy());
+            CrateStats { crate_path, ..Default::default() }
+        },
+    )
 }
 
 pub fn get_crate_stats(
