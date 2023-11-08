@@ -9,6 +9,7 @@ use log::{debug, error, info};
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
+use std::panic;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::mpsc::channel;
@@ -226,6 +227,11 @@ fn main() {
         let download_loc = download_loc.to_owned();
         let test_run = args.test_run;
         pool.execute(move || {
+            // Debugging hack from David
+            panic::set_hook(Box::new(|_| {
+                println!("{:?}", std::backtrace::Backtrace::force_capture());
+            }));
+
             let res = crate_stats(&crt, download_loc, test_run, args.quick_mode);
             if let Err(e) = tx.send((crt, res)) {
                 error!("Error sending result: {:?}", e);
