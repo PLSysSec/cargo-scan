@@ -12,7 +12,7 @@ use super::loc_tracker::LoCTracker;
 use super::scanner::ScanResults;
 
 use anyhow::Result;
-use log::{info, warn};
+use log::{debug, info, warn};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -145,7 +145,8 @@ fn get_auditing_metrics(audit: &AuditFile, results: &ScanResults) -> (usize, usi
         if let Some(tracker) = results.fn_loc_tracker.get(f) {
             total_loc += tracker.get_loc_lb();
         } else {
-            info!("failed to find tracker node");
+            // This case happens in the case of abstract trait method nodes
+            debug!("no tracker found for a method -- possibly an abstract trait method");
         }
     }
 
