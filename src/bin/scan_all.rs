@@ -205,6 +205,9 @@ fn main() {
     cargo_scan::util::init_logging();
     let args = Args::parse();
 
+    println!("===== Scanning all crates in {} =====", args.crates_csv.to_string_lossy());
+    debug!("args: {:?}", args);
+
     let mut rdr = csv::Reader::from_path(&args.crates_csv).expect("Failed to open CSV");
     let _headers = rdr.headers().expect("Failed to read CSV header");
 
@@ -240,7 +243,7 @@ fn main() {
 
         // Spawn threads
         for crt in batch_crates {
-            println!("Spawning thread for: {}", crt);
+            info!("Spawning thread for: {}", crt);
 
             let tx_inner = tx.clone();
             let crt = crt.clone();
