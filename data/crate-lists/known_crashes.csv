@@ -1,4 +1,5 @@
-name,downloads,description,created_at,updated_at,documentation,homepage,repository,id
-syn,147892895,Parser for Rust source code,2016-09-07 15:22:40.491981,2022-09-19 00:19:02.780119,https://docs.rs/syn,,https://github.com/dtolnay/syn,6274
-idna,68911409,IDNA (Internationalizing Domain Names in Applications) and Punycode.,2016-03-27 08:55:20.657552,2022-09-08 07:54:22.951729,,,https://github.com/servo/rust-url/,4577
-futures-util,53234695,Common utilities and extension traits for the futures-rs library. ,2018-03-05 22:42:24.332661,2022-08-29 13:40:04.978883,,https://rust-lang.github.io/futures-rs,https://github.com/rust-lang/futures-rs,54020
+name,type,comment
+syn,crash,
+idna,stack overflow,offending code currently disabled
+futures-util,stack overflow,offending code currently disabled
+cpp_demangle,crash,
