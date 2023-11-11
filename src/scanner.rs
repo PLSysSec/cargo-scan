@@ -985,6 +985,16 @@ where
                     self.scan_expr(y);
                 }
             }
+            syn::Expr::Const(c) => {
+                if self.skip_attrs(&c.attrs) {
+                    self.data.skipped_conditional_code.add(c);
+                    return;
+                }
+
+                for s in &c.block.stmts {
+                    self.scan_fn_statement(s);
+                }
+            }
             syn::Expr::Infer(_) => {
                 // a single underscore _
                 // we can ignore this
