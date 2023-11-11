@@ -310,6 +310,10 @@ impl CanonicalPath {
 
         self.to_owned()
     }
+
+    pub fn get_src_loc(&self) -> &SrcLoc {
+        &self.src_loc
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
