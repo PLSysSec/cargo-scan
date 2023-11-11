@@ -10,7 +10,7 @@ use crate::effect::SrcLoc;
 use crate::ident::{CanonicalPath, CanonicalType, Ident};
 
 use anyhow::Result;
-use log::{debug, warn};
+use log::debug;
 use std::fmt::Display;
 use std::path::Path as FilePath;
 use syn::{self, spanned::Spanned};
@@ -281,7 +281,8 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
 
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath {
         let s = SrcLoc::from_span(self.filepath, idx);
-        warn!(
+        // TODO: bump back to a warn! once a fix is pushed
+        debug!(
             "Skipping function call on a field index (using fallback) for {:?} ({})",
             idx, s
         );
