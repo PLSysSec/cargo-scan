@@ -1,17 +1,19 @@
-name,type,comment
-syn,crash,
-rayon,crash,
-kernel32-sys,crash,
-ws2_32-sys,crash,
-synom,crash,
-pyo3,crash,
-encoding-index-tradchinese,crash,
-encoding-index-singlebyte,crash,
-encoding-index-simpchinese,crash,
-encoding-index-japanese,crash,
-encoding-index-korean,crash,
-encoding,crash,
-cpp_demangle,crash,
-syntax_syntax,crash,
-idna,stack overflow,offending code currently disabled
-futures-util,stack overflow,offending code currently disabled
+name,group,type,comment
+syn,top10,crash,
+idna,top100,stack overflow,offending code currently disabled
+futures-util,top100,stack overflow,offending code currently disabled
+rayon,top1000,crash,
+kernel32-sys,top1000,crash,
+ws2_32-sys,top1000,crash,
+cloudabi,top1000,missing,unable to find src dir or lib.rs
+protobuf,top1000,crash,
+synom,top1000,crash,
+pyo3,top1000,crash,
+encoding-index-tradchinese,top1000,crash,
+encoding-index-singlebyte,top1000,crash,
+encoding-index-simpchinese,top1000,crash,
+encoding-index-japanese,top1000,crash,
+encoding,top1000,crash,
+encoding-index-korean,top1000,crash,
+encoding-index-tests,top1000,missing,unable to find src dir or lib.rs
+cpp_demangle,top1000,crash,
