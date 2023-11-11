@@ -59,6 +59,10 @@ struct Args {
     // Run in quick mode (turns off RustAnalyzer)
     #[clap(short, long, default_value_t = false)]
     quick_mode: bool,
+
+    // Don't collect raw list of effects
+    #[clap(long, default_value_t = false)]
+    skip_raw: bool,
 }
 
 /*
@@ -274,8 +278,13 @@ fn main() {
     let output_pattern = base.join(pref.to_string() + RESULTS_PATTERNS_SUFFIX);
     let output_metadata = base.join(pref.to_string() + RESULTS_METADATA_SUFFIX);
 
-    all_stats.dump_all(&output_all);
+    println!("Saving summary, patterns, and metadata to: {}", base.to_string_lossy());
     all_stats.dump_summary(&output_summary);
     all_stats.dump_patterns(&output_pattern);
     all_stats.dump_metadata(&output_metadata);
+
+    if !args.skip_raw {
+        println!("Saving raw effect list to: {}", output_all.to_string_lossy());
+        all_stats.dump_all(&output_all);
+    }
 }
