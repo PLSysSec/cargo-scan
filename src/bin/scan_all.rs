@@ -236,6 +236,8 @@ fn main() {
 
         // Spawn threads
         for crt in batch_crates {
+            println!("Spawning thread for: {}", crt);
+
             let tx_inner = tx.clone();
             let crt = crt.clone();
             let download_loc = download_loc.to_owned();
