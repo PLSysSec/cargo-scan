@@ -196,11 +196,15 @@ impl<'a> ResolverImpl<'a> {
         let file_id = resolver.find_file_id(filepath)?;
         let src_file = sems.parse(file_id);
 
-        let file_diags = resolver.host.analysis().diagnostics(
-            &ra_ap_ide::DiagnosticsConfig::test_sample(),
-            ra_ap_ide::AssistResolveStrategy::None,
-            file_id,
-        )?;
+        // TBD: This causes a stack overflow on some crates
+        // Disabling until a fix is found, can re-enable if needed for
+        // individual runs
+        // let file_diags = resolver.host.analysis().diagnostics(
+        //     &ra_ap_ide::DiagnosticsConfig::test_sample(),
+        //     ra_ap_ide::AssistResolveStrategy::None,
+        //     file_id,
+        // )?;
+        let file_diags = Vec::new();
 
         Ok(ResolverImpl { db, sems, resolver, src_file, file_id, file_diags })
     }
