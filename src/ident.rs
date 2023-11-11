@@ -353,7 +353,7 @@ impl Display for CanonicalType {
 
 impl CanonicalType {
     fn char_ok(c: char) -> bool {
-        c.is_ascii_alphanumeric() || "_-&*+|!=',;:<>()[]{}? ".contains(c)
+        c.is_ascii_alphanumeric() || "_-&*+#|!=',;:<>()[]{}? ".contains(c)
     }
 
     pub fn invariant(&self) -> bool {
