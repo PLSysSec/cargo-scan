@@ -26,10 +26,10 @@ top10: install
 	$(SCAN_ALL) data/crate-lists/top10.csv top10
 
 top100: install
-	$(SCAN_ALL) data/crate-lists/top100.csv top100
+	$(SCAN_ALL) data/crate-lists/top100.csv top100 -n 50
 
 top1000: install
-	$(SCAN_ALL) data/crate-lists/top1000.csv top1000
+	$(SCAN_ALL) data/crate-lists/top1000.csv top1000 -n 50
 
 top10000: install
 	# Note: this actually contains only 9998 crates at the moment.
