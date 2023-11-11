@@ -1,0 +1,2 @@
+name,downloads,description,created_at,updated_at,documentation,homepage,repository,id
+idna,68911409,IDNA (Internationalizing Domain Names in Applications) and Punycode.,2016-03-27 08:55:20.657552,2022-09-08 07:54:22.951729,,,https://github.com/servo/rust-url/,4577
