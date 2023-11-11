@@ -61,6 +61,9 @@ struct Args {
     quick_mode: bool,
 }
 
+/*
+    Wrapper for scan_stats::get_crate_stats_default
+*/
 fn crate_stats(
     crt: &str,
     download_loc: PathBuf,
@@ -99,6 +102,9 @@ fn crate_stats(
     stats
 }
 
+/*
+    Struct to collect stats for all crates
+*/
 #[derive(Debug, Default)]
 struct AllStats {
     crates: Vec<String>,
@@ -124,13 +130,6 @@ impl AllStats {
         }
         self.crate_stats.insert(crt, c);
     }
-
-    // fn iter_effects(&self) -> impl Iterator<Item = &EffectInstance> {
-    //     self.crates.iter().flat_map(|crt| {
-    //         let stats = self.crate_stats.get(crt).unwrap();
-    //         stats.effects.iter()
-    //     })
-    // }
 
     fn dump_all(&self, path: &Path) {
         let mut f = util::fs::path_writer(path);
@@ -195,6 +194,9 @@ impl AllStats {
     }
 }
 
+/*
+    Entrypoint
+*/
 fn main() {
     cargo_scan::util::init_logging();
     let args = Args::parse();
