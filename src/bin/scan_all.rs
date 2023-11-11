@@ -9,10 +9,9 @@ use log::{debug, error, info};
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
-use std::panic;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::mpsc::channel;
+use std::sync::mpsc;
 use threadpool::ThreadPool;
 
 /*
@@ -218,51 +217,50 @@ fn main() {
         fs::create_dir_all(download_loc).expect("Failed to create download location");
     }
 
-    let pool = ThreadPool::new(args.num_threads);
-    let (tx, rx) = channel();
+    let mut all_stats = AllStats::new(crates.clone());
 
-    for crt in &crates {
-        let tx = tx.clone();
-        let crt = crt.clone();
-        let download_loc = download_loc.to_owned();
-        let test_run = args.test_run;
-        pool.execute(move || {
-            // Debugging hack from David
-            panic::set_hook(Box::new(|_| {
-                println!("{:?}", std::backtrace::Backtrace::force_capture());
-            }));
+    let batch_size = args.num_threads;
+    let num_batches = (num_crates + batch_size - 1) / batch_size;
+    let progress_inc = (num_crates + PROGRESS_INCS - 1) / PROGRESS_INCS;
 
-            let res = crate_stats(&crt, download_loc, test_run, args.quick_mode);
-            if let Err(e) = tx.send((crt, res)) {
-                error!("Error sending result: {:?}", e);
+    for batch in 0..num_batches {
+        let pool = ThreadPool::new(args.num_threads);
+        let (tx, rx) = mpsc::channel();
+
+        let start = batch * batch_size;
+        let end = (batch + 1) * batch_size;
+        let end = if end > num_crates { num_crates } else { end };
+        let batch_crates = &crates[start..end];
+
+        // Spawn threads
+        for crt in batch_crates {
+            let tx_inner = tx.clone();
+            let crt = crt.clone();
+            let download_loc = download_loc.to_owned();
+            pool.execute(move || {
+                let res = crate_stats(&crt, download_loc, args.test_run, args.quick_mode);
+                if let Err(e) = tx_inner.send((crt, res)) {
+                    error!("Error sending result: {:?}", e);
+                }
+            });
+        }
+
+        // Drop handle
+        drop(tx);
+        // Wait for threads
+        info!("Waiting for threads... (batch {} of {})", batch, num_batches);
+        for (i, (crt, stats)) in rx.iter().enumerate() {
+            all_stats.push_stats(crt, stats);
+            if (start + i + 1) % progress_inc == 0 {
+                println!(
+                    "{:.0}% complete",
+                    ((100 * (start + i + 1)) as f64) / (num_crates as f64)
+                );
             }
-        });
-
-        // TODO: is this line necessary?
-        assert!(rx.try_iter().next().is_none());
-        // Old:
-        // Clean up our waiting threads
-        // for (crt, stats) in rx.try_iter() {
-        //     stats.push(msg);
-        // }
-    }
-
-    // Drop our last channel so we don't block forever waiting for it to finish
-    drop(tx);
-
-    info!("Waiting for jobs to complete...");
-
-    // Collect the messages
-    let mut all_stats = AllStats::new(crates);
-    let progress_inc = num_crates / PROGRESS_INCS;
-    for (i, (crt, stats)) in rx.iter().enumerate() {
-        all_stats.push_stats(crt, stats);
-        if (i + 1) % progress_inc == 0 {
-            println!("{:.0}% complete", ((100 * (i + 1)) as f64) / (num_crates as f64));
         }
     }
 
-    // dbg!(&stats);
+    // dbg!(&all_stats);
 
     // Save Results
     let base = Path::new(RESULTS_DIR);

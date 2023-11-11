@@ -12,7 +12,7 @@ use super::loc_tracker::LoCTracker;
 use super::scanner::ScanResults;
 
 use anyhow::Result;
-use log::{debug, info, warn};
+use log::{debug, warn};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
