@@ -409,7 +409,7 @@ where
                     self.data.skipped_macros.add(m);
                 }
                 syn::TraitItem::Verbatim(v) => {
-                    self.syn_warning("skipping Verbatim expression", v);
+                    self.syn_info("skipping Verbatim expression", v);
                 }
                 other => {
                     self.data.skipped_other.add(other);
@@ -439,7 +439,7 @@ where
                     self.data.skipped_macros.add(m);
                 }
                 syn::ImplItem::Verbatim(v) => {
-                    self.syn_warning("skipping Verbatim expression", v);
+                    self.syn_info("skipping Verbatim expression", v);
                 }
                 other => {
                     self.data.skipped_other.add(other);
@@ -961,7 +961,7 @@ where
                 self.scan_unsafe_block(x);
             }
             syn::Expr::Verbatim(v) => {
-                self.syn_warning("skipping Verbatim expression", v);
+                self.syn_info("skipping Verbatim expression", v);
             }
             syn::Expr::While(x) => {
                 if self.skip_attrs(&x.attrs) {
@@ -985,7 +985,14 @@ where
                     self.scan_expr(y);
                 }
             }
-            _ => self.syn_warning("encountered unknown expression", e),
+            syn::Expr::Infer(_) => {
+                // a single underscore _
+                // we can ignore this
+            }
+            _ => {
+                // unexpected case
+                self.syn_warning("encountered unknown/unexpected expression", e)
+            }
         }
     }
 
@@ -1271,12 +1278,12 @@ pub fn try_scan_file(
     if quick_mode {
         scan_file_quick(crate_name, filepath, scan_results, sinks, enabled_cfg)
             .unwrap_or_else(|err| {
-                warn!("Failed to scan file {} ({})", filepath.to_string_lossy(), err);
+                info!("Failed to scan file {} ({})", filepath.to_string_lossy(), err);
             })
     } else {
         scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg)
             .unwrap_or_else(|err| {
-                warn!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
+                info!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
             });
     }
 }

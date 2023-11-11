@@ -1,5 +1,17 @@
 name,type,comment
 syn,crash,
+rayon,crash,
+kernel32-sys,crash,
+ws2_32-sys,crash,
+synom,crash,
+pyo3,crash,
+encoding-index-tradchinese,crash,
+encoding-index-singlebyte,crash,
+encoding-index-simpchinese,crash,
+encoding-index-japanese,crash,
+encoding-index-korean,crash,
+encoding,crash,
+cpp_demangle,crash,
+syntax_syntax,crash,
 idna,stack overflow,offending code currently disabled
 futures-util,stack overflow,offending code currently disabled
-cpp_demangle,crash,

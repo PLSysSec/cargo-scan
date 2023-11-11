@@ -50,7 +50,15 @@ impl Ident {
     }
 
     fn str_ok(s: &str) -> bool {
-        let skips = if s.starts_with("r#") { 2 } else { 0 };
+        let skips = if s.starts_with("r#") {
+            // raw ident, e.g. r#try
+            2
+        } else if s.starts_with('\'') {
+            // Lifetime ident, e.g. 'a
+            1
+        } else {
+            0
+        };
         s.chars().skip(skips).all(Self::char_ok) && !s.is_empty()
     }
 
