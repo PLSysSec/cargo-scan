@@ -26,14 +26,14 @@ top10: install
 	$(SCAN_ALL) data/crate-lists/top10.csv top10
 
 top100: install
-	$(SCAN_ALL) data/crate-lists/top100.csv top100 -n 50
+	$(SCAN_ALL) data/crate-lists/top100.csv top100 -n 64
 
 top1000: install
-	$(SCAN_ALL) data/crate-lists/top1000.csv top1000 -n 50
+	$(SCAN_ALL) data/crate-lists/top1000.csv top1000 -n 64
 
 top10000: install
 	# Note: this actually contains only 9998 crates at the moment.
-	$(SCAN_ALL) data/crate-lists/top10000.csv top10000 -n 50 --skip-raw
+	$(SCAN_ALL) data/crate-lists/top10000.csv top10000 -n 64
 
 mozilla: install
 	$(SCAN_ALL) data/crate-lists/mozilla-exempt.csv mozilla-exempt
