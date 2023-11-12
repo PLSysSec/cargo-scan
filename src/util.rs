@@ -78,7 +78,7 @@ pub mod fs {
     use std::path::{Path, PathBuf};
     use walkdir::{DirEntry, WalkDir};
 
-    pub fn walk_files(p: &PathBuf) -> impl Iterator<Item = PathBuf> {
+    pub fn walk_files(p: &Path) -> impl Iterator<Item = PathBuf> {
         debug_assert!(p.is_dir());
         WalkDir::new(p)
             .sort_by_file_name()
@@ -88,7 +88,7 @@ pub mod fs {
     }
 
     pub fn walk_files_with_extension<'a>(
-        p: &'a PathBuf,
+        p: &'a Path,
         ext: &'a str,
     ) -> impl Iterator<Item = PathBuf> + 'a {
         walk_files(p)

@@ -1329,39 +1329,26 @@ pub fn scan_crate_with_sinks(
 
     // TODO: For now, only walking through the src dir, but might want to
     //       include others (e.g. might codegen in other dirs)
+    // If there is no src_dir, we walk through all .rs files in the crate.
+
     let src_dir = crate_path.join(FilePath::new("src"));
-    if src_dir.is_dir() {
-        for entry in util::fs::walk_files_with_extension(&src_dir, "rs") {
-            try_scan_file(
-                &crate_name,
-                entry.as_path(),
-                &resolver,
-                &mut scan_results,
-                sinks.clone(),
-                &enabled_cfg,
-                quick_mode,
-            );
-        }
+    let file_iter = if src_dir.is_dir() {
+        util::fs::walk_files_with_extension(&src_dir, "rs")
     } else {
-        info!("crate has no src dir; looking for a single lib.rs file instead");
-        let lib_file = crate_path.join(FilePath::new("lib.rs"));
-        if lib_file.is_file() {
-            try_scan_file(
-                &crate_name,
-                lib_file.as_path(),
-                &resolver,
-                &mut scan_results,
-                sinks,
-                &enabled_cfg,
-                quick_mode,
-            );
-        } else {
-            warn!(
-                "unable to find src dir or lib.rs file; \
-                no files scanned! In crate {:?}",
-                crate_path
-            );
-        }
+        info!("crate has no src dir; scanning all .rs files instead");
+        util::fs::walk_files_with_extension(crate_path, "rs")
+    };
+
+    for entry in file_iter {
+        try_scan_file(
+            &crate_name,
+            entry.as_path(),
+            &resolver,
+            &mut scan_results,
+            sinks.clone(),
+            &enabled_cfg,
+            quick_mode,
+        );
     }
 
     scan_results
