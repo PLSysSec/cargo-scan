@@ -1,0 +1,101 @@
+name,downloads,description,created_at,updated_at,documentation,homepage,repository,id
+color-spantrace,1924739,A pretty printer for tracing_error::SpanTrace based on color-backtrace,2020-05-06 23:29:18.864517,2022-01-13 00:01:51.188366,https://docs.rs/color-spantrace,,https://github.com/yaahc/color-spantrace,238367
+wasmtime-cranelift,1921861,Integration between Cranelift and Wasmtime,2020-09-23 18:55:05.358247,2022-09-20 15:57:07.472667,https://docs.rs/wasmtime-cranelift/,,https://github.com/bytecodealliance/wasmtime,292198
+odds,1921001,"Odds and ends — collection miscellania. Extra functionality for slices (`.find()`, `RevSlice`), s...",2015-06-02 15:26:06.451758,2020-04-11 17:19:30.79695,https://docs.rs/odds/,,https://github.com/bluss/odds,2287
+rw-stream-sink,1920020,Adaptator between Stream/Sink and AsyncRead/AsyncWrite,2019-01-02 13:41:11.634316,2022-05-31 11:15:39.729825,,,https://github.com/libp2p/rust-libp2p,105015
+rental,1916501,"A macro to generate safe self-referential structs, plus premade types for common use cases.",2016-11-23 10:30:47.252592,2021-05-01 23:22:36.642491,https://docs.rs/rental,,https://github.com/jpernst/rental,7340
+cssparser-macros,1912999,Procedural macros for cssparser,2017-02-25 16:53:34.899824,2019-10-22 16:31:36.338694,https://docs.rs/cssparser-macros/,,https://github.com/servo/rust-cssparser,8676
+cached,1912968,Generic cache implementations and simplified function memoization,2017-03-28 00:36:06.017836,2022-09-02 00:59:39.719278,https://docs.rs/cached,,https://github.com/jaemk/cached,9176
+hyper-openssl,1909152,Hyper TLS support via OpenSSL,2016-11-29 04:30:02.116223,2022-02-19 17:44:34.860446,,,https://github.com/sfackler/hyper-openssl,7405
+block-cipher-trait,1907688,DEPRECATED: please switch to the `cipher` crate,2016-12-16 12:42:44.035187,2021-08-25 14:27:00.354249,,,https://github.com/RustCrypto/traits/tree/master/cipher,7634
+rls-data,1906893,Data structures used by the RLS and Rust compiler,2017-03-15 18:52:04.609579,2021-01-15 00:10:35.65831,,,https://github.com/rust-lang/rls,8990
+rustc-ap-rustc_errors,1906113,Automatically published version of the package `rustc_errors` in the rust-lang/rust repository fr...,2018-01-11 02:34:30.149257,2021-07-06 08:20:52.121785,,,https://github.com/rust-lang/rust,46318
+bimap,1904634,Bijective maps,2017-09-10 20:49:54.744249,2022-01-23 18:02:46.858727,https://docs.rs/bimap/,,https://github.com/billyrieger/bimap-rs/,31327
+parity-tokio-ipc,1903008,Interprocess communication library for tokio. ,2018-09-26 10:27:54.070702,2021-07-06 12:13:02.522041,,https://github.com/paritytech/parity-tokio-ipc,https://github.com/paritytech/parity-tokio-ipc,86608
+human-panic,1891262,Panic messages for humans,2018-04-15 00:02:31.006288,2020-03-22 09:43:17.628115,https://docs.rs/human-panic,https://github.com/yoshuawuyts/human-panic,https://github.com/yoshuawuyts/human-panic,60643
+ash,1890865,Vulkan bindings for Rust,2016-12-09 19:43:27.190795,2022-03-23 21:04:50.661216,https://docs.rs/ash,,https://github.com/MaikKlein/ash,7518
+k8s-openapi,1889813,Bindings for the Kubernetes client API,2018-06-30 09:37:50.529047,2022-09-15 18:27:25.623364,https://arnavion.github.io/k8s-openapi/v0.16.x/k8s_openapi/,,https://github.com/Arnavion/k8s-openapi,72288
+cassowary,1889488,A Rust implementation of the Cassowary linear constraint solving algorithm.  The Cassowary algori...,2016-04-30 17:13:30.674561,2017-09-13 20:04:34.589162,https://dylanede.github.io/cassowary-rs,https://github.com/dylanede/cassowary-rs,https://github.com/dylanede/cassowary-rs,4932
+wildmatch,1888698,Simple string matching  with questionmark and star wildcard operator.,2020-01-02 13:32:02.176991,2022-06-28 20:30:59.309211,,,https://github.com/becheran/wildmatch,194477
+alga,1887054,Abstract algebra for Rust,2016-09-11 09:25:10.288907,2020-03-02 08:54:17.641259,https://docs.rs/alga,,https://github.com/rustsim/alga,6332
+tendermint-abci,1885224,    tendermint-abci provides a simple framework with which to build low-level     applications on...,2021-04-06 17:22:56.83668,2022-09-23 17:18:42.722186,,,https://github.com/informalsystems/tendermint-rs,379897
+rustc-ap-rustc_lexer,1879612,Automatically published version of the package `rustc_lexer` in the rust-lang/rust repository fro...,2019-07-22 05:25:52.622716,2021-07-06 08:15:22.787779,,,https://github.com/rust-lang/rust,150705
+napi-sys,1877895,NodeJS N-API raw binding,2017-11-30 02:04:20.893393,2022-05-10 14:28:17.462241,,,https://github.com/napi-rs/napi-rs,41044
+tokio-retry,1873272,"Extensible, asynchronous retry behaviours for futures/tokio",2017-03-05 13:07:28.724889,2021-03-06 13:07:27.598743,https://docs.rs/tokio-retry,,https://github.com/srijs/rust-tokio-retry,8827
+validator,1867779,"Common validation functions (email, url, length, ...) and trait - to be used with `validator_derive`",2016-12-28 02:54:16.372547,2022-07-25 12:25:28.888531,,https://github.com/Keats/validator,https://github.com/Keats/validator,7807
+rental-impl,1865832,An implementation detail of rental. Should not be used directly.,2017-03-18 07:29:45.531779,2019-10-01 20:45:41.617257,https://docs.rs/rental,https://www.jpernst.com,https://github.com/jpernst/rental,9023
+loom,1865269,Permutation testing for concurrent code,2018-12-07 19:58:42.545465,2022-05-19 19:51:34.578687,,https://github.com/tokio-rs/loom,https://github.com/tokio-rs/loom,100677
+build-helper,1864484,This crate contains convenience methods for build scripts.,2017-05-10 11:17:31.866143,2017-05-12 04:38:27.486182,https://docs.rs/crate/build-helper/,,https://github.com/DanielKeep/rust-build-helper,13993
+rocket_http,1860384,"Types, traits, and parsers for HTTP requests, responses, and headers. ",2018-10-31 21:29:01.634758,2022-05-26 01:49:38.324338,https://api.rocket.rs/v0.4/rocket_http/,https://rocket.rs,https://github.com/SergioBenitez/Rocket,93882
+roxmltree,1850518,Represent an XML as a read-only tree.,2018-08-31 16:32:36.315456,2022-08-15 16:55:01.021867,https://docs.rs/roxmltree/,,https://github.com/RazrFalcon/roxmltree,82377
+nonzero_ext,1850104,Extensions and additional traits for non-zero integer types,2018-09-15 15:04:43.714495,2021-08-21 15:57:43.150498,https://docs.rs/nonzero_ext,,https://github.com/antifuchs/nonzero_ext,84848
+devise,1849617,A library for devising derives and other procedural macros.,2018-10-29 11:13:21.150242,2022-05-26 00:17:17.244564,,,https://github.com/SergioBenitez/Devise,93305
+devise_codegen,1847809,A library for devising derives and other procedural macros.,2018-10-29 11:12:44.017103,2022-05-26 00:16:54.286878,,,https://github.com/SergioBenitez/Devise,93304
+metadeps,1846917,Run pkg-config from declarative dependencies in Cargo.toml,2016-12-15 03:05:10.343135,2017-05-30 06:20:19.246889,http://docs.rs/metadeps,,https://github.com/joshtriplett/metadeps,7584
+devise_core,1844092,A library for devising derives and other procedural macros.,2018-10-29 11:12:08.105331,2022-05-26 00:15:42.230747,,,https://github.com/SergioBenitez/Devise,93303
+rkyv,1843516,Zero-copy deserialization framework for Rust,2020-11-11 16:36:21.012106,2022-06-26 22:51:46.673696,https://docs.rs/rkyv,,https://github.com/rkyv/rkyv,311298
+libp2p,1842903,Peer-to-peer networking library,2018-08-08 18:03:31.75563,2022-09-07 08:13:27.966507,,,https://github.com/libp2p/rust-libp2p,78395
+pretty-hex,1839856,Pretty hex dump of bytes slice in the common style.,2018-03-08 18:24:18.360087,2022-04-16 16:42:41.613052,https://docs.rs/pretty-hex,https://github.com/wolandr/pretty-hex,https://github.com/wolandr/pretty-hex,54572
+rkyv_derive,1836626,Derive macro for rkyv,2020-11-11 16:14:18.106933,2022-06-26 22:51:18.700232,https://docs.rs/rkyv_derive,,https://github.com/rkyv/rkyv,311283
+logos,1832609,Create ridiculously fast Lexers,2018-11-09 14:43:23.485073,2022-06-08 09:31:53.653484,https://docs.rs/logos,,https://github.com/maciejhirsz/logos,95665
+logos-derive,1832337,Create ridiculously fast Lexers,2018-11-09 14:43:51.249509,2022-06-08 09:31:32.019581,https://docs.rs/logos-derive,,https://github.com/maciejhirsz/logos,95666
+tower-make,1828885,Trait aliases for Services that produce specific types of Responses. ,2019-08-27 16:44:36.206282,2019-11-29 21:12:08.778591,https://docs.rs/tower-make/0.3.0,https://github.com/tower-rs/tower,https://github.com/tower-rs/tower,160128
+askama,1826610,"Type-safe, compiled Jinja-like templates for Rust",2017-02-15 19:34:56.689248,2022-02-16 21:55:52.791018,https://docs.rs/askama,https://github.com/djc/askama,https://github.com/djc/askama,8529
+wasmi-validation,1825992,Wasm code validator,2019-04-19 14:27:39.2104,2022-07-25 10:15:49.37687,,,https://github.com/paritytech/wasmi,128970
+multihash-derive,1824739,Proc macro for deriving custom multihash tables.,2020-10-30 16:49:52.151769,2022-02-01 16:33:16.438371,,,https://github.com/multiformats/multihash,307027
+quine-mc_cluskey,1821837,Rust implementation of the Quine-McCluskey algorithm and Petrick's method,2016-03-22 13:58:39.673778,2016-08-03 16:06:34.316253,https://oli-obk.github.io/quine-mc_cluskey,,https://github.com/oli-obk/quine-mc_cluskey,4523
+askama_derive,1818017,Procedural macro package for Askama,2017-02-15 19:42:14.703577,2022-02-16 20:54:32.149697,,https://github.com/djc/askama,https://github.com/djc/askama,8530
+cpp,1817695,Inline C++ code closures,2015-08-01 18:33:46.089322,2022-04-29 08:56:06.649447,https://docs.rs/cpp,,https://github.com/mystor/rust-cpp,2732
+integer-sqrt,1815325,An implementation of integer square root algorithm for primitive rust types,2017-10-23 12:29:54.830809,2020-09-09 09:44:05.291025,,,https://github.com/derekdreery/integer-sqrt-rs,36675
+block-cipher,1812652,DEPRECATED: replaced by the `cipher` crate,2018-10-30 23:57:03.040653,2020-10-25 19:16:07.095637,,,https://github.com/RustCrypto/traits/tree/master/cipher,93703
+askama_shared,1812078,Shared code for Askama,2017-09-06 18:15:52.822678,2022-02-27 15:10:15.509597,,https://github.com/djc/askama,https://github.com/djc/askama,30821
+conv,1810158,This crate provides a number of conversion traits with more specific semantics than those provide...,2015-08-07 11:57:41.763365,2016-03-30 07:03:54.758483,https://danielkeep.github.io/rust-conv/doc/conv/index.html,,https://github.com/DanielKeep/rust-conv,2775
+inferno,1807237,Rust port of the FlameGraph performance profiling tool suite,2019-01-27 00:38:43.387945,2022-07-26 11:31:37.289932,,,https://github.com/jonhoo/inferno.git,110834
+clap_complete,1804947,Generate shell completion scripts for your clap::Command,2021-12-31 18:24:25.813971,2022-09-20 21:31:07.224027,,,https://github.com/clap-rs/clap/tree/master/clap_complete,505887
+blowfish,1799896,Blowfish block cipher,2016-10-06 21:13:17.263613,2022-02-17 08:58:15.414493,https://docs.rs/blowfish,,https://github.com/RustCrypto/block-ciphers,6757
+metrics-util,1799370,Helper types/functions used by the metrics ecosystem.,2019-04-23 20:33:21.26438,2022-07-21 01:20:09.554745,https://docs.rs/metrics-util,https://github.com/metrics-rs/metrics,https://github.com/metrics-rs/metrics,129727
+nalgebra-macros,1795778,Procedural macros for nalgebra,2021-06-02 13:28:27.350924,2021-06-02 13:28:27.350924,https://www.nalgebra.org/docs,https://nalgebra.org,https://github.com/dimforge/nalgebra,405288
+xi-unicode,1790243,"Unicode utilities useful for text editing, including a line breaking iterator.",2016-04-29 04:52:32.918548,2020-10-25 22:46:55.19529,,,https://github.com/google/xi-editor,4900
+dtoa-short,1788138,Serialize float number and truncate to certain precision,2017-08-14 06:44:34.83883,2020-12-11 06:56:46.613923,,,https://github.com/upsuper/dtoa-short,27473
+libp2p-swarm,1786720,The libp2p swarm,2019-07-19 09:03:11.333567,2022-09-07 07:54:38.241081,,,https://github.com/libp2p/rust-libp2p,150065
+x11-clipboard,1781994,x11 clipboard support for Rust.,2017-04-23 07:17:50.215841,2022-07-31 12:15:14.853921,https://docs.rs/x11-clipboard/,,https://github.com/quininer/x11-clipboard,11629
+file-per-thread-logger,1778608,A logging implementation that writes logs in one file per thread,2018-07-30 17:09:34.053923,2022-02-05 17:54:57.235656,,,https://github.com/bnjbvr/file-per-thread-logger,76679
+metrics-macros,1771797,Macros for the metrics crate.,2020-06-17 01:57:58.632678,2022-07-22 14:48:27.87232,https://docs.rs/metrics,https://github.com/metrics-rs/metrics,https://github.com/metrics-rs/metrics,254795
+vcell,1770996,`Cell` with volatile read / write operations,2017-03-08 02:23:56.163098,2021-01-01 12:09:16.037049,https://docs.rs/vcell,,https://github.com/japaric/vcell,8887
+calloop,1769174,A callback-based event loop,2018-08-24 16:57:45.869464,2022-06-20 09:22:04.21348,https://docs.rs/calloop/,,https://github.com/Smithay/calloop,81116
+libp2p-tcp,1769108,TCP/IP transport protocol for libp2p,2019-01-02 13:46:00.48847,2022-09-07 07:54:25.043383,,,https://github.com/libp2p/rust-libp2p,105018
+cpp_build,1761754,Cargo build script for the `cpp` crate,2017-03-06 03:38:39.696956,2022-04-29 08:54:53.423542,https://docs.rs/cpp_build,,https://github.com/mystor/rust-cpp,8845
+hex_fmt,1761083,Formatting and shortening byte slices as hexadecimal strings,2018-10-11 15:50:22.120053,2018-12-27 12:41:46.455922,,,https://github.com/poanetwork/hex_fmt,89268
+ptr_meta_derive,1759874,Macros for ptr_meta,2021-02-03 17:57:18.080611,2022-08-10 23:03:50.838098,https://docs.rs/ptr_meta_derive,,https://github.com/djkoloski/ptr_meta,350167
+ptr_meta,1759085,A radioactive stabilization of the ptr_meta rfc,2021-02-03 17:59:03.776364,2022-08-10 23:04:08.766121,https://docs.rs/ptr_meta,,https://github.com/djkoloski/ptr_meta,350169
+static-map-macro,1753802,Macro to create a stack-alocated map,2019-12-15 11:33:58.401118,2022-03-30 22:03:23.738396,,https://github.com/kdy1/rust-static-map,https://github.com/kdy1/rust-static-map,189528
+st-map,1753711,Runtime for a stack-alocated map,2019-12-15 11:36:01.682364,2022-03-30 22:03:30.164109,,https://github.com/kdy1/rust-static-map,https://github.com/kdy1/rust-static-map,189531
+rustc-rayon-core,1749401,Core APIs for Rayon - fork for rustc,2018-05-10 21:40:54.664173,2022-05-28 03:18:16.930991,https://docs.rs/rustc-rayon-core/,,https://github.com/rust-lang/rustc-rayon,64753
+cpp_macros,1747545,Procedural macro implementation for the `cpp` crate,2017-03-06 03:39:06.594131,2022-04-29 08:54:40.026185,https://docs.rs/cpp_macros,,https://github.com/mystor/rust-cpp,8846
+rustc-rayon,1747414,Simple work-stealing parallelism for Rust - fork for rustc,2018-05-10 21:41:28.368718,2022-05-27 23:41:01.314524,https://docs.rs/rustc-rayon/,,https://github.com/rust-lang/rustc-rayon,64754
+andrew,1743245,"The andrew crate provides convenient drawing of objects such as shapes, lines and text to buffers",2018-08-17 13:05:37.060313,2020-10-23 12:14:21.588315,,,https://github.com/Smithay/andrew,79927
+libp2p-noise,1740576,Cryptographic handshake protocol using the noise framework.,2019-01-30 16:00:33.335802,2022-09-07 07:54:07.260487,,,https://github.com/libp2p/rust-libp2p,111642
+rustc-ap-rustc_target,1732962,Automatically published version of the package `rustc_target` in the rust-lang/rust repository fr...,2018-04-27 06:59:49.251886,2021-07-06 08:19:16.960938,,,https://github.com/rust-lang/rust,62531
+stb_truetype,1732907,A straight translation of the font loading code in stb_truetype.h from C to Rust.,2016-02-05 09:04:20.005777,2019-11-23 13:39:54.159461,https://docs.rs/stb_truetype-rs,,https://gitlab.redox-os.org/redox-os/stb_truetype-rs,4079
+tui,1730428,A library to build rich terminal user interfaces or dashboards ,2016-11-08 09:45:50.134741,2022-08-14 13:40:31.787551,https://docs.rs/tui/0.19.0/tui/,,https://github.com/fdehau/tui-rs,7176
+is_ci,1729519,Super lightweight CI environment checker. Just tells you if you're in CI or not without much fuss.,2021-09-22 16:03:35.825781,2021-09-22 18:06:50.11955,https://docs.rs/is_ci,,https://github.com/zkat/is_ci,454986
+libp2p-yamux,1727796,Yamux multiplexing protocol for libp2p,2019-01-02 13:50:07.293152,2022-09-07 07:51:26.847924,,,https://github.com/libp2p/rust-libp2p,105024
+supports-color,1725368,"Detects whether a terminal supports color, and gives details about that support.",2021-09-11 05:51:44.725111,2021-10-04 01:44:37.563236,https://docs.rs/supports-color,,https://github.com/zkat/supports-color,449628
+mysql_common,1721321,MySql protocol primitives,2017-07-25 18:05:56.772047,2022-07-27 10:44:06.01383,https://docs.rs/mysql_common,https://github.com/blackbeam/rust_mysql_common,https://github.com/blackbeam/rust_mysql_common,25051
+napi-derive,1719926,N-API procedural macros,2017-11-30 02:08:00.676899,2022-09-08 09:28:48.741189,,,https://github.com/napi-rs/napi-rs,41046
+slotmap,1712553,Slotmap data structure,2018-07-02 16:03:35.775764,2021-08-30 14:45:45.983646,,,https://github.com/orlp/slotmap,72603
+crates-index,1712036,Library for retrieving and interacting with the crates.io index,2015-05-27 04:22:23.122022,2022-08-12 10:11:00.40835,https://docs.rs/crates-index/,https://lib.rs/crates-index,https://github.com/frewsxcv/rust-crates-index,2231
+str_stack,1711856,A string allocator for allocating many write-once strings.  This library is primarily useful for ...,2015-11-14 21:27:53.971288,2015-12-11 23:56:18.321051,https://stebalien.github.io/str_stack/str_stack/,,https://github.com/Stebalien/str_stack,3414
+path-dedot,1709685,A library for extending `Path` and `PathBuf` in order to parse the path which contains dots.,2018-08-17 16:10:03.270597,2022-04-07 09:15:32.828544,,https://magiclen.org/path-dedot,https://github.com/magiclen/path-dedot,79964
+serde_path_to_error,1707189,Path to the element that failed to deserialize,2019-01-07 00:04:58.762298,2022-08-03 00:22:30.222931,,,https://github.com/dtolnay/path-to-error,105940
+volatile-register,1707163,Volatile access to memory mapped hardware registers,2016-09-27 22:57:17.974704,2021-08-14 06:44:02.760355,https://docs.rs/volatile-register,,https://github.com/japaric/volatile-register,6645
+libp2p-dns,1706430,DNS transport implementation for libp2p,2019-01-02 13:48:02.450285,2022-09-07 07:54:35.831772,,,https://github.com/libp2p/rust-libp2p,105021
+tarpc,1700173,An RPC framework for Rust with a focus on ease of use.,2016-02-12 09:20:48.797404,2022-08-12 22:56:20.32069,https://docs.rs/tarpc,https://github.com/google/tarpc,https://github.com/google/tarpc,4155
+as-slice,1699721,`AsSlice` and `AsMutSlice` traits,2018-11-01 00:23:06.836964,2021-03-25 15:44:11.216011,,,https://github.com/japaric/as-slice,93920
+unix_socket,1697968,Unix domain socket bindings,2015-02-21 21:11:19.414138,2015-12-16 00:01:49.263868,https://doc.rust-lang.org/unix-socket/doc/v0.5.0/unix_socket,,https://github.com/rust-lang-nursery/unix-socket,1444
+data-encoding-macro,1697664,Macros for data-encoding,2017-11-18 21:35:58.384825,2021-05-27 21:12:56.600222,https://docs.rs/data-encoding-macro,,https://github.com/ia0/data-encoding,39849
+zbus,1695491,API for D-Bus communication,2020-07-07 01:12:27.619322,2022-09-07 19:50:43.601057,,,https://gitlab.freedesktop.org/dbus/zbus/,262139
+zvariant,1695020,D-Bus & GVariant encoding & decoding,2019-12-30 22:46:16.210813,2022-07-24 18:37:46.015711,,,https://gitlab.freedesktop.org/dbus/zbus/,193679
+wayland-cursor,1694666,Bindings to libwayland-cursor.,2019-09-14 09:01:06.634283,2022-09-16 09:11:15.385732,https://docs.rs/wayland-cursor/,,https://github.com/smithay/wayland-rs,164744
+data-encoding-macro-internal,1693484,Internal library for data-encoding-macro,2017-11-18 21:34:16.969522,2021-05-27 21:12:32.305206,,,https://github.com/ia0/data-encoding,39848
+zvariant_derive,1692792,D-Bus & GVariant encoding & decoding,2020-05-22 13:09:28.990065,2022-07-24 18:36:38.22151,,,https://gitlab.freedesktop.org/dbus/zbus/,244576

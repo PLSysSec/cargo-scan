@@ -1,0 +1,101 @@
+name,downloads,description,created_at,updated_at,documentation,homepage,repository,id
+glam,1496599,A simple and fast 3D math library for games and graphics,2019-05-22 13:07:43.1253,2022-08-02 11:29:51.069393,,,https://github.com/bitshifter/glam-rs,136081
+http-client,1493494,Types and traits for http clients.,2019-03-29 16:25:14.750392,2022-06-20 20:34:06.027569,https://docs.rs/http-client,,https://github.com/http-rs/http-client,124607
+wasmer-compiler,1492785,Base compiler abstraction for Wasmer WebAssembly runtime,2020-08-15 00:34:52.016222,2022-08-08 17:20:00.626169,,,https://github.com/wasmerio/wasmer,276861
+wasmer-types,1492343,Wasmer Common Types,2020-08-15 00:31:59.464424,2022-08-08 17:11:23.016807,,,https://github.com/wasmerio/wasmer,276858
+wasmer-vm,1491775,Runtime library support for Wasmer,2020-08-15 00:33:36.24042,2022-08-08 17:15:42.795917,,,https://github.com/wasmerio/wasmer,276860
+no-std-compat,1491248,A `#![no_std]` compatibility layer that will make porting your crate to no_std *easy*.,2019-04-20 20:59:23.80504,2020-08-09 08:39:42.206558,,,https://gitlab.com/jD91mZM2/no-std-compat,129142
+fail,1490210,Fail points for rust.,2017-09-27 11:14:00.508814,2021-11-07 14:25:45.152655,https://docs.rs/fail,https://github.com/tikv/fail-rs,https://github.com/tikv/fail-rs,33538
+cxx,1489453,Safe interop between Rust and C++,2019-12-28 02:59:21.893783,2022-09-19 17:42:20.241988,https://docs.rs/cxx,https://cxx.rs,https://github.com/dtolnay/cxx,192866
+libp2p-gossipsub,1487360,Gossipsub protocol for libp2p,2020-01-24 16:39:56.838348,2022-09-07 08:03:45.174623,,,https://github.com/libp2p/rust-libp2p,201569
+base16ct,1483241,Pure Rust implementation of Base16 a.k.a hexadecimal (RFC 4648) which avoids any usages of data-d...,2022-01-11 22:12:56.812454,2022-01-15 15:37:12.299674,https://docs.rs/base16ct,,https://github.com/RustCrypto/formats/tree/master/base16ct,512489
+derive_utils,1482954,A procedural macro helper for easily writing derive macros for enums. ,2018-12-15 06:32:47.431357,2022-01-10 12:41:56.023049,,,https://github.com/taiki-e/derive_utils,101989
+wasmer-engine,1482821,Wasmer Engine abstraction,2020-08-15 00:42:09.771152,2022-06-06 20:26:11.381278,,,https://github.com/wasmerio/wasmer,276867
+wasmer-object,1482041,Wasmer Native Object generator,2020-08-15 00:46:08.361768,2022-08-08 17:17:35.737758,,,https://github.com/wasmerio/wasmer,276870
+glow,1478462,"GL on Whatever: a set of bindings to run GL (Open GL, OpenGL ES, and WebGL) anywhere, and avoid t...",2019-03-20 18:27:03.121785,2021-12-28 03:30:17.282341,,https://github.com/grovesNL/glow.git,https://github.com/grovesNL/glow,122727
+schnorrkel,1477140,"Schnorr VRF, signatures, etc. using the Ristretto group",2019-02-12 10:13:52.067952,2021-10-18 07:46:46.109232,https://docs.rs/schnorrkel,,https://github.com/w3f/schnorrkel,114271
+cuckoofilter,1476380,Cuckoo Filter: Practically Better Than Bloom,2015-07-17 05:59:39.49279,2020-08-25 16:29:05.054317,,http://axiom.co,https://github.com/axiomhq/rust-cuckoofilter,2619
+miette-derive,1475885,Derive macros for miette. Like `thiserror` for Diagnostics.,2021-08-15 18:51:03.664675,2022-09-10 21:26:21.133872,,,https://github.com/zkat/miette,437438
+miette,1475725,Fancy diagnostic reporting library and protocol for us mere mortals who aren't compiler hackers.,2021-08-03 02:37:11.180152,2022-09-10 21:26:48.213713,https://docs.rs/miette,,https://github.com/zkat/miette,430774
+environmental,1474117,Set scope-limited values can can be accessed statically,2018-09-13 14:38:47.414286,2021-05-12 09:20:19.658551,,,,84536
+servo_arc,1473811,A fork of std::sync::Arc with some extra functionality and without weak references,2018-01-12 23:13:18.094655,2018-02-22 01:50:51.344763,,,https://github.com/servo/servo,46579
+rls-vfs,1473295,Virtual File System for the RLS,2017-04-09 20:44:01.066693,2019-04-21 10:09:36.103456,,,https://github.com/rust-lang/rls,10155
+xcursor,1472928,A library for loading XCursor themes,2020-04-09 14:00:47.330252,2021-08-23 10:22:11.862794,https://docs.rs/xcursor,,https://github.com/esposm03/xcursor-rs,227961
+osmesa-sys,1469753,OSMesa library bindings for Rust,2015-04-09 16:55:48.920214,2016-09-17 05:01:40.145309,,,https://github.com/Daggerbot/osmesa-rs.git,1822
+chalk-engine,1468448,Core trait engine from Chalk project,2018-03-22 08:55:02.000793,2022-07-31 00:27:09.67686,,,https://github.com/rust-lang/chalk,56860
+rustc-ap-serialize,1468233,Automatically published version of the package `serialize` in the rust-lang/rust repository from ...,2018-01-11 02:34:09.449264,2020-06-02 08:31:22.128458,,,https://github.com/rust-lang/rust,46314
+memory-db,1462507,"In-memory implementation of hash-db, useful for tests",2019-01-22 09:45:22.707684,2022-09-20 13:29:15.388856,,,https://github.com/paritytech/trie,109964
+cxxbridge-flags,1461352,Compiler configuration of the `cxx` crate (implementation detail),2020-08-30 19:11:14.887567,2022-09-19 17:41:47.441623,,,https://github.com/dtolnay/cxx,282801
+pnet_macros,1461243,Automatic bit manipulation for binary data formats,2015-07-31 16:38:46.111423,2022-06-01 16:55:57.850377,,https://github.com/libpnet/libpnet,https://github.com/libpnet/libpnet,2724
+futures-core-preview,1459592,The core traits and types in for the `futures` library. ,2018-06-26 20:56:17.913957,2019-09-26 21:27:36.078361,https://rust-lang-nursery.github.io/futures-api-docs/0.3.0-alpha.19/futures_core,https://rust-lang-nursery.github.io/futures-rs,https://github.com/rust-lang-nursery/futures-rs,71846
+get_if_addrs,1459008,Return interface IP addresses on Posix and windows systems,2016-01-10 18:21:12.447013,2018-06-21 12:37:17.229115,https://docs.rs/get_if_addrs,http://maidsafe.net,https://github.com/maidsafe/get_if_addrs,3863
+gumdrop,1458687,Option parser with custom derive support,2017-05-23 03:13:55.083778,2022-03-09 16:36:01.879463,https://docs.rs/gumdrop/,https://github.com/murarth/gumdrop,https://github.com/murarth/gumdrop,15652
+send_wrapper,1458662,This Rust library implements a wrapper type called SendWrapper which allows you to move around no...,2017-09-07 12:18:26.526981,2022-06-05 17:10:03.323883,https://docs.rs/send_wrapper,,https://github.com/thk1/send_wrapper,30905
+gumdrop_derive,1457750,custom derive support for gumdrop,2017-05-23 03:13:37.534599,2022-03-09 16:35:47.207108,https://docs.rs/gumdrop_derive/,https://github.com/murarth/gumdrop,https://github.com/murarth/gumdrop,15651
+tower-balance,1456798,Balance load across a set of uniform services. ,2017-11-16 17:34:48.482017,2019-12-19 23:08:14.949184,https://docs.rs/tower-balance/0.3.0,https://github.com/tower-rs/tower,https://github.com/tower-rs/tower,39568
+tower-ready-cache,1456721,Caches a set of services ,2019-12-19 23:04:15.295071,2020-02-24 18:29:35.262789,https://docs.rs/tower-ready-cache/0.3.1,https://github.com/tower-rs/tower,https://github.com/tower-rs/tower,190753
+neon-build,1456716,Build logic required for Neon projects.,2017-01-21 01:04:59.311397,2022-05-23 19:06:31.434866,,,https://github.com/neon-bindings/neon,8150
+daemonize,1455554,Library to enable your code run as a daemon process on Unix-like systems.,2015-12-20 22:06:49.933429,2019-03-27 14:53:40.845154,https://docs.rs/daemonize,,https://github.com/knsd/daemonize,3716
+syntex,1454453,A library that enables compile time syntax extension expansion,2014-12-05 20:21:07.600281,2017-02-19 21:22:23.251257,,,https://github.com/erickt/rust-syntex,464
+trackable,1453251,This library provides a way to track objects manually as an alternative to mechanisms like backtr...,2017-02-18 21:11:38.382144,2021-04-03 04:19:57.634589,,https://github.com/sile/trackable,https://github.com/sile/trackable,8574
+protobuf-codegen-pure,1452995,Pure-rust codegen for protobuf using protobuf-parser crate  WIP ,2018-05-11 00:52:28.45103,2022-02-05 10:31:05.932735,,https://github.com/stepancheg/rust-protobuf/tree/master/protobuf-codegen-pure/,https://github.com/stepancheg/rust-protobuf/tree/master/protobuf-codegen-pure/,64782
+qrcode,1452668,QR code encoder in Rust,2014-11-28 21:53:32.189822,2020-02-23 15:26:21.902257,http://docs.rs/qrcode,,https://github.com/kennytm/qrcode-rust,423
+tikv-jemallocator,1452015,A Rust allocator backed by jemalloc ,2020-07-21 11:46:51.343626,2022-05-24 23:51:10.545736,https://docs.rs/jemallocator,https://github.com/tikv/jemallocator,https://github.com/tikv/jemallocator,267582
+checked_int_cast,1446828,Conversions between primitive integers with overflow and underflow checking ,2015-09-07 22:26:22.523656,2015-12-11 23:58:10.571132,https://PeterReid.github.io/checked_int_cast,https://github.com/PeterReid/checked_int_cast,https://github.com/PeterReid/checked_int_cast,2998
+serde-wasm-bindgen,1446631,Native Serde adapter for wasm-bindgen,2019-05-16 17:15:02.792426,2022-05-12 12:59:45.177096,,,https://github.com/cloudflare/serde-wasm-bindgen,134715
+hyperlocal,1445716,Hyper bindings for Unix domain sockets,2016-01-03 01:09:14.249538,2020-12-28 21:38:25.029629,,https://github.com/softprops/hyperlocal,https://github.com/softprops/hyperlocal,3815
+wasmer,1443692,High-performance WebAssembly runtime,2018-10-24 11:05:42.527566,2022-08-08 17:32:32.150871,,,https://github.com/wasmerio/wasmer,92364
+multibase,1439646,multibase in rust,2017-01-19 21:14:58.886776,2020-11-06 12:24:39.121601,,https://github.com/multiformats/rust-multibase,https://github.com/multiformats/rust-multibase,8137
+wasmer-derive,1437867,Wasmer derive macros,2020-12-02 01:23:32.832047,2022-08-08 17:10:53.955405,,,https://github.com/wasmerio/wasmer,318738
+cairo-rs,1435678,Rust bindings for the Cairo library,2015-05-12 20:40:49.781555,2022-06-27 07:36:13.391277,https://gtk-rs.org/gtk-rs-core/stable/latest/docs/cairo/,https://gtk-rs.org/,https://github.com/gtk-rs/gtk-rs-core,2093
+kube,1434037,Kubernetes client and async controller runtime,2019-04-29 18:35:09.743716,2022-09-21 20:03:11.448933,,,https://github.com/kube-rs/kube-rs,131043
+array-macro,1431982,Array multiple elements constructor syntax,2017-08-01 21:16:44.208913,2022-05-29 12:12:24.972466,https://docs.rs/array-macro,,https://github.com/xfix/array-macro,26014
+treediff,1431457,Find the difference between arbitrary data structures,2017-02-05 16:19:10.674108,2021-10-09 08:59:14.809137,https://docs.rs/treediff,,https://github.com/Byron/treediff-rs,8399
+comfy-table,1430428,An easy to use library for building beautiful tables with automatic content wrapping,2020-01-19 19:39:43.902087,2022-08-28 17:41:46.096398,https://docs.rs/comfy-table/,https://github.com/nukesor/comfy-table,https://github.com/nukesor/comfy-table,200219
+rustc_tools_util,1429881,small helper to generate version information for git packages,2019-01-01 01:35:36.361473,2019-05-23 21:25:06.654565,,,https://github.com/rust-lang/rust-clippy,104782
+gleam,1423279,Generated OpenGL bindings and wrapper for Servo.,2015-06-15 19:51:44.719674,2021-12-08 16:31:30.707464,https://doc.servo.org/gleam/,,https://github.com/servo/gleam,2389
+async-std-resolver,1421393,"Trust-DNS is a safe and secure DNS library, for async-std. This Resolver library uses the trust-d...",2020-04-10 22:12:52.712954,2022-09-02 14:52:32.584115,https://docs.rs/async-std-resolver,http://www.trust-dns.org/index.html,https://github.com/bluejekyll/trust-dns,228479
+take,1418398,A cell allowing the inner value to be consumed without a mutable reference. ,2016-08-04 05:26:55.139021,2016-08-04 05:26:55.139021,https://github.com/carllerche/take,https://github.com/carllerche/take,https://github.com/carllerche/take,5885
+neon-runtime,1417798,"Bindings to the Node.js native addon API, used by the Neon implementation.",2017-02-17 07:20:27.69613,2022-05-23 19:07:01.418957,,,https://github.com/neon-bindings/neon,8554
+gio,1417268,Rust bindings for the Gio library,2016-06-14 21:40:48.240176,2022-06-27 07:35:50.505427,https://gtk-rs.org/gtk-rs-core/stable/latest/docs/gio/,https://gtk-rs.org/,https://github.com/gtk-rs/gtk-rs-core,5381
+isatty,1412896,Deprecated -- use the `atty` crate,2016-06-05 22:04:48.957696,2018-09-09 18:39:09.467884,,,,5297
+built,1411430,Provides a crate with information from the time it was built.,2017-02-20 21:35:49.486681,2021-05-27 21:39:51.299529,https://docs.rs/built,,https://github.com/lukaslueg/built,8610
+zmq-sys,1411398,Low-level bindings to the zeromq library,2014-12-09 05:32:34.677066,2019-09-21 11:59:18.488561,,,https://github.com/erickt/rust-zmq,497
+crates-io,1410161,Helpers for interacting with crates.io ,2015-07-24 21:50:27.121978,2022-04-07 14:12:55.857883,,,https://github.com/rust-lang/cargo,2669
+async-h1,1406392,Asynchronous HTTP 1.1 parser.,2019-06-01 16:02:44.361303,2021-11-21 15:03:47.895336,https://docs.rs/async-h1,,https://github.com/http-rs/async-h1,138323
+libp2p-wasm-ext,1406201,Allows passing in an external transport in a WASM environment,2019-05-15 14:58:43.948912,2022-09-07 07:54:29.649193,,,https://github.com/libp2p/rust-libp2p,134481
+pprof,1405082,An internal perf tools for rust programs.,2019-11-04 03:29:16.405748,2022-08-29 12:54:43.679297,https://docs.rs/pprof/,,https://github.com/tikv/pprof-rs,177899
+tokio-proto,1404037,A network application framework for rapid development and highly scalable production deployments ...,2017-01-11 16:58:10.532357,2017-03-15 17:54:39.540965,https://docs.rs/tokio-proto/0.1,https://tokio.rs,https://github.com/tokio-rs/tokio-proto,8017
+cairo-sys-rs,1403700,FFI bindings to libcairo,2015-05-12 20:25:24.918065,2022-01-15 12:06:25.897878,,https://gtk-rs.org/,https://github.com/gtk-rs/gtk-rs-core,2092
+escargot,1400338,Cargo API written in Paris,2018-05-28 10:07:10.609247,2021-12-15 14:44:52.672339,http://docs.rs/escargot/,https://github.com/crate-ci/escargot,https://github.com/crate-ci/escargot.git,67436
+pnet_sys,1399356,Access to network related system function and calls.,2017-10-30 18:47:44.938873,2022-06-01 16:55:35.280568,,https://github.com/libpnet/libpnet,https://github.com/libpnet/libpnet,37493
+json-patch,1398652,"RFC 6902, JavaScript Object Notation (JSON) Patch",2017-10-20 20:06:36.954007,2019-08-25 00:38:47.383298,,,https://github.com/idubrov/json-patch,36395
+rust-embed-utils,1394183,Utilities for rust-embed,2019-07-05 04:57:11.066858,2022-09-12 19:01:18.389567,https://docs.rs/rust-embed,,https://github.com/pyros2097/rust-embed,146265
+chalk-derive,1391655,A helper crate for use by chalk crates for `derive` macros.,2020-04-30 04:26:21.040037,2022-07-31 00:25:54.341101,,,https://github.com/rust-lang/chalk,235667
+v_escape,1389834,The simd optimized escaping code,2018-11-23 22:14:48.482695,2021-10-12 00:41:50.766312,https://docs.rs/v_escape,,https://github.com/botika/v_escape,98348
+names,1388451,"A random name generator with names suitable for use in container instances, project names, applic...",2015-09-22 16:32:34.073204,2022-06-28 20:26:29.163977,https://docs.rs/names,https://github.com/fnichol/names,https://github.com/fnichol/names,3091
+chalk-ir,1387745,"Chalk's internal representation of types, goals, and clauses",2020-04-30 04:28:43.089316,2022-07-31 00:26:12.43799,,,https://github.com/rust-lang/chalk,235670
+boxfnonce,1387073,safe FnOnce boxing for rust stable,2017-02-01 16:14:27.869925,2019-02-02 11:08:54.189214,https://stbuehler.github.io/rustdocs/boxfnonce/boxfnonce/,https://github.com/stbuehler/rust-boxfnonce,https://github.com/stbuehler/rust-boxfnonce,8339
+uom,1386689,Units of measurement,2017-02-26 21:20:36.785199,2022-06-28 19:50:50.587438,https://docs.rs/uom,,https://github.com/iliekturtles/uom,8704
+chalk-solve,1385364,Combines the chalk-engine with chalk-ir,2020-04-30 04:31:18.223647,2022-07-31 00:26:39.680045,,,https://github.com/rust-lang/chalk,235674
+borsh-derive,1385301,Binary Object Representation Serializer for Hashing ,2019-08-16 23:24:14.124261,2022-02-04 15:58:10.724024,,http://borsh.io,https://github.com/nearprotocol/borsh,157491
+loupe-derive,1382985,"Profiling tool for Rust, see the `loupe` crate",2021-03-23 10:00:04.558992,2021-06-17 09:10:08.0127,,,https://github.com/wasmerio/loupe,372535
+wgpu-core,1382547,WebGPU core logic on wgpu-hal,2020-04-06 13:02:12.712054,2022-07-14 02:28:55.667174,,https://github.com/gfx-rs/wgpu,https://github.com/gfx-rs/wgpu,226893
+loupe,1381346,Profiling tool for Rust,2021-03-23 10:03:35.04065,2021-06-17 09:10:27.322301,,,https://github.com/wasmerio/loupe,372536
+asn1,1381230,ASN.1 (DER) parser and writer for Rust.,2015-07-21 00:33:43.115959,2022-09-07 11:31:31.706708,,,https://github.com/alex/rust-asn1,2639
+cpal,1380887,Low-level cross-platform audio I/O library in pure Rust.,2014-12-17 05:59:37.82103,2022-08-22 21:44:16.673646,https://docs.rs/cpal,,https://github.com/rustaudio/cpal,579
+zerocopy,1378423,Utilities for zero-copy parsing and serialization,2018-08-15 05:46:29.013597,2021-11-04 21:04:45.266713,,,https://fuchsia.googlesource.com/fuchsia/+/HEAD/src/lib/zerocopy,79521
+borsh-derive-internal,1376460,Binary Object Representation Serializer for Hashing ,2019-08-16 23:23:06.129464,2022-02-04 15:06:54.884229,,http://borsh.io,https://github.com/nearprotocol/borsh,157490
+scan_fmt,1376199,A simple scanf()-like input for Rust,2015-05-06 15:12:12.158752,2021-02-21 00:52:36.710808,,,https://github.com/wlentz/scan_fmt,2042
+libp2p-plaintext,1375967,Plaintext encryption dummy protocol for libp2p,2019-01-02 13:52:26.540729,2022-09-07 07:54:06.798722,,,https://github.com/libp2p/rust-libp2p,105026
+sodiumoxide,1375210,Fast cryptographic library for Rust (bindings to libsodium),2015-03-25 11:45:10.186709,2021-06-24 08:34:09.003782,https://docs.rs/sodiumoxide,,https://github.com/sodiumoxide/sodiumoxide,1717
+parity-multiaddr,1374528,Implementation of the multiaddr format,2019-01-02 13:39:36.600327,2021-03-17 15:31:23.10602,,https://github.com/libp2p/rust-libp2p,,105013
+futures-channel-preview,1373949,Channels for asynchronous communication using futures-rs. ,2018-06-26 20:57:48.419352,2019-09-26 21:29:42.807809,https://rust-lang-nursery.github.io/futures-api-docs/0.3.0-alpha.19/futures_channel,https://rust-lang-nursery.github.io/futures-rs,https://github.com/rust-lang-nursery/futures-rs,71848
+futures-util-preview,1373723,Common utilities and extension traits for the futures-rs library. ,2018-06-26 20:58:49.740688,2019-09-26 21:29:53.813077,https://rust-lang-nursery.github.io/futures-api-docs/0.3.0-alpha.19/futures_util,https://rust-lang-nursery.github.io/futures-rs,https://github.com/rust-lang-nursery/futures-rs,71850
+lsp-server,1368471,Generic LSP server scaffold.,2019-08-30 14:18:28.228046,2022-04-08 22:12:44.941167,,,https://github.com/rust-analyzer/lsp-server,160890
+wasmer-compiler-cranelift,1365708,Cranelift compiler for Wasmer WebAssembly runtime,2020-08-15 00:36:54.665838,2022-08-08 17:21:01.925722,https://docs.rs/wasmer-compiler-cranelift/,,https://github.com/wasmerio/wasmer,276862
+pnet_datalink,1365620,"Cross-platform, datalink layer networking.",2017-10-30 18:49:30.213625,2022-06-01 16:57:22.518005,,https://github.com/libpnet/libpnet,https://github.com/libpnet/libpnet,37496
+borsh-schema-derive-internal,1362423,Schema Generator for Borsh ,2020-02-22 01:24:58.114001,2022-02-04 15:57:54.073698,,http://borsh.io,https://github.com/nearprotocol/borsh,211341
+asn1_derive,1361991,#[derive] support for asn1,2021-05-03 03:51:24.987269,2022-09-07 11:31:22.720969,,,https://github.com/alex/rust-asn1,392378
+parity-util-mem-derive,1361601,Crate for memory reporting,2020-01-04 08:52:31.399765,2020-01-04 08:52:31.399765,,,https://github.com/paritytech/pariry-common/parity-util-mem/derive,195064
+typetag,1360958,Serde serializable and deserializable trait objects,2019-01-23 08:13:35.009542,2022-08-03 14:03:54.292249,https://docs.rs/typetag,,https://github.com/dtolnay/typetag,110178

@@ -1,0 +1,101 @@
+name,downloads,description,created_at,updated_at,documentation,homepage,repository,id
+cgl,980794,Rust bindings for CGL on Mac,2015-06-15 19:55:44.411024,2019-09-11 17:54:10.322944,,,https://github.com/servo/cgl-rs,2390
+is-match,978766,Library to check whether something matches something else,2017-05-03 19:06:47.867234,2017-05-03 19:06:47.867234,,,https://github.com/matthiasbeyer/is-match,12976
+cortex-m-rt,978347,Minimal runtime / startup for Cortex-M microcontrollers,2017-04-12 05:53:55.024289,2021-11-25 09:31:43.515878,https://docs.rs/cortex-m-rt/,,https://github.com/rust-embedded/cortex-m-rt,10375
+khronos-egl,978305,Rust bindings for EGL,2019-08-05 15:27:25.647984,2021-03-23 14:34:36.382757,https://docs.rs/khronos-egl,,https://github.com/timothee-haudebourg/khronos-egl,154308
+simdutf8,975785,SIMD-accelerated UTF-8 validation.,2021-04-20 19:11:04.474217,2022-04-02 11:03:52.405811,https://docs.rs/simdutf8/,https://github.com/rusticstuff/simdutf8,https://github.com/rusticstuff/simdutf8,387267
+rlimit,971898,Resource limits,2019-04-05 16:57:52.357585,2022-04-06 14:47:52.630219,https://docs.rs/rlimit,,https://github.com/Nugine/rlimit/,126019
+cargo-audit,971390,Audit Cargo.lock for crates with security vulnerabilities,2017-02-07 09:56:35.459434,2022-05-23 14:19:28.703587,,https://rustsec.org,https://github.com/RustSec/rustsec/tree/main/cargo-audit,8420
+crc32c,970753,Safe implementation for hardware accelerated CRC32C instructions with software fallback,2017-09-15 15:21:20.021596,2022-04-12 18:09:20.860314,http://docs.rs/crc32c,https://github.com/zowens/crc32c,https://github.com/zowens/crc32c,31892
+freetype,966150,Bindings for Freetype used by Servo,2015-11-30 16:42:09.692974,2020-07-14 21:12:30.573548,https://doc.servo.org/freetype/,,https://github.com/servo/rust-freetype,3543
+parquet-format,963023,Apache Parquet Format - thrift definition and generated Rust file,2018-04-12 05:05:04.37731,2021-01-11 00:41:29.523777,,https://github.com/sunchao/parquet-format-rs,https://github.com/sunchao/parquet-format-rs,60232
+argon2rs,962875,The pure Rust password hashing library that runs on Argon2.,2016-02-01 08:16:24.632972,2016-08-20 03:40:43.435883,http://bryant.github.io/argon2rs/argon2rs/,,https://github.com/bryant/argon2rs,4044
+minicbor,961428,A small CBOR codec suitable for no_std environments.,2020-03-08 22:45:05.206776,2022-06-19 11:44:35.016637,https://twittner.gitlab.io/minicbor/minicbor/,,https://gitlab.com/twittner/minicbor,216684
+glutin_glx_sys,961164,The glx bindings for glutin,2019-03-10 00:17:42.444269,2022-09-03 17:49:39.732914,,,https://github.com/rust-windowing/glutin,119676
+glyph_brush_layout,957765,Text layout for ab_glyph,2018-09-01 19:53:23.392912,2021-07-16 10:00:47.721841,,,https://github.com/alexheretic/glyph-brush,82545
+cvss,954814,Common Vulnerability Scoring System parser/serializer,2019-08-27 21:52:22.000101,2022-05-02 01:44:17.712941,,,https://github.com/RustSec/rustsec/tree/main/cvss,160218
+http-range,953574,HTTP Range header parser,2016-10-02 21:09:55.674671,2022-02-15 08:34:32.572573,https://docs.rs/http-range/0.1.5/http_range/,,https://github.com/bancek/rust-http-range.git,6692
+abscissa_core,953136,"Application microframework with support for command-line option parsing, configuration, error han...",2019-07-16 15:15:38.561818,2022-02-11 14:35:09.608022,,https://github.com/iqlusioninc/abscissa/,https://github.com/iqlusioninc/abscissa/tree/main/core/,149410
+log_settings,952851,a tiny crate allowing libraries to change logger settings,2016-05-31 13:43:28.961497,2018-05-08 20:43:29.115264,,,https://github.com/oli-obk/log_settings,5250
+glium,949522,Elegant and safe OpenGL wrapper.  Glium is an intermediate layer between OpenGL and your applicat...,2014-11-12 20:34:24.638552,2022-07-30 22:44:22.047215,https://docs.rs/glium,,https://github.com/glium/glium,75
+mktemp,947588,mktemp files and directories,2016-03-25 18:26:23.054306,2021-01-05 09:58:26.183643,https://samgiles.github.io/rs-mktemp/mktemp/struct.Temp.html,https://samgiles.github.io/rs-mktemp/mktemp,https://github.com/samgiles/rs-mktemp,4563
+geo,946271,Geospatial primitives and algorithms,2015-01-16 01:12:13.230366,2022-08-25 19:21:55.036726,https://docs.rs/geo/,,https://github.com/georust/geo,796
+deadpool-runtime,946026,Dead simple async pool utitities for sync managers,2021-10-26 13:35:13.545355,2021-10-26 14:02:50.432145,,,https://github.com/bikeshedder/deadpool,471921
+async-tls,945876,Asynchronous TLS/SSL streams using Rustls.,2019-05-31 13:35:34.230592,2020-12-09 17:19:11.169027,https://docs.rs/async-tls,https://github.com/async-std/async-tls,https://github.com/async-std/async-tls,138162
+ic-types,945705,Types related to the Internet Computer Public Specification.,2020-08-18 22:46:45.887242,2022-09-22 13:49:31.451342,https://docs.rs/ic-types,https://docs.rs/ic-types,https://github.com/dfinity/ic-types,278044
+abscissa_derive,945615,Custom derive support for the abscissa application microframework,2018-08-26 06:14:43.574604,2022-02-11 14:25:12.23672,,https://github.com/iqlusioninc/abscissa,https://github.com/iqlusioninc/abscissa/tree/main/abscissa_derive,81470
+fast_chemail,945466,Check email address,2016-12-07 16:21:01.652704,2019-02-15 12:02:40.474144,https://docs.rs/fast_chemail,,https://gitlab.com/fast_chemail/fast_chemail-rs,7503
+atomic_refcell,944912,Threadsafe RefCell,2017-01-03 22:05:33.994897,2021-09-29 23:52:45.694603,https://docs.rs/atomic_refcell/,,https://github.com/bholley/atomic_refcell,7905
+cstr_core,943000,Implementation of CStr and CString for no_std environments.,2017-10-12 13:49:16.031628,2022-07-19 10:28:08.203933,https://docs.rs/cstr_core/,,https://github.com/Amanieu/cstr_core,35396
+byte-pool,942024,"Pool of byte slices, for efficient memory usage",2019-11-13 12:13:37.458825,2021-03-28 17:43:33.939699,,,https://github.com/dignifiedquire/byte-pool,180953
+freetype-sys,941793,Low level binding for FreeType font library,2014-12-11 20:18:06.235838,2022-08-04 14:58:00.74979,,https://github.com/PistonDevelopers/freetype-sys,https://github.com/PistonDevelopers/freetype-sys.git,528
+core-video-sys,936293,Bindings to CoreVideo.framework for macOS and iOS,2019-02-07 02:19:08.940708,2020-05-06 14:53:08.149119,https://docs.rs/core-video-sys/*/x86_64-apple-darwin/core-video-sys,https://github.com/luozijun/rust-core-video-sys,https://github.com/luozijun/rust-core-video-sys,113260
+candid_derive,934565,Macros implementation of #[derive(CandidType)] for the Candid.,2020-05-14 23:35:26.92149,2021-06-30 17:05:25.594368,https://docs.rs/candid_derive,https://docs.rs/candid_derive,https://github.com/dfinity/candid,241689
+gzip-header,931530,A crate for decoding and encoding the header part of gzip files based on the gzip header  impleme...,2017-04-19 09:26:40.09978,2021-11-10 16:40:01.510406,https://docs.rs/gzip-header/,https://github.com/oyvindln/gzip-header,https://github.com/oyvindln/gzip-header,11174
+minicbor-derive,930762,Derive minicbor `Decode` and `Encode` traits.,2020-03-08 22:41:23.720483,2022-06-19 11:44:07.338346,https://twittner.gitlab.io/minicbor/minicbor_derive/,,https://gitlab.com/twittner/minicbor,216681
+lettre,929452,Email client,2015-10-21 21:29:39.693168,2022-07-20 08:47:51.869113,,https://lettre.rs,https://github.com/lettre/lettre,3280
+data-url,927218,Processing of data: URL according to WHATWG’s Fetch Standard,2018-02-02 09:20:35.995542,2022-09-08 07:45:03.775526,,,https://github.com/servo/rust-url,49319
+async-graphql-value,926529,GraphQL value for async-graphql,2020-10-11 12:43:49.026262,2022-09-09 12:19:50.518226,https://docs.rs/async-graphql/,https://github.com/async-graphql/async-graphql,https://github.com/async-graphql/async-graphql,298334
+wee_alloc,924084,"wee_alloc: The Wasm-Enabled, Elfin Allocator",2018-02-02 18:53:08.534646,2019-08-22 17:15:35.888353,,,https://github.com/rustwasm/wee_alloc,49387
+swc_atoms,922859,Atoms for the swc project.,2018-11-18 03:13:59.075604,2022-09-23 07:50:39.953248,https://rustdoc.swc.rs/swc_atoms/,,https://github.com/swc-project/swc.git,97347
+html-escape,920704,This library is for encoding/escaping special characters in HTML and decoding/unescaping HTML ent...,2020-06-26 13:17:14.021156,2022-03-17 02:52:57.99798,,https://magiclen.org/html-escape,https://github.com/magiclen/html-escape,258381
+again,919643,wasm-compatible retry util for std library futures,2020-05-12 23:01:53.565815,2020-05-31 00:02:01.197576,https://docs.rs/again,https://github.com/softprops/again,https://github.com/softprops/again,240866
+dbghelp-sys,919533,Contains function definitions for the Windows API library dbghelp. See winapi for types and const...,2015-01-26 18:22:28.592377,2015-12-16 00:01:49.263868,https://retep998.github.io/doc/dbghelp/,,https://github.com/retep998/winapi-rs,1051
+unescape,916655,Unescapes strings with escape sequences written out as literal characters.,2016-03-05 02:14:00.813945,2016-03-05 02:14:00.813945,,,https://github.com/saghm/unescape-rs,4372
+gfx-backend-vulkan,916062,Vulkan API backend for gfx-rs,2018-12-27 01:48:01.872692,2021-06-19 05:14:01.54909,https://docs.rs/gfx-backend-vulkan,https://github.com/gfx-rs/gfx,https://github.com/gfx-rs/gfx,103987
+listenfd,915315,A simple library to work with listenfds passed from the outside (systemd/catflap socket activation),2018-05-17 00:48:16.906123,2022-05-31 09:35:52.195004,,https://github.com/mitsuhiko/rust-listenfd,,65800
+rustc-ap-graphviz,913914,Automatically published version of the package `graphviz` in the rust-lang/rust repository from c...,2018-10-24 05:22:58.538207,2020-06-02 08:31:10.893697,,,https://github.com/rust-lang/rust,92329
+yup-oauth2,911668,"An oauth2 implementation, providing the 'device', 'service account' and 'installed' authorization...",2015-02-27 08:21:00.801028,2022-06-20 00:55:05.332437,https://docs.rs/yup-oauth2/,,https://github.com/dermesser/yup-oauth2,1484
+bitpacking,910333,Fast integer compression/decompression via SIMD bit-packing. Port of simdcomp to rust.,2018-03-18 22:53:59.449782,2021-04-22 12:52:48.743715,,,,56336
+bollard-stubs,909149,Stubs used for the Bollard rust async Docker client API,2020-06-11 19:02:01.076753,2022-09-09 09:01:31.767944,,,,252916
+connection-string,908969,Connection string parsing in Rust (and WebAssembly),2020-10-05 14:41:18.945179,2022-02-04 15:31:56.650047,https://docs.rs/connection-string,,https://github.com/prisma/connection-string,296320
+kuchiki,907759,(朽木) HTML/XML tree manipulation library,2015-02-27 10:27:19.682756,2020-08-05 12:02:30.144298,,,https://github.com/SimonSapin/kuchiki,1485
+metal,907027,Rust bindings for Metal,2015-04-06 16:24:16.404868,2022-07-01 14:08:21.798002,https://docs.rs/crate/metal,https://github.com/gfx-rs/metal-rs,https://github.com/gfx-rs/metal-rs,1786
+libmimalloc-sys,904941,Sys crate wrapping the mimalloc allocator,2019-06-24 19:56:56.407804,2022-04-30 08:15:30.211382,,,https://github.com/purpleprotocol/mimalloc_rust/tree/master/libmimalloc-sys,143295
+jsonrpsee-proc-macros,904121,Procedueral macros for jsonrpsee,2020-02-28 11:35:06.117674,2022-07-29 11:07:52.573573,https://docs.rs/jsonrpsee-proc-macros,https://github.com/paritytech/jsonrpsee,https://github.com/paritytech/jsonrpsee,213512
+safe-mix,903358,Implementation of the Collective Coin Flip algorithm,2018-08-09 09:09:01.847376,2020-02-06 09:33:49.505927,https://github.com/paritytech/safe-mix,https://github.com/paritytech/safe-mix,https://github.com/paritytech/safe-mix,78479
+cascade,902721,Dart-like cascade macro for Rust,2018-08-13 03:18:39.801754,2020-09-21 23:50:44.536568,,,https://github.com/inquisitivepenguin/cascade,79191
+const-sha1,901518,A sha1 implementation for use in const contexts,2020-06-29 14:31:57.019085,2020-07-22 17:04:55.1655,https://docs.rs/const-sha1,,https://github.com/rylev/const-sha1,259401
+rstar,901120,R*-tree library for the rust ecosystem,2018-11-22 22:26:45.2039,2022-04-06 10:10:22.63234,https://docs.rs/rstar/,,https://github.com/georust/rstar,98213
+amq-protocol,898880,AMQP specifications,2017-03-03 08:45:36.407649,2022-02-24 16:08:39.82427,https://docs.rs/amq-protocol,,https://github.com/amqp-rs/amq-protocol,8785
+cfb,898361,Read/write Compound File Binary (structured storage) files,2017-03-20 00:27:43.820777,2022-07-05 18:30:56.338772,http://mdsteele.github.io/rust-cfb/,,https://github.com/mdsteele/rust-cfb,9056
+gobject-2-0-sys,897726,Import crate for GObject,2015-01-25 11:07:50.183687,2015-12-16 00:01:56.610782,,,https://github.com/gi-rust/gobject-sys.git,874
+amq-protocol-types,897588,AMQP specifications - types,2017-03-05 15:23:36.213331,2022-02-24 16:06:41.700635,https://docs.rs/amq-protocol-types,,https://github.com/amqp-rs/amq-protocol,8831
+cortex-m-rt-macros,895724,Attributes re-exported in `cortex-m-rt`,2018-09-06 15:15:22.442718,2021-08-17 16:57:11.23419,https://docs.rs/cortex-m-rt,,https://github.com/rust-embedded/cortex-m-rt,83187
+svg_fmt,895387,Very simple debugging utilities to dump shapes in SVG format.,2019-04-25 14:38:28.670811,2019-06-09 09:48:50.366159,https://docs.rs/svg_fmt/,,https://github.com/nical/rust_debug,130146
+mimalloc,894464,Performance and security oriented drop-in allocator,2019-06-24 19:57:57.202544,2022-04-30 08:15:51.917061,,,https://github.com/purpleprotocol/mimalloc_rust,143296
+uninit,892779,A collection of tools for a safer usage of uninitialized memory,2019-08-28 14:35:25.089793,2022-08-22 17:13:48.718552,https://docs.rs/uninit,https://crates.io/crates/uninit,https://github.com/danielhenrymantilla/rust-uninit,160416
+embed-resource,888176,A Cargo library to handle compilation and inclusion of Windows resources in the most resilient fa...,2017-01-30 23:39:58.376378,2022-07-03 00:54:13.036883,https://rawcdn.githack.com/nabijaczleweli/rust-embed-resource/doc/embed_resource/index.html,,https://github.com/nabijaczleweli/rust-embed-resource,8314
+rust_decimal_macros,887488,Shorthand macros to assist creating Decimal types.,2017-11-11 19:29:52.110872,2022-08-05 19:58:28.465342,https://docs.rs/rust_decimal/,,https://github.com/paupino/rust-decimal,39068
+wayland-egl,885213,Bindings to libwayland-egl.,2019-09-14 09:01:34.799222,2022-09-16 09:10:17.212837,https://docs.rs/wayland-egl/,,https://github.com/smithay/wayland-rs,164745
+graphql-introspection-query,884961,GraphQL introspection query and response types.,2020-03-13 08:32:30.142955,2021-07-04 08:09:23.753066,,,https://github.com/graphql-rust/graphql-client,218072
+nom-supreme,884698,A collection of excellent utilities for nom,2020-12-13 08:01:00.694218,2022-04-21 05:37:46.328158,,,https://github.com/Lucretiel/nom-supreme,322361
+libp2p-relay,878040,Communications relaying for libp2p,2021-03-17 15:13:39.603641,2022-09-07 08:03:49.480091,,,https://github.com/libp2p/rust-libp2p,370171
+foreign-types-macros,877221,An internal crate used by foreign-types,2019-03-04 17:47:22.329574,2022-03-21 22:09:17.138771,,,https://github.com/sfackler/foreign-types,118673
+jsonrpsee-ws-client,877101,WebSocket client for JSON-RPC,2021-03-04 12:08:55.259372,2022-07-29 11:10:03.643711,https://docs.rs/jsonrpsee-ws-client,https://github.com/paritytech/jsonrpsee,https://github.com/paritytech/jsonrpsee,363692
+sdl2-sys,876161,"Raw SDL2 bindings for Rust, used internally rust-sdl2",2015-01-05 10:46:49.95073,2022-02-06 18:14:23.288532,,,https://github.com/rust-sdl2/rust-sdl2,714
+typed-headers,874991,Typed HTTP header serialization and deserialization.,2018-06-22 18:38:10.245882,2019-12-06 12:34:29.467831,,,https://github.com/sfackler/typed-headers,71307
+rouille,874011,High-level idiomatic web framework.,2016-01-24 11:39:22.296692,2021-12-22 16:17:26.889627,http://docs.rs/rouille,,https://github.com/tomaka/rouille,3977
+opentelemetry-otlp,871252,Exporter for the OpenTelemetry Collector,2020-08-14 02:49:26.002779,2022-09-13 02:37:42.312343,,https://github.com/open-telemetry/opentelemetry-rust/tree/main/opentelemetry-otlp,https://github.com/open-telemetry/opentelemetry-rust/tree/main/opentelemetry-otlp,276473
+objc_exception,870256,Rust interface for Objective-C's throw and try/catch statements.,2015-05-16 07:25:06.035011,2019-11-24 20:24:11.413243,http://ssheldon.github.io/rust-objc/objc_exception/,,http://github.com/SSheldon/rust-objc-exception,2118
+tiberius,869278,A TDS (MSSQL) driver,2016-05-06 21:14:23.213079,2022-09-06 07:52:02.974216,https://docs.rs/tiberius/,,https://github.com/prisma/tiberius,4993
+nom_locate,868016,A special input type for nom to locate tokens,2017-06-03 16:00:52.503726,2021-08-29 09:55:06.347313,https://docs.rs/nom_locate/,https://github.com/fflorent/nom_locate,https://github.com/fflorent/nom_locate,17565
+stable-pattern,865682,Stable port of std::str::Pattern and friends.,2021-02-25 01:38:26.297624,2021-02-25 01:38:26.297624,https://docs.rs/stable-pattern,,https://github.com/SergioBenitez/stable-pattern,360205
+fslock,864255,A library to use files as locks,2020-01-01 05:47:08.522751,2021-12-20 19:12:35.80893,,,https://github.com/brunoczim/fslock,194064
+pyo3cls,862984,Proc macros for PyO3 package,2017-07-23 18:22:53.078569,2020-12-20 10:14:37.041337,,https://github.com/pyo3/pyo3,https://github.com/pyo3/pyo3,24720
+cstr,862711,Macro for building static CStr reference,2018-02-01 13:22:52.279554,2022-09-24 12:23:05.272425,,,https://github.com/upsuper/cstr,49148
+strength_reduce,862106,Faster integer division and modulus operations,2019-01-03 09:25:27.861719,2019-12-27 23:07:11.740242,http://docs.rs/strength_reduce,,http://github.com/ejmahler/strength_reduce,105196
+winutil,860413,Simple library providing wrappers around a handful of useful winapi calls.,2016-03-31 08:14:03.739405,2017-12-19 13:59:38.518221,,,https://bitbucket.org/DaveLancaster/winutil,4634
+wide,860033,A crate to help you go wide.,2019-09-21 19:03:53.121747,2022-01-23 05:47:07.11039,,,https://github.com/Lokathor/wide,166591
+femme,859047,Not just a pretty (inter)face: pretty-printer and ndjson logger for log crate.,2019-07-19 18:22:27.079281,2022-05-09 15:06:53.950807,https://docs.rs/femme,,https://github.com/lrlna/femme,150184
+lipsum,858344,Lipsum is a lorem ipsum text generation library. It generates pseudo-random Latin text. Use this ...,2017-07-02 08:34:23.213003,2022-06-06 21:37:56.628595,https://docs.rs/lipsum/,,https://github.com/mgeisler/lipsum/,21549
+metrics-exporter-prometheus,857998,A metrics-compatible exporter for sending metrics to Prometheus.,2020-06-17 02:12:26.098844,2022-07-21 01:20:35.199871,https://docs.rs/metrics-exporter-prometheus,https://github.com/metrics-rs/metrics,https://github.com/metrics-rs/metrics,254805
+igd,856729,Internet Gateway Protocol client,2015-02-27 07:06:17.914068,2020-12-26 05:37:12.303851,https://docs.rs/igd/,https://github.com/sbstp/rust-igd,https://github.com/sbstp/rust-igd,1482
+peg,855590,A simple Parsing Expression Grammar (PEG) parser generator.,2014-11-23 21:01:43.578924,2022-01-04 00:57:00.012434,,,https://github.com/kevinmehall/rust-peg,374
+critical-section,855191,Cross-platform critical section,2021-05-09 22:19:59.246258,2022-09-13 20:39:43.293163,,,https://github.com/rust-embedded/critical-section,395364
+pyo3-derive-backend,852061,Code generation for PyO3 package,2018-07-18 11:26:00.505545,2020-12-20 10:13:46.976841,,https://github.com/pyo3/pyo3,https://github.com/pyo3/pyo3,74874
+futures_codec,851672,Utilities for encoding and decoding frames using `async/await`,2019-04-26 09:47:36.670475,2020-06-21 13:52:17.425058,https://docs.rs/crate/futures_codec,https://github.com/matthunz/futures-codec,https://github.com/matthunz/futures-codec,130289
+serialport,850863,A cross-platform low-level serial port library,2016-12-23 04:33:15.68406,2022-06-02 17:37:23.281708,https://docs.rs/serialport/,,https://github.com/serialport/serialport-rs,7733
+wio,848081,Windows IO wrapper,2015-03-03 17:41:07.321623,2019-03-28 09:34:12.904965,,,https://github.com/retep998/wio-rs,1516
+cvt,844662,Expose the cvt function from Rust libstd.,2019-10-07 11:41:55.410762,2019-10-11 18:17:57.44881,,,https://github.com/marmistrz/cvt,170556
+sd-notify,843699,Lightweight crate for systemd service state notifications,2019-09-20 21:12:32.808856,2022-08-31 16:33:37.151372,,,https://github.com/lnicola/sd-notify,166307
