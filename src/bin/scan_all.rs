@@ -5,7 +5,7 @@ use cargo_scan::scan_stats::{self, CrateStats};
 use cargo_scan::util;
 
 use clap::Parser;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
@@ -121,6 +121,17 @@ impl AllStats {
     fn new(crates: Vec<String>) -> Self {
         Self { crates, ..Default::default() }
     }
+
+    fn get_stats(
+        self_crate_stats: &mut HashMap<String, CrateStats>,
+        crt: String,
+    ) -> &mut CrateStats {
+        self_crate_stats.entry(crt).or_insert_with(|| {
+            warn!("Crate stats not found, possibly due to a crash; using default");
+            Default::default()
+        })
+    }
+
     fn push_stats(&mut self, crt: String, c: CrateStats) {
         for eff in &c.effects {
             let pat = eff.eff_type().to_csv();
@@ -132,28 +143,30 @@ impl AllStats {
                 .entry(pat)
                 .or_default() += 1;
         }
-        self.crate_stats.insert(crt, c);
+        if let Some(x) = self.crate_stats.insert(crt, c) {
+            warn!("Crate stats already present in map, overwriting: {:?}", x);
+        }
     }
 
-    fn dump_all(&self, path: &Path) {
+    fn dump_all(&mut self, path: &Path) {
         let mut f = util::fs::path_writer(path);
         writeln!(f, "{}", EffectInstance::csv_header()).unwrap();
         for crt in &self.crates {
-            let stats = self.crate_stats.get(crt).unwrap();
+            let stats = Self::get_stats(&mut self.crate_stats, crt.clone());
             for eff in &stats.effects {
                 writeln!(f, "{}", eff.to_csv()).unwrap();
             }
         }
     }
 
-    fn dump_summary(&self, path: &Path) {
+    fn dump_summary(&mut self, path: &Path) {
         let mut f = util::fs::path_writer(path);
         writeln!(f, "crate, effects").unwrap();
         let mut crates_total: Vec<(String, usize)> = self
             .crates
             .iter()
             .map(|k| {
-                let stats = self.crate_stats.get(k).unwrap();
+                let stats = Self::get_stats(&mut self.crate_stats, k.to_string());
                 (k.to_string(), stats.effects.len())
             })
             .filter(|(_, v)| *v != 0)
@@ -188,11 +201,11 @@ impl AllStats {
         }
     }
 
-    fn dump_metadata(&self, path: &Path) {
+    fn dump_metadata(&mut self, path: &Path) {
         let mut f = util::fs::path_writer(path);
         writeln!(f, "crate, {}", CrateStats::metadata_csv_header()).unwrap();
         for crt in &self.crates {
-            let stats = self.crate_stats.get(crt).unwrap();
+            let stats = Self::get_stats(&mut self.crate_stats, crt.clone());
             writeln!(f, "{}, {}", crt, stats.metadata_csv()).unwrap();
         }
     }
