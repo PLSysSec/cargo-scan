@@ -1,0 +1,101 @@
+name,downloads,description,created_at,updated_at,documentation,homepage,repository,id
+executable-path,56502,Get the path of a binary target's executable,2017-11-30 17:41:11.766518,2017-11-30 17:42:08.940717,,https://github.com/casey/rust-executable-path,,41141
+cw-controllers,56484,Common controllers we can reuse in many contracts,2020-12-22 21:07:21.940142,2022-09-14 13:58:48.248623,,https://cosmwasm.com,https://github.com/CosmWasm/cw-plus,326204
+throttle,56471,Time-based rate-limit utility,2019-08-12 17:14:07.874031,2019-08-12 17:14:07.874031,,https://github.com/SOF3/throttle,https://github.com/SOF3/throttle.git,156174
+tauri_includedir_codegen,56450,This crate was deprecated. It is now part of the `tauri-codegen` crate.,2019-12-16 22:51:48.100261,2021-06-06 00:35:33.871893,https://docs.rs/includedir_codegen,https://github.com/tilpner/includedir,https://github.com/tilpner/includedir,189865
+ws_stream_tungstenite,56424,Provide AsyncRead/AsyncWrite over Tungstenite WebSockets,2019-09-17 17:05:54.7609,2022-04-24 19:41:58.103505,https://docs.rs/ws_stream_tungstenite,https://github.com/najamelan/ws_stream_tungstenite,https://github.com/najamelan/ws_stream_tungstenite,165511
+mavlink,56379,Implements the MAVLink data interchange format for UAVs.,2016-02-24 04:44:56.964127,2022-02-03 12:23:17.640124,,,https://github.com/mavlink/rust-mavlink,4263
+velcro_core,56378,Core dependencies used by the `velcro` crate. See `velcro` for documentation.  It is not advised ...,2020-12-02 08:10:03.148776,2021-01-15 20:54:19.136165,https://docs.rs/velcro/latest/velcro,https://github.com/peterjoel/velcro,https://github.com/peterjoel/velcro,318829
+did_url,56326,A no_std parser for Decentralized Identifiers (DIDs),2020-11-13 01:57:41.904298,2020-11-13 01:57:41.904298,,,https://github.com/l1h3r/did_url,311808
+nnnoiseless,56324,"Audio denoising, derived from Xiph's RNNoise library",2020-07-09 17:11:27.063375,2022-05-26 20:06:50.664373,,,https://github.com/jneem/nnnoiseless,262936
+micro-timer-macros,56319,Macros for the micro-timer crate,2020-03-23 10:55:10.108353,2020-09-28 13:40:02.596463,,https://foss.heptapod.net/octobus/rust/micro-timer/tree/branch/default/libs/micro-timer-macros,https://foss.heptapod.net/octobus/rust/micro-timer/tree/branch/default/libs/micro-timer-macros,221706
+rust-webvr-api,56260,Safe rust API that provides a way to interact with Virtual Reality headsets  and integration with...,2017-08-30 20:01:16.885657,2020-02-19 22:39:17.982798,,https://github.com/servo/rust-webvr,https://github.com/servo/rust-webvr,29932
+actix-protobuf,56255,Protobuf payload extractor for Actix Web,2018-03-21 23:01:40.404935,2022-08-24 17:11:21.858374,,https://actix.rs,https://github.com/actix/actix-extras.git,56810
+substrate-wasmtime-jit,56226,JIT-style execution for WebAsssembly code in Cranelift,2020-03-12 18:08:04.596962,2020-05-19 18:18:30.485017,https://docs.rs/wasmtime-jit,,https://github.com/bytecodealliance/wasmtime,217914
+termbg,56210,Terminal background color detection,2020-11-09 10:20:28.730055,2022-05-25 01:16:45.575212,,,https://github.com/dalance/termbg,310245
+simd-json-derive-int,56162,procmacros for simd-json-derive,2020-06-17 07:32:41.064831,2022-07-08 12:17:30.157512,,,,254846
+zeroconf,56161,cross-platform library that wraps ZeroConf/mDNS implementations like Bonjour or Avahi,2020-09-25 00:35:56.749029,2022-04-26 17:23:26.357022,https://docs.rs/zeroconf,https://github.com/windy1/zeroconf-rs,https://github.com/windy1/zeroconf-rs,292705
+zcash_note_encryption,56154,Note encryption for Zcash transactions,2021-03-19 20:56:43.074577,2021-12-17 22:01:20.478386,,https://github.com/zcash/librustzcash,https://github.com/zcash/librustzcash,371091
+never-type,56145,This library is an alternative implementation of never type for stable rust.,2019-04-05 12:20:01.259016,2019-10-17 01:27:41.327784,,,http://github.com/CodeChain-io/rust-never-type,125975
+libappindicator,56137,Rust safe bindings for libappindicator,2017-02-27 07:50:36.395077,2022-06-29 02:41:09.770129,,,,8709
+internet-checksum,56074,"RFC 1071 checksum computation (the ""internet checksum"")",2019-06-25 18:15:02.035958,2021-11-09 21:31:50.200332,,,https://fuchsia.googlesource.com/fuchsia/+/HEAD/src/connectivity/lib/internet-checksum,143540
+checkers-macros,56049,"Macros for checkers, a sanity checker for global allocations. ",2020-01-18 10:32:11.724636,2022-04-25 00:36:33.116315,https://docs.rs/checkers,https://github.com/udoprog/checkers,https://github.com/udoprog/checkers,199682
+tree-sitter-typescript,56036,Typescript grammar for the tree-sitter parsing library,2021-03-09 17:42:54.001957,2022-03-29 00:36:52.758432,,,https://github.com/tree-sitter/tree-sitter-typescript,366430
+dbus-codegen,55990,Binary crate to generate Rust code from XML introspection data,2017-11-11 03:51:19.225907,2021-10-13 06:20:58.335973,,,https://github.com/diwic/dbus-rs,38957
+mmledger,55968,A ledger for confidential computing (CC) shims for tracking memory management system calls,2022-03-15 08:09:06.319586,2022-05-03 16:37:05.255233,,https://github.com/enarx/mmledger,https://github.com/enarx/mmledger,550362
+fastrlp-derive,55944,Procedural macros for fastrlp,2022-03-16 15:36:56.461085,2022-07-24 09:07:29.971706,,,https://github.com/vorot93/fastrlp,551241
+tai64,55931,TAI64 and TAI64N (i.e. Temps Atomique International) timestamp support for Rust,2018-03-21 06:36:14.226368,2021-11-05 03:55:04.125251,,,https://github.com/RustCrypto/formats/tree/master/tai64,56658
+nphysics2d,55914,2-dimensional physics engine in Rust. This crate is being superseded by the rapier3d crate.,2016-03-30 20:44:11.688596,2021-08-08 16:19:27.047553,http://nphysics.org/rustdoc/nphysics2d/index.html,http://nphysics.org,https://github.com/rustsim/nphysics,4627
+v_eval,55911,Expression evaluator with context,2019-03-18 17:35:28.901401,2020-05-05 19:13:06.33938,https://docs.rs/v_eval,,https://github.com/botika/v_eval,122287
+hyperfine,55839,A command-line benchmarking tool,2018-01-13 19:43:43.164635,2022-09-07 07:30:06.482266,,https://github.com/sharkdp/hyperfine,https://github.com/sharkdp/hyperfine,46692
+k8-types,55779,Kubernetes Object Types,2021-01-16 05:46:15.267037,2022-09-02 18:31:40.746366,,,https://github.com/infinyon/k8-api,342671
+tauri_includedir,55768,This crate was deprecated. It is now part of the `tauri-codegen` crate.,2019-12-16 22:46:46.956373,2021-06-06 00:35:38.285621,https://docs.rs/includedir,https://github.com/tilpner/includedir,https://github.com/tilpner/includedir,189864
+blas,55766,The package provides wrappers for BLAS (Fortran).,2014-11-20 21:08:39.536557,2021-04-10 07:27:58.086503,https://docs.rs/blas,https://github.com/blas-lapack-rs/blas,https://github.com/blas-lapack-rs/blas,152
+holochain_wasmer_guest,55731,wasm guest code,2020-02-10 17:07:40.968623,2022-05-17 22:16:19.306928,,,,207069
+odbc-api,55707,Write ODBC Applications in (mostly) safe Rust.,2020-08-14 19:14:08.310312,2022-09-02 22:08:49.844086,https://docs.rs/odbc-api/,,https://github.com/pacman82/odbc-api,276774
+http-muncher,55704,Rust Streaming HTTP parser based on nodejs/http-parser,2015-05-19 21:56:32.024477,2018-05-24 09:41:32.329083,http://nbaksalyar.github.io/rust-streaming-http-parser/,,https://github.com/nbaksalyar/rust-streaming-http-parser,2153
+limited-table,55657,A preallocated table with the limited size,2019-04-05 11:20:45.796875,2019-04-05 11:20:45.796875,,,http://github.com/CodeChain-io/rust-limited-table,125969
+bastion,55649,Fault-tolerant Runtime for Rust applications,2019-07-21 20:38:59.488881,2022-01-07 20:35:17.461203,https://docs.rs/bastion,https://github.com/bastion-rs/bastion,https://github.com/bastion-rs/bastion,150616
+id_tree,55640,A library for creating and modifying Tree structures.,2016-10-17 00:06:23.736209,2021-04-13 13:15:33.191269,https://docs.rs/id_tree,,https://github.com/iwburns/id-tree,6877
+jsonschema-valid,55616,A simple JSON schema validator.,2019-04-12 19:16:35.529932,2022-07-11 13:31:59.534639,,,https://github.com/mdboom/jsonschema-valid,127513
+cbitset,55571,"A bit set, being able to hold a fixed amount of booleans in an array of integers",2018-09-22 15:23:48.279532,2019-05-26 14:25:13.182957,,,https://gitlab.redox-os.org/redox-os/cbitset,85986
+object_store,55562,"A generic object store interface for uniformly interacting with AWS S3, Google Cloud Storage, Azu...",2022-05-13 15:41:59.625632,2022-09-11 23:25:55.106562,,,https://github.com/apache/arrow-rs,585938
+rs-graph,55558,A library for graph algorithms and combinatorial optimization,2017-08-01 08:29:37.471419,2021-05-08 10:55:10.309405,,https://chiselapp.com/user/fifr/repository/rs-graph,https://chiselapp.com/user/fifr/repository/rs-graph,25955
+rustify_derive,55531,A derive macro for implementing an Endpoint for rustify,2021-08-15 05:35:13.48589,2021-09-30 04:59:16.009262,,,https://github.com/jmgilman/rustify,437086
+natural,55530,Pure rust library for natural language processing.,2017-03-07 13:14:35.934646,2020-02-13 07:02:07.166508,,,https://github.com/cjqed/rs-natural,8874
+vkrs,55480,Vkontakte API Rust client library,2015-11-19 18:02:36.250986,2018-11-27 09:54:39.928048,http://kstep.me/vkrs/vkrs/index.html,,https://github.com/kstep/vkrs,3461
+civet,55475,civetweb-based server implementation for conduit,2014-11-13 06:58:16.333511,2021-01-03 02:11:05.95419,,,https://github.com/jtgeibel/rust-civet,92
+randomx-rs,55459,Rust bindings for the RandomX Proof-of-Work,2019-11-27 09:48:55.652617,2021-09-01 17:52:37.321817,,https://tari.com,https://github.com/tari-project/randomx-rs,184786
+s3handler,55446,An s3 handler for s3rs nu-shell-s3-plugin,2019-02-09 02:25:38.21109,2022-06-15 05:35:04.619273,,,,113629
+ruma-common,55432,Common types for other ruma crates.,2020-05-01 15:16:48.290462,2022-09-16 10:14:51.472315,,https://www.ruma.io/,https://github.com/ruma/ruma,236251
+libgpg-error-sys,55401,Raw bindings for libgpg-error,2015-06-11 04:13:48.993529,2020-08-09 05:34:40.718117,https://docs.rs/libgpg-error-sys,,https://github.com/gpg-rs/libgpg-error/libgpg-error-sys,2354
+async-datagram,55400,Async datagram traits.,2019-03-08 00:17:53.657511,2019-06-24 09:47:58.827113,https://docs.rs/async-datagram,,https://github.com/rustasync/async-datagram,119398
+eventual,55399,Future & Stream abstraction,2015-03-31 19:57:22.126781,2016-05-04 21:03:53.762412,https://carllerche.github.io/eventual/eventual,https://github.com/carllerche/eventual,https://github.com/carllerche/eventual,1747
+c-ares-sys,55375,Low-level bindings to the c-ares library,2015-07-17 09:27:57.839742,2022-04-25 11:30:21.60209,,,https://github.com/dimbleby/rust-c-ares,2621
+ruma-client-api,55368,Types for the endpoints in the Matrix client-server API.,2017-01-05 21:24:37.999942,2022-09-21 16:21:19.226295,,https://www.ruma.io/,https://github.com/ruma/ruma,7938
+token-generator,55363,It returns an unsed token,2019-04-05 11:36:13.964115,2019-04-05 11:36:13.964115,,,http://github.com/CodeChain-io/rust-token-generator,125972
+telegra-ph,55358,implementation of API of telegra.ph,2022-03-20 15:58:34.93239,2022-07-13 11:37:00.643124,https://docs.rs/telegra-ph,https://crates.io/crates/telegraph,https://github.com/HomelyGuy/telegraph,553614
+sugars,55351,An useful collection of macros to make tasks easier.,2019-06-28 13:12:49.968918,2022-02-04 12:12:47.493212,https://docs.rs/sugars,https://crates.io/crates/sugars,https://github.com/GrayJack/sugars,144303
+rustify,55341,A Rust library for interacting with HTTP API endpoints.,2021-08-15 05:39:22.896513,2022-03-15 20:16:03.47099,,,https://github.com/jmgilman/rustify,437089
+apply,55333,A tiny library for chaining free functions into method call chains.,2015-09-21 20:06:58.81884,2020-07-02 13:04:02.256605,,,https://github.com/burtonageo/apply,3086
+rust_cast,55288,Library that allows you to communicate with Google Cast enabled devices (e.g. Chromecast).,2016-07-05 16:13:53.52766,2022-03-20 19:01:48.10271,https://azasypkin.github.io/rust-cast/,https://github.com/azasypkin/rust-cast,https://github.com/azasypkin/rust-cast,5591
+test-fuzz-macro,55275,test-fuzz-macro,2020-09-22 00:58:17.452026,2022-09-01 14:44:13.576586,,,https://github.com/trailofbits/test-fuzz,291376
+druid-derive,55274,"derive impls for druid, a Rust UI toolkit.",2019-11-02 04:55:09.104812,2021-01-02 02:20:22.772811,,,https://github.com/linebender/druid,177480
+netif,55266,List the network interfaces on the system.,2021-12-22 21:35:03.671997,2022-09-19 08:07:07.464312,,,,501948
+card-validate,55258,Rust card validate detects and validates credit card numbers,2017-08-27 09:56:02.668452,2019-02-19 09:29:03.416236,,https://github.com/valeriansaliou/rs-card-validate,https://github.com/valeriansaliou/rs-card-validate.git,29433
+bayer,55256,Algorithms for demosaicing Bayer images.,2017-02-03 23:53:05.558451,2017-07-22 21:57:51.660114,https://docs.rs/bayer/,https://github.com/wangds/libbayer.git,https://github.com/wangds/libbayer.git,8375
+pinboard,55247,"A lock-free, threadsafe way to publish data, just stick it on the pinboard",2017-05-30 00:12:51.002634,2020-11-01 23:41:09.831617,,,https://github.com/bossmc/pinboard,16845
+lyon_extra,55222,Various optional utilities for the lyon crate.,2016-05-29 17:51:09.534732,2022-07-14 11:45:19.952302,https://docs.rs/lyon_extra/,,https://github.com/nical/lyon,5228
+shellfn-core,55221,Core functions for `shellfn` crate,2019-02-16 00:38:11.13786,2019-02-16 20:50:48.80571,,,,115063
+testing,55200,Testing utilities for the swc project.,2018-11-18 03:40:44.528204,2022-09-24 03:38:51.993287,https://rustdoc.swc.rs/testing/,,https://github.com/swc-project/swc.git,97361
+sctk-adwaita,55186,Adwaita-like SCTK Frame,2022-04-24 14:33:19.79153,2022-08-19 21:24:11.396254,https://docs.rs/sctk-adwaita,,https://github.com/PolyMeilex/sctk-adwaita,573151
+shellfn-attribute,55173,Attribute macro for `shellfn` crate,2019-02-16 00:39:08.9667,2019-02-16 20:51:13.972199,,,,115064
+tcod,55162,The Rust bindings for the Doryen library (a.k.a. libtcod).,2015-01-04 23:41:34.400551,2019-06-09 20:03:14.057072,http://tomassedovic.github.io/tcod-rs/tcod/index.html,https://github.com/tomassedovic/tcod-rs,https://github.com/tomassedovic/tcod-rs,711
+juniper_graphql_ws,55114,GraphQL over WebSocket protocol implementation for Juniper,2020-12-10 06:00:46.860464,2022-01-27 07:51:42.072522,https://docs.rs/juniper_graphql_ws,,https://github.com/graphql-rust/juniper,321395
+test-fuzz-runtime,55058,test-fuzz-runtime,2020-09-22 00:57:17.937728,2022-09-01 14:45:37.308876,,,https://github.com/trailofbits/test-fuzz,291374
+slabmalloc,55029,Simple slab based malloc implementation in rust. Can be used stand-alone or in order to provide t...,2015-07-12 05:49:53.384072,2022-08-24 17:51:19.171003,https://docs.rs/slabmalloc,https://github.com/gz/rust-slabmalloc,https://github.com/gz/rust-slabmalloc,2585
+hpke-rs,55018,HPKE Implementation using Evercrypt,2020-11-10 10:45:54.907218,2022-02-07 09:48:00.130661,https://docs.rs/hpke-rs,,https://github.com/franziskuskiefer/hpke-rs,310757
+solana-storage-proto,55013,Solana Storage Protobuf Definitions,2020-10-24 21:45:25.090879,2022-09-20 21:56:35.570962,https://docs.rs/solana-storage-proto,https://solana.com/,https://github.com/solana-labs/solana,305138
+memory-module-sys,55000,Bindings to the MemoryModule library for loading libraries from memory on Windows,2020-02-26 22:03:17.689404,2020-03-23 01:52:49.663241,,https://github.com/indygreg/rs-memory-module-sys,https://github.com/indygreg/rs-memory-module-sys.git,212815
+shellfn,54980,Attribute-like proc macro which reduces the amount of code required to call shell commands and pa...,2019-02-16 00:39:30.234849,2019-02-16 20:51:30.426476,https://docs.rs/shellfn,,https://github.com/synek317/shellfn,115065
+openat-ext,54977,    Extension methods for the openat crate ,2019-08-21 01:40:46.579988,2022-02-25 23:34:52.861856,http://docs.rs/openat-ext,http://github.com/coreos/openat-ext,,158508
+fluvio,54947,The official Fluvio driver for Rust,2020-10-02 21:56:19.75164,2022-07-26 21:11:06.67848,,,https://github.com/infinyon/fluvio,295563
+urdf-rs,54924,URDF parser using serde-xml-rs,2017-04-15 08:18:29.089446,2022-08-17 07:27:38.941589,,,https://github.com/openrr/urdf-rs,10637
+pagecache,54904,lock-free pagecache and log for high-performance databases,2018-01-29 23:11:20.033849,2019-09-10 21:50:49.881835,https://docs.rs/pagecache/,https://github.com/spacejam/sled/tree/master/crates/pagecache,https://github.com/spacejam/sled,48842
+stable_bst,54889,An ordered map and set based on a binary search tree. Works with stable Rust 1.9.0.,2016-07-07 06:06:48.951572,2016-08-19 00:57:05.742496,https://rocallahan.github.io/stable-bst/doc/stable_bst,,https://github.com/rocallahan/stable-bst,5602
+unwrap-infallible,54869,Unwrapping Result values with compile-time guarantee of infallibility,2019-10-30 05:43:39.691953,2019-12-16 09:21:45.347439,,,https://github.com/mzabaluev/unwrap-infallible,176852
+hdrsample,54817,A port of HdrHistogram to Rust,2016-07-09 22:52:22.216274,2018-12-04 18:37:45.933706,https://docs.rs/hdrsample,https://github.com/HdrHistogram/HdrHistogram_rust/tree/hdrsample-deprecation,,5620
+promising-future,54786,Implementation of Promise/Future pairs.,2015-09-24 19:30:37.44466,2016-05-25 20:52:55.280975,https://jsgf.github.io/promising-future/index.html,,https://github.com/jsgf/promising-future,3101
+test-fuzz,54781,To make fuzzing Rust easy,2020-09-22 01:00:07.413435,2022-09-01 14:47:19.734644,,,https://github.com/trailofbits/test-fuzz,291377
+fastq,54738,A parser for fastq,2016-11-29 20:15:06.298247,2018-08-10 09:51:07.372856,https://docs.rs/fastq,,https://github.com/aseyboldt/fastq-rs,7408
+ktmw32-sys,54735,Contains function definitions for the Windows API library ktmw32. See winapi for types and consta...,2015-01-26 18:28:46.520289,2017-12-18 09:05:32.712886,https://retep998.github.io/doc/ktmw32/,,https://github.com/retep998/winapi-rs,1103
+flv-tls-proxy,54678,Simple Local TLS Proxy,2020-05-24 21:00:07.414416,2022-07-11 01:58:03.793879,,,https://github.com/infinyon/flv-tls-proxy,245358
+sc-tracing-proc-macro,54677,Helper macros for Substrate's client CLI,2021-02-10 21:06:59.0225,2021-02-10 21:06:59.0225,,https://substrate.dev,https://github.com/paritytech/substrate/,353460
+metrics_distributor,54672,Ingest logs and forward aggregated data to APIs/services.,2016-02-25 23:57:41.47592,2020-04-24 04:16:38.904862,https://docs.rs/metrics_distributor,,https://github.com/dirk/metrics_distributor,4292
+swc_css,54628,CSS apis for rust,2021-08-19 05:28:18.775942,2022-09-24 03:39:24.772715,https://rustdoc.swc.rs/swc_css/,,https://github.com/swc-project/swc.git,439484
+tink-signature,54628,Signature functionality for Rust port of Google's Tink cryptography library,2021-01-21 11:18:15.13457,2022-03-25 08:23:16.599556,https://docs.rs/tink-signature,,https://github.com/project-oak/tink-rust,344848
+tauri-bundler,54597,Wrap rust executables in OS-specific app bundles for Tauri,2020-02-09 23:52:13.27395,2022-09-16 18:05:33.354654,,,https://github.com/tauri-apps/tauri,206863
+log-reroute,54577,Support to change logging target for the log crate,2018-05-29 20:24:46.274051,2021-09-12 15:10:57.215881,https://docs.rs/log-reroute,,https://github.com/vorner/log-reroute,67675
+err-context,54574,Lightweight context layers for stdandard library errors,2019-09-28 19:41:31.197464,2019-09-28 19:41:31.197464,https://docs.rs/err-context,,https://github.com/vorner/err-context,168483
+cosmwasm-vm,54483,VM bindings to run cosmwams contracts,2019-10-08 12:14:19.362062,2022-09-19 14:49:05.491261,,,https://github.com/CosmWasm/cosmwasm/tree/main/packages/vm,170785
+meta_tools,54460,Collection of general purpose meta tools. ,2022-01-10 14:47:29.247941,2022-07-18 20:29:12.226873,https://docs.rs/meta_tools,https://github.com/Wandalen/wTools/tree/master/module/rust/meta_tools,https://github.com/Wandalen/wTools/tree/master/module/rust/meta_tools,511440

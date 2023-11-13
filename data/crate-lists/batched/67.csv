@@ -1,0 +1,101 @@
+name,downloads,description,created_at,updated_at,documentation,homepage,repository,id
+tls_codec_derive,50611,Derive macros for the tls_codec trait,2021-06-11 11:34:02.660585,2022-02-07 09:13:38.957887,https://docs.rs/tls_codec_derive/,,https://github.com/RustCrypto/formats/tree/master/tls_codec/derive,408963
+bstringify,50581,stringify! that yields byte string literals instead,2020-07-25 22:49:13.886555,2020-07-25 23:19:18.397205,https://docs.rs/bstringify,https://crates.io/crates/bstringify,https://github.com/danielhenrymantilla/rust-bstringify,269588
+hrtf,50577,HRTF (Head-Related Transfer Function) audio signal processor,2020-10-12 12:46:28.228613,2022-01-22 13:49:52.588832,https://docs.rs/hrtf,,https://github.com/mrDIMAS/hrtf,298700
+erasable,50547,Type-erased thin pointers.,2020-01-31 22:25:07.041154,2020-05-13 00:32:45.33887,,,https://github.com/CAD97/pointer-utils/tree/master/crates/erasable,203770
+infer_schema_macros,50545,This crate is internal to diesel_infer_schema and should not be used directly,2017-11-28 23:59:32.756118,2019-01-24 18:44:09.125982,,,,40920
+dxgi,50542,"Provides a convenient, higher level wrapping of the DXGI APIs. Targetting dxgi 1.2 stuff that wor...",2018-03-22 18:31:18.007014,2019-02-24 22:09:53.370152,https://docs.rs/dxgi,,https://github.com/Connicpu/dxgi-rs,56946
+string_template,50510,Very simple string template for Rust. ,2018-11-01 10:13:39.44279,2018-11-29 23:51:52.695447,,https://github.com/michaelr524/string_template,https://github.com/michaelr524/string_template,94004
+question,50484,"Ask a question, what more could you want?",2017-11-02 14:23:05.9397,2018-05-08 19:58:25.783126,https://docs.rs/question/0.1.0/question/,https://gitlab.com/starshell/question,https://gitlab.com/starshell/question,37794
+collada,50463,"A library for parsing COLLADA documents for mesh, skeletal and animation data",2015-05-28 16:01:38.920731,2021-09-04 21:23:58.763215,,https://github.com/PistonDevelopers/piston_collada,https://github.com/PistonDevelopers/piston_collada,2239
+scylla,50423,"Async CQL driver for Rust, optimized for Scylla, fully compatible with Apache Cassandra™",2021-04-07 14:35:33.712686,2022-08-25 14:07:57.609545,,,https://github.com/scylladb/scylla-rust-driver,380375
+tcod-sys,50404,Raw FFI bindings & build script to link against libtcod.,2015-01-04 23:28:22.348851,2019-06-09 17:04:08.349904,,https://github.com/tomassedovic/tcod-rs,https://github.com/tomassedovic/tcod-rs/tree/master/tcod-sys,710
+elements,50381,"Library with support for de/serialization, parsing and executing on data structures and network m...",2018-08-24 18:36:54.215814,2022-06-17 14:00:12.74582,https://docs.rs/elements/,https://github.com/ElementsProject/rust-elements/,https://github.com/ElementsProject/rust-elements/,81144
+interpolate_idents,50366,Useable macro identifier concatenation plugin,2015-03-22 14:51:44.561557,2018-11-08 08:22:56.132245,,,https://github.com/SkylerLipthay/interpolate_idents,1634
+reqwasm,50362,HTTP requests library for WASM Apps,2021-02-03 15:20:48.673267,2022-03-11 10:52:54.458286,,,https://github.com/hamza1311/reqwasm,350120
+rustsym,50358,Tool to query symbols from rust code for use in IDEs,2016-07-23 18:19:41.523885,2017-08-09 18:14:16.212583,,,https://github.com/trixnz/rustsym,5764
+resiter,50351,Helper crate for handling iterators over result,2018-02-22 10:35:02.877495,2019-10-25 15:39:17.479002,https://docs.rs/resiter,,https://github.com/matthiasbeyer/resiter,52375
+kvdb-shared-tests,50350,"Shared tests for kvdb functionality, to be executed against actual implementations",2020-01-04 08:57:25.537376,2022-09-20 13:08:01.52322,,,,195068
+tower-request-modifier,50332,Tower service middleware to modify the request. ,2019-07-09 19:19:19.774815,2019-07-09 19:19:19.774815,https://docs.rs/tower-request-modifier/0.1.0/tower_request_modifier,https://github.com/tower-rs/tower-http,https://github.com/tower-rs/tower-http,147911
+reductive,50289,Optimized vector quantization for dense vectors,2019-02-04 09:27:00.286701,2021-12-03 11:08:04.428322,https://docs.rs/reductive/,https://github.com/finalfusion/reductive,https://github.com/finalfusion/reductive,112610
+twapi-reqwest,50236,Twitter OAuth library used by reqwest.,2020-02-01 06:01:22.541094,2022-08-16 00:41:47.61146,https://docs.rs/twapi-reqwest,,https://github.com/aoyagikouhei/twapi-reqwest-rs,203851
+pin-weak,50216,Small wrapper around an equivalent of Pin<Weak<T>>,2020-08-03 07:13:33.14351,2021-11-29 12:49:24.744318,https://docs.rs/pin-weak,,https://github.com/sixtyfpsui/pin-weak,272423
+worker,50186,A Rust SDK for writing Cloudflare Workers.,2016-03-24 12:38:34.403568,2022-08-31 20:26:21.796681,,,https://github.com/cloudflare/workers-rs,4546
+testaso,50184,"Test alignment, size and offset for structs.",2022-03-25 14:55:03.88006,2022-03-25 14:55:03.88006,,https://github.com/enarx/testaso,https://github.com/enarx/testaso,556254
+actix-test-server,50130,Actix test server,2019-03-02 22:56:44.715354,2019-05-12 15:12:21.932859,https://docs.rs/actix-test-server/,https://actix.rs,https://github.com/actix/actix-net.git,118235
+librespot-tremor,50115,Rust bindings to tremor,2019-11-06 14:37:38.704249,2021-01-30 03:14:38.853426,,,,178654
+testing_macros,50106,General purpose testing macros,2020-11-20 06:12:57.770855,2022-07-18 02:54:04.979519,https://rustdoc.swc.rs/testing_macros/,,https://github.com/swc-project/swc.git,314257
+serde_xml,50091,xml support for rust-serde,2015-10-02 11:56:52.658139,2016-09-19 13:36:41.684657,,,https://github.com/serde-rs/xml,3144
+git-path,50062,A WIP crate of the gitoxide project dealing paths and their conversions,2022-04-28 07:40:50.791378,2022-09-20 09:45:03.383012,,,https://github.com/Byron/gitoxide,576662
+dominator,50021,Zero-cost ultra-high-performance declarative DOM library using FRP signals,2018-03-18 16:21:42.596178,2022-09-10 02:16:03.239099,,https://github.com/Pauan/rust-dominator,https://github.com/Pauan/rust-dominator,56286
+cddl,50004,Parser for the Concise data definition language (CDDL),2019-06-09 18:29:59.083993,2022-03-23 20:18:47.91842,,https://cddl.anweiss.tech,https://github.com/anweiss/cddl,140031
+nu-source,49996,A source string characterizer for Nushell,2019-11-27 04:15:38.529723,2022-02-08 10:12:36.61745,,,,184711
+fluvio-stream-model,49980,Fluvio Event Stream Model,2020-10-02 18:35:21.169561,2022-08-11 00:44:44.821087,,,https://github.com/infinyon/fluvio,295506
+audio_thread_priority,49947,"Bump a thread to real-time priority, for audio work, on Linux, Windows and macOS",2018-01-24 17:32:03.326515,2022-03-22 11:01:40.927788,,,https://github.com/padenot/audio_thread_priority,48166
+fvm_ipld_car,49940,IPLD CAR handling library,2022-03-02 16:20:30.451845,2022-08-05 00:20:58.082422,,,https://github.com/filecoin-project/ref-fvm,542387
+cargo-apk,49908,Helps cargo build APKs,2016-04-20 10:52:32.836341,2022-09-12 13:53:20.850772,https://docs.rs/cargo-apk,https://github.com/rust-windowing/android-ndk-rs,https://github.com/rust-windowing/android-ndk-rs,4798
+probe-rs,49801,A collection of on chip debugging tools to communicate with microchips.,2019-10-23 21:32:12.446166,2022-07-12 09:34:16.639295,https://docs.rs/probe-rs/,https://github.com/probe-rs/probe-rs,https://github.com/probe-rs/probe-rs,175013
+maildir,49793,A simple library for maildir manipulation,2017-01-15 04:33:40.196567,2022-09-02 17:33:40.720545,,https://github.com/staktrace/maildir/blob/master/README.md,https://github.com/staktrace/maildir,8075
+two-rusty-forks,49788,Cross-platform library for running Rust tests in sub-processes using a fork-like interface. ,2020-08-30 21:26:15.85824,2020-08-30 23:11:30.12881,https://docs.rs/rusty-fork,,https://github.com/altsysrq/rusty-fork,282835
+ruma-events,49781,Deprecated: crate merged into ruma-common,2016-12-13 09:33:53.094628,2022-05-04 13:26:20.110993,,https://www.ruma.io/,https://github.com/ruma/ruma,7561
+yewtil,49774,Utility crate for Yew,2019-11-11 20:03:19.616266,2021-05-15 11:20:33.312599,,,https://github.com/yewstack/yew,180353
+include-flate,49763,A variant of include_bytes!/include_str! with compile-time deflation and runtime lazy inflation,2019-08-13 15:27:12.196758,2021-11-19 01:43:03.607803,,https://github.com/SOF3/include-flate,https://github.com/SOF3/include-flate.git,156465
+nphysics3d,49741,3-dimensional physics engine in Rust. This crate is being superseded by the rapier3d crate.,2016-03-30 21:01:04.099908,2021-08-08 16:19:55.765452,http://nphysics.org/rustdoc/nphysics3d/index.html,http://nphysics.org,https://github.com/rustsim/nphysics,4628
+chrome-devtools-rs,49710,Low-level library for interacting with the Chrome Devtools Protocol,2020-02-06 18:30:31.980291,2021-07-15 15:53:58.546005,,,https://github.com/EverlastingBugstopper/chrome-devtools-rs,205556
+demo-hack-impl,49709,Demo of proc-macro-hack,2017-02-22 23:40:29.561184,2018-10-31 18:46:11.228938,,,https://github.com/dtolnay/proc-macro-hack,8640
+lexiclean,49629,Lexically clean paths,2020-04-22 05:59:46.090432,2020-04-22 06:07:30.21379,,https://github.com/casey/lexiclean,https://github.com/casey/lexiclean,232806
+process_path,49598,Gets the path of the currently executing process or dynamic library.,2017-01-04 00:25:49.86817,2022-06-27 14:30:06.198744,https://docs.rs/process_path,,https://github.com/wesleywiser/process_path,7911
+web30,49550,Async endian safe web3 library,2019-04-11 06:18:05.365811,2022-08-02 12:23:58.246862,,,https://github.com/althea-net/web30,127186
+sp-core-hashing,49533,Primitive core crate hashing implementation.,2021-12-08 20:10:42.661149,2021-12-08 20:10:42.661149,https://docs.rs/sp-core-hashing,https://substrate.dev,https://github.com/paritytech/substrate/,494794
+nu-table,49520,Nushell table printing,2020-06-30 19:02:28.235856,2022-09-09 00:30:09.552325,,,https://github.com/nushell/nushell/tree/main/crates/nu-table,259944
+zoom-api,49517,A fully generated & opinionated API client for the Zoom API.,2020-07-09 22:21:49.709136,2022-07-26 23:39:05.296576,https://docs.rs/zoom-api/,,https://github.com/oxidecomputer/third-party-api-clients/tree/main/zoom,263028
+csound-sys,49496,Native bindings to the libcsound64 library,2019-01-31 17:44:31.432382,2020-03-27 22:35:46.443744,,,https://github.com/neithanmo/csound-rs,111842
+oasis-macros,49461,Macros used internally by the Oasis framework.,2019-07-16 17:08:10.894267,2020-01-15 21:44:30.130398,,,https://github.com/oasislabs/oasis-rs.git,149432
+shakmaty,49454,Chess and chess variant rules and operations,2017-03-13 14:10:42.612301,2022-09-18 12:30:06.501635,,,https://github.com/niklasf/shakmaty,8963
+executor,49413,A minimalistic async/await executor,2019-10-08 22:47:40.599663,2022-07-16 18:30:05.761821,,,https://www.github.com/richardanaya/executor,170935
+sliceslice,49402,A fast implementation of single-pattern substring search using SIMD acceleration,2020-07-22 15:57:14.330055,2022-04-27 12:02:27.055164,,,https://github.com/cloudflare/sliceslice-rs,268068
+floating-duration,49397,Converts durations to fractional numbers and allows automatic formatting of durations. ,2017-04-15 21:20:21.906333,2018-03-20 17:19:25.797203,https://torkleyy.github.io/floating-duration/,,https://github.com/torkleyy/floating-duration,10762
+tinybmp,49382,"No-std, low memory footprint BMP image loader",2019-03-03 18:04:52.467693,2022-04-18 19:41:11.873178,https://docs.rs/tinybmp,,https://github.com/embedded-graphics/tinybmp,118455
+ic-cdk-optimizer,49361,WASM Optimizer for the IC CDK (experimental).,2020-10-02 21:11:07.25995,2022-09-15 15:56:47.332581,https://docs.rs/ic-cdk-optimizer,https://docs.rs/ic-cdk-optimizer,https://github.com/dfinity/cdk-rs,295556
+pyroscope,49354,"Pyroscope Profiler Agent for continuous profiling of Rust, Python and Ruby applications. ",2021-12-17 17:55:57.73933,2022-06-27 22:20:39.124984,https://docs.rs/pyroscope,https://pyroscope.io/docs/rust,https://github.com/pyroscope-io/pyroscope-rs,499702
+deno_runtime,49353,Provides the deno runtime library,2020-12-13 21:44:01.890673,2022-09-22 18:17:08.640259,,,https://github.com/denoland/deno,322527
+hex-view,49323,Easily format a &[u8] as hex.,2017-09-29 22:07:19.998371,2019-07-09 23:47:17.599629,https://crates.io/crates/hex-view,,https://github.com/paulkernfeld/hex-view,33942
+git-traverse,49288,A WIP crate of the gitoxide project,2021-04-30 04:02:30.667025,2022-09-20 09:47:12.725568,,,https://github.com/Byron/gitoxide,391391
+r2d2-memcache,49275,Memcached support for the r2d2 connection pool,2017-01-18 02:16:23.141135,2021-01-07 14:53:12.63247,,,https://github.com/megumish/r2d2-memcache,8112
+test-generator,49255,Rust Test generator: enumerating entries according to file-system pattern and generating a test f...,2019-01-17 22:48:28.858985,2019-07-28 20:53:06.006033,https://docs.rs/test-generator,https://github.com/frehberg/test-generator.git,https://github.com/frehberg/test-generator.git,109228
+sapp-windows,49253,Part of miniquad rendering library. Native bindings to slightly modified sokol-app. ,2020-01-11 03:30:14.499333,2022-05-08 18:52:51.033058,,https://github.com/not-fl3/miniquad,,197402
+etcommon-bloom,49196,Log bloom implementation for Ethereum.,2017-08-02 13:41:57.653431,2017-08-02 13:41:57.653431,,,https://github.com/ethereumproject/etcommon,26112
+parity-daemonize,49151,A more advanced daemonizer,2018-12-11 11:18:35.438688,2019-02-14 20:03:56.591129,https://docs.rs/parity-daemonize,,https://github.com/paritytech/parity-daemonize,101420
+slack-chat-api,49147,A fully generated & opinionated API client for the Slack API.,2020-12-15 19:21:25.63204,2022-07-06 22:07:29.628847,https://docs.rs/slack-chat-api/,,https://github.com/oxidecomputer/third-party-api-clients/tree/main/slack,323278
+interledger-packet,49106,Interledger packet serialization/deserialization,2019-03-11 05:16:12.155389,2019-11-11 11:46:51.212041,,,https://github.com/interledger-rs/interledger-rs,120004
+boringtun,49103,an implementation of the WireGuard® protocol designed for portability and speed,2019-03-22 22:29:24.901415,2022-07-20 16:45:16.357527,https://docs.rs/boringtun/0.5.2/boringtun/,,https://github.com/cloudflare/boringtun,123202
+demo-hack,49100,Demo of proc-macro-hack,2017-02-22 23:40:17.723731,2018-10-31 18:46:32.099323,,,https://github.com/dtolnay/proc-macro-hack,8639
+tower-web-macros,49092,Macros for tower-web ,2018-08-09 17:40:31.860542,2019-04-10 20:32:31.957021,http://rust-doc.s3-website-us-east-1.amazonaws.com/tower-web/v0.3.5/tower_web/,https://github.com/carllerche/tower-web,https://github.com/carllerche/tower-web,78551
+encoding_derive_helpers,49071,Helper functions for creating different encoding derivation macros,2021-08-29 20:10:14.107376,2022-07-11 12:00:57.313002,,https://github.com/LNP-BP,https://github.com/LNP-BP/client_side_validation,443884
+cortex-m-rtfm-macros,49070,Procedural macros of the cortex-m-rtfm crate,2017-07-29 06:17:43.209998,2020-06-12 07:30:35.164425,https://rtfm-rs.github.io/cortex-m-rtfm/api/cortex_m_rtfm,,https://github.com/rtfm-rs/cortex-m-rtfm,25522
+git-diff,49042,Calculate differences between various git objects,2021-04-26 02:14:00.051419,2022-09-20 09:57:23.796488,,,https://github.com/Byron/gitoxide,389548
+nu-errors,49034,Core error subsystem for Nushell,2019-12-17 17:37:08.889556,2022-02-08 10:13:56.045391,,,,190052
+bswap,49011,"A Rust library for byte-swapping integers, pointers, and slices.",2015-02-25 08:34:24.620096,2019-05-09 01:45:09.162924,,https://andydude.github.io/rust-bswap/bswap/index.html,https://github.com/andydude/rust-bswap/,1469
+multi_reader,48981,MultiReader - a composite reader implementation.,2016-08-24 21:18:48.136914,2016-08-24 21:18:48.136914,,,https://github.com/Ostrovski/multi_reader.rs,6097
+git-url,48939,A WIP crate of the gitoxide project implementing parsing and serialization of git-url,2020-08-13 15:10:41.72962,2022-09-20 09:56:57.063132,,,https://github.com/Byron/gitoxide,276272
+git-pack,48884,Implements git packs and related data structures,2021-05-24 14:38:27.864095,2022-09-20 09:58:04.590129,,,https://github.com/Byron/gitoxide,401443
+embedded-hal-mock,48877,A collection of mocked devices that implement the embedded-hal traits,2018-03-31 16:51:58.031193,2021-08-16 18:29:49.517067,https://docs.rs/embedded-hal,,https://github.com/dbrgn/embedded-hal-mock,58354
+lib3h_protocol,48874,Protocol definition for interacting with Lib3h.,2019-05-29 16:04:49.994468,2020-03-10 19:42:54.468415,https://docs.rs/lib3h_protocol,,https://github.com/holochain/lib3h,137723
+url2,48865,ergonomic wrapper around the popular url crate,2019-11-01 22:41:11.186455,2020-09-30 20:05:49.456158,https://docs.rs/url2,,https://github.com/neonphog/url2,177450
+mt19937,48838,A translation of the MT19937 Mersenne Twister rng algorithm to Rust,2020-03-12 03:34:26.53371,2021-04-06 16:37:35.633172,https://docs.rs/mt19937,,https://github.com/RustPython/mt19937,217749
+lzxd,48822,Decompression implementation for Microsoft's LZXD compression format. ,2020-07-13 08:54:57.845265,2021-10-10 16:41:06.48688,https://docs.rs/lzxd,https://github.com/Lonami/lzxd,https://github.com/Lonami/lzxd,264637
+versionisator,48803,Tool for build.rs script to display handy version information,2019-09-01 10:40:19.65535,2022-07-23 13:16:13.922979,,https://github.com/primetype/versionator#readme,https://github.com/primetype/versionator,161324
+uchardet,48760,Detect character encodings using uchardet library,2014-11-20 20:51:53.02395,2017-12-07 20:46:48.090556,http://docs.rs/uchardet,https://github.com/emk/rust-uchardet,https://github.com/emk/rust-uchardet,148
+rustacuda_core,48716,Minimal kernel-support crate for Rustacuda,2018-12-01 21:23:31.707223,2020-02-29 17:06:48.289934,,,https://github.com/bheisler/RustaCUDA,99574
+autocxx-bindgen,48712,Automatically generates Rust FFI bindings to C and C++ libraries. Version adjusted for cxx.,2020-12-15 00:30:08.426621,2022-08-29 21:44:32.224073,https://docs.rs/bindgen,https://rust-lang.github.io/rust-bindgen/,https://github.com/adetaylor/rust-bindgen,322933
+ruma,48667,Types and traits for working with the Matrix protocol.,2017-01-05 21:23:43.706008,2022-09-21 16:36:45.704854,,https://www.ruma.io/,https://github.com/ruma/ruma,7937
+pallet-staking,48657,FRAME pallet staking,2020-02-27 23:23:49.168947,2021-02-10 21:27:42.68607,,https://substrate.dev,https://github.com/paritytech/substrate/,213387
+shared_memory_derive,48654,Support crate that provides macros for the shared_memory crate.,2019-09-20 02:33:39.779204,2019-09-20 02:33:39.779204,,,https://github.com/elast0ny/shared_memory-rs,166113
+macaw,48638,An opinionated game math library built on top the excellent glam,2021-08-02 13:14:03.861515,2022-09-13 19:42:25.550355,,,,430417
+include-flate-codegen-exports,48539,Macro codegen for the include-flate crate,2019-09-03 12:54:14.324693,2021-11-19 01:42:38.894488,,https://github.com/SOF3/include-flate,https://github.com/SOF3/include-flate.git,161802
+markup-proc-macro,48492,"A blazing fast, type-safe template engine for Rust.",2018-12-03 08:50:56.6005,2022-06-27 11:13:01.805491,https://docs.rs/markup,https://github.com/utkarshkukreti/markup.rs,https://github.com/utkarshkukreti/markup.rs,99802
+bracket-pathfinding,48425,"Pathfinding and field-of view utilities. A Star, Dijkstra. Part of the bracket-lib family.",2020-02-21 18:24:24.1596,2021-02-15 16:03:04.500242,,https://github.com/thebracket/bracket-lib,https://github.com/thebracket/bracket-lib,211259
+bracket-random,48375,"Random number generator (xorshift based), focused on dice rolling. Optionally includes parsing of...",2020-02-21 16:49:53.772451,2021-02-10 18:59:59.529079,,https://github.com/thebracket/bracket-lib,https://github.com/thebracket/bracket-lib,211239
+twilight-model,48352,Discord API models for the Twilight ecosystem.,2020-08-30 02:50:53.368746,2022-09-16 23:15:24.109239,https://docs.rs/twilight-model,https://twilight.rs/chapter_1_crates/section_1_model.html,https://github.com/twilight-rs/twilight.git,282535
+lsd,48349,An ls command with a lot of pretty colors and some other stuff.,2018-11-25 11:48:13.38696,2022-09-13 03:25:58.668557,,,https://github.com/Peltoche/lsd,98583
+fps_counter,48348,A Frames Per Second (FPS) counter,2014-12-11 19:45:46.755823,2021-01-16 06:33:30.054889,,https://github.com/pistondevelopers/fps_counter,https://github.com/pistondevelopers/fps_counter.git,527

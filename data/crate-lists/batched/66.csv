@@ -1,0 +1,101 @@
+name,downloads,description,created_at,updated_at,documentation,homepage,repository,id
+sp-npos-elections,52393,NPoS election algorithm primitives,2020-06-08 20:30:03.320672,2021-02-10 21:22:22.380993,,https://substrate.dev,https://github.com/paritytech/substrate/,251601
+sp-npos-elections-compact,52387,NPoS Compact Solution Type,2020-06-08 20:29:41.224938,2021-02-10 21:22:00.356907,,https://substrate.dev,https://github.com/paritytech/substrate/,251600
+pest_tmp,52382,The Elegant Parser,2019-06-15 13:45:45.899854,2019-06-15 13:45:45.899854,https://docs.rs/pest,https://pest-parser.github.io/,https://github.com/pest-parser/pest,141342
+wtools,52379,Collection of general purpose tools for solving problems. Fundamentally extend the language witho...,2021-10-01 08:08:20.40001,2022-07-18 20:33:51.586691,https://docs.rs/wtools,https://github.com/Wandalen/wTools/tree/master/module/rust/wtools,https://github.com/Wandalen/wTools/tree/master/module/rust/wtools,459052
+git-odb,52371,Implements various git object databases,2020-07-12 04:28:54.650706,2022-09-20 09:58:20.893852,,,https://github.com/Byron/gitoxide,264295
+pest_meta_tmp,52346,pest meta language parser and validator,2019-06-15 13:48:48.758638,2019-06-15 13:48:48.758638,https://docs.rs/pest,https://pest-parser.github.io/,https://github.com/pest-parser/pest,141344
+nanomsg,52343,"A high-level, Rust idiomatic wrapper around nanomsg.",2014-12-08 02:08:06.147152,2018-09-14 20:03:35.509862,https://github.com/thehydroimpulse/nanomsg.rs,https://github.com/thehydroimpulse/nanomsg.rs,https://github.com/thehydroimpulse/nanomsg.rs,480
+griddle,52339,A HashMap variant that spreads resize load across inserts,2020-06-30 01:05:54.869754,2021-06-19 03:23:26.694308,,,https://github.com/jonhoo/griddle.git,259603
+bluez-generated,52315,Generated bindings for talking to BlueZ on Linux.,2020-10-18 20:11:48.175828,2021-01-08 19:30:13.876425,,,https://github.com/alsuren/mijia-homie/,302402
+direct2d,52303,A safe abstraction for drawing with Direct2D,2015-12-12 01:11:32.349922,2019-02-24 22:15:54.038887,https://docs.rs/direct2d/*/x86_64-pc-windows-msvc/direct2d/,,https://github.com/Connicpu/direct2d-rs,3614
+defer-drop,52295,Defer dropping large types to a background thread,2020-05-21 20:00:50.180456,2021-09-10 09:32:14.702812,,,https://github.com/Lucretiel/defer-drop,244277
+android_injected_glue,52284,Injected glue for the Android JNI,2017-04-13 10:32:29.47452,2017-11-02 10:17:07.955779,,,https://github.com/tomaka/android-rs-glue,10487
+pest_generator_tmp,52280,pest code generator,2019-06-15 13:49:20.93735,2019-06-15 13:49:20.93735,https://docs.rs/pest,https://pest-parser.github.io/,https://github.com/pest-parser/pest,141345
+whatsys,52278,Determine the kernel version,2021-03-10 16:32:58.622393,2022-07-18 10:34:44.224361,,,https://github.com/badboy/whatsys,366840
+snarkvm,52256,A decentralized virtual machine,2020-01-24 18:53:01.309335,2022-09-03 21:54:14.836674,,https://aleo.org,https://github.com/AleoHQ/snarkVM,201602
+billboard,52249,Display informational boxes in the terminal.,2020-03-06 22:32:10.957835,2020-03-06 22:32:10.957835,,,https://github.com/EverlastingBugstopper/billboard,216194
+rusty-money,52226,"Parse, format and perform calculations with money safely.     ",2019-12-08 09:37:35.881647,2021-01-16 16:50:30.709117,https://docs.rs/rusty-money,,https://github.com/varunsrin/rusty_money,187259
+fastrlp,52225,Fast RLP serialization library,2022-03-16 15:37:28.005802,2022-07-24 09:07:18.865297,,,https://github.com/vorot93/fastrlp,551242
+debugtrace,52181,Enables backtraces to be attached to values in debug and test builds without incurring a cost in ...,2016-03-02 14:20:49.914153,2016-03-02 14:20:49.914153,http://m4rw3r.github.io/debugtrace_rs,http://github.com/m4rw3r/debugtrace_rs,http://github.com/m4rw3r/debugtrace_rs,4343
+yarte_helpers,52178,Helper collection for yarte,2019-02-18 19:16:11.352058,2022-09-07 13:22:01.368259,https://docs.rs/yarte_helpers,,https://github.com/botika/yarte,115617
+agnostik,52140,Executor Agnostic Runtime that can run your futures with your favourite Executor.,2020-01-21 20:14:29.597204,2021-02-01 13:20:35.33189,,https://github.com/bastion-rs/agnostik,,200866
+smf,52116,Rust bindings for the illumos SMF system,2021-02-19 15:42:20.589598,2021-05-26 23:05:03.649566,,,https://github.com/oxidecomputer/smf,357619
+fluvio-spu-schema,52103,Fluvio API for SPU,2020-10-02 18:46:57.451671,2022-07-13 23:30:29.920411,,,https://github.com/infinyon/fluvio,295520
+easy-jsonrpc-mw,52103,Convert a trait definition into a jsonrpc api. ,2019-08-19 09:50:25.4653,2019-10-10 14:34:33.54266,https://docs.rs/easy-jsonrpc,,https://github.com/mimblewimble/easy-jsonrpc,158037
+fluvio-types,52100,Fluvio common types and objects,2020-10-02 18:32:11.58145,2022-07-13 23:27:27.69399,,,https://github.com/infinyon/fluvio,295505
+gstreamer-net,52057,Rust bindings for GStreamer Net library,2017-12-22 14:13:36.686291,2022-01-16 11:30:45.795252,https://gstreamer.pages.freedesktop.org/gstreamer-rs/stable/latest/docs/gstreamer_net/,https://gstreamer.freedesktop.org,https://gitlab.freedesktop.org/gstreamer/gstreamer-rs,44040
+pest_derive_tmp,52046,pest's derive macro,2019-06-15 13:49:49.267461,2019-06-15 13:49:49.267461,https://docs.rs/pest,https://pest-parser.github.io/,https://github.com/pest-parser/pest,141347
+mioco,52042,"Scalable, asynchronous IO coroutine-based handling (aka MIO COroutines).",2015-07-04 18:49:19.5616,2016-08-21 23:44:40.351373,https://dpc.github.io/mioco/,https://github.com/dpc/mioco,https://github.com/dpc/mioco,2530
+cortex-m-rtfm,52041,Real Time For the Masses (RTFM): a concurrency framework for building real time systems,2017-05-09 14:04:47.673699,2020-06-12 07:31:12.193063,https://rtfm.rs/,,https://github.com/rtfm-rs/cortex-m-rtfm,13875
+nuclei,52029,Proactive IO & runtime system,2020-07-05 22:08:38.311214,2022-06-28 01:42:53.289685,https://docs.rs/nuclei,https://github.com/vertexclique/nuclei,https://github.com/vertexclique/nuclei,261738
+bolero-afl,52004,afl plugin for bolero,2019-09-09 21:27:03.628652,2022-05-24 15:53:57.345522,,https://github.com/camshaft/bolero,https://github.com/camshaft/bolero,163662
+ra_vfs,51998,Virtual File System abstraction for rust-analyzer,2019-02-18 13:34:17.094144,2020-05-10 22:51:46.123663,,,https://github.com/rust-analyzer/ra_vfs,115569
+netcdf,51968,High-level NetCDF bindings for Rust,2015-06-27 17:22:31.562209,2022-01-28 15:28:56.123953,https://docs.rs/crate/netcdf,,https://github.com/georust/netcdf,2477
+libusb,51967,Rust library for accessing USB devices.,2015-03-15 01:13:26.273414,2016-09-10 18:59:30.800141,http://dcuddeback.github.io/libusb-rs/libusb/,https://github.com/dcuddeback/libusb-rs,https://github.com/dcuddeback/libusb-rs.git,1579
+ec-gpu-gen,51927,Code generator for field and eliptic curve operations on the GPUs,2021-09-30 14:23:44.205667,2022-09-06 12:41:47.518505,,https://github.com/filecoin-project/ff-cl-gen,https://github.com/filecoin-project/ff-cl-gen,458724
+macroquad_macro,51917,Proc macro for macroquad ,2020-02-11 00:47:32.096909,2021-09-20 02:59:35.622824,,,https://github.com/not-fl3/macroquad,207202
+ra_ap_proc_macro_srv,51895,TBD,2020-08-24 13:08:52.366934,2022-09-12 09:36:16.302726,,,,280110
+bee-pow,51835,Provides Proof of Work utilities for the IOTA protocol,2020-06-25 21:31:02.259757,2022-08-30 07:44:15.212683,,https://www.iota.org,https://github.com/iotaledger/bee,258227
+easy-jsonrpc-proc-macro-mw,51815,Procedural macro portion of easy-jsonrpc. Don't use this crate directly. Use easy-jsonrpc instead. ,2019-08-19 09:50:02.660491,2019-08-19 09:50:02.660491,,,https://github.com/layer1capital/easy-jsonrpc,158036
+device_tree,51807,Reads and parses Linux device tree images,2016-03-20 00:14:49.591918,2016-06-28 13:23:48.944617,https://mbr.github.io/device_tree-rs/device_tree/,,https://github.com/mbr/device_tree-rs,4491
+netlify_toml,51807,netlify_toml is a parser for netlify.toml files,2018-01-14 00:39:26.201299,2021-11-05 15:50:26.036362,,https://github.com/calavera/netlify-toml-rs,,46729
+utf16_iter,51770,Iterator by char over potentially-invalid UTF-16 in &[u16],2022-06-13 09:49:27.814111,2022-09-09 09:04:24.891215,https://docs.rs/utf16_iter/,https://docs.rs/utf16_iter/,https://github.com/hsivonen/utf16_iter,604990
+synopsys-usb-otg,51722,'usb-device' implementation for Synopsys USB OTG IP cores,2020-02-12 21:31:06.767868,2022-01-04 19:18:32.815362,,,https://github.com/stm32-rs/synopsys-usb-otg,207803
+tari_bulletproofs,51696,A pure-Rust implementation of Bulletproofs using Ristretto,2020-12-01 18:23:13.37283,2021-07-02 09:59:15.923901,,,https://github.com/tari-project/bulletproofs,318668
+libp2p-ratelimit,51693,Transfer rate limiting transport adapter for libp2p,2019-01-02 13:48:51.603305,2019-08-15 12:06:24.043618,,,https://github.com/libp2p/rust-libp2p,105022
+slip21,51679,SLIP-21 implementation in Rust,2019-07-22 07:34:39.410006,2020-05-15 10:04:33.280866,https://docs.rs/slip21/,https://github.com/stevenroose/rust-slip21/,https://github.com/stevenroose/rust-slip21/,150714
+korome,51653,WIP game engine using glium,2016-02-22 20:51:54.605693,2017-01-08 05:38:13.53486,https://docs.rs/korome/,https://github.com/LFalch/korome,https://github.com/LFalch/korome,4251
+deelevate,51632,Drop privileges on Windows,2020-12-18 03:40:31.196404,2022-03-17 23:28:09.15703,https://docs.rs/deelevate,,,324201
+async-trait-fn,51631,A fork of async-trait with some useful options,2022-08-18 13:24:42.050064,2022-08-18 13:24:42.050064,https://docs.rs/async-trait-fn,,https://github.com/wvwwvwwv/async-trait-fn,648150
+needletail,51610,FASTX parsing and k-mer methods,2017-03-04 18:41:50.180671,2021-03-12 17:06:44.910625,,,https://github.com/onecodex/needletail,8806
+bresenham,51608,"A fast, iterator-based integer-only implementation of Bresenham's line algorithm.",2016-08-14 10:54:59.629667,2016-08-14 11:07:55.917603,https://mbr.github.io/bresenham-rs/bresenham,,https://github.com/mbr/bresenham-rs,5969
+etagere,51600,Dynamic 2D texture atlas allocation using the shelf packing algorithm.,2020-11-12 14:05:30.038714,2022-05-04 20:52:54.470006,https://docs.rs/etagere/,,https://github.com/nical/etagere,311591
+ruma-identifiers-validation,51565,Validation logic for ruma-common and ruma-macros,2020-08-07 16:34:39.71995,2022-09-12 18:22:24.970004,,https://www.ruma.io/,https://github.com/ruma/ruma,274053
+gen-z,51534,Macro-free stream construction through asynchronous generators via an awaitable sender,2020-10-23 00:34:31.234282,2020-10-23 00:34:31.234282,,,https://github.com/Dessix/gen-z-rs,304505
+bracket-color,51530,"RGB and HSV color handling and utilities, including lerp and W3C named colors. Part of the bracke...",2020-02-21 17:28:07.517586,2021-02-10 17:37:45.027645,,https://github.com/thebracket/bracket-lib,https://github.com/thebracket/bracket-lib,211249
+gamma-lut,51525,Rust port of Skia gamma correcting tables,2017-01-18 22:44:09.616629,2017-10-29 00:31:07.343161,https://docs.rs/gamma-lut,,https://github.com/changm/gamma-lut-rs,8130
+slip132,51524,Bitcoin SLIP-132 standard implementation (parsing custom xpub/xpriv key formats),2021-01-18 21:12:15.522982,2022-06-30 17:42:29.432567,,https://github.com/LNP-BP/descriptor-wallet/tree/master/slip132,https://github.com/LNP-BP/descriptor-wallet,343674
+ncollide_procedural,51508,DEPRECATED: use ncollide2d or ncollide3d insead.,2015-06-06 11:25:16.739956,2019-04-27 10:28:59.484956,http://ncollide.org/rustdoc/ncollide_procedural,http://ncollide.org,https://github.com/sebcrozet/ncollide,2319
+eventsource,51489,Library for accessing EventSource/Server-Sent Events endpoints,2016-05-27 12:18:45.873601,2020-04-22 18:46:28.529337,,,https://github.com/lluchs/eventsource,5195
+teloxide-core,51463,Core part of the `teloxide` library - telegram bot API client,2021-02-16 21:14:44.759075,2022-08-19 06:58:30.861424,https://docs.rs/teloxide-core/,https://github.com/teloxide/teloxide-core/,https://github.com/teloxide/teloxide-core/,356180
+fluvio-command,51445,Fluvio command utilities,2021-01-27 02:00:47.0743,2021-07-06 16:02:48.557401,,,https://github.com/infinyon/fluvio-command,347128
+horrorshow,51430,a templating library written in rust macros,2015-05-27 21:22:37.540145,2021-10-13 14:50:28.749675,https://docs.rs/horrorshow,,https://github.com/Stebalien/horrorshow-rs,2232
+eszip,51407,A utility that can download JavaScript and TypeScript module graphs and store them locally in a s...,2021-02-15 15:34:41.757861,2022-09-08 16:45:01.040047,,,https://github.com/denoland/eszip,355574
+range-map,51405,Maps and sets implemented using ranges.,2016-01-11 20:34:20.7353,2016-08-08 11:37:47.423648,http://jneem.github.io/range-map,,http://github.com/jneem/range-map,3874
+teloxide-macros,51399,The teloxide's procedural macros,2020-02-19 16:41:32.040409,2022-07-19 15:58:54.054056,,,,210638
+symphonia-format-ogg,51395,Pure Rust OGG demuxer (a part of project Symphonia).,2020-09-01 22:25:22.037665,2022-07-17 03:36:37.478013,,https://github.com/pdeljanov/Symphonia,https://github.com/pdeljanov/Symphonia,283677
+hprof,51390,A simple hierarchical profiler,2015-05-03 21:13:21.959216,2015-12-28 17:28:00.208536,https://cmr.github.io/hprof,,https://github.com/cmr/hprof,2015
+oasis-std,51349,Library for developing on the Oasis platform,2019-03-01 03:51:14.478823,2020-03-31 23:44:19.202272,,,https://github.com/oasislabs/oasis-rs,117892
+bolero-honggfuzz,51346,honggfuzz plugin for bolero,2019-10-16 02:38:24.590655,2022-05-24 15:54:19.017714,,https://github.com/camshaft/bolero,https://github.com/camshaft/bolero,172860
+zeno,51310,"High performance, low level 2D path rasterization.",2020-10-06 08:28:38.648567,2021-06-25 10:39:25.791398,,https://github.com/dfrg/zeno,https://github.com/dfrg/zeno,296562
+sdl2_mixer,51267,SDL2_mixer bindings for Rust,2014-11-26 10:03:29.505974,2016-11-29 05:57:36.920583,,,https://github.com/andelf/rust-sdl2_mixer,404
+rnix,51264,A Nix parser written in Rust,2018-08-15 05:53:46.667812,2022-06-14 10:35:45.419596,,,https://github.com/nix-community/rnix-parser,79522
+sshkeys,51231,Rust library for parsing OpenSSH certificates and public keys,2017-10-19 08:12:58.370867,2022-02-17 18:56:59.737184,https://docs.rs/sshkeys,,https://github.com/dnaeon/rust-sshkeys,36175
+libxlsxwriter-sys,51229,Rust binding of libxlsxwriter,2019-11-17 16:02:53.463833,2022-08-19 14:39:01.028896,,https://github.com/informationsea/xlsxwriter-rs,https://github.com/informationsea/xlsxwriter-rs,182022
+yarte_derive,51220,Procedural macro package for yarte,2019-02-18 19:16:51.316289,2022-09-07 13:24:33.101092,https://docs.rs/yarte_derive,,https://github.com/botika/yarte,115618
+rusoto_rekognition,51154,AWS SDK for Rust - Amazon Rekognition @ 2016-06-27,2017-06-21 06:28:26.818203,2022-04-25 04:48:47.685889,https://docs.rs/rusoto_rekognition,https://www.rusoto.org/,https://github.com/rusoto/rusoto,19949
+xlsxwriter,51141,"Write xlsx file with number, formula, string, formatting, autofilter, merged cells, data validati...",2019-11-17 16:05:21.831359,2022-08-19 14:40:01.439299,,https://github.com/informationsea/xlsxwriter-rs,https://github.com/informationsea/xlsxwriter-rs,182023
+portaudio-sys,51117,Bindings to PortAudio,2017-03-06 21:55:51.820585,2017-03-06 21:55:51.820585,,,,8862
+filebuffer,51015,Fast and simple file reading,2016-01-31 12:03:13.589568,2018-04-29 21:08:58.296082,https://docs.rs/filebuffer,,https://github.com/ruuda/filebuffer,4032
+strcursor,51011,Provides a string cursor type for seeking through a string whilst respecting grapheme cluster and...,2015-06-22 15:03:27.571897,2017-03-20 04:49:17.779918,https://docs.rs/strcursor/0.2.5/strcursor/index.html,,https://github.com/DanielKeep/strcursor,2446
+etcommon-block-core,51010,Core block and transaction types for Ethereum.,2017-10-19 15:52:33.491471,2019-10-25 01:29:12.773779,,,https://github.com/ethereumproject/etcommon-rs,36221
+bit-struct,50989,"Define structs which have fields which are assigned to individual bits, not bytes",2021-11-29 20:40:49.079686,2022-09-09 16:16:43.823759,,,https://github.com/andrewgazelka/bit-struct,489483
+qttypes,50960,Manually maintained buildings for Qt value types,2021-04-21 10:48:46.411129,2022-02-25 17:29:18.802718,,,https://github.com/woboq/qmetaobject-rs,387552
+ambassador,50943,Trait implementation delegation via procedural macros,2019-11-17 14:48:32.028291,2022-09-07 00:14:26.102695,,,https://github.com/hobofan/ambassador,181998
+electrsd,50939,"Utility to run a regtest electrs process, useful in integration testing environment",2021-05-19 08:01:49.059224,2022-09-06 08:56:36.720784,https://docs.rs/elecrtsd/,,https://github.com/RCasatta/electrsd,399434
+amiquip,50926,Pure Rust RabbitMQ client,2019-03-31 21:42:08.371971,2022-01-12 22:34:43.56739,,,https://github.com/jgallagher/amiquip,125051
+log-fastly,50918,Implementation of the `log` façade for Fastly Compute@Edge,2020-04-16 00:06:56.199998,2022-08-19 18:52:59.53946,,,,230650
+parsell,50868,Parsell LL(1) streaming parser combinators,2016-02-05 19:10:15.098836,2016-03-07 20:22:32.885537,http://asajeffrey.github.io/parsell,,https://github.com/asajeffrey/parsell,4089
+tower-web,50867,Web framework with a focus on removing boilerplate ,2018-03-11 17:47:04.279948,2019-04-10 20:33:46.812043,https://docs.rs/tower-web/0.3.7/tower_web/,https://github.com/carllerche/tower-web,https://github.com/carllerche/tower-web,55026
+flexstr,50835,"A flexible, simple to use, immutable, clone-efficient `String` replacement for Rust",2022-02-26 04:36:42.635263,2022-04-18 19:20:54.447072,https://docs.rs/flexstr,,https://github.com/nu11ptr/flexstr,539790
+json-structural-diff,50791,A Rust JSON structural diff library,2021-01-12 13:17:06.045188,2021-01-12 13:17:06.045188,,,https://github.com/Luni-4/json-structural-diff,340890
+tls_codec,50781,A pure Rust implementation of the TLS (de)serialization,2021-06-11 11:34:31.679088,2022-02-07 09:13:48.747326,https://docs.rs/tls_codec/,,https://github.com/RustCrypto/formats/tree/master/tls_codec,408964
+csound,50770,Raw bindings to Csound High level Rust bindings are available in the `csound` crate ,2019-01-31 17:56:02.876524,2020-03-27 22:39:21.48385,https://neithanmo.github.io/csound-rs/csound/,,https://github.com/neithanmo/csound-rs,111844
+srec,50677,Parsing and generating Motorola S-record (SRECORD/SREC) files,2019-12-03 08:03:32.072908,2020-06-26 10:07:13.477739,https://docs.rs/srec,https://github.com/The6P4C/srec,https://github.com/The6P4C/srec.git,186078
+async-once-cell,50676,Async single assignment cells and lazy values.,2021-08-08 22:57:24.550974,2022-06-27 23:34:25.085384,https://docs.rs/async_once_cell,,https://github.com/danieldg/async-once-cell,433382
+sanakirja,50637,"Copy-on-write datastructures, storable on disk (or elsewhere) with a stable format.",2016-02-21 11:10:07.781112,2022-01-01 11:11:48.707083,https://docs.rs/sanakirja,,https://nest.pijul.com/pijul/sanakirja,4235
+include-flate-codegen,50631,Macro codegen for the include-flate crate,2019-08-13 15:10:18.588475,2021-11-19 01:42:10.742595,,https://github.com/SOF3/include-flate,https://github.com/SOF3/include-flate.git,156458
+rsass,50623,Sass implementation in pure rust (not complete yet),2017-01-22 22:17:59.060337,2022-09-18 19:29:15.931093,https://docs.rs/rsass,,https://github.com/kaj/rsass,8184
+superlu-sys,50615,The package provides bindings to SuperLU.,2015-05-16 19:13:18.342138,2017-11-18 05:50:36.618713,https://docs.rs/superlu-sys,https://github.com/stainless-steel/superlu-sys,https://github.com/stainless-steel/superlu-sys,2125
+yarte,50614,"Type-safe, compiled Handlebars",2019-02-18 19:17:30.486896,2022-09-07 13:25:00.074995,https://docs.rs/yarte,,https://github.com/botika/yarte,115619

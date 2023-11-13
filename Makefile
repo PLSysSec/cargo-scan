@@ -45,16 +45,16 @@ medium: top100 mozilla
 large: top1000 top10000
 
 temp-test:
-	time $(SCAN_ALL) data/crate-lists/batched/11.csv temp-11 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/12.csv temp-12 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/13.csv temp-13 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/14.csv temp-14 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/15.csv temp-15 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/16.csv temp-16 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/17.csv temp-17 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/18.csv temp-18 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/19.csv temp-19 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/20.csv temp-20 -n 64
+	time $(SCAN_ALL) data/crate-lists/batched/61.csv temp-61 -n 64
+	time $(SCAN_ALL) data/crate-lists/batched/62.csv temp-62 -n 64
+	time $(SCAN_ALL) data/crate-lists/batched/63.csv temp-63 -n 64
+	time $(SCAN_ALL) data/crate-lists/batched/64.csv temp-64 -n 64
+	time $(SCAN_ALL) data/crate-lists/batched/65.csv temp-65 -n 64
+	time $(SCAN_ALL) data/crate-lists/batched/66.csv temp-66 -n 64
+	time $(SCAN_ALL) data/crate-lists/batched/67.csv temp-67 -n 64
+	time $(SCAN_ALL) data/crate-lists/batched/68.csv temp-68 -n 64
+	time $(SCAN_ALL) data/crate-lists/batched/69.csv temp-69 -n 64
+	time $(SCAN_ALL) data/crate-lists/batched/70.csv temp-70 -n 64
 
 clean:
 	# Warning: this deletes all downloaded packages and experiment results not under version control!

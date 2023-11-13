@@ -1,0 +1,101 @@
+name,downloads,description,created_at,updated_at,documentation,homepage,repository,id
+sgxs-loaders,46654,Platform-specific loaders for SGX enclaves.  The following loaders are supported: * SGX device (L...,2018-11-19 10:12:49.193796,2022-07-29 21:53:34.902685,https://edp.fortanix.com/docs/api/sgxs_loaders/,https://edp.fortanix.com/,https://github.com/fortanix/rust-sgx,97586
+aws-smithy-protocol-test,46646,A collection of library functions to validate HTTP requests against Smithy protocol tests.,2021-10-20 22:40:02.717792,2022-09-20 12:46:26.14523,,,https://github.com/awslabs/smithy-rs,468154
+sn_dbc,46594,Safe Network DBC,2021-05-11 18:39:46.516366,2022-09-23 13:00:30.628001,https://docs.rs/sn_dbc,,https://github.com/maidsafe/sn_dbc,396189
+wfd,46587,A simple to use abstraction over the Open and Save dialogs in the Windows API,2019-11-17 20:26:34.52351,2021-01-24 22:11:49.784234,,,https://www.github.com/ben-wallis/wfd,182068
+deno_net,46587,Networking for Deno,2021-06-28 23:42:19.256605,2022-09-22 18:12:09.977971,,,https://github.com/denoland/deno,415961
+chamkho,46579,"Khmer, Lao, Myanmar, and Thai word segmentation/breaking library and command line",2015-03-20 14:53:14.615306,2022-09-14 15:57:54.05928,https://github.com/veer66/chamkho/blob/master/README.md,https://github.com/veer66/chamkho,https://github.com/veer66/chamkho,1622
+ntex-service,46578,ntex service,2020-03-31 04:31:24.996545,2022-07-07 15:57:28.042277,https://docs.rs/ntex-service/,https://ntex.rs,https://github.com/ntex-rs/ntex.git,224650
+rust-lapper,46565,A fast and easy interval overlap library,2019-08-30 02:10:20.851524,2022-09-12 22:23:10.320436,https://docs.rs/rust-lapper,,https://github.com/sstadick/rust-lapper,160783
+icu_locid,46540,API for managing Unicode Language and Locale Identifiers,2020-10-15 15:25:36.105795,2022-08-05 00:41:21.607071,,,https://github.com/unicode-org/icu4x,300033
+unic-ucd,46522,UNIC — Unicode Character Database,2017-06-20 08:46:54.479933,2019-03-03 05:12:56.218622,,,https://github.com/open-i18n/rust-unic/,19656
+jsonrpc_client,46469,"An async, macro-driven JSON-RPC client with pluggable backends.",2018-08-24 07:10:57.206866,2021-08-26 01:33:17.079641,,,https://github.com/thomaseizinger/rust-jsonrpc-client,81012
+flamegraph,46448,"A simple cargo subcommand for generating flamegraphs, using inferno under the hood",2019-03-07 19:43:46.841546,2022-07-25 08:57:07.585829,,,https://github.com/flamegraph-rs/flamegraph,119364
+aesm-client,46425,"RPC client for Intel SGX AESM (Architectural Enclave Service Manager).  With this client, applica...",2018-11-19 10:10:51.149477,2022-07-29 21:38:43.385332,https://edp.fortanix.com/docs/api/aesm_client/,https://edp.fortanix.com/,https://github.com/fortanix/rust-sgx,97585
+crc64fast,46411,SIMD accelerated CRC64 calculation,2019-11-20 08:25:56.883456,2020-05-02 10:41:41.694979,,,https://github.com/tikv/crc64fast,182926
+serde_closure,46377,Serializable and debuggable closures.  This library provides macros that wrap closures to make th...,2018-07-17 21:20:57.150262,2020-08-05 08:08:34.890934,https://docs.rs/serde_closure,https://github.com/alecmocatta/serde_closure,https://github.com/alecmocatta/serde_closure,74789
+cargo-project,46372,Library to retrieve information about a Cargo project,2018-09-17 00:13:35.903123,2022-07-06 13:37:28.768188,https://docs.rs/cargo-project,,https://github.com/japaric/cargo-project,85051
+mp3-metadata,46360,Metadata parser for MP3 files,2016-08-30 21:47:14.555803,2022-07-31 12:53:05.05392,,,https://github.com/GuillaumeGomez/mp3-metadata,6191
+itoap,46349,Even faster functions for printing integers with decimal format,2020-07-08 13:09:24.207712,2021-02-18 16:50:27.920486,,https://github.com/Kogia-sima/itoap,https://github.com/Kogia-sima/itoap,262545
+embedded-storage,46343,A Storage Abstraction Layer for Embedded Systems,2021-05-18 10:03:41.891399,2022-02-07 10:35:50.414323,https://docs.rs/embedded-storage,https://github.com/rust-embedded-community/embedded-storage,https://github.com/rust-embedded-community/embedded-storage,398928
+queues,46334,Efficient FIFO Queue data structures,2017-09-22 13:31:34.317833,2019-01-16 12:02:28.978633,,,https://gitlab.com/rust-algorithms/queues,32637
+qlog,46331,qlog data model for QUIC and HTTP/3,2019-12-11 18:09:12.587755,2022-08-22 14:25:02.441375,,,https://github.com/cloudflare/quiche,188485
+seccomp-sys,46326,low-level bindings to libseccomp,2016-02-25 16:19:59.586874,2019-09-22 14:07:23.962048,,,https://github.com/polachok/seccomp-sys,4281
+interledger-settlement,46307,Settlement-related components for Interledger.rs,2019-09-10 18:42:26.671592,2019-11-11 11:56:19.882639,,,https://github.com/interledger-rs/interledger-rs,163910
+base62,46299,A Base62 encoding/decoding library,2015-10-13 12:48:26.376761,2022-09-13 16:32:08.770101,https://docs.rs/base62/,https://github.com/fbernier/base62,https://github.com/fbernier/base62,3212
+twilight-http,46295,Discord REST API client for the Twilight ecosystem.,2020-08-30 02:53:27.313753,2022-09-16 23:15:57.246548,https://docs.rs/twilight-http,https://twilight.rs/chapter_1_crates/section_2_http.html,https://github.com/twilight-rs/twilight.git,282536
+permutate,46288,Generic permutator that permutates singular and multiple lists,2016-09-07 00:27:59.283214,2017-06-03 14:21:34.35945,https://docs.rs/permutate/0.1.0/permutate/,,https://github.com/mmstick/permutate,6269
+puruspe,46284,Pure Rust Special function library,2020-02-28 08:10:04.345413,2022-05-02 06:30:18.952149,,,https://github.com/Axect/puruspe,213463
+ruma-api-macros,46205,Deprecated: crate merged into ruma-macros,2017-07-07 08:27:23.03284,2022-05-04 13:15:38.609414,,https://www.ruma.io/,https://github.com/ruma/ruma,22335
+utcnow,46195,Get the current unixtime in a no-std context,2022-07-23 03:27:28.847324,2022-08-23 01:09:16.985579,,,https://github.com/Kijewski/utcnow,631266
+subslice,46134,Fast subslice search,2018-07-23 23:39:19.321075,2021-07-12 05:56:13.456101,,,https://github.com/strake/subslice.rs,75693
+hex-slice,46118,Extends the std::fmt::*Hex traits to slices,2016-05-03 11:09:01.24759,2018-03-02 22:35:51.808542,https://cstorey.github.io/hex-slice/hex_slice/index.html,,https://github.com/cstorey/hex-slice/,4959
+bear-lib-terminal,46095,BearLibTerminal FFI for Rust,2015-12-29 17:56:52.276351,2019-01-15 16:03:22.117273,https://rawcdn.githack.com/nabijaczleweli/BearLibTerminal.rs/doc/bear_lib_terminal/index.html,,https://github.com/nabijaczleweli/BearLibTerminal.rs,3787
+serde-diff,46078,A small helper to serialize the diff of two structs of the same type and apply those differences ...,2019-11-09 10:07:54.818134,2021-01-12 10:01:39.79992,,,https://github.com/amethyst/serde-diff,179688
+num-macros,46054,deprecated -- use num-derive,2015-05-02 01:01:35.721522,2017-12-14 07:46:37.17684,http://rust-num.github.io/num,https://github.com/rust-num/num,https://github.com/rust-num/num,2001
+ordered-map,46043,"A HashMap, with the capability of accessing the keys and values in order",2020-01-30 04:40:30.080891,2021-02-21 09:09:44.508446,,https://github.com/qwfy/ordered-map,https://github.com/qwfy/ordered-map.git,203208
+lightning_encoding,46017,Network encoding for lightning network peer protocol data types,2021-01-23 23:24:24.934748,2022-06-30 18:05:05.590046,,https://lnp-bp.org,https://github.com/LNP-BP/lnp-core,345826
+pest_vm,46006,pest grammar virtual machine,2018-09-30 03:34:14.879091,2022-09-12 05:54:23.123654,https://docs.rs/pest,https://pest-parser.github.io/,https://github.com/pest-parser/pest,87223
+elastic_types,46001,A strongly-typed implementation of Elasticsearch core types and Mapping API.,2016-04-29 04:00:53.375689,2019-04-23 00:31:14.444566,https://docs.rs/elastic_types/,,https://github.com/elastic-rs/elastic,4898
+serde-diff-derive,45996,Derives serde_diff::SerdeDiff,2019-11-09 10:04:23.433268,2021-01-02 03:07:51.945332,,,https://github.com/amethyst/serde-diff,179686
+poldercast,45982,Peer to Peer topology management ,2019-02-20 04:54:12.472842,2022-01-27 11:01:01.389048,,https://github.com/primetype/poldercast#README.md,https://github.com/primetype/poldercast,115900
+faux,45972,A library to mock structs,2020-01-06 22:03:18.26309,2022-09-19 04:35:58.102171,,https://github.com/nrxus/faux,https://github.com/nrxus/faux,195952
+helloworld,45972,hello world program,2019-09-18 02:43:28.286015,2019-09-18 02:43:28.286015,,,,165616
+md5-asm,45969,Assembly implementation of MD5 compression function,2017-05-07 14:12:22.902524,2021-02-09 12:15:38.304537,https://docs.rs/md5-asm,,https://github.com/RustCrypto/asm-hashes,13584
+ring-compat,45951,Compatibility crate for using RustCrypto's traits with the cryptographic algorithm implementation...,2020-09-29 21:31:58.834889,2022-03-12 19:03:30.641605,https://docs.rs/ring-compat,,https://github.com/RustCrypto/ring-compat,294350
+linfa,45929,A Machine Learning framework for Rust,2018-04-05 07:23:01.465608,2022-06-15 04:42:28.293723,,,https://github.com/rust-ml/linfa,59039
+rust-releases-rust-changelog,45857,RustChangelog source implementation for rust-releasess,2021-04-10 21:47:48.667772,2022-07-05 12:31:17.868036,https://docs.rs/rust-releases-rust-changelog,,https://github.com/foresterre/rust-releases,381809
+rust-releases-core,45856,Base traits and definitions for rust-releases,2021-04-10 21:46:14.115892,2022-07-05 12:30:38.826344,https://docs.rs/rust-releases-core,,https://github.com/foresterre/rust-releases,381806
+pin-convert,45855,Traits for converting to `Pin` variants. ,2019-06-03 19:37:12.624287,2019-06-03 19:37:12.624287,https://docs.rs/pin-convert/0.1.0/pin-convert,https://github.com/carllerche/pin-convert,,138734
+faux_macros,45843,"Implementations for #[create], #[methods], when!",2020-01-06 21:59:31.743969,2022-09-19 04:35:39.121359,,https://github.com/nrxus/faux,https://github.com/nrxus/faux,195950
+rust-releases-io,45833,I/O helper crate for rust-releases,2021-04-10 21:46:30.41875,2022-07-05 12:30:48.404878,https://docs.rs/rust-releases-channel-manifests,,https://github.com/foresterre/rust-releases,381807
+jlink_rtt,45833,Implements the JLINK RTT protocol,2018-09-04 15:01:55.296074,2020-05-03 00:28:07.595585,,,https://github.com/wez/jlink_rtt,82923
+advent-of-code,45819,Solutions to Advent of Code,2020-09-10 20:07:00.422103,2022-09-15 18:16:26.908084,https://docs.rs/advent-of-code/2019.12.455/advent_of_code/,https://github.com/fornwall/advent-of-code,https://github.com/fornwall/advent-of-code,287145
+tide-websockets,45810,tide websockets,2020-12-04 23:35:36.770805,2021-05-23 23:37:32.01573,https://docs.rs/tide-websockets,,https://github.com/http-rs/tide-websockets,319761
+slack-hook2,45780,A rust crate for sending messages to Slack via webhooks.,2020-02-19 14:15:38.151578,2020-03-05 13:15:25.963829,,https://github.com/clux/rust-slack,https://github.com/clux/rust-slack,210590
+gpgme-sys,45769,Raw bindings for gpgme,2015-06-11 04:21:47.703459,2021-08-07 07:46:19.035502,https://docs.rs/gpgme-sys,,https://github.com/gpg-rs/gpgme/gpgme-sys,2355
+litemap,45754,"A key-value Map implementation based on a flat, sorted Vec.",2021-02-23 01:00:09.087357,2022-08-04 23:37:28.379851,https://docs.rs/litemap,,https://github.com/unicode-org/icu4x,359238
+spin_on,45730,"A simple, inefficient Future executor",2020-09-08 14:00:16.257706,2020-10-10 19:59:00.285507,,,,286148
+ipmpsc,45721,"Inter-process Multiple Producer, Single Consumer Channels",2019-06-18 18:18:06.5073,2021-05-24 17:53:53.864863,https://docs.rs/ipmpsc/,,https://github.com/dicej/ipmpsc,141987
+codepage-437,45710,Codepage 437 transcoding for Rust,2018-02-24 11:51:40.483159,2018-02-24 11:51:40.483159,https://cdn.rawgit.com/nabijaczleweli/codepage-437/doc/codepage_437/index.html,,https://github.com/nabijaczleweli/codepage-437,52628
+rinfluxdb,45687,A library for querying and posting data to InfluxDB,2021-07-14 21:27:19.097935,2021-11-28 00:01:52.441511,,,https://gitlab.com/claudiomattera/rinfluxdb,422886
+actix-web-validator,45680,Validation mechanism for actix-web,2020-02-17 17:27:12.221972,2022-08-25 12:34:23.362303,https://docs.rs/actix-web-validator/,,https://github.com/rambler-digital-solutions/actix-web-validator,210076
+clap_derive-v3,45649,"Parse command line argument by defining a struct, derive crate.",2020-03-29 20:21:29.97855,2020-03-29 20:21:29.97855,https://docs.rs/clap_derive-v3,https://clap.rs/,https://github.com/poma/clap/tree/master/clap_derive,224191
+runtime,45619,[deprecated] Empowering everyone to build asynchronous software.,2019-01-22 14:21:33.816172,2019-10-29 19:46:28.408261,https://docs.rs/runtime,https://github.com/rustasync/runtime,https://github.com/rustasync/runtime,110019
+deno_webgpu,45594,WebGPU implementation for Deno,2021-03-02 20:35:16.176008,2022-09-22 18:11:15.646083,,,https://github.com/gfx-rs/wgpu,362862
+rweb-openapi,45588,Rust bindings for openapi schemas,2020-01-22 10:50:57.093978,2021-07-25 03:26:37.952405,,https://github.com/kdy1/openapi,https://github.com/kdy1/openapi,201000
+pix,45572,Pixel / raster image library,2019-04-09 02:45:20.853773,2022-06-01 14:22:32.040834,https://docs.rs/pix,https://github.com/DougLau/pix,https://github.com/DougLau/pix,126727
+executor-macros,45569,Macros for executor,2020-02-03 21:36:49.897262,2020-04-13 05:20:02.313395,,,,204574
+icu_provider,45561,Trait and struct definitions for the ICU data provider,2020-10-15 15:31:04.542638,2022-08-05 00:42:07.592328,,,https://github.com/unicode-org/icu4x,300037
+piston3d-cam,45547,A library for 3D camera and navigation,2015-01-26 22:18:33.550071,2019-05-24 12:04:07.135864,,https://github.com/pistondevelopers/cam,https://github.com/pistondevelopers/cam.git,1303
+relm-derive,45495,Custom derive required by the relm crate.,2017-03-20 03:42:02.44144,2022-02-08 23:10:16.200796,https://docs.rs/relm-derive/,https://relm.antoyo.xyz/,https://github.com/antoyo/relm,9058
+clap-v3,45484,"A simple to use, efficient, and full-featured Command Line Argument Parser",2020-03-29 20:28:10.700261,2020-03-29 20:28:10.700261,https://docs.rs/clap-v3/,https://clap.rs/,https://github.com/poma/clap,224192
+tts,45464,High-level Text-To-Speech (TTS) interface,2018-12-30 20:42:29.72043,2022-09-21 21:54:15.055898,,,https://github.com/ndarilek/tts-rs,104616
+mongoc-sys,45448,Sys package with installer and bindings for mongoc,2015-12-19 20:00:24.530009,2022-07-02 08:23:29.297102,,,https://github.com/thijsc/mongo-rust-driver,3706
+tojson_macros,45440,A simple syntax extension generates default ToJson impl,2015-04-19 11:27:53.258835,2017-02-21 13:49:10.361269,,https://github.com/sunng87/tojson_macros,https://github.com/sunng87/tojson_macros,1897
+exonum_sodiumoxide,45439,Fast cryptographic library for Rust (bindings to libsodium),2017-09-14 07:10:15.952034,2022-01-23 13:01:07.602484,https://docs.rs/exonum_sodiumoxide,,https://github.com/exonum/exonum_sodiumoxide,31690
+resize-slice,45432,Shrink slice references,2015-07-21 04:09:38.243507,2018-05-13 01:38:58.283215,http://arcnmx.github.io/resize-slice-rs/resize_slice/,,https://github.com/arcnmx/resize-slice-rs,2640
+bmp,45413,Small library for reading and writing BMP images in Rust.,2014-11-20 22:27:26.7224,2019-08-16 09:25:01.80287,https://docs.rs/bmp,https://github.com/sondrele/rust-bmp,https://github.com/sondrele/rust-bmp.git,172
+ws2812-timer-delay,45378,Timer-based driver for ws2812 leds,2019-03-05 10:30:03.383459,2019-11-29 05:54:32.739315,https://docs.rs/crate/ws2812-timer-delay,,https://github.com/smart-leds-rs/ws2812-timer-delay-rs,118848
+git-delta,45354,A syntax-highlighting pager for git,2019-09-30 20:37:54.987411,2022-08-31 21:00:11.871638,https://github.com/dandavison/delta,https://github.com/dandavison/delta,https://github.com/dandavison/delta,168909
+lib3h_sodium,45346,lib3h libsodium wrapper providing memory secure api access,2019-05-24 15:31:58.573076,2020-03-10 19:39:33.097838,https://docs.rs/lib3h_sodium,,https://github.com/holochain/lib3h,136689
+lightning_encoding_derive,45335,Derive macros for lightning network peer protocol encodings,2021-01-23 23:41:57.709413,2022-06-30 18:04:44.794139,,https://github.com/internet2-org,https://github.com/internet2-org/internet2,345829
+async-graphql-tide,45333,async-graphql for tide,2020-04-26 15:19:45.213826,2022-09-09 12:42:13.390619,https://docs.rs/async-graphql-tide/,https://github.com/async-graphql/async-graphql,https://github.com/async-graphql/async-graphql,234297
+exonum_libsodium-sys,45325,FFI binding to libsodium,2017-09-14 07:04:25.236052,2022-01-23 13:00:20.819821,https://dnaq.github.io/sodiumoxide,,https://github.com/exonum/exonum_sodiumoxide.git,31689
+nu-json,45308,Fork of serde-hjson,2020-11-24 19:59:12.22679,2022-09-09 00:25:53.263118,,,https://github.com/nushell/nushell/tree/main/crates/nu-json,315939
+shuteye,45302,shuteye provides for high-resolution sleep in rust. Let your code catch some shuteye,2015-10-24 23:24:29.45761,2017-11-18 06:13:23.711926,http://docs.rs/shuteye,https://github.com/brayniac/shuteye,https://github.com/brayniac/shuteye,3299
+bbs,45248,The BBS+ signature scheme,2020-04-20 16:03:54.025784,2020-07-07 16:32:57.115211,https://docs.rs/bbs,,https://github.com/hyperledger/ursa,232254
+futures-state-stream,45235,A version of the futures crate's Stream which returns state on completion,2016-12-26 20:21:55.314998,2017-09-30 21:20:47.55584,https://docs.rs/futures-state-stream/0.1.1/futures_state_stream,,https://github.com/sfackler/futures-state-stream,7786
+amq-proto,45169,AMQP/RabbitMQ protocol implementation,2017-03-03 14:29:28.134309,2017-03-03 14:29:28.134309,,,https://github.com/Antti/rust-amq-proto,8789
+cam-geom,45151,Geometric models of cameras for photogrammetry,2020-02-27 22:48:06.957382,2022-05-02 16:28:47.376203,,,https://github.com/strawlab/cam-geom,213286
+heatmap,45143,time-series of histograms with precision guarantees,2015-09-24 06:05:55.437227,2017-11-18 06:14:43.116246,https://docs.rs/heatmap,https://github.com/brayniac/heatmap,https://github.com/brayniac/heatmap,3098
+zcash_encoding,45143,Binary encodings used throughout the Zcash ecosystem.,2021-08-31 19:50:31.904424,2022-05-10 23:57:09.54953,,https://github.com/zcash/librustzcash,https://github.com/zcash/librustzcash,445270
+ncollide_pipeline,45117,DEPRECATED: USE ncollide2d OR ncollide3D INSTEAD. 2 and 3-dimensional collision detection library...,2015-06-06 11:27:27.610391,2019-04-27 10:19:07.677011,http://ncollide.org/rustdoc/ncollide_pipeline,http://ncollide.org,https://github.com/sebcrozet/ncollide,2320
+gvr-sys,45094,Rust bindings for Google VR SDK,2017-03-03 17:33:26.995803,2020-01-29 08:39:41.322173,,https://github.com/MortimerGoro/gvr-sys,https://github.com/MortimerGoro/gvr-sys,8792
+wasm-bindgen-anyref-xform,45079,Internal anyref transformations for wasm-bindgen ,2019-03-04 17:55:16.11689,2020-05-01 15:35:01.85501,https://docs.rs/wasm-bindgen-anyref-xform,https://rustwasm.github.io/wasm-bindgen/,https://github.com/rustwasm/wasm-bindgen/tree/master/crates/anyref-xform,118685
+spl-token-cli,45077,SPL-Token Command-line Utility,2020-08-13 04:48:27.996742,2022-08-25 23:33:36.357274,,https://spl.solana.com/token,https://github.com/solana-labs/solana-program-library,276029
+speedy,45068,A fast binary serialization framework,2017-12-06 21:31:32.039164,2022-08-25 06:47:26.227556,https://docs.rs/speedy/*/speedy/,https://github.com/koute/speedy,https://github.com/koute/speedy,41989
+env-test-util,45054,Just a simple tool to manipulate environment variable in tests.,2020-11-05 07:19:24.212352,2020-11-05 12:08:53.631253,,,https://github.com/jdrouet/env-test-util,308812
+cuda-driver-sys,45034,Rust binding to CUDA Driver APIs,2019-12-30 14:26:06.139598,2020-05-03 19:29:42.783316,https://docs.rs/cuda-runtime-sys/,,https://github.com/rust-cuda/cuda-sys,193519
+sauron,45031,A versatile web framework and library for building client-side and/or server-side web applications,2019-04-15 15:22:51.298986,2022-09-21 03:43:07.157253,https://docs.rs/sauron,,https://github.com/ivanceras/sauron,128130
+oci-spec,45022,Open Container Initiative Specifictions in Rust,2019-05-28 14:24:53.108448,2022-09-06 11:57:09.167509,https://docs.rs/oci-spec,https://github.com/containers/oci-spec-rs,https://github.com/containers/oci-spec-rs,137523

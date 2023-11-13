@@ -1,0 +1,101 @@
+name,downloads,description,created_at,updated_at,documentation,homepage,repository,id
+read_token,48333,A simple library to read tokens using look ahead,2015-02-07 01:18:34.700653,2019-05-15 17:02:41.926265,,https://github.com/pistondevelopers/read_token,https://github.com/pistondevelopers/read_token.git,1356
+oasis-borsh-derive-internal,48288,Binary Object Representation Serializer for Hashing ,2020-01-15 19:08:47.400602,2021-01-19 22:12:51.763714,,http://borsh.io,https://github.com/nearprotocol/borsh,198812
+rustacuda_derive,48265,Custom Derive Macro for RustaCUDA,2018-12-01 21:24:29.619037,2020-02-29 17:07:04.905616,,,https://github.com/bheisler/RustaCUDA,99575
+ckb-logger,48252,CKB logging facade.,2020-09-29 05:54:31.700636,2022-09-07 07:08:17.876729,,https://github.com/nervosnetwork/ckb,https://github.com/nervosnetwork/ckb,293978
+intel-mkl-tool,48246,Seek Intel(R) MKL library from system,2019-12-14 17:26:17.845187,2022-09-13 13:31:41.848432,,,https://github.com/rust-math/intel-mkl-src,189394
+femtovg,48228,Antialiased 2D vector drawing library,2020-09-28 16:31:11.843694,2022-05-23 07:26:20.062981,,,https://github.com/femtovg/femtovg,293756
+markup,48190,"A blazing fast, type-safe template engine for Rust.",2018-12-03 08:51:35.952755,2022-06-27 11:13:26.348377,https://docs.rs/markup,https://github.com/utkarshkukreti/markup.rs,https://github.com/utkarshkukreti/markup.rs,99803
+rolling-file,48188,A rolling file appender with customizable rolling conditions.,2021-03-31 16:26:23.769886,2021-03-31 16:26:23.769886,https://docs.rs/rolling-file/,https://github.com/Axcient/rolling-file-rs,https://github.com/Axcient/rolling-file-rs,376211
+bracket-noise,48187,Rust port of Auburn's amazing FastNoise library. Part of the bracket-lib family.,2020-02-21 19:25:22.379517,2021-02-10 19:30:59.527085,,https://github.com/thebracket/bracket-lib,https://github.com/thebracket/bracket-lib,211284
+async-ready,48170,Async readiness traits.,2019-03-08 00:28:50.262903,2019-05-15 17:47:17.124599,https://docs.rs/async-ready,,https://github.com/rustasync/async-ready,119399
+bracket-algorithm-traits,48155,"Traits required for the bracket-* crates. Adapt your maps to the traits with Algorithm2D, Algorit...",2020-02-21 18:12:37.725318,2021-02-10 19:59:12.664451,,https://github.com/thebracket/bracket-lib,https://github.com/thebracket/bracket-lib,211255
+c-ares-resolver,48137,"An asynchronous DNS resolver, backed by c-ares. ",2016-10-17 13:59:01.936665,2021-11-06 19:15:47.613685,https://docs.rs/c-ares-resolver,,https://github.com/dimbleby/c-ares-resolver,6883
+uefi-services,48131,Higher-level utilities for uefi-rs,2019-09-26 10:24:48.866979,2022-09-09 16:46:57.387163,,,https://github.com/rust-osdev/uefi-rs,167800
+uhttp_sse,48131,"Zero-copy, zero-allocation HTTP Server-Sent Events protocol",2017-01-23 01:31:41.041707,2017-02-23 00:52:51.319635,https://docs.rs/uhttp_sse,,https://github.com/kchmck/uhttp_sse.rs,8188
+azure_sdk_core,48115,Rust wrappers around Microsoft Azure REST APIs - Core crate,2018-02-09 12:23:11.218283,2020-09-29 17:55:29.286225,http://mindflavor.github.io/AzureSDKForRust/azure_sdk_for_rust/index.html,https://github.com/MindFlavor/AzureSDKForRust,https://github.com/MindFlavor/AzureSDKForRust,50349
+deno_tls,48110,TLS for Deno,2021-08-10 11:27:02.515236,2022-09-22 18:09:49.424057,,,https://github.com/denoland/deno,434190
+fuser,48110,Filesystem in Userspace (FUSE) for Rust,2020-06-19 06:08:48.399994,2022-08-25 02:37:20.767015,https://docs.rs/fuser,https://github.com/cberner/fuser,https://github.com/cberner/fuser,255595
+clams-derive,48083,Clams help building shells,2018-03-31 14:35:50.230259,2019-06-06 10:49:27.349971,,,https://github.com/lukaspustina/clams-derive.git,58336
+try_match,48081,An expression macro to match a pattern and return the bound variables in `Result`. ,2019-10-20 09:01:41.392484,2021-10-28 03:30:58.693418,,,https://github.com/yvt/try_match-rs,174180
+fil_actor_bundler,48069,An IPLD CAR bundling tool for Wasm bytecode,2022-03-02 20:05:40.111016,2022-08-29 15:40:55.419715,,,https://github.com/filecoin-project/builtin-actors-bundler,542526
+rbatis-core,48025,"Core of rbatis, the rust SQL toolkit. Not intended to be used directly.",2020-06-25 05:58:01.340887,2022-07-07 15:00:03.687466,https://rbatis.github.io/rbatis.io/#/en/,https://rbatis.github.io/rbatis.io/#/en/,https://github.com/rbatis/rbatis,257776
+tokio-pipe,47999,Asynchronous pipe(2) library using tokio.,2020-06-21 06:58:40.899528,2022-06-26 15:00:08.643118,,,https://github.com/yskszk63/tokio-pipe,256233
+worker-macros,47990,Macros to support the `worker` crate and remove FFI boilerplate / conversion from user code.,2021-09-02 16:30:24.82566,2022-08-31 20:11:37.54477,,,https://github.com/cloudflare/workers-rs/tree/main/worker-macros,446064
+yoke-derive,47980,Custom derive for the yoke crate,2021-07-02 19:25:03.408101,2022-06-01 16:54:01.645173,,,https://github.com/unicode-org/icu4x,417987
+derp,47976,DER Parser (and Writer),2017-07-01 17:08:26.017983,2020-01-04 14:52:56.920259,https://docs.rs/derp,https://github.com/heartsucker/derp,https://github.com/heartsucker/derp,21477
+worker-sys,47956,Low-level extern definitions / FFI bindings to the Cloudflare Workers JS Runtime.,2021-09-02 16:29:16.29704,2022-08-31 20:09:26.169573,,,https://github.com/cloudflare/workers-rs/tree/main/worker-sys,446063
+ntdll,47952,bindings to `ntdll.dll`.,2018-08-08 10:18:28.37888,2018-08-09 01:08:07.326812,https://docs.rs/ntdll,,https://github.com/hinaria/ntdll,78337
+stm32l4,47947,Device support crates for STM32L4 devices,2018-05-07 16:08:52.016162,2022-07-04 20:02:33.4149,,,https://github.com/stm32-rs/stm32-rs,64153
+inquerest,47945,A complex url parameter parser for rest filter queries,2015-11-06 22:45:20.890148,2020-08-07 12:03:41.758533,https://docs.rs/inquerest,,https://github.com/ivanceras/inquerest,3377
+metaflac,47937,A library for reading and writing FLAC metadata.,2015-04-13 01:42:43.554435,2021-10-07 15:23:09.730973,https://jameshurst.github.io/rust-metaflac,https://github.com/jameshurst/rust-metaflac,https://github.com/jameshurst/rust-metaflac,1855
+oasis-borsh,47937,Binary Object Representation Serializer for Hashing ,2020-01-15 19:24:27.804471,2021-01-19 22:29:10.532178,,http://borsh.io,https://github.com/nearprotocol/borsh,198816
+interledger-service,47925,The core abstraction for the Interledger.rs implementation,2019-03-11 05:16:29.357453,2019-11-11 11:48:04.622895,,,https://github.com/interledger-rs/interledger-rs,120005
+cio-api,47907,Helper functions and types for doing the activities of a CIO,2020-07-09 21:57:01.547121,2020-09-03 01:37:18.8425,https://docs.rs/cio-api,,https://github.com/oxidecomputer/cio,263015
+css-color-parser2,47852,Easy-to-use Rust parser for CSS3 color strings,2020-03-17 13:03:10.325981,2020-03-17 13:03:10.325981,https://7thsigil.github.io/css-color-parser-rs/css_color_parser/index.html,https://github.com/7thSigil/css-color-parser-rs,https://github.com/7thSigil/css-color-parser-rs,219799
+defmt-decoder,47846,Decodes defmt log frames,2020-11-11 16:08:19.639259,2022-08-09 10:03:17.126948,,,https://github.com/knurling-rs/defmt,311277
+evercrypt-sys,47827,FFI binding to HACL/Evercrypt,2020-09-26 10:52:14.041546,2022-02-24 15:40:54.10458,https://www.franziskuskiefer.de/evercrypt-rust,,https://github.com/franziskuskiefer/evercrypt-rust/,293120
+vorbis-sys,47808,FFI for the libvorbis library,2014-11-12 16:56:36.831989,2021-01-06 15:16:21.639757,,,,64
+blurdroid,47798,Bluetooth lib for Rust using Android's bluedroid,2016-08-15 09:13:52.382035,2018-03-29 08:50:29.144829,,,https://github.com/szeged/blurdroid,5975
+amethyst_renderer,47766,High-level rendering engine with multiple backends,2016-01-27 22:06:19.130921,2019-01-10 18:29:06.649087,https://www.amethyst.rs/doc/master/doc/amethyst_renderer/,https://www.amethyst.rs/,https://github.com/amethyst/amethyst,4004
+delaunator,47765,A very fast 2D Delaunay triangulation library.,2018-09-14 18:59:21.700678,2021-10-31 08:27:26.282963,https://docs.rs/delaunator,,https://github.com/mourner/delaunator-rs,84746
+evercrypt,47732,Crypto library using formally verified code from HACL/Evercrypt,2020-09-26 11:07:50.617446,2022-02-24 15:41:40.001419,https://www.franziskuskiefer.de/evercrypt-rust,,https://github.com/franziskuskiefer/evercrypt-rust/,293124
+try_match_inner,47724,The internal procedural macro of `try_match` ,2019-10-20 09:00:57.819312,2021-10-28 03:30:36.875905,,,https://github.com/yvt/try_match-rs,174179
+rust-releases,47717,"Find, index and obtain all officially available Rust releases",2021-02-22 14:40:09.737773,2022-07-05 12:32:18.00737,https://docs.rs/rust-releases,,https://github.com/foresterre/rust-releases,359022
+nu-value-ext,47693,Extension traits for values in Nushell,2019-12-17 17:38:51.89439,2022-02-08 10:16:43.167497,,,,190058
+fly-accept-encoding,47692,Determine the best encoding possible from an Accept-Encoding HTTP header.,2020-07-02 12:31:23.884835,2022-05-18 13:45:37.993321,https://docs.rs/fly-accept-encoding,,https://github.com/superfly/accept-encoding,260616
+eth2_hashing,47691,Hashing primitives used in Ethereum 2.0,2019-07-31 01:20:26.201976,2021-07-29 15:43:50.126813,,,,153108
+clocksource,47678,clocksource provides TSC access with transparent fallback to clock_gettime(),2016-08-27 05:42:47.421579,2019-06-27 16:32:26.630487,https://docs.rs/clocksource,https://github.com/brayniac/clocksource,https://github.com/brayniac/clocksource,6135
+opaque_typedef_macros,47667,Supports defining opaque typedefs,2017-12-05 16:28:09.216943,2019-03-31 08:06:17.103199,,,https://github.com/lo48576/opaque_typedef,41841
+ntex-rt,47631,ntex runtime,2020-03-31 04:21:20.343017,2022-09-20 06:02:38.743917,https://docs.rs/ntex-rt/,https://ntex.rs,https://github.com/ntex-rs/ntex.git,224646
+two-rusty-forks-macro,47626,Proc-macro library for rusty-fork. ,2020-08-30 21:25:50.610817,2020-08-30 23:11:02.422094,https://docs.rs/two-rusty-forks-macro,,https://github.com/altsysrq/rusty-fork,282834
+iter_tools,47620,Collection of general purpose tools to iterate. Currently it simply reexport itertools. ,2022-01-11 21:47:23.103289,2022-07-15 07:23:01.63818,https://docs.rs/iter_tools,https://github.com/Wandalen/wTools/tree/master/module/rust/iter_tools,https://github.com/Wandalen/wTools/tree/master/module/rust/iter_tools,512478
+deno_broadcast_channel,47577,Implementation of BroadcastChannel API for Deno,2021-05-23 13:44:47.535003,2022-09-22 18:13:59.529358,,,https://github.com/denoland/deno,401114
+mdbook-mermaid,47567,mdbook preprocessor to add mermaid support,2019-07-10 19:37:30.567047,2022-07-29 20:51:10.039965,,https://github.com/badboy/mdbook-mermaid,https://github.com/badboy/mdbook-mermaid,148130
+sgxs,47554,Library for working with the SGX stream format. ,2016-01-15 00:54:19.489309,2022-07-29 21:51:28.728106,https://edp.fortanix.com/docs/api/sgxs/,https://edp.fortanix.com/,https://github.com/fortanix/rust-sgx,3895
+lines,47515,Utililities for iterating readers efficiently line-by-line.,2015-04-12 21:46:21.022373,2017-05-24 09:27:24.777053,https://docs.rs/lines/,,https://github.com/xitep/lines-rs.git,1853
+cosmrs,47511,Transaction builder and signer for Cosmos-based blockchains,2021-05-04 03:00:02.761825,2022-08-08 22:35:58.519722,,,https://github.com/cosmos/cosmos-rust/tree/main/cosmrs,392824
+oasis-borsh-derive,47498,Binary Object Representation Serializer for Hashing ,2020-01-15 19:11:15.188904,2020-01-15 19:11:15.188904,,http://borsh.io,https://github.com/nearprotocol/borsh,198814
+easy-error,47494,Simple error utilities,2019-06-20 21:30:32.539103,2021-05-04 20:03:49.437372,,,https://gitlab.com/neachdainn/easy-error,142431
+m3u8-rs,47483,A library for parsing m3u8 files (Apple's HTTP Live Streaming (HLS) protocol).,2016-06-03 19:28:34.498307,2022-09-23 17:17:21.788603,https://rutgersc.github.io/doc/m3u8_rs/index.html,,https://github.com/rutgersc/m3u8-rs,5276
+safe_core,47479,SAFE core,2015-10-13 09:56:46.357346,2020-12-07 15:47:58.141185,https://docs.rs/safe_core,https://maidsafe.net,https://github.com/maidsafe/safe_client_libs,3208
+embedded-svc,47460,A set of traits for services higher level than embedded-hal and typically found in embedded micro...,2021-07-19 06:25:04.375525,2022-08-05 13:40:40.333198,,,https://github.com/esp-rs/embedded-svc,424634
+mikktspace,47438,Mikkelsen tangent space algorithm,2018-06-12 17:15:27.333106,2022-02-12 22:34:13.213296,https://docs.rs/mikktspace,https://github.com/gltf-rs/mikktspace,https://github.com/gltf-rs/mikktspace,69804
+webrtc-sdp,47387,webrtc-sdp parses strings in the format of the Session Description Protocol according to RFC4566....,2019-01-27 05:03:40.825238,2022-01-13 04:42:04.464881,,,https://github.com/mozilla/webrtc-sdp,110860
+headless_chrome,47376,Control Chrome programatically,2019-02-14 06:10:37.419393,2019-09-02 02:23:26.325514,,https://github.com/atroche/rust-headless-chrome,https://github.com/atroche/rust-headless-chrome,114683
+ascii_table,47363,Print ASCII tables to the terminal,2019-05-13 20:41:35.258716,2022-01-25 07:22:52.069848,https://docs.rs/ascii_table,https://gitlab.com/d5b4b2/ascii-table,https://gitlab.com/d5b4b2/ascii-table,134081
+log-ndc,47299,log extension with NDC-like functionality,2019-02-03 23:50:35.017087,2021-02-22 21:59:07.624891,,,https://github.com/stepancheg/rust-log-ndc,112518
+syslog_rfc5424,47295,Parser for RFC5424 (IETF-format) syslog messages,2016-02-23 00:54:32.40774,2022-07-15 15:42:27.923977,https://docs.rs/syslog_rfc5424/,https://github.com/Roguelazer/rust-syslog-rfc5424,https://github.com/Roguelazer/rust-syslog-rfc5424,4253
+space,47290,A library providing abstractions for spatial datastructures and search,2018-10-18 19:09:23.930933,2021-08-14 23:59:13.00789,https://docs.rs/space/,,https://github.com/rust-cv/space,91390
+fvm_ipld_bitfield,47288,Bitfield logic for use in Filecoin actors,2022-03-02 16:19:48.23399,2022-09-12 22:47:30.876228,,,https://github.com/filecoin-project/ref-fvm,542386
+assert_float_eq,47274,Assertions for floating-point equality.,2018-10-31 03:29:41.730451,2018-11-01 18:55:11.379355,https://docs.rs/assert_float_eq,,https://github.com/AlexHuszagh/assert_float_eq,93732
+av-data,47260,Multimedia data structures,2019-05-04 11:23:37.11613,2022-09-02 07:59:17.95428,,https://github.com/rust-av/rust-av,,131989
+ntex-router,47213,Path router,2020-03-31 02:23:10.466135,2021-08-23 14:15:51.597498,https://docs.rs/ntex-router/,,https://github.com/ntex-rs/ntex.git,224614
+texture-synthesis,47205,"Multiresolution Stochastic Texture Synthesis, a non-parametric example-based algorithm for image ...",2019-08-27 07:53:50.973806,2022-02-07 07:00:31.995136,https://docs.rs/texture-synthesis,https://github.com/EmbarkStudios/texture-synthesis,https://github.com/EmbarkStudios/texture-synthesis,160034
+nannou,47201,A Creative Coding Framework for Rust.,2017-10-16 11:55:22.985068,2021-12-17 05:09:54.656752,,https://github.com/nannou-org/nannou,https://github.com/nannou-org/nannou.git,35857
+scylla-macros,47184,proc macros for scylla async CQL driver,2021-04-07 14:34:12.789451,2021-11-10 15:32:27.464722,,,https://github.com/scylladb/scylla-rust-driver,380371
+binance,47174,Rust Library for the Binance API,2017-11-06 16:31:38.810543,2022-08-21 09:28:17.312318,https://docs.rs/crate/binance/,,https://github.com/wisespace-io/binance-rs,38362
+deno_http,47165,HTTP server implementation for Deno,2021-07-12 23:33:09.322478,2022-09-22 18:14:28.985376,,,https://github.com/denoland/deno,422120
+qoqo_calculator,47161,qoqo-calculator is the calculator backend of the qoqo quantum computing toolkit by HQS Quantum Si...,2021-02-04 12:22:34.162474,2022-09-07 14:29:30.232852,,,https://github.com/HQSquantumsimulations/qoqo_calculator,350482
+iobuffer,47115,A simple memory-based buffer for IO reading and writing,2018-04-20 09:40:25.538352,2020-03-19 14:26:00.723967,,https://github.com/Metaswitch/iobuffer,https://github.com/Metaswitch/iobuffer,61537
+flamer,47111,a procedural macro to insert `flame::start_guard(_)` calls,2016-05-19 17:00:38.324574,2019-08-15 07:10:42.067525,,,https://github.com/llogiq/flamer,5106
+index_vec,47094,Newtype-style helpers for `Vec` and `usize`.,2019-09-08 18:52:22.268308,2021-10-01 09:04:49.400485,,,http://github.com/thomcc/index_vec,163273
+git-glob,47078,A WIP crate of the gitoxide project dealing with pattern matching,2022-04-07 08:59:16.107141,2022-09-20 09:44:48.420605,,,https://github.com/Byron/gitoxide,563552
+tail,47076,Tail implementation in Rust that is performant and resistant to file truncations,2018-03-17 18:15:20.631243,2018-03-17 21:30:47.699844,,,https://github.com/tdbgamer/Tail,56164
+interledger-http,47066,HTTP client and server services for Interledger.rs,2019-03-11 05:23:14.683824,2019-11-11 11:52:38.925809,,,https://github.com/interledger-rs/interledger-rs,120014
+ruma-api,47025,Deprecated: crate merged into ruma-common,2016-12-15 09:55:20.673559,2022-05-04 13:16:06.248217,,https://www.ruma.io/,https://github.com/ruma/ruma,7586
+git-sec,46975,A WIP crate of the gitoxide project providing a shared trust model,2022-04-15 04:41:47.614068,2022-09-20 09:46:33.382929,,,https://github.com/Byron/gitoxide,568237
+oracle,46974,Oracle binding,2017-10-31 10:06:23.153938,2022-08-09 15:23:30.223342,,,https://github.com/kubo/rust-oracle,37562
+hts-sys,46965,This library provides HTSlib bindings.,2020-03-17 11:59:24.402088,2021-08-23 14:24:03.67426,https://docs.rs/rust-htslib,,https://github.com/samtools/htslib.git,219783
+trust-dns-native-tls,46932,Trust-DNS is a safe and secure DNS library. This is an extension for the Trust-DNS client to use ...,2017-05-09 04:47:06.173532,2022-02-28 04:17:45.606686,https://docs.rs/trust-dns-native-tls,http://www.trust-dns.org/index.html,https://github.com/bluejekyll/trust-dns,13822
+llvm-bitcode,46906,LLVM Bitcode parser in Rust,2021-02-12 12:12:05.438737,2021-02-13 13:21:56.466957,,,https://github.com/messense/llvm-bitcode-rs.git,354170
+uninitialized,46899,Opt-in unsafe uninitialized memory,2015-07-21 07:15:41.717655,2016-07-09 19:43:57.572943,http://arcnmx.github.io/uninitialized-rs/uninitialized,,https://github.com/arcnmx/uninitialized-rs,2642
+libzfs-types,46888,Shared types for libzfs,2018-11-08 17:10:37.335937,2020-08-28 13:18:48.6078,,,https://github.com/whamcloud/rust-libzfs,95522
+devicemapper-sys,46850,Low level bindings for devicemapper,2021-10-08 19:26:16.840486,2022-07-21 16:36:50.422365,https://docs.rs/devicemapper-rs-sys,https://stratis-storage.github.io/,https://github.com/stratis-storage/devicemapper-rs,462474
+tryhard,46844,Easily retry futures,2020-11-23 14:21:30.019365,2022-09-01 07:30:55.400194,https://docs.rs/tryhard,https://github.com/EmbarkStudios/tryhard,https://github.com/EmbarkStudios/tryhard,315397
+load_image,46808,Load PNG or JPEG with color profile support,2019-03-03 19:02:37.913983,2022-09-22 01:29:56.5048,,https://imageoptim.com/api,,118487
+finalfusion,46772,Reader and writer for common word embedding formats,2019-03-19 18:20:04.381664,2021-12-12 09:50:27.97456,https://docs.rs/finalfusion/,https://github.com/finalfusion/finalfusion-rust,https://github.com/finalfusion/finalfusion-rust,122500
+new_string_template,46761,Simple Customizable String-Templating Library for Rust.,2021-05-28 17:17:50.7546,2022-08-30 08:18:52.979401,,https://github.com/hasezoey/new_string_template,https://github.com/hasezoey/new_string_template,403249
+shippo,46738,An API client for Shippo,2020-12-21 22:36:57.299416,2021-07-20 20:43:02.548839,https://docs.rs/shippo,,https://github.com/oxidecomputer/cio,325465
+gpgme,46730,GPGme bindings for Rust,2015-06-11 04:27:26.352161,2021-08-07 07:46:44.821815,https://docs.rs/gpgme,,https://github.com/gpg-rs/gpgme,2356
+lpc55-pac,46718,Peripheral access API for NXP LPC55 microcontrollers,2020-04-28 00:44:31.670012,2022-03-16 23:51:50.683124,https://docs.rs/lpc55-pac,,https://github.com/lpc55/lpc55-pac,234830

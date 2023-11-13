@@ -1,0 +1,101 @@
+name,downloads,description,created_at,updated_at,documentation,homepage,repository,id
+stm32-usbd,63593,'usb-device' implementation for STM32 microcontrollers,2019-06-05 13:38:35.526276,2021-03-12 04:54:50.246965,,,https://github.com/stm32-rs/stm32-usbd,139144
+storage-proofs,63580,Implementations of Proofs of Storage,2019-06-04 14:39:26.344947,2020-12-01 16:23:31.578773,,,https://github.com/filecoin-project/rust-fil-proofs,138907
+tink-proto,63558,Protocol buffer message definitions for Rust port of Google's Tink cryptography library,2021-01-21 11:13:54.112112,2022-03-25 08:20:30.851923,https://docs.rs/tink-proto,,https://github.com/project-oak/tink-rust,344842
+serde_ipld_dagcbor,63513,IPLD DAG-CBOR support for Serde.,2022-03-09 14:49:40.894022,2022-05-19 12:04:45.436873,,,https://github.com/ipld/serde_ipld_dagcbor,546974
+find-places-db,63473,Quick and dirty crate for finding a user's local places databases,2018-08-20 20:14:24.6144,2020-05-19 20:25:53.214976,,,,80471
+tokio-metrics,63437,Runtime and task level metrics for Tokio applications. ,2022-02-17 22:23:55.336047,2022-02-18 02:58:11.433051,,https://tokio.rs,https://github.com/tokio-rs/tokio,534401
+const-str,63420,compile-time string operations,2020-09-10 13:52:57.883156,2022-07-02 10:28:10.265787,,,https://github.com/Nugine/const-str,287038
+prost-reflect,63409,A protobuf library extending prost with reflection support and dynamic messages.,2021-12-26 21:09:42.149089,2022-08-14 13:27:11.926647,https://docs.rs/prost-reflect,,https://github.com/andrewhickman/prost-reflect,503470
+my_internet_ip,63358,Retrieve the public IP of the machine your app runs on.,2018-03-01 22:02:07.998728,2018-10-03 09:18:02.519773,,https://gitlab.com/philippludwig/my-internet-ip,https://gitlab.com/philippludwig/my-internet-ip.git,53366
+arrayfire,63350,ArrayFire is a high performance software library for parallel computing with an easy-to-use API. ...,2015-11-14 03:08:36.437693,2021-01-10 07:24:27.409384,http://arrayfire.github.io/arrayfire-rust/arrayfire/index.html,https://github.com/arrayfire/arrayfire,https://github.com/arrayfire/arrayfire-rust,3409
+alacritty_config_derive,63322,Failure resistant deserialization derive,2021-01-08 12:06:54.334328,2022-09-03 17:45:01.847587,,https://github.com/alacritty/alacritty,,334295
+termbox-sys,63321,Low level bindings for the termbox library,2014-12-18 13:57:33.137572,2020-03-24 11:24:55.635192,,https://github.com/gchp/termbox-sys,https://github.com/gchp/termbox-sys,596
+ifmt,63321,Inline expression interpolation for Rust.,2019-04-20 08:17:10.562007,2021-01-06 19:39:08.141659,,,https://github.com/ct-austin/ifmt,129070
+derefable,63249,Automatically derive Deref/DerefMut implementations,2019-01-23 14:45:22.548142,2019-01-23 14:45:22.548142,,,,110219
+juniper_rocket,63227,Juniper GraphQL integration with Rocket,2017-12-03 16:22:19.532754,2022-05-25 09:15:29.128945,https://docs.rs/juniper_rocket,,https://github.com/graphql-rust/juniper,41576
+osmpbfreader,63200,Read OpenStreetMap PBF files in rust.,2016-04-18 13:56:13.291707,2022-02-01 09:01:16.81905,https://docs.rs/osmpbfreader,,https://github.com/TeXitoi/osmpbfreader-rs,4783
+bolero-engine,63159,fuzz and property testing framework,2020-01-06 23:49:12.064159,2022-05-24 15:53:29.182167,,https://github.com/camshaft/bolero,https://github.com/camshaft/bolero,195972
+rpki,63143,A library for validating and creating RPKI data.,2018-11-01 09:52:34.18532,2022-09-14 09:54:39.554787,https://docs.rs/rpki/,https://github.com/nlnetlabs/rpki-rs/,https://github.com/NLnetLabs/rpki-rs,93998
+svgparser,63065,"Featureful, pull-based, zero-allocation SVG parser.",2016-08-26 12:26:57.943316,2018-04-21 15:06:43.54976,https://docs.rs/svgparser/,,https://github.com/RazrFalcon/svgparser,6126
+ifmt-impl,63017,Implementation detail of the ifmt crate.,2019-05-08 03:17:29.489845,2021-01-06 19:37:28.388852,,,https://github.com/ct-austin/ifmt,132742
+wasmer-win-exception-handler,63014,Wasmer runtime exception handling for Windows,2019-02-25 21:29:56.154867,2020-06-24 22:08:57.786502,,,https://github.com/wasmerio/wasmer,117213
+tss-esapi-sys,62972,FFI wrapper around TSS 2.0 Enhanced System API,2021-03-23 10:07:34.533348,2022-02-04 09:51:13.430759,https://docs.rs/crate/tss-esapi-sys,,https://github.com/parallaxsecond/rust-tss-esapi,372537
+selene-lib,62942,A library for linting Lua code. You probably want selene instead.,2019-11-07 00:19:08.075662,2022-09-19 23:54:23.724567,,,https://github.com/Kampfkarren/selene,178862
+aws-sdk-autoscaling,62916,AWS SDK for Auto Scaling,2021-05-08 02:09:20.200241,2022-09-21 00:49:49.831992,,,https://github.com/awslabs/aws-sdk-rust,394640
+hashmap_core,62906,Implementation of HashMap and HashSet for no_std environments.,2017-11-30 18:50:03.33541,2019-08-19 07:38:42.653054,https://docs.rs/hashmap_core/,,https://github.com/Amanieu/hashmap_core,41145
+union-find,62893,Struct and methods for union-find operation.,2015-01-06 10:25:36.6256,2022-07-18 10:53:40.895352,https://gifnksm.github.io/union-find-rs,,https://github.com/gifnksm/union-find-rs,719
+konst_proc_macros,62838,Implementation detail of the `konst` crate,2021-03-20 17:37:45.139827,2021-09-11 22:36:33.198127,https://docs.rs/konst/,,https://github.com/rodrimati1992/konst/,371435
+kodama,62834,Agglomerative hierarchical clustering. ,2017-08-15 14:39:46.662398,2020-07-21 13:55:00.097819,https://github.com/diffeo/kodama,https://github.com/diffeo/kodama,https://github.com/diffeo/kodama,27612
+config_file_handler,62816,"Create, read and write JSON-encoded config files.",2016-01-27 00:15:34.393933,2018-08-23 11:14:23.529913,https://docs.rs/config_file_handler,https://maidsafe.net,https://github.com/maidsafe/config_file_handler,3996
+tink-core,62801,Core crate for Rust port of Google's Tink cryptography library,2021-01-21 11:15:19.015614,2022-03-25 08:21:00.125356,https://docs.rs/tink-core,,https://github.com/project-oak/tink-rust,344843
+amber,62752,A code search and replace tool,2016-02-07 16:13:18.761346,2021-04-06 01:31:38.234366,,,https://github.com/dalance/amber,4118
+egui_web,62731,Bindings for compiling egui code to WASM for a web page,2020-08-09 15:39:49.347436,2022-02-22 18:37:01.897334,,https://github.com/emilk/egui/tree/master/egui_web,https://github.com/emilk/egui/tree/master/egui_web,274668
+file-lock,62717,File locking via POSIX advisory record locks,2015-04-18 07:38:32.543294,2022-07-16 07:46:13.894376,https://docs.rs/file-lock/,https://crates.io/crates/file-lock,https://github.com/alfiedotwtf/file-lock,1888
+collectable,62686,"Fallible, no_std-friendly collection traits",2020-05-24 19:48:26.693114,2020-05-24 20:29:29.895975,https://docs.rs/collectable,,https://github.com/RustCrypto/utils,245344
+iron-hmac,62661,HMAC middleware for the Iron HTTP framework,2015-12-13 23:51:02.197736,2018-10-22 23:16:40.552078,https://jwilm.github.io/iron-hmac/latest/iron_hmac/,,https://github.com/jwilm/iron-hmac,3626
+gusto-api,62660,A fully generated & opinionated API client for the Gusto API.,2020-11-17 19:34:13.924493,2022-07-28 01:05:35.615285,https://docs.rs/gusto-api/,,https://github.com/oxidecomputer/third-party-api-clients/tree/main/gusto,313377
+terraswap,62660,Common terraswap types,2020-12-08 05:31:04.171407,2022-08-08 02:59:00.440386,https://docs.terraswap.io,https://terraswap.io,https://github.com/terraswap/terraswap,320706
+breakpad-handler,62652,Allows writing of a minidump when a crash occurs,2021-07-27 12:56:03.588847,2021-07-27 12:56:03.588847,https://docs.rs/breakpad-handler,https://github.com/EmbarkStudios/sentry-contrib-rust/breakpad-handler,https://github.com/EmbarkStudios/sentry-contrib-rust,427960
+benchmarking,62650,This crate can be used to execute something and measure the execution time. It does not output an...,2019-06-04 15:03:08.332694,2022-03-05 05:45:16.668489,,https://magiclen.org/benchmarking,https://github.com/magiclen/benchmarking,138913
+cylinder,62645,Cylinder is a cryptographic signing library with CLI tools. ,2020-08-25 21:30:30.134099,2022-01-07 20:45:26.073303,,,https://github.com/cargill/cylinder,280734
+ichwh,62619,An async implementation of `which`,2019-12-27 00:04:44.283172,2020-04-21 17:11:11.163869,,,https://gitlab.com/avandesa/ichwh-rs,192566
+sentry-contrib-breakpad,62550,Unopinionated crash collection for Sentry reporting purposes,2021-07-27 12:56:47.092739,2022-06-29 07:53:48.900463,https://docs.rs/sentry-contrib-breakpad,https://github.com/EmbarkStudios/sentry-contrib-rust,https://github.com/EmbarkStudios/sentry-contrib-rust,427961
+pinyin,62544,Convert Chinese to pinyin,2015-08-27 01:35:13.27245,2021-12-12 02:03:03.368343,https://docs.rs/pinyin/,https://github.com/mozillazg/rust-pinyin,https://github.com/mozillazg/rust-pinyin,2931
+deno_crypto,62532,Web Cryptography API implementation for Deno,2020-10-14 14:56:09.501662,2022-09-22 18:13:10.694933,,,https://github.com/denoland/deno,299659
+assert,62516,The package provides assertions for testing.,2014-11-20 20:00:03.897721,2017-10-19 06:13:28.552966,https://docs.rs/assert,https://github.com/stainless-steel/assert,https://github.com/stainless-steel/assert,134
+mqttrs,62462,Mqtt protocol encoding and decoding,2019-02-24 06:03:08.782734,2021-05-26 05:43:07.383215,https://docs.rs/mqttrs,https://github.com/00imvj00/mqttrs,https://github.com/00imvj00/mqttrs,116840
+sorted-iter,62425,"Typesafe extensions for sorted iterators, including set and relational operations",2019-11-07 09:16:07.803216,2021-11-15 15:32:02.818291,,https://github.com/rklaehn,https://github.com/rklaehn/sorted-iter,178964
+buddy-alloc,62376,"Buddy-alloc is a memory allocator for no-std Rust, used for embedded environments.",2020-01-05 03:14:10.740292,2020-11-14 02:31:10.008872,,,https://github.com/jjyr/buddy-alloc,195314
+topgrade,62373,Upgrade all the things,2018-06-03 10:38:32.990823,2022-05-28 16:44:26.986219,,,https://github.com/r-darwish/topgrade,68317
+bevy_animation,62349,Provides animation functionality for Bevy Engine,2020-08-14 00:55:01.655308,2022-08-23 19:42:25.317447,,https://bevyengine.org,https://github.com/bevyengine/bevy,276415
+anchor-client,62303,Rust client for Anchor programs,2021-01-31 15:09:45.215409,2022-07-05 20:24:04.772096,,,,348908
+filesystem,62294,"Real, fake, and mock implementations of file system operations",2017-07-28 03:57:14.640234,2019-02-17 01:06:35.733151,,,https://github.com/iredelmeier/filesystem-rs,25421
+tracing-tracy,62276,Inspect tracing-enabled Rust applications with Tracy ,2020-06-20 21:54:56.162423,2022-06-11 20:54:34.054787,https://docs.rs/tracing-tracy,https://github.com/nagisa/rust_tracy_client,https://github.com/nagisa/rust_tracy_client,256095
+vpncloud,62272,Peer-to-peer VPN,2015-11-28 16:54:59.758307,2021-12-23 20:34:33.027792,,https://vpncloud.ddswd.de,https://github.com/dswd/vpncloud,3521
+vec-collections,62235,Rust collections that are newtype wrappers around smallvec,2019-11-06 14:07:33.896638,2021-12-08 07:27:44.937575,,https://github.com/rklaehn,https://github.com/rklaehn/vec-collections,178644
+embuild,62201,A build support library for embedded Rust,2021-08-23 18:13:08.293087,2022-09-24 20:37:14.13362,,,https://github.com/ivmarkov/embuild,441307
+mio-anonymous-pipes,62182,Asynchronous wrapper for windows synchronous pipes,2018-12-08 12:30:52.35373,2021-07-10 06:49:05.538132,,,https://github.com/davidhewitt/mio-anonymous-pipes,100813
+random-wheel,62174,A little implementation of random wheels (used in genetic algorithm for selection),2015-07-08 21:43:05.662991,2016-03-15 13:18:30.170571,https://kerosene2000.github.io/random-wheel-rs-doc/random-wheel-rs/random_wheel/index.html,,https://github.com/Kerosene2000/random-wheel-rs,2563
+litrs,62157,Parse and inspect Rust literals (i.e. tokens in the Rust programming language representing fixed ...,2021-05-24 19:28:16.798772,2021-06-09 17:00:32.279267,https://docs.rs/litrs/,,https://github.com/LukasKalbertodt/litrs/,401540
+strict_encoding_derive,62129,Strict encoding derivation macros,2021-01-18 17:26:46.498832,2022-06-30 14:31:25.63843,,https://github.com/LNP-BP,https://github.com/LNP-BP/client_side_validation,343589
+luminance,62111,Stateless and type-safe graphics framework,2016-04-29 09:39:20.928784,2022-04-19 10:14:16.892705,https://docs.rs/luminance,https://github.com/phaazon/luminance-rs,https://github.com/phaazon/luminance-rs,4901
+ra_ap_ide_diagnostics,62100,TBD,2021-06-21 11:25:48.608375,2022-09-12 09:29:37.325273,,,,412856
+conrod_winit,62073,"An easy-to-use, 100% Rust, extensible 2D GUI library.",2018-12-26 10:02:16.73511,2022-01-17 04:32:35.197072,,https://github.com/pistondevelopers/conrod,https://github.com/pistondevelopers/conrod.git,103868
+pgn-reader,62071,Fast non-allocating and streaming reader for chess games in PGN notation,2017-09-28 22:05:11.50093,2022-09-23 11:13:38.044445,,,https://github.com/niklasf/rust-pgn-reader.git,33847
+json-decode,62052,An elm inspired runtime JSON decoder for Rust,2020-02-03 23:03:35.724558,2021-05-16 18:49:56.180673,https://docs.rs/json-decode,https://github.com/polyandglot/json-decode,,204602
+sql_lexer,62048,Library to lex and sanitize SQL,2016-03-01 14:03:46.512529,2021-10-22 09:17:20.41578,,,https://github.com/appsignal/sql_lexer,4338
+ethsign,61990,A library to read JSON keyfiles and sign Ethereum stuff.,2019-02-13 14:27:56.852738,2021-02-03 22:54:39.708195,https://docs.rs/crate/ethsign,https://github.com/tomusdrw/ethsign,https://github.com/tomusdrw/ethsign,114572
+css-color-parser,61956,Easy-to-use Rust parser for CSS3 color strings,2016-08-17 23:45:09.441196,2017-08-02 14:52:22.704919,https://7thsigil.github.io/css-color-parser-rs/css_color_parser/index.html,https://github.com/7thSigil/css-color-parser-rs,https://github.com/7thSigil/css-color-parser-rs,6011
+sprs-ldl,61929,Sparse cholesky factorization,2016-05-20 18:14:32.06113,2022-06-20 07:11:00.089918,https://vbarrielle.github.io/sprs/doc/sprs/,,https://github.com/sparsemat/sprs,5121
+chalk-rust-ir,61867,A library that defines the IR for Rust concepts like traits and impls.,2020-04-30 04:29:48.15568,2020-04-30 04:29:48.15568,,,https://github.com/rust-lang/chalk,235672
+ruma-identifiers,61844,Deprecated: crate merged into ruma-common,2016-07-28 09:18:56.863179,2022-05-04 13:05:42.97521,,https://www.ruma.io/,https://github.com/ruma/ruma,5806
+spsc-buffer,61832,Single-producer single-consumer lock-free buffer,2018-12-08 11:23:30.119498,2018-12-08 11:29:17.472643,,,https://github.com/davidhewitt/spsc-buffer,100805
+debugit,61798,Debug-print any value without trait bounds using specialization (Rust nightly channel),2016-10-02 11:05:44.143951,2021-11-27 10:54:03.446159,https://docs.rs/debugit/,,https://github.com/bluss/debugit,6688
+symphonia-bundle-mp3,61773,"Pure Rust MP1, MP2, and MP3 demuxer and decoder (a part of project Symphonia).",2020-09-01 22:25:15.805626,2022-07-17 03:36:25.812046,,https://github.com/pdeljanov/Symphonia,https://github.com/pdeljanov/Symphonia,283675
+tokio-socketcan,61766,Asynchronous Linux SocketCAN sockets with tokio,2019-01-10 04:00:21.442006,2021-11-17 16:04:58.600223,,,https://github.com/oefd/tokio-socketcan,107707
+accountable-refcell,61732,A RefCell wrapper that provides actionable information for dynamic borrow failures.,2017-11-02 17:21:50.646208,2020-12-11 17:45:37.935294,https://docs.rs/accountable-refcell,,https://github.com/jdm/accountable-refcell,37811
+pam-sys,61718,FFI wrappers for the Linux Pluggable Authentication Modules (PAM),2015-03-22 23:27:51.394302,2022-01-19 16:49:18.203683,https://docs.rs/pam-sys/,,https://github.com/1wilkens/pam-sys.git,1702
+influxdb_derive,61716,Private implementation detail of the influxdb crate,2020-03-17 19:19:46.340864,2021-11-04 16:02:04.648239,,,https://github.com/influxdb-rs/influxdb-rust,219918
+lddtree,61696,Read the ELF dependency tree,2021-12-05 12:31:41.124326,2022-09-13 12:36:39.223897,,,https://github.com/messense/lddtree-rs,492661
+fontconfig-parser,61689,fontconfig file parser in pure Rust,2021-10-23 08:43:19.225941,2021-10-31 07:16:18.542063,https://docs.rs/fontconfig-parser,https://github.com/Riey/fontconfig-parser,https://github.com/Riey/fontconfig-parser,469798
+json_value_merge,61686,Interface to merge serde_json::Value objects.,2020-04-04 15:41:09.415267,2021-12-17 22:30:00.399199,,,https://github.com/jmfiaschi/json_value_merge,226301
+parity-codec-derive,61660,Serialization and deserialization derive macro for Parity Codec,2018-09-13 14:08:59.081321,2019-04-02 12:12:08.97628,,,,84530
+guess_host_triple,61645,Guess which Rust-supported platform is running the current code,2018-04-25 03:16:39.787204,2021-09-22 12:11:37.046281,,,https://gitlab.com/Screwtapello/guess_host_triple/,62187
+bulletproofs,61608,A pure-Rust implementation of Bulletproofs using Ristretto,2018-06-27 15:33:51.514885,2021-02-02 23:30:45.752191,,,https://github.com/zkcrypto/bulletproofs,71953
+bit,61594,A library which provides helpers to manipulate bits and bit ranges.,2017-04-11 18:22:40.471034,2017-04-12 10:31:36.240428,https://docs.rs/bit,,https://github.com/jmi2k/bit-rs,10317
+helix,61593,Embed Rust in your Ruby,2017-03-14 10:12:35.50426,2018-06-04 20:19:55.5058,https://usehelix.com/documentation,https://usehelix.com,https://github.com/tildeio/helix,8973
+aws-sdk-rds,61587,AWS SDK for Amazon Relational Database Service,2021-05-08 02:29:31.392268,2022-09-21 01:27:08.637472,,,https://github.com/awslabs/aws-sdk-rust,394664
+libipld-core,61545,Base traits and definitions used by ipld codecs.,2020-05-01 13:08:15.882342,2022-08-24 16:44:14.183576,,,https://github.com/ipfs-rust/rust-ipld,236176
+codicon,61510,Traits for encoding and decoding,2018-10-10 13:27:48.645752,2020-09-07 19:51:26.185875,https://docs.rs/codicon,,https://github.com/psilocybin/codicon,89045
+nettle,61506,Rust bindings for the Nettle cryptographic library,2018-11-06 14:06:42.77061,2022-05-11 11:01:46.834248,https://docs.rs/nettle,,https://gitlab.com/sequoia-pgp/nettle-rs,95018
+solana-gossip,61500,"Blockchain, Rebuilt for Scale",2019-05-30 21:47:54.885949,2022-09-20 22:11:56.926361,https://docs.rs/solana-gossip,https://solana.com/,https://github.com/solana-labs/solana,138022
+prost-amino-derive,61496,A Protocol Buffers implementation for the Rust Language modified to enable amino (de)serialization.,2018-10-17 16:18:35.451554,2020-06-23 15:40:53.214458,https://docs.rs/prost-derive,,https://github.com/danburkert/prost,91175
+nu-plugin,61496,Functionality for building Nushell plugins,2020-01-07 16:32:06.734916,2022-09-09 00:40:13.503006,,,https://github.com/nushell/nushell/tree/main/crates/nu-plugin,196197
+spirv-types,61419,SPIR-V types shared between spirv-std and spirv-std-macros,2021-04-29 07:27:32.880328,2022-08-12 10:48:23.777592,,,https://github.com/EmbarkStudios/rust-gpu,390948
+splitmut,61404,Safely retrieves multiple mutable values from the same collection.,2016-02-04 13:23:11.198945,2018-02-27 07:53:24.974809,http://docs.rs/splitmut/,,https://github.com/diwic/splitmut-rs,4076
+rjson,61387,A minimal json parser,2018-11-29 05:55:02.613546,2018-12-06 11:34:04.760355,,,https://github.com/yw662/rjson,99169
+cl3,61384,A Rust implementation of the Khronos OpenCL 3.0 API and extensions.,2020-12-21 16:59:22.678295,2022-09-17 11:37:53.23929,https://docs.rs/cl3/,https://github.com/kenba/cl3,https://github.com/kenba/cl3,325320
+mousse,61294,A set of encoder and decoder for server sent events,2021-09-18 17:51:57.884998,2021-09-18 22:15:51.387921,,,https://github.com/FreeMasen/mousse,453371
+assimp-sys,61268,Rust FFI bindings for the Assimp library,2015-04-26 12:09:21.863281,2017-11-01 22:29:31.768645,,,https://github.com/Eljay/assimp-sys,1961
+filepath,61255,Get the filesystem path of a file.,2018-08-02 22:21:09.885599,2022-05-06 21:39:47.544651,,,https://github.com/evilpie/filepath,77225
