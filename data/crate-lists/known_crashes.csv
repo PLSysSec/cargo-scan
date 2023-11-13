@@ -17,3 +17,4 @@ encoding-index-korean,top1000,crash,
 cpp_demangle,top1000,crash,
 block,top1000,crash,
 windows,top10000,excessively slow,
+pose,top10000,yanked,missing from crates.io

@@ -32,7 +32,6 @@ top1000: install
 	$(SCAN_ALL) data/crate-lists/top1000.csv top1000 -n 64
 
 top10000: install
-	# Note: this actually contains only 9998 crates at the moment.
 	$(SCAN_ALL) data/crate-lists/top10000.csv top10000 -n 64
 
 mozilla: install

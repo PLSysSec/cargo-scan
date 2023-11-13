@@ -1019,6 +1019,7 @@ attohttpc,2586451,Small and lightweight HTTP client,2019-03-23 01:45:31.172639,2
 unicode-linebreak,2576682,Implementation of the Unicode Line Breaking Algorithm,2018-12-10 20:45:01.729575,2022-09-17 09:23:53.599518,,https://github.com/axelf4/unicode-linebreak,https://github.com/axelf4/unicode-linebreak,101192
 cfg-expr,2567812,A parser and evaluator for Rust `cfg()` expressions.,2020-01-09 17:16:21.632089,2022-05-19 06:39:17.30656,https://docs.rs/cfg-expr,https://github.com/EmbarkStudios/cfg-expr,https://github.com/EmbarkStudios/cfg-expr,196946
 lexical-util,2565939,Shared utilities for lexical creates.,2021-09-03 05:05:47.942062,2022-05-18 19:57:53.088579,,,https://github.com/Alexhuszagh/rust-lexical,446287
+windows,2561030,Rust for Windows,2019-01-15 00:13:05.848555,2022-09-22 17:03:38.163142,https://microsoft.github.io/windows-docs-rs/,,https://github.com/microsoft/windows-rs,108581
 is-macro,2553701,Easily create methods for to use yout custom enum like Option / Result,2019-12-27 07:31:20.065978,2022-06-15 03:19:31.207135,http://docs.rs/is-macro,,https://github.com/kdy1/is-macro,192605
 lexical-parse-integer,2550473,Efficient parsing of integers from strings.,2021-09-03 05:06:17.84369,2022-06-06 16:38:11.3081,,,https://github.com/Alexhuszagh/rust-lexical,446289
 flatbuffers,2549449,Official FlatBuffers Rust runtime library.,2016-06-01 19:18:36.248215,2022-04-25 17:18:36.565266,,https://google.github.io/flatbuffers/,https://github.com/google/flatbuffers,5260
@@ -2765,6 +2766,7 @@ wasm-instrument,385590,Instrument and transform wasm modules.,2022-01-11 17:33:4
 rusoto_kinesis,384335,AWS SDK for Rust - Amazon Kinesis @ 2013-12-02,2017-05-20 01:48:58.119647,2022-04-25 04:29:46.53946,https://docs.rs/rusoto_kinesis,https://www.rusoto.org/,https://github.com/rusoto/rusoto,15267
 bat,384266,A cat(1) clone with wings.,2018-04-22 14:08:25.118286,2022-09-10 18:33:08.634878,,https://github.com/sharkdp/bat,https://github.com/sharkdp/bat,61835
 cidr,384219,IP network and IP host within network types,2017-03-06 15:41:04.873693,2021-10-08 18:50:28.042889,https://docs.rs/cidr,https://github.com/stbuehler/rust-cidr,https://github.com/stbuehler/rust-cidr,8852
+peek,384155,A query language for serializable data structures.,2019-07-13 16:52:17.786718,2019-08-30 12:09:14.793592,,,https://gitlab.com/glue-for-rust/peek-rs,148815
 rustc-ap-rustc_ast_passes,384045,Automatically published version of the package `rustc_ast_passes` in the rust-lang/rust repositor...,2020-03-25 14:12:28.093262,2021-07-06 08:25:33.382379,,,https://github.com/rust-lang/rust,222674
 aws_lambda_events,383928,AWS Lambda event definitions,2018-10-30 05:46:37.559336,2022-09-12 01:44:53.322705,,https://github.com/LegNeato/aws-lambda-events,https://github.com/LegNeato/aws-lambda-events,93531
 solana_rbpf,383917,Virtual machine and JIT compiler for eBPF programs,2018-10-30 08:25:09.324139,2022-08-15 07:55:53.789863,,https://solana.com/,https://github.com/solana-labs/rbpf,93545
@@ -3524,6 +3526,7 @@ cassandra-cpp-sys,232444,A bindgen-generated Rust wrapper around the DataStax Ca
 sp-trie,232309,Patricia trie stuff using a parity-scale-codec node format,2020-02-27 00:54:16.825855,2022-03-01 15:16:34.257582,https://docs.rs/sp-trie,https://substrate.io,https://github.com/paritytech/substrate/,212899
 pwhash,232146,A collection of password hashing routines in pure Rust.,2016-02-09 22:39:09.598445,2021-01-03 18:20:47.082322,https://inejge.github.io/pwhash,https://github.com/inejge/pwhash,https://github.com/inejge/pwhash,4140
 pratt,231771,A Pratt parser for Rust,2020-04-06 13:57:55.455105,2020-10-24 17:24:15.503741,,,https://github.com/segeljakt/pratt/,226927
+pose,231604,An XSLT like templating system for Rust ,2019-07-12 10:26:00.395186,2019-08-30 12:15:39.901915,,,https://github.com/measlytwerp/pose-rs,148461
 tract-core,231266,"Tiny, no-nonsense, self contained, TensorFlow and ONNX inference",2018-11-02 11:18:38.222837,2022-09-23 12:35:28.695162,,,https://github.com/snipsco/tract,94302
 ufmt-write,231232,`μfmt`'s `uWrite` trait,2019-05-08 08:23:41.593528,2019-11-17 21:45:14.680074,,,https://github.com/japaric/ufmt,132774
 bevy_sprite,231093,Provides sprite functionality for Bevy Engine,2020-08-10 04:33:29.120371,2022-08-19 00:39:11.339069,,https://bevyengine.org,https://github.com/bevyengine/bevy,274920
