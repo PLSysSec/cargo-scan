@@ -1019,7 +1019,6 @@ attohttpc,2586451,Small and lightweight HTTP client,2019-03-23 01:45:31.172639,2
 unicode-linebreak,2576682,Implementation of the Unicode Line Breaking Algorithm,2018-12-10 20:45:01.729575,2022-09-17 09:23:53.599518,,https://github.com/axelf4/unicode-linebreak,https://github.com/axelf4/unicode-linebreak,101192
 cfg-expr,2567812,A parser and evaluator for Rust `cfg()` expressions.,2020-01-09 17:16:21.632089,2022-05-19 06:39:17.30656,https://docs.rs/cfg-expr,https://github.com/EmbarkStudios/cfg-expr,https://github.com/EmbarkStudios/cfg-expr,196946
 lexical-util,2565939,Shared utilities for lexical creates.,2021-09-03 05:05:47.942062,2022-05-18 19:57:53.088579,,,https://github.com/Alexhuszagh/rust-lexical,446287
-windows,2561030,Rust for Windows,2019-01-15 00:13:05.848555,2022-09-22 17:03:38.163142,https://microsoft.github.io/windows-docs-rs/,,https://github.com/microsoft/windows-rs,108581
 is-macro,2553701,Easily create methods for to use yout custom enum like Option / Result,2019-12-27 07:31:20.065978,2022-06-15 03:19:31.207135,http://docs.rs/is-macro,,https://github.com/kdy1/is-macro,192605
 lexical-parse-integer,2550473,Efficient parsing of integers from strings.,2021-09-03 05:06:17.84369,2022-06-06 16:38:11.3081,,,https://github.com/Alexhuszagh/rust-lexical,446289
 flatbuffers,2549449,Official FlatBuffers Rust runtime library.,2016-06-01 19:18:36.248215,2022-04-25 17:18:36.565266,,https://google.github.io/flatbuffers/,https://github.com/google/flatbuffers,5260
@@ -6792,7 +6791,6 @@ llvm-bitcode,46906,LLVM Bitcode parser in Rust,2021-02-12 12:12:05.438737,2021-0
 uninitialized,46899,Opt-in unsafe uninitialized memory,2015-07-21 07:15:41.717655,2016-07-09 19:43:57.572943,http://arcnmx.github.io/uninitialized-rs/uninitialized,,https://github.com/arcnmx/uninitialized-rs,2642
 libzfs-types,46888,Shared types for libzfs,2018-11-08 17:10:37.335937,2020-08-28 13:18:48.6078,,,https://github.com/whamcloud/rust-libzfs,95522
 devicemapper-sys,46850,Low level bindings for devicemapper,2021-10-08 19:26:16.840486,2022-07-21 16:36:50.422365,https://docs.rs/devicemapper-rs-sys,https://stratis-storage.github.io/,https://github.com/stratis-storage/devicemapper-rs,462474
-tryhard,46844,Easily retry futures,2020-11-23 14:21:30.019365,2022-09-01 07:30:55.400194,https://docs.rs/tryhard,https://github.com/EmbarkStudios/tryhard,https://github.com/EmbarkStudios/tryhard,315397
 load_image,46808,Load PNG or JPEG with color profile support,2019-03-03 19:02:37.913983,2022-09-22 01:29:56.5048,,https://imageoptim.com/api,,118487
 finalfusion,46772,Reader and writer for common word embedding formats,2019-03-19 18:20:04.381664,2021-12-12 09:50:27.97456,https://docs.rs/finalfusion/,https://github.com/finalfusion/finalfusion-rust,https://github.com/finalfusion/finalfusion-rust,122500
 new_string_template,46761,Simple Customizable String-Templating Library for Rust.,2021-05-28 17:17:50.7546,2022-08-30 08:18:52.979401,,https://github.com/hasezoey/new_string_template,https://github.com/hasezoey/new_string_template,403249

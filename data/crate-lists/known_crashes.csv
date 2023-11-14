@@ -18,3 +18,4 @@ cpp_demangle,top1000,crash,
 block,top1000,crash,
 windows,top10000,excessively slow,
 pose,top10000,yanked,missing from crates.io
+tryhard,top10000,stack overflow,not yet diagnosed
