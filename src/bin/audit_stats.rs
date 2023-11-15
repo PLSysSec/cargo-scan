@@ -31,7 +31,7 @@ const RESULTS_SUMMARY_SUFFIX: &str = "stats_summary.csv";
 
 // Headers
 const STATS_CC_HEADER: &str = "avg_call_stack";
-const STATS_SUMMARY_HEADER: &str = "crate, total_fns, total_loc, total_caller_checked, total_avg_call_stack, total_sinks";
+const STATS_SUMMARY_HEADER: &str = "crate, total_fns, total_loc, audited_loc, total_caller_checked, total_avg_call_stack, total_sinks";
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -49,8 +49,10 @@ struct AuditingStats {
     crate_id: CrateId,
     // Total number of audited functions
     total_fns: usize,
-    // Total lines of audited code
+    // Total lines of code in functions we consider in the crate
     total_loc: usize,
+    // Total lines of audited code
+    audited_loc: usize,
     // Base effects that are marked caller-checked
     // and the size of the corresponding `EffectTree`
     caller_checked_effects: HashMap<EffectInstance, usize>,
@@ -129,7 +131,7 @@ fn compute_stats(
     results: &ScanResults,
     sinks: &HashSet<IdentPath>,
 ) -> AuditingStats {
-    let mut total_loc = 0;
+    let mut audited_loc = 0;
     let mut total_fns = HashSet::new();
     let mut sink_calls = HashSet::new();
     let mut caller_checked_effects = HashMap::new();
@@ -147,7 +149,7 @@ fn compute_stats(
 
         for (key, tracker) in results.fn_loc_tracker.iter() {
             if custom_eq(key, f) {
-                total_loc += tracker.get_loc_lb();
+                audited_loc += tracker.get_loc_lb();
                 found = true;
                 break;
             }
@@ -167,10 +169,13 @@ fn compute_stats(
     });
     sink_calls.extend(sink_effects.cloned());
 
+    let total_loc = results.fn_loc_tracker.values().fold(0, |acc, x| acc + x.get_loc_lb());
+
     AuditingStats {
         crate_id,
         total_fns: total_fns.len(),
         total_loc,
+        audited_loc,
         caller_checked_effects,
         total_effects,
         sink_calls,
@@ -355,10 +360,11 @@ fn dump_summary(all_stats: &Vec<AuditingStats>) -> Result<()> {
     for stats in all_stats {
         writeln!(
             output,
-            "{}, {}, {}, {}/{}, {}, {}",
+            "{}, {}, {}, {}, {}/{}, {}, {}",
             stats.crate_id,
             stats.total_fns,
             stats.total_loc,
+            stats.audited_loc,
             stats.caller_checked_effects.len(),
             stats.total_effects,
             stats.total_avg_call_stack(),
