@@ -45,18 +45,6 @@ medium: top100 mozilla
 
 large: top1000 top10000
 
-temp-test:
-	time $(SCAN_ALL) data/crate-lists/batched/61.csv temp-61 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/62.csv temp-62 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/63.csv temp-63 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/64.csv temp-64 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/65.csv temp-65 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/66.csv temp-66 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/67.csv temp-67 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/68.csv temp-68 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/69.csv temp-69 -n 64
-	time $(SCAN_ALL) data/crate-lists/batched/70.csv temp-70 -n 64
-
 clean:
 	# Warning: this deletes all downloaded packages and experiment results not under version control!
 	# Run make full to redownload and regenerate results.
