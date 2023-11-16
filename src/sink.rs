@@ -30,18 +30,20 @@ const SINK_PATTERNS: &[&str] = &[
     "std::simd",
     "libc",
     "winapi",
-    "mio::net",
-    "mio::unix",
-    "tokio::fs",
-    "tokio::io",
-    "tokio::net",
-    "tokio::process",
-    "hyper::client",
-    "hyper::server",
-    "tokio_util::udp",
-    "tokio_util::net",
-    "socket2",
 ];
+
+// Removed sink patterns on 2023-11-16
+// "mio::net",
+// "mio::unix",
+// "tokio::fs",
+// "tokio::io",
+// "tokio::net",
+// "tokio::process",
+// "hyper::client",
+// "hyper::server",
+// "tokio_util::udp",
+// "tokio_util::net",
+// "socket2",
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Sink(Pattern);
