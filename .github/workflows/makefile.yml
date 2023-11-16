@@ -56,4 +56,20 @@ jobs:
       run: make test-results
 
     - name: Check for differences
-      run: git diff --exit-code
+      id: git-check
+      run: |
+        git diff --exit-code data/results
+        echo "::set-output name=changes::$(if [ $? -eq 1 ]; then echo 'true'; else echo 'false'; fi)"
+
+    - name: Configure Git
+      if: steps.git-check.outputs.changes == 'true'
+      run: |
+        git config --global user.name 'Caleb Stanford'
+        git config --global user.email 'cdstanford@ucdavis.com'
+
+    - name: Commit and push if there are changes
+      if: steps.git-check.outputs.changes == 'true'
+      run: |
+        git add data/results
+        git commit -m "Update test results"
+        git push
