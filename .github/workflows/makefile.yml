@@ -16,10 +16,13 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install Make
-      run: apt-get update && apt-get install -y make
-
     - name: Install dependencies
+      run: |
+        apt-get update
+        apt-get install -y make
+        apt-get install -y pkg-config libssl-dev
+
+    - name: Make install
       run: make install
 
     - name: Run check
