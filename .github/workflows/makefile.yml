@@ -8,9 +8,30 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    container: rust:slim
 
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Cargo check
+      run: cargo check
+
+  clippy:
+    runs-on: ubuntu-latest
+    container: rust:slim
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Clippy
+      run: rustup component add clippy
+
+    - name: Run Clippy
+      run: cargo clippy -- -D warnings
+
+  build:
+    runs-on: ubuntu-latest
     container: rust:slim
 
     steps:
@@ -25,22 +46,27 @@ jobs:
     - name: Make install
       run: make install
 
-    - name: Install Clippy
-      run: rustup component add clippy
+  tests:
+    runs-on: ubuntu-latest
+    container: rust:slim
 
-    - name: Install Rustfmt
-      run: rustup component add rustfmt
+    steps:
+    - uses: actions/checkout@v3
 
-    - name: Run check
-      run: make checks
+    - name: Install dependencies
+      run: |
+        apt-get update
+        apt-get install -y make
+        apt-get install -y pkg-config libssl-dev
+
+    - name: Build release
+      run: cargo build --release
 
     - name: Update test results
       run: make test-results
 
   fmt:
-
     runs-on: ubuntu-latest
-
     container: rust:slim
 
     steps:

@@ -18,7 +18,7 @@ checks:
 test-crates-csv:
 	$(UPDATE_TEST_CRATES_CSV)
 
-test-results: install test-crates-csv
+test-results: test-crates-csv
 	$(SCAN_ALL) data/crate-lists/test-crates.csv test -t
 
 test: checks test-results
