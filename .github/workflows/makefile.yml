@@ -25,6 +25,9 @@ jobs:
     - name: Make install
       run: make install
 
+    - name: Install Clippy
+      run: rustup component add clippy
+
     - name: Run check
       run: make checks
 
