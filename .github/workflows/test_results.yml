@@ -1,4 +1,4 @@
-name: Update and push test results
+name: Test Results
 on: push
 permissions:
   contents: write

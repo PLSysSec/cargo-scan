@@ -1,8 +1,9 @@
-name: Makefile CI
+name: Checks
 
 on:
   push:
     branches: [ main ]
+    paths: [ 'src/**', 'tests/**' ]
   pull_request:
     branches: [ main ]
 
@@ -33,21 +34,3 @@ jobs:
 
       - name: Run unit tests
         run: cargo test
-
-  install-ubuntu:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Make install
-      run: make install
-
-  install-macos:
-    runs-on: macos-latest
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Make install
-      run: make install
