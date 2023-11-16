@@ -51,18 +51,3 @@ jobs:
 
     - name: Make install
       run: make install
-
-  tests:
-    runs-on: macos-latest
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Build release
-      run: cargo build --release
-
-    - name: Update test results
-      run: make test-results
-
-    # Commit test results
-    - uses: stefanzweifel/git-auto-commit-action@v5
