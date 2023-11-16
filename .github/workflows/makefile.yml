@@ -42,7 +42,7 @@ jobs:
     - name: Run Clippy
       run: cargo clippy -- -D warnings
 
-  build:
+  install:
     runs-on: ubuntu-latest
     container: rust:slim
 
@@ -79,6 +79,9 @@ jobs:
 
     - name: Update test results
       run: make test-results
+
+    - name: Check for differences
+      run: git diff --exit-code
 
   fmt:
     runs-on: ubuntu-latest
