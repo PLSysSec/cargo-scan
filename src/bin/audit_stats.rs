@@ -169,7 +169,8 @@ fn compute_stats(
     });
     sink_calls.extend(sink_effects.cloned());
 
-    let total_loc = results.fn_loc_tracker.values().fold(0, |acc, x| acc + x.get_loc_lb());
+    let total_loc =
+        results.fn_loc_tracker.values().fold(0, |acc, x| acc + x.get_loc_lb());
 
     AuditingStats {
         crate_id,
