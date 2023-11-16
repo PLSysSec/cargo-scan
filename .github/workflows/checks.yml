@@ -2,8 +2,8 @@ name: Checks
 
 on:
   push:
+    paths: [ 'src/**', 'tests/**', '.github/**' ]
     branches: [ main ]
-    paths: [ 'src/**', 'tests/**' ]
   pull_request:
     branches: [ main ]
 

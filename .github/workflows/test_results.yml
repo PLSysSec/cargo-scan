@@ -1,15 +1,25 @@
-name: Test Results
-on: push
+name: Test results
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
 permissions:
   contents: write
+
 jobs:
-  report:
+  update:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
-      - name: Make test
-        run: make test
-      - name: Commit
+
+      - name: Update results
+        run: make test-results
+
+      - name: Commit results
         run: |
           git config --global user.name 'Caleb Stanford'
           git config --global user.email 'cdstanford@users.noreply.github.com'

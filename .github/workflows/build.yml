@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    paths: [ 'Makefile' ]
+    paths: [ 'Makefile', '.github/**' ]
     branches: [ main ]
   pull_request:
     branches: [ main ]
