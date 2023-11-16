@@ -14,6 +14,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Install dependencies
+      run: |
+        apt-get update
+        apt-get install -y make
+        apt-get install -y pkg-config libssl-dev
+
     - name: Cargo check
       run: cargo check
 
@@ -23,6 +29,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        apt-get update
+        apt-get install -y make
+        apt-get install -y pkg-config libssl-dev
 
     - name: Install Clippy
       run: rustup component add clippy
@@ -58,6 +70,9 @@ jobs:
         apt-get update
         apt-get install -y make
         apt-get install -y pkg-config libssl-dev
+
+    - name: Install Python
+      run: apt-get install -y python3
 
     - name: Build release
       run: cargo build --release
