@@ -1,4 +1,4 @@
-.PHONY: install checks test test-crates-csv test-results top10 top100 top1000 top10000 mozilla small medium large clean
+.PHONY: install checks test test-results top10 top100 top1000 top10000 mozilla small medium large clean
 .DEFAULT_GOAL := install
 
 SCAN_ALL := cargo run --release --bin scan_all --
@@ -15,10 +15,9 @@ checks:
 	cargo clippy
 	cargo fmt
 
-test-crates-csv:
+test-results:
 	$(UPDATE_TEST_CRATES_CSV)
-
-test-results: test-crates-csv
+	cargo build --release
 	$(SCAN_ALL) data/crate-lists/test-crates.csv test -t
 
 test: checks test-results

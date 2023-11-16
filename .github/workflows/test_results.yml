@@ -1,0 +1,17 @@
+name: Update and push test results
+on: push
+permissions:
+  contents: write
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Make test
+        run: make test
+      - name: Commit
+        run: |
+          git config --global user.name 'Caleb Stanford'
+          git config --global user.email 'cdstanford@users.noreply.github.com'
+          git commit -am ":file_folder: Update test results"
+          git push

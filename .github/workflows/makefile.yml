@@ -25,6 +25,15 @@ jobs:
       - name: Run Rustfmt
         run: cargo fmt -- --check
 
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run unit tests
+        run: cargo test
+
   install-ubuntu:
     runs-on: ubuntu-latest
 
