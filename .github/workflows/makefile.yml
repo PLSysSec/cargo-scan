@@ -43,9 +43,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install Python
-      run: apt-get install -y python3
-
     - name: Build release
       run: cargo build --release
 
@@ -57,13 +54,9 @@ jobs:
 
   fmt:
     runs-on: ubuntu-latest
-    container: rust:slim
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install Rustfmt
-        run: rustup component add rustfmt
 
       - name: Formatting Check
         run: cargo fmt -- --check
