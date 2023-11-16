@@ -9,7 +9,6 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    container: rust:slim
 
     steps:
     - uses: actions/checkout@v3
@@ -25,7 +24,6 @@ jobs:
 
   clippy:
     runs-on: ubuntu-latest
-    container: rust:slim
 
     steps:
     - uses: actions/checkout@v3
@@ -44,7 +42,6 @@ jobs:
 
   install:
     runs-on: ubuntu-latest
-    container: rust:slim
 
     steps:
     - uses: actions/checkout@v3
@@ -60,7 +57,6 @@ jobs:
 
   tests:
     runs-on: ubuntu-latest
-    container: rust:slim
 
     steps:
     - uses: actions/checkout@v3
