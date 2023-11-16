@@ -28,6 +28,9 @@ jobs:
     - name: Install Clippy
       run: rustup component add clippy
 
+    - name: Install Rustfmt
+      run: rustup component add rustfmt
+
     - name: Run check
       run: make checks
 
