@@ -24,5 +24,6 @@ jobs:
         run: |
           git config --global user.name 'Caleb Stanford'
           git config --global user.email 'cdstanford@users.noreply.github.com'
-          git commit -am ":robot: autoupdate from CI"
+          git add .
+          git diff-index --quiet HEAD || git commit -am ":robot: autoupdate from CI"
           git push
