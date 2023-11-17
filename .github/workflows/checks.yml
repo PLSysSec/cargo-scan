@@ -2,7 +2,7 @@ name: Checks
 
 on:
   push:
-    paths: [ 'src/**', 'tests/**', '.github/**' ]
+    paths: [ 'src/**', 'tests/**', '.github/workflows/checks.yml' ]
     branches: [ main ]
   pull_request:
     branches: [ main ]

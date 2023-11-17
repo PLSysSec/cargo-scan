@@ -2,6 +2,7 @@ name: Results
 
 on:
   push:
+    paths: [ 'src/**', 'data/**', '.github/workflows/results.yml' ]
     branches: [ main ]
   pull_request:
     branches: [ main ]

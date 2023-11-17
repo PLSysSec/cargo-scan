@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    paths: [ 'Makefile', '.github/**' ]
+    paths: [ 'Makefile', '.github/workflows/build.yml' ]
     branches: [ main ]
   pull_request:
     branches: [ main ]
