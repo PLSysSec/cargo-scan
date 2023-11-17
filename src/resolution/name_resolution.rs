@@ -79,6 +79,7 @@ impl Resolver {
             extra_env,
             invocation_strategy,
             invocation_location,
+            target_dir: None,
         }
     }
 
