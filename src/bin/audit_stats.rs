@@ -31,7 +31,7 @@ const RESULTS_SUMMARY_SUFFIX: &str = "stats_summary.csv";
 
 // Headers
 const STATS_CC_HEADER: &str = "avg_call_stack";
-const STATS_SUMMARY_HEADER: &str = "crate, total_fns, total_loc, audited_loc, total_caller_checked, total_avg_call_stack, total_sinks";
+const STATS_SUMMARY_HEADER: &str = "crate, total_fns, total_loc, audited_loc, total_caller_checked, total_avg_call_stack, total_sinks, total_pub_fns, pub_fns_cc";
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -60,16 +60,20 @@ struct AuditingStats {
     total_effects: usize,
     // Set of sink calls that flow from dependencies
     sink_calls: HashSet<EffectInstance>,
+    // How many public functions are in the crate
+    pub_fns: usize,
+    // How many public functions are marked caller-checked
+    pub_fns_cc: usize,
 }
 
 impl AuditingStats {
-    pub fn total_avg_call_stack(&self) -> usize {
+    pub fn total_avg_call_stack(&self) -> f32 {
         if self.caller_checked_effects.is_empty() {
-            return 0;
+            return 0.0;
         }
 
-        let sum: usize = self.caller_checked_effects.values().sum();
-        sum / self.caller_checked_effects.len()
+        let sum = self.caller_checked_effects.values().sum::<usize>() as f32;
+        sum / self.caller_checked_effects.len() as f32
     }
 }
 
@@ -77,10 +81,9 @@ impl AuditingStats {
 // that was audited for this effect.
 fn count_tree_size(tree: &EffectTree) -> usize {
     match tree {
-        EffectTree::Leaf(_, SafetyAnnotation::CallerChecked) => 1,
-        EffectTree::Leaf(_, _) => 0,
+        EffectTree::Leaf(_, _) => 1,
         EffectTree::Branch(_, ts) => {
-            1 + ts.iter().fold(0, |s, t| s + count_tree_size(t)) / ts.len()
+            ts.iter().fold(1, |s, t| s + count_tree_size(t))
         }
     }
 }
@@ -180,6 +183,8 @@ fn compute_stats(
         caller_checked_effects,
         total_effects,
         sink_calls,
+        pub_fns: results.pub_fns.len(),
+        pub_fns_cc: audit.pub_caller_checked.len(),
     }
 }
 
@@ -361,7 +366,7 @@ fn dump_summary(all_stats: &Vec<AuditingStats>) -> Result<()> {
     for stats in all_stats {
         writeln!(
             output,
-            "{}, {}, {}, {}, {}/{}, {}, {}",
+            "{}, {}, {}, {}, {}/{}, {}, {}, {}, {}",
             stats.crate_id,
             stats.total_fns,
             stats.total_loc,
@@ -369,7 +374,9 @@ fn dump_summary(all_stats: &Vec<AuditingStats>) -> Result<()> {
             stats.caller_checked_effects.len(),
             stats.total_effects,
             stats.total_avg_call_stack(),
-            stats.sink_calls.len()
+            stats.sink_calls.len(),
+            stats.pub_fns,
+            stats.pub_fns_cc,
         )?;
     }
 
