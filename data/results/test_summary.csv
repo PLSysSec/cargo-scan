@@ -6,7 +6,7 @@ unsafe-test, 14
 fns-closures, 11
 permissions-ex, 6
 cfg-ex, 3
-dependency-ex, 2
+dependency-ex, 3
 libc-ex, 2
 num_cpus_minimal, 2
 resolution-ex, 2

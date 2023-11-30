@@ -18,6 +18,7 @@ cfg_ex, cfg_ex::foo1, std::fs::write, std::fs, data/test-packages/cfg-ex/src, ma
 cfg_ex, cfg_ex::foo2, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 24, 4
 cfg_ex, cfg_ex::test_2, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 41, 4
 dependency_ex, dependency_ex::read_fn, std::fs::File::open, std::fs, data/test-packages/dependency-ex/src, lib.rs, 5, 24
+dependency_ex, dependency_ex::read_fn, std::fs::File::read_to_end, std::fs, data/test-packages/dependency-ex/src, lib.rs, 8, 17
 dependency_ex, dependency_ex::unsafe_deref, dependency_ex::unsafe_deref::y, [PtrDeref], data/test-packages/dependency-ex/src, lib.rs, 21, 9
 dependency_parent, dependency_parent::internal_unsafe_deref, dependency_parent::internal_unsafe_deref::y, [PtrDeref], data/test-packages/dependency-parent/src, main.rs, 5, 9
 ffi_ex, ffi_ex::SCDynamicStoreGetTypeID, ffi_ex::SCDynamicStoreGetTypeID, [FFI Declaration], data/test-packages/ffi-ex/src, main.rs, 38, 4
