@@ -82,9 +82,7 @@ impl AuditingStats {
 fn count_tree_size(tree: &EffectTree) -> usize {
     match tree {
         EffectTree::Leaf(_, _) => 1,
-        EffectTree::Branch(_, ts) => {
-            ts.iter().fold(1, |s, t| s + count_tree_size(t))
-        }
+        EffectTree::Branch(_, ts) => ts.iter().fold(1, |s, t| s + count_tree_size(t)),
     }
 }
 
