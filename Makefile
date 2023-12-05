@@ -35,6 +35,8 @@ top1000: install
 top10000: install
 	# currently 9998, windows and tryhard disabled
 	$(SCAN_ALL) data/crate-lists/top10000.csv top10000 -n 64
+	split -n 3 data/results/top10000_all.csv data/results/top10000_all.csv. -a 1
+	rm data/results/top10000_all.csv
 
 mozilla: install
 	$(SCAN_ALL) data/crate-lists/mozilla-exempt.csv mozilla-exempt
