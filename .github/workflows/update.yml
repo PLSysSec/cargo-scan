@@ -1,4 +1,4 @@
-name: Results
+name: Update
 
 on:
   push:
@@ -19,6 +19,9 @@ jobs:
 
       - name: Update results
         run: make test-results
+
+      - name: Run rustfmt
+        run: cargo fmt
 
       - name: Commit results
         run: |
