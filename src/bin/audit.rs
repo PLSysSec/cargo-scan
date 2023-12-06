@@ -344,9 +344,13 @@ fn runner(args: Args) -> Result<()> {
             None => Err(anyhow!("Audit file to review doesn't exist")),
             Some(af) => {
                 match args.review_info {
-                    ReviewInfo::All => {
-                        review_audit(&af, &args.crate_path, &args.config, args.quick_mode, args.ignore_hash)
-                    }
+                    ReviewInfo::All => review_audit(
+                        &af,
+                        &args.crate_path,
+                        &args.config,
+                        args.quick_mode,
+                        args.ignore_hash,
+                    ),
                     ReviewInfo::PubFuns => {
                         println!("Public functions marked caller-checked:");
                         for pub_fn in af.pub_caller_checked.keys() {
