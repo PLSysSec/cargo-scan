@@ -345,7 +345,7 @@ fn runner(args: Args) -> Result<()> {
             Some(af) => {
                 match args.review_info {
                     ReviewInfo::All => {
-                        review_audit(&af, &args.crate_path, &args.config, args.quick_mode)
+                        review_audit(&af, &args.crate_path, &args.config, args.quick_mode, args.ignore_hash)
                     }
                     ReviewInfo::PubFuns => {
                         println!("Public functions marked caller-checked:");

@@ -57,6 +57,7 @@ pub fn review_audit(
     crate_path: &Path,
     config: &Config,
     quick_mode: bool,
+    ignore_hash: bool,
 ) -> Result<()> {
     // TODO: Change this scan to use the simpler scan when we add it
     // NOTE: The original scan for the audit we're reviewing wasn't necesarilly created
@@ -65,7 +66,7 @@ pub fn review_audit(
     println!("Scanning crate...");
     let scan_res =
         scanner::scan_crate(crate_path, &audit_file.scanned_effects, quick_mode)?;
-    if !is_audit_scan_valid(audit_file, crate_path)? {
+    if !ignore_hash && !is_audit_scan_valid(audit_file, crate_path)? {
         println!("Error: crate has changed since last audit file scan.");
         return Err(anyhow!("Invalid audit file during review"));
     }

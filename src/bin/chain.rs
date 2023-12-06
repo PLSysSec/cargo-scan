@@ -267,7 +267,7 @@ fn review_crate_audit_file(
 ) -> Result<()> {
     match review_type {
         ReviewInfo::All => {
-            review_audit(audit_file, &crate_path, &AuditConfig::default(), false)
+            review_audit(audit_file, &crate_path, &AuditConfig::default(), false, false)
         }
         ReviewInfo::PubFuns => {
             println!("Public functions marked caller-checked:");

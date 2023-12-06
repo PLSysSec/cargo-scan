@@ -130,6 +130,7 @@ fn main() -> Result<()> {
         &PathBuf::from(&args.crate_path),
         &review_config,
         false,
+        true,
     )?;
 
     remove_dir_all(&args.audit_file_path)?;
