@@ -12,6 +12,7 @@ libc-ex
 num_cpus_minimal
 parsing-ex
 permissions-ex
+recursion-ex
 resolution-ex
 toy-crates
 trait-ex
