@@ -93,9 +93,11 @@ impl EffectTree {
         match self {
             EffectTree::Leaf(e, _) => vec![e.clone()].into_iter().collect::<HashSet<_>>(),
             EffectTree::Branch(e, next) => {
-                let mut res = next.iter().map(|x| {
-                    x.get_effect_infos()
-                }).flatten().collect::<HashSet<_>>();
+                let mut res = next
+                    .iter()
+                    .map(|x| x.get_effect_infos())
+                    .flatten()
+                    .collect::<HashSet<_>>();
                 res.insert(e.clone());
                 res
             }
