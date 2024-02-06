@@ -357,11 +357,20 @@ fn update_audit_annotation(
                 return Ok(AuditStatus::ContinueAudit);
             }
 
+            // flatten the effect tree to look for duplicates so we don't loop
+            let prev_effects = effect_tree.get_effect_infos();
+
             // Add all call locations as parents of this effect
             let new_check_locs = scan_res
                 .get_callers(&curr_effect.caller_path)?
                 .into_iter()
-                .map(|e| EffectTree::Leaf(e, SafetyAnnotation::Skipped))
+                .filter_map(|e| {
+                    if !prev_effects.contains(&e) {
+                        Some(EffectTree::Leaf(e, SafetyAnnotation::Skipped))
+                    } else {
+                        None
+                    }
+                })
                 .collect::<Vec<_>>();
 
             if new_check_locs.is_empty() {
