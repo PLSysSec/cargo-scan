@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::audit_chain::AuditChain;
 use crate::audit_file::{EffectInfo, EffectTree};
@@ -268,6 +268,12 @@ pub fn start_audit(
     // We will set this to the root effect we need to audit if we audit an
     // effect tree and need to now traverse into the dependency packages.
     let mut dependency_audit_effect: Option<EffectInstance> = None;
+    // Keep track of the safety annotation for each different function pointer.
+    // When auditing function pointer effects upon their creation, the user should
+    // determine if they are safe to call in any context. Therefore, in case of
+    // multiple identical such effects, we will automatically flag them as the user
+    // annotated the first one.
+    let mut fn_ptr_effects: HashMap<&str, SafetyAnnotation> = HashMap::new();
 
     let (unaudited_base, unaudited_total) = audit_file.unaudited_effects();
     if unaudited_base > 0 {
@@ -299,6 +305,15 @@ pub fn start_audit(
     for (e, t) in audit_locs {
         match t.get_leaf_annotation() {
             Some(SafetyAnnotation::Skipped) => {
+                // Check if we have already audited the same function
+                // pointer effect and don't show it to the user again
+                if matches!(e.eff_type(), Effect::FnPtrCreation)
+                    && fn_ptr_effects.contains_key(e.callee_path())
+                {
+                    t.set_annotation(*fn_ptr_effects.get(e.callee_path()).unwrap());
+                    continue;
+                }
+
                 match audit_effect_tree(e, t, &scan_res, config)? {
                     AuditStatus::EarlyExit => {
                         break;
@@ -310,7 +325,20 @@ pub fn start_audit(
                     AuditStatus::AuditParentEffect => {
                         return Err(anyhow!("We should never return this status here"));
                     }
-                    _ => (),
+                    _ => {
+                        // Keep track of the safety annotations for function pointers
+                        if matches!(e.eff_type(), Effect::FnPtrCreation)
+                            && !matches!(
+                                t.get_leaf_annotation(),
+                                Some(SafetyAnnotation::Skipped)
+                            )
+                        {
+                            fn_ptr_effects.insert(
+                                e.callee_path(),
+                                t.get_leaf_annotation().unwrap(),
+                            );
+                        }
+                    }
                 }
             }
 
