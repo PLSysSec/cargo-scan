@@ -1,11 +1,11 @@
 crate, [ClosureCreation], [FFI Call], [FFI Declaration], [FnPtrCreation], [PtrDeref], [StaticExtVar], [StaticMutVar], [UnionField], [UnsafeCall], libc, std::env, std::ffi, std::fs, std::io, std::net, std::path, std::process
 caller-checked, 0, 4, 0, 0, 1, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0
 cfg-ex, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0
-dependency-ex, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0
+dependency-ex, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0
 dependency-parent, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 dummy, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 ffi-ex, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-fns-closures, 2, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 1
+fns-closures, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 1
 fnv_minimal, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 inline-ex, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 libc-ex, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0
