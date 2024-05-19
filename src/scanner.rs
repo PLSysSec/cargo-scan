@@ -18,7 +18,7 @@ use crate::resolution::resolve::{FileResolver, Resolve};
 use anyhow::{anyhow, Context, Result};
 use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
-use petgraph::visit::EdgeRef;
+use petgraph::visit::{Bfs, EdgeRef};
 use petgraph::Direction;
 use proc_macro2::{TokenStream, TokenTree};
 use quote::ToTokens;
@@ -38,11 +38,13 @@ use syn::ForeignItemFn;
 #[derive(Debug, Default)]
 pub struct ScanResults {
     pub effects: Vec<EffectInstance>,
+    fn_ptr_effects: Vec<EffectInstance>,
 
     // Saved function declarations
     pub pub_fns: HashSet<CanonicalPath>,
     pub fn_locs: HashMap<CanonicalPath, SrcLoc>,
     pub trait_meths: HashSet<CanonicalPath>,
+    fns_with_effects: HashSet<CanonicalPath>,
 
     pub call_graph: DiGraph<CanonicalPath, SrcLoc>,
     pub node_idxs: HashMap<CanonicalPath, NodeIndex>,
@@ -560,6 +562,19 @@ where
         let f_unsafety: &Option<syn::token::Unsafe> = &f_sig.unsafety;
         if f_unsafety.is_some() {
             self.scope_unsafe += 1;
+
+            // We need to track unsafe functions to properly
+            // filter `FnPtrCreation` effect instances at the
+            // end of the scan, if the pointer points to an
+            // unsafe function
+            self.data.fns_with_effects.insert(f_name.clone());
+        }
+
+        // Similarly, we need to track local FFI declarations to
+        // properly filter `FnPtrCreation` effect instances at the
+        // end of the scan, if the pointer points to a foreign function
+        if f_sig.abi.is_some() {
+            self.data.fns_with_effects.insert(f_name.clone());
         }
 
         // ***** Scan body *****
@@ -1008,8 +1023,7 @@ where
 
     fn scan_path(&mut self, x: &'a syn::Path) {
         let ty = self.resolver.resolve_path_type(x);
-        // Function pointer creation
-        if ty.is_function() || ty.is_fn_ptr() {
+        if ty.is_function() {
             // Skip constant or immutable static function pointers
             if self.resolver.resolve_const_or_static(x) {
                 self.syn_info("Skipping const or static item", x);
@@ -1119,15 +1133,24 @@ where
         let eff = EffectInstance::new_effect(
             self.filepath,
             caller.clone(),
-            callee,
+            callee.clone(),
             &eff_span,
-            eff_type,
+            eff_type.clone(),
         );
 
         if self.scope_unsafe > 0 && eff.is_rust_unsafe() {
             self.scope_unsafe_effects += 1;
         }
-        self.data.effects.push(eff);
+        // Do not add effect instance to effects yet,
+        // if it's a function pointer. We will check if
+        // the function the pointer points to has potential
+        // effects itself at the end of the scan
+        if matches!(eff_type, Effect::FnPtrCreation) {
+            self.data.fn_ptr_effects.push(eff);
+        } else {
+            self.data.effects.push(eff);
+            self.data.fns_with_effects.insert(caller.clone());
+        }
     }
 
     /// push an Effect to the list of results based on this call site.
@@ -1164,6 +1187,7 @@ where
             self.scope_unsafe_effects += 1;
         }
         self.data.effects.push(eff);
+        self.data.fns_with_effects.insert(caller.clone());
     }
 
     // f in a call of the form (f)(args)
@@ -1351,6 +1375,7 @@ pub fn scan_crate_with_sinks(
         );
     }
 
+    filter_fn_ptr_effects(&mut scan_results, crate_name);
     scan_results
         .effects
         .retain(|e| EffectType::matches_effect(relevant_effects, e.eff_type()));
@@ -1365,4 +1390,39 @@ pub fn scan_crate(
     quick_mode: bool,
 ) -> Result<ScanResults> {
     scan_crate_with_sinks(crate_path, HashSet::new(), relevant_effects, quick_mode)
+}
+
+/// Keep only the `FnPtrCreation` effect instances for the pointers that
+/// point to functions with effects or functions defined in dependencies
+fn filter_fn_ptr_effects(scan_results: &mut ScanResults, crate_name: String) {
+    let mut crate_name = crate_name;
+    crate::ident::replace_hyphens(&mut crate_name);
+
+    for p in scan_results.fn_ptr_effects.iter() {
+        if !p.callee().crate_name().to_string().eq(&crate_name)
+            || check_fn_for_effects(scan_results, p.callee())
+        {
+            scan_results.effects.push(p.clone());
+            scan_results.fns_with_effects.insert(p.caller().clone());
+        }
+    }
+}
+
+// We still need to track transitive effects from callees, because the immediate
+// function the pointer points to might not have effects, but it might call other
+// functions with potentially dangerous behavior.
+fn check_fn_for_effects(scan_results: &ScanResults, fn_: &CanonicalPath) -> bool {
+    let Some(node) = scan_results.node_idxs.get(fn_) else {
+        return true;
+    };
+    let graph = &scan_results.call_graph;
+    let mut bfs = Bfs::new(graph, *node);
+
+    while let Some(node) = bfs.next(graph) {
+        if scan_results.fns_with_effects.contains(&graph[node]) {
+            return true;
+        }
+    }
+
+    false
 }

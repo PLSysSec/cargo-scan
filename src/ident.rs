@@ -13,7 +13,7 @@ use crate::effect::SrcLoc;
 
 use super::util::iter::FreshIter;
 
-fn replace_hyphens(s: &mut String) {
+pub fn replace_hyphens(s: &mut String) {
     while let Some(i) = s.find('-') {
         s.replace_range(i..(i + 1), "_");
     }
