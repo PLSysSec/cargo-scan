@@ -327,120 +327,57 @@ impl CanonicalPath {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum TypeKind {
     RawPointer,
-    Callable(CallableKind),
-    DynTrait,
-    Generic,
     UnionFld,
     StaticMut,
     Function,
     #[default]
-    // Default case. Types that we have fully resolved
-    // and do not need extra information about.
+    // Default case for types that we
+    // don't need extra information about.
     Plain,
 }
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum CallableKind {
-    Closure,
-    FnPtr,
-    FnOnce,
-    Other,
+
+impl Display for TypeKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match self {
+            TypeKind::RawPointer => "raw pointer",
+            TypeKind::UnionFld => "union field",
+            TypeKind::StaticMut => "mutable static",
+            TypeKind::Function => "function",
+            TypeKind::Plain => "plain",
+        };
+        write!(f, "{}", s)
+    }
 }
 
 /// Type representing a type identifier.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
-pub struct CanonicalType {
-    ty: String,
-    ty_kind: TypeKind,
-    trait_bounds: Vec<CanonicalPath>,
-}
+pub struct CanonicalType(TypeKind);
+
 impl Display for CanonicalType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.ty.fmt(f)
+        self.0.fmt(f)
     }
 }
 
 impl CanonicalType {
-    fn char_ok(c: char) -> bool {
-        c.is_ascii_alphanumeric() || "_-&*+#|!=',;:<>()[]{}? ".contains(c)
-    }
-
-    pub fn invariant(&self) -> bool {
-        self.ty.chars().all(Self::char_ok)
-    }
-
-    pub fn check_invariant(&self) {
-        if !self.invariant() {
-            warn!("failed invariant! on CanonicalType {}", self);
-        }
-    }
-
-    pub fn new(s: &str) -> Self {
-        Self::new_owned_string(s.to_string())
-    }
-
-    pub fn new_owned_string(s: String) -> Self {
-        Self::new_owned(s, vec![], Default::default())
-    }
-
-    pub fn new_owned(s: String, b: Vec<CanonicalPath>, k: TypeKind) -> Self {
-        let result = Self { ty: s, trait_bounds: b, ty_kind: k };
-        result.check_invariant();
-        result
-    }
-
-    pub fn as_str(&self) -> &str {
-        self.ty.as_str()
-    }
-
-    pub fn add_trait_bound(&mut self, trait_bound: CanonicalPath) {
-        self.trait_bounds.push(trait_bound)
-    }
-
-    pub fn get_trait_bounds(&self) -> &Vec<CanonicalPath> {
-        &self.trait_bounds
+    pub fn new(k: TypeKind) -> Self {
+        Self(k)
     }
 
     pub fn is_raw_ptr(&self) -> bool {
-        matches!(self.ty_kind, TypeKind::RawPointer)
-    }
-
-    pub fn is_callable(&self) -> bool {
-        matches!(&self.ty_kind, TypeKind::Callable(_))
-    }
-
-    pub fn is_dyn_trait(&self) -> bool {
-        matches!(self.ty_kind, TypeKind::DynTrait)
-    }
-
-    pub fn is_generic(&self) -> bool {
-        matches!(self.ty_kind, TypeKind::Generic)
-    }
-
-    pub fn is_closure(&self) -> bool {
-        matches!(&self.ty_kind, TypeKind::Callable(crate::ident::CallableKind::Closure))
+        matches!(self.0, TypeKind::RawPointer)
     }
 
     pub fn is_union_field(&self) -> bool {
-        matches!(self.ty_kind, TypeKind::UnionFld)
+        matches!(self.0, TypeKind::UnionFld)
     }
 
     pub fn is_mut_static(&self) -> bool {
-        matches!(self.ty_kind, TypeKind::StaticMut)
+        matches!(self.0, TypeKind::StaticMut)
     }
 
     pub fn is_function(&self) -> bool {
-        matches!(self.ty_kind, TypeKind::Function)
-    }
-
-    pub fn is_fn_ptr(&self) -> bool {
-        matches!(&self.ty_kind, TypeKind::Callable(crate::ident::CallableKind::FnPtr))
-    }
-
-    pub fn get_callable_kind(&self) -> Option<CallableKind> {
-        if let TypeKind::Callable(kind) = &self.ty_kind {
-            return Some(kind.clone());
-        }
-        None
+        matches!(self.0, TypeKind::Function)
     }
 }
 

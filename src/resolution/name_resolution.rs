@@ -294,7 +294,7 @@ impl<'a> ResolverImpl<'a> {
         let token = self.token(i, s)?;
         let def = self.find_def(&token)?;
 
-        get_canonical_type(&self.sems, self.db, &def)
+        get_canonical_type(self.db, &def)
     }
 
     pub fn is_ffi(&self, s: SrcLoc, i: Ident) -> Result<bool> {

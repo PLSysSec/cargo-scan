@@ -163,8 +163,8 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         Self::aggregate_path(self.filepath, &self.lookup_path_vec(p))
     }
 
-    fn resolve_path_type(&self, p: &'a syn::Path) -> CanonicalType {
-        Self::aggregate_path_type(&self.lookup_path_vec(p))
+    fn resolve_path_type(&self, _: &'a syn::Path) -> CanonicalType {
+        CanonicalType::new(Default::default())
     }
 
     fn resolve_def(&self, i: &'a syn::Ident) -> CanonicalPath {
@@ -199,8 +199,8 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
         CanonicalPath::new_owned(format!("UNKNOWN_FIELD::{}", i), src_loc)
     }
 
-    fn resolve_field_type(&self, i: &syn::Ident) -> CanonicalType {
-        CanonicalType::new_owned_string(format!("UNKNOWN_TYPE::{}", i))
+    fn resolve_field_type(&self, _: &syn::Ident) -> CanonicalType {
+        CanonicalType::new(Default::default())
     }
 
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath {
@@ -466,13 +466,5 @@ impl<'a> HackyResolver<'a> {
             result.push_ident(&ident_from_syn(i));
         }
         CanonicalPath::from_path(result, SrcLoc::from_span(fp, &span))
-    }
-
-    fn aggregate_path_type(p: &[&'a syn::Ident]) -> CanonicalType {
-        let mut result = IdentPath::new_empty();
-        for &i in p {
-            result.push_ident(&ident_from_syn(i));
-        }
-        CanonicalType::new_owned_string(result.to_string())
     }
 }
