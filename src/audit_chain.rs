@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Context, Result};
-use cargo::core::source::MaybePackage;
 use cargo::ops::{fetch, FetchOptions};
 use cargo::{core::Workspace, ops::generate_lockfile, util::config};
 use cargo_lock::{Dependency, Lockfile, Package};
@@ -477,27 +476,15 @@ pub fn create_new_audit_chain(
     let root_name = format!("{}-{}", crate_data.crate_name, crate_data.version);
 
     let config = config::Config::default()?;
-    let _lock = config.acquire_package_cache_lock();
-    let set = HashSet::new();
     crate_path_buf.push("Cargo.toml");
     let workspace = Workspace::new(Path::new(&crate_path_buf), &config)?;
     let fetch_options = FetchOptions { config: &config, targets: Vec::new() };
-    let (resolve, _package_set) = fetch(&workspace, &fetch_options)?;
+    let (_resolve, package_set) = fetch(&workspace, &fetch_options)?;
+
     let crate_paths: HashMap<CrateId, PathBuf> =
-        HashMap::from_iter(resolve.iter().filter_map(|p| {
-            // NOTE: We should return Some for every element here
-            let source_id = p.source_id();
-            let Ok(mut source) = source_id.load(&config, &set) else {
-                return None;
-            };
-            match source.download(p) {
-                Ok(MaybePackage::Ready(pkg)) => {
-                    let crate_id =
-                        CrateId::new(p.name().to_string(), p.version().clone());
-                    Some((crate_id, pkg.root().to_path_buf()))
-                }
-                _ => None,
-            }
+        HashMap::from_iter(package_set.packages().map(|p| {
+            let crate_id = CrateId::new(p.name().to_string(), p.version().clone());
+            (crate_id, p.root().to_path_buf())
         }));
 
     println!("Creating dependency graph");

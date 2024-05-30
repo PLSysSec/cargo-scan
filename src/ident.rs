@@ -46,7 +46,7 @@ impl Display for Ident {
 
 impl Ident {
     fn char_ok(c: char) -> bool {
-        c.is_ascii_alphanumeric() || c == '_'
+        c.is_ascii_alphanumeric() || c == '_' || c == '.'
     }
 
     fn str_ok(s: &str) -> bool {
