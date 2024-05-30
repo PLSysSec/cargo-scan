@@ -214,8 +214,7 @@ fn fn_decl_info(fn_loc: &SrcLoc) -> Result<CallStackInfo> {
 fn missing_fn_decl_info(effect_loc: &SrcLoc) -> CallStackInfo {
     let mut path_list = effect_loc.dir().clone();
     path_list.push(effect_loc.file());
-    let full_path = path_list.join("/");
-    let full_path_str = full_path.to_string_lossy().to_string();
+    let full_path_str = path_list.to_string_lossy().to_string();
 
     CallStackInfo::new(None, full_path_str, effect_loc.start_line())
 }

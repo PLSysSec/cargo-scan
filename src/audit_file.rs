@@ -95,8 +95,7 @@ impl EffectTree {
             EffectTree::Branch(e, next) => {
                 let mut res = next
                     .iter()
-                    .map(|x| x.get_effect_infos())
-                    .flatten()
+                    .flat_map(|x| x.get_effect_infos())
                     .collect::<HashSet<_>>();
                 res.insert(e.clone());
                 res
