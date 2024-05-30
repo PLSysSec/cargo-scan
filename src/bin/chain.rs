@@ -128,7 +128,7 @@ impl std::fmt::Display for ReviewInfo {
 }
 
 impl CommandRunner for Review {
-    fn run_command(self, args: OuterArgs) -> Result<()> {
+    fn run_command(self, _args: OuterArgs) -> Result<()> {
         let mut chain =
             match AuditChain::read_audit_chain(PathBuf::from(&self.manifest_path)) {
                 Ok(Some(chain)) => Ok(chain),
@@ -164,9 +164,11 @@ impl CommandRunner for Review {
                     review_crate
                 ))
             })?;
-            let mut crate_path = PathBuf::from(&args.crate_download_path);
-            crate_path.push(format!("{}", review_crate));
-            review_crate_audit_file(&audit_file, crate_path, self.review_info)?;
+            review_crate_audit_file(
+                &audit_file,
+                audit_file.base_dir.clone(),
+                self.review_info,
+            )?;
         }
         Ok(())
     }
