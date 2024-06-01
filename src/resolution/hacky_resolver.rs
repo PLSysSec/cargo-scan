@@ -29,7 +29,7 @@ where
         .to_str()?
         .replace('-', "_")
         .split('/')
-        .filter(|x| invariant(x))
+        .filter(|x| !x.is_empty() && invariant(x))
         .join("::");
 
     let file = filepath.file_name()?.to_str()?.strip_suffix(".rs")?.to_string();
