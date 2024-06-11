@@ -1,12 +1,13 @@
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
+use ra_ap_hir::db::DefDatabase;
 use ra_ap_hir_expand::InFile;
 
 use crate::ident::{CanonicalPath, CanonicalType, Ident, TypeKind};
 
 use ra_ap_hir::{
-    Adt, AsAssocItem, AssocItemContainer, DefWithBody, GenericParam, HasSource, Module,
-    ModuleSource, Semantics, VariantDef,
+    Adt, AsAssocItem, AssocItemContainer, DefWithBody, GenericParam, HasSource,
+    HirDisplay, Module, ModuleSource, Semantics, VariantDef,
 };
 
 use ra_ap_hir_expand::name::AsName;
@@ -144,11 +145,25 @@ fn get_container_name(
                         container_names.push(name_to_string(t.name(db)))
                     }
                     AssocItemContainer::Impl(i) => {
-                        let adt = i.self_ty(db).as_adt();
-                        let name = adt.map(|it| name_to_string(it.name(db)));
+                        let id = ra_ap_hir_def::ImplId::from(i);
+                        let impl_data = db.impl_data(id);
+
+                        let name = if let Some(trait_ref) =
+                            impl_data.target_trait.as_ref()
+                        {
+                            format!(
+                                "<{} as {}>",
+                                i.self_ty(db).display(db),
+                                trait_ref.path.display(db)
+                            )
+                        } else {
+                            let adt = i.self_ty(db).as_adt();
+                            adt.map(|it| name_to_string(it.name(db))).unwrap_or_default()
+                        };
+
                         let mut parent_names = get_container_name(sems, db, &i.into());
                         container_names.append(&mut parent_names);
-                        container_names.push(name.unwrap_or_default())
+                        container_names.push(name)
                     }
                 }
             }
