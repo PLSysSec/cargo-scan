@@ -62,7 +62,7 @@ resolution_ex, resolution_ex::type_resolution_examples::test_cases, core::slice:
 toy_crates, toy_crates::rustc_version::version_meta_for_command, std::process::Command::arg, std::process, data/test-packages/toy-crates/src, rustc_version.rs, 11, 18
 toy_crates, toy_crates::rustc_version::version_meta_for_command, std::process::Command::output, std::process, data/test-packages/toy-crates/src, rustc_version.rs, 11, 29
 toy_crates, toy_crates::rustc_version::version_meta, std::env::var_os, std::env, data/test-packages/toy-crates/src, rustc_version.rs, 16, 14
-toy_crates, toy_crates::rustc_version::version_meta, std::ffi::os_str::OsString::from, std::ffi, data/test-packages/toy-crates/src, rustc_version.rs, 16, 53
+toy_crates, toy_crates::rustc_version::version_meta, std::ffi::os_str::<OsString as From<&T>>::from, std::ffi, data/test-packages/toy-crates/src, rustc_version.rs, 16, 53
 toy_crates, toy_crates::rustc_version::version_meta, CLOSURE::data::test_packages::toy_crates::src::rustc_version::16::50, [ClosureCreation], data/test-packages/toy-crates/src, rustc_version.rs, 16, 50
 toy_crates, toy_crates::rustc_version::version_meta, std::process::Command::new, std::process, data/test-packages/toy-crates/src, rustc_version.rs, 17, 29
 toy_crates, toy_crates::syn::Cursor::entry, toy_crates::syn::Cursor::ptr, [PtrDeref], data/test-packages/toy-crates/src, syn.rs, 45, 19
