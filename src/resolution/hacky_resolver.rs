@@ -156,11 +156,11 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
     }
 
     fn resolve_ident(&self, i: &'a syn::Ident) -> CanonicalPath {
-        Self::aggregate_path(self.filepath, self.lookup_ident_vec(&i))
+        Self::aggregate_path(self.lookup_ident_vec(&i))
     }
 
     fn resolve_path(&self, p: &'a syn::Path) -> CanonicalPath {
-        Self::aggregate_path(self.filepath, &self.lookup_path_vec(p))
+        Self::aggregate_path(&self.lookup_path_vec(p))
     }
 
     fn resolve_path_type(&self, _: &'a syn::Path) -> CanonicalType {
@@ -190,13 +190,11 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
     }
 
     fn resolve_method(&self, i: &'a syn::Ident) -> CanonicalPath {
-        let src_loc = SrcLoc::from_span(self.filepath, &i.span());
-        CanonicalPath::new_owned(format!("UNKNOWN_METHOD::{}", i), src_loc)
+        CanonicalPath::new_owned(format!("UNKNOWN_METHOD::{}", i))
     }
 
     fn resolve_field(&self, i: &syn::Ident) -> CanonicalPath {
-        let src_loc = SrcLoc::from_span(self.filepath, &i.span());
-        CanonicalPath::new_owned(format!("UNKNOWN_FIELD::{}", i), src_loc)
+        CanonicalPath::new_owned(format!("UNKNOWN_FIELD::{}", i))
     }
 
     fn resolve_field_type(&self, _: &syn::Ident) -> CanonicalType {
@@ -204,8 +202,7 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
     }
 
     fn resolve_field_index(&self, idx: &'a syn::Index) -> CanonicalPath {
-        let src_loc = SrcLoc::from_span(self.filepath, &idx.span());
-        CanonicalPath::new_owned(format!("UNKNOWN_FIELD::{}", idx.index), src_loc)
+        CanonicalPath::new_owned(format!("UNKNOWN_FIELD::{}", idx.index))
     }
 
     fn resolve_unsafe_path(&self, _: &'a syn::Path) -> bool {
@@ -226,11 +223,10 @@ impl<'a> Resolve<'a> for HackyResolver<'a> {
 
     fn resolve_closure(&self, cl: &'a syn::ExprClosure) -> CanonicalPath {
         if let Some(ident) = infer_closure_ident(self.filepath, &cl.span()) {
-            let src_loc = SrcLoc::from_span(self.filepath, &cl.span());
-            CanonicalPath::new_owned(ident, src_loc)
+            CanonicalPath::new_owned(ident)
         } else {
             let s = SrcLoc::from_span(self.filepath, &cl.span());
-            CanonicalPath::new_owned(format!("UNKNOWN_CLOSURE::{}", s), s)
+            CanonicalPath::new_owned(format!("UNKNOWN_CLOSURE::{}", s))
         }
     }
 
@@ -458,13 +454,11 @@ impl<'a> HackyResolver<'a> {
         IdentPath::from_idents(self.scope_mods.iter().cloned().map(ident_from_syn))
     }
 
-    fn aggregate_path(fp: &FilePath, p: &[&'a syn::Ident]) -> CanonicalPath {
+    fn aggregate_path(p: &[&'a syn::Ident]) -> CanonicalPath {
         let mut result = IdentPath::new_empty();
-        let mut span = p[0].span();
         for &i in p {
-            span = i.span().join(span).unwrap();
             result.push_ident(&ident_from_syn(i));
         }
-        CanonicalPath::from_path(result, SrcLoc::from_span(fp, &span))
+        CanonicalPath::from_path(result)
     }
 }

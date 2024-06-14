@@ -104,28 +104,6 @@ fn effects_marked_caller_checked(
     }
 }
 
-// Hacky workaround to check equality of `CanonicalPath`s
-// because they contain `SrcLoc`s with absolute dirs
-fn custom_eq(cp1: &CanonicalPath, cp2: &CanonicalPath) -> bool {
-    if cp1.as_path() != cp2.as_path() {
-        return false;
-    }
-
-    let loc1 = cp1.get_src_loc();
-    let loc2 = cp2.get_src_loc();
-    let dir1 = loc1.dir().to_string_lossy();
-    let dir2 = loc2.dir().to_string_lossy();
-    let Some(dir1) = dir1.rsplit_once("cargo-scan") else { return false };
-    let Some(dir2) = dir2.rsplit_once("cargo-scan") else { return false };
-
-    dir1.1 == dir2.1
-        && loc1.file() == loc2.file()
-        && loc1.start_line() == loc2.start_line()
-        && loc1.start_col() == loc2.start_col()
-        && loc1.end_line() == loc2.end_line()
-        && loc1.end_col() == loc2.end_col()
-}
-
 fn compute_stats(
     crate_id: CrateId,
     audit: &AuditFile,
@@ -146,20 +124,12 @@ fn compute_stats(
 
     // Collect total lines of code for audited functions
     for f in &total_fns {
-        let mut found = false;
-
-        for (key, tracker) in results.fn_loc_tracker.iter() {
-            if custom_eq(key, f) {
-                audited_loc += tracker.get_loc_lb();
-                found = true;
-                break;
-            }
-        }
-        if !found {
-            debug!(
+        match results.fn_loc_tracker.get(f) {
+            Some(tracker) => audited_loc += tracker.get_loc_lb(),
+            None => debug!(
                 "failed to find tracker node for `{:?}`. possibly it is a trait method.",
                 f.as_str()
-            );
+            ),
         }
     }
 

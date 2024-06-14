@@ -210,7 +210,7 @@ impl<'a> ResolverImpl<'a> {
         Ok(ResolverImpl { db, sems, resolver, src_file, file_id, file_diags })
     }
 
-    fn def_source_loc(&self, def: &Definition) -> Option<SrcLoc> {
+    fn parse_source_file(&self, def: &Definition) -> Option<()> {
         let db = self.db;
         let node = syntax_node_from_def(def, db)?;
 
@@ -219,24 +219,7 @@ impl<'a> ResolverImpl<'a> {
         let file_id = node.file_id.file_id()?;
         self.sems.parse(file_id);
 
-        let range = self.sems.original_range(&node.value).range;
-        let vfs_path = self.resolver.vfs.file_path(file_id);
-        let str_path = vfs_path.to_string();
-        let filepath = Path::new(&str_path);
-
-        let line_index = self.resolver.host.analysis().file_line_index(file_id).ok()?;
-        // LineCol is zero-based in RA
-        let start_line_col = line_index.line_col(range.start());
-        let end_line_col = line_index.line_col(range.end());
-        let src_loc = SrcLoc::new(
-            filepath,
-            start_line_col.line as usize + 1,
-            start_line_col.col as usize + 1,
-            end_line_col.line as usize + 1,
-            end_line_col.col as usize + 1,
-        );
-
-        Some(src_loc)
+        Some(())
     }
 
     fn find_def(&self, token: &SyntaxToken) -> Result<Definition> {
@@ -278,16 +261,12 @@ impl<'a> ResolverImpl<'a> {
     }
 
     pub fn resolve_ident(&self, s: SrcLoc, i: Ident) -> Result<CanonicalPath> {
-        let token = self.token(i, s.clone())?;
+        let token = self.token(i, s)?;
         let def = self.find_def(&token)?;
-        let def_loc = self.def_source_loc(&def);
+        self.parse_source_file(&def);
 
         canonical_path(&self.sems, self.db, &def)
             .ok_or_else(|| anyhow!("Could not construct canonical path for '{:?}'", def))
-            .map(|mut cp| match def_loc {
-                Some(loc) => cp.add_src_loc(loc),
-                None => cp.add_src_loc(s),
-            })
     }
 
     pub fn resolve_type(&self, s: SrcLoc, i: Ident) -> Result<CanonicalType> {
@@ -367,9 +346,8 @@ impl<'a> ResolverImpl<'a> {
         let mut impl_methods_for_trait_method: Vec<CanonicalPath> = Vec::new();
         let filter_ = |x: AssocItem| match x {
             AssocItem::Function(f) => {
-                let cp = canonical_path(&self.sems, self.db, &Definition::from(f));
-                let def_loc = self.def_source_loc(&f.into())?;
-                cp.map(|mut cp| cp.add_src_loc(def_loc))
+                self.parse_source_file(&f.into())?;
+                canonical_path(&self.sems, self.db, &f.into())
             }
             _ => None,
         };
