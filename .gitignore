@@ -7,3 +7,6 @@ target
 .vscode
 *.audit_crates
 *.audit_policies
+editor-plugin/node_modules
+editor-plugin/out
+editor-plugin/CHANGELOG.md

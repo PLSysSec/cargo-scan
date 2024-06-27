@@ -1,0 +1,56 @@
+{
+  "name": "cargo-scan",
+  "displayName": "cargo-scan",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "workspaceContains:Cargo.toml",
+    "workspaceContains:*/Cargo.toml"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cargo-scan.scan",
+        "title": "Scan Crate",
+        "category": "cargo-scan"
+      },
+      {
+        "command": "effectsView.openLocation",
+        "title": "Open Location"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "effectsView",
+          "name": "Effects"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^7.11.0",
+    "@typescript-eslint/parser": "^7.11.0",
+    "@vscode/test-cli": "^0.0.9",
+    "@vscode/test-electron": "^2.4.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5"
+  }
+}

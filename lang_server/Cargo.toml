@@ -1,0 +1,21 @@
+[package]
+name = "lang_server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "lang_server"
+
+[dependencies]
+cargo-scan = { path = "../", version = "0.1.0" }
+lsp-server = "0.7.6"
+lsp-types = "=0.95"
+log.workspace = true
+anyhow.workspace = true
+serde_json.workspace = true
+serde = { workspace = true, features = ["derive"] }
+env_logger.workspace = true
+
+
