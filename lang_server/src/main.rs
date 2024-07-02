@@ -1,6 +1,5 @@
-pub mod server;
-
 use env_logger::Builder;
+use lang_server::server;
 use log::info;
 use std::{env, error::Error, str::FromStr};
 

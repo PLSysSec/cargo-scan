@@ -1,40 +1,53 @@
-use std::{error::Error, str::FromStr};
+use std::{error::Error, path::PathBuf, str::FromStr};
 
 use anyhow::anyhow;
+use cargo_scan::{audit_file::AuditFile, effect::EffectInstance, ident::CanonicalPath};
 use log::{debug, info};
 use lsp_server::{Connection, Message};
 use lsp_types::{
-    request::Request, InitializeParams, Location, Position, Range, ServerCapabilities,
-    TextDocumentSyncCapability, TextDocumentSyncKind, Url,
+    notification::Notification, request::Request, InitializeParams, ServerCapabilities,
+    TextDocumentSyncCapability, TextDocumentSyncKind,
 };
 use serde::{Deserialize, Serialize};
 
-use cargo_scan::scan_stats;
+use crate::{
+    location::{convert_annotation, to_src_loc},
+    request::{audit_req, scan_req, EffectsResponse, ScanCommandResponse},
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ScanCommandParams {
     params: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct ScanCommandResponse {
-    effects: Vec<EffectsResponse>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct EffectsResponse {
-    effect_id: String,
-    effect_type: String,
-    location: Location,
-}
-
 struct ScanCommand;
+struct AuditCommand;
 
 impl Request for ScanCommand {
     type Params = ScanCommandParams;
     type Result = ScanCommandResponse;
     const METHOD: &'static str = "cargo-scan.scan";
 }
+
+impl Request for AuditCommand {
+    type Params = ScanCommandParams;
+    type Result = ScanCommandResponse;
+    const METHOD: &'static str = "cargo-scan.audit";
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct AuditNotificationParams {
+    safety_annotation: String,
+    effect: EffectsResponse,
+}
+
+struct AuditNotification;
+
+impl Notification for AuditNotification {
+    type Params = AuditNotificationParams;
+    const METHOD: &'static str = "cargo-scan.set_annotation";
+}
+
 pub fn run_server() -> anyhow::Result<(), Box<dyn Error + Sync + Send>> {
     let (connection, io_threads) = Connection::stdio();
 
@@ -52,7 +65,6 @@ pub fn run_server() -> anyhow::Result<(), Box<dyn Error + Sync + Send>> {
     info!("Initialized server connection");
 
     runner(&connection, initialize_params)?;
-
     io_threads.join()?;
 
     Ok(())
@@ -71,9 +83,12 @@ fn runner(
         .and_then(|folders| folders.get(0).map(|folder| folder.uri.clone()))
         .ok_or_else(|| anyhow!("Couldn't get root path from workspace folders"))?;
 
-    let root_crate_path = root_uri.path();
-    info!("Starting main server loop");
+    let root_crate_path = std::path::PathBuf::from_str(root_uri.path())?;
+    debug!("Crate path received in cargo-scan LSP server: {}", root_crate_path.display());
 
+    info!("Starting main server loop\n");
+    let mut audit_file: Option<AuditFile> = None;
+    let mut audit_file_path = PathBuf::new();
     for msg in &conn.receiver {
         match msg {
             Message::Request(req) => {
@@ -82,47 +97,25 @@ fn runner(
                 }
 
                 if req.method == ScanCommand::METHOD {
-                    // scan crate in root path
-                    let path = std::path::PathBuf::from_str(root_crate_path)?;
-                    debug!(
-                        "Crate path received in cargo-scan lsp server: {}",
-                        path.display()
-                    );
+                    // let stats = get_simple_scan_results(&root_crate_path);
+                    let res = scan_req(&root_crate_path)?;
+                    conn.sender.send(Message::Response(lsp_server::Response {
+                        id: req.id,
+                        result: Some(res),
+                        error: None,
+                    }))?;
+                } else if req.method == AuditCommand::METHOD {
+                    let (af, fp) = audit_req(&root_crate_path)?;
+                    let effects = af
+                        .audit_trees
+                        .keys()
+                        .into_iter()
+                        .map(|x| x.clone())
+                        .collect::<Vec<EffectInstance>>();
 
-                    let res = scan_stats::get_crate_stats_default(path, false);
-                    info!("Finished scanning. Found {} effects.", res.effects.len());
-
-                    // Gather effects to send as a response
-                    let mut effects = vec![];
-                    for effect in res.effects {
-                        let call_loc = effect.call_loc();
-                        let filepath = call_loc.filepath_string();
-
-                        // Convert call location to an appropriate lsp type
-                        let location = Location {
-                            uri: Url::from_file_path(filepath).unwrap(),
-                            range: Range {
-                                start: Position {
-                                    line: call_loc.sub1().start_line() as u32,
-                                    character: call_loc.sub1().start_col() as u32,
-                                },
-                                end: Position {
-                                    line: call_loc.sub1().end_line() as u32,
-                                    character: call_loc.sub1().end_col() as u32,
-                                },
-                            },
-                        };
-
-                        let eff = EffectsResponse {
-                            effect_id: effect.callee_path().to_string(),
-                            effect_type: effect.eff_type().to_csv(),
-                            location,
-                        };
-
-                        effects.push(eff);
-                    }
-
-                    let res = serde_json::to_value(ScanCommandResponse { effects })?;
+                    audit_file = Some(af);
+                    audit_file_path = fp;
+                    let res = ScanCommandResponse::new(&effects)?.to_json_value()?;
                     conn.sender.send(Message::Response(lsp_server::Response {
                         id: req.id,
                         result: Some(res),
@@ -131,7 +124,28 @@ fn runner(
                 }
             }
             Message::Response(_) => {}
-            Message::Notification(_) => {}
+            Message::Notification(notif) => {
+                if notif.method == AuditNotification::METHOD {
+                    let params: AuditNotificationParams =
+                        serde_json::from_value(notif.params)?;
+                    let annotation = params.safety_annotation;
+                    let effect = params.effect;
+                    let src_loc = to_src_loc(effect.location)?;
+                    let callee = CanonicalPath::new_owned(effect.callee);
+
+                    if let Some(audit_) = audit_file.as_mut() {
+                        if let Some((_, tree)) =
+                            audit_.audit_trees.iter_mut().find(|(i, _)| {
+                                *i.callee() == callee && *i.call_loc() == src_loc
+                            })
+                        {
+                            let new_ann = convert_annotation(annotation);
+                            tree.set_annotation(new_ann);
+                            audit_.save_to_file(audit_file_path.clone())?;
+                        }
+                    }
+                }
+            }
         }
     }
 

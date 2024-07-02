@@ -2244,6 +2244,7 @@ dependencies = [
  "anyhow",
  "cargo-scan",
  "env_logger",
+ "home",
  "log",
  "lsp-server",
  "lsp-types",

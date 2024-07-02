@@ -22,8 +22,9 @@
         "category": "cargo-scan"
       },
       {
-        "command": "effectsView.openLocation",
-        "title": "Open Location"
+        "command": "cargo-scan.audit",
+        "title": "Audit Crate",
+        "category": "cargo-scan"
       }
     ],
     "views": {

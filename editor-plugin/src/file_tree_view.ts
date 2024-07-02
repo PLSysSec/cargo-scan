@@ -1,7 +1,10 @@
 import * as vscode from 'vscode';
+import { window } from 'vscode';
+import { LanguageClient } from 'vscode-languageclient/node';
 
 interface EffectResponseData {
-    effect_id: string;
+    caller: string;
+    callee: string;
     effect_type: string;
     location: vscode.Location;
 }
@@ -10,20 +13,24 @@ export interface EffectsResponse {
     effects: EffectResponseData[];
 }
 
+interface AuditNotification {
+    safety_annotation: string;
+    effect: EffectResponseData;
+}
+
 // Class to present the locations of the effects as a TreeView in VSCode's sidebar
 export class LocationsProvider
-    implements vscode.TreeDataProvider<vscode.TreeItem>
-{
-    private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined> = 
+    implements vscode.TreeDataProvider<vscode.TreeItem> {
+    private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined> =
         new vscode.EventEmitter<vscode.TreeItem | undefined>();
     readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined> =
         this._onDidChangeTreeData.event;
 
-    private effects: EffectResponseData[] = [];
     private groupedEffects: { [file: string]: EffectResponseData[] } = {};
 
+    constructor(private client: LanguageClient) {}
+
     setLocations(effects: EffectResponseData[]) {
-        this.effects = effects;
         this.groupedEffects = this.groupByFile(effects);
         this._onDidChangeTreeData.fire(undefined);
     }
@@ -69,6 +76,55 @@ export class LocationsProvider
             {} as { [file: string]: EffectResponseData[] }
         );
     }
+
+    private remove_item(item: LocationItem) {
+        const uri = vscode.Uri.parse(item.data.location.uri.toString());
+        const file = uri.fsPath;
+        let effects = this.groupedEffects[file];
+
+        // Remove effect item from the list
+        if (effects) {
+            this.groupedEffects[file] = effects.filter(eff => eff !== item.data);
+        }
+        // If there no remaining effects for `file`,
+        // delete it from the TreeView as well
+        if (this.groupedEffects[file].length === 0) {
+            delete this.groupedEffects[file];
+        }
+        // Update TreeView
+        this._onDidChangeTreeData.fire(undefined);
+    }
+
+    register(context: vscode.ExtensionContext) {
+        const tree = vscode.window.createTreeView('effectsView', { treeDataProvider: this });
+
+        tree.onDidChangeSelection(async (e) => {
+            const annotate_effects = context.globalState.get('annotateEffects', false);
+            const selectedItem = e.selection[0];
+
+            if (selectedItem instanceof LocationItem) {
+                if (annotate_effects) {
+                    const selection = await vscode.window.showQuickPick(['Safe', 'Unsafe', 'Caller-Checked'], {
+                        placeHolder: 'Choose a safety annotation for this effect instance'
+                    });
+                    if (selection) {
+                        vscode.window.showInformationMessage(`You marked effect "${selectedItem.tooltip}" as ${selection}.`);
+                        this.remove_item(selectedItem);
+
+                        // Notify server about the received safety annotation from the user
+                        const params: AuditNotification = { safety_annotation: selection, effect: selectedItem.data };
+                        this.client.sendNotification('cargo-scan.set_annotation', params);
+                    }
+                } else {
+                    // Preview effects
+                    let location = selectedItem.data.location;
+                    vscode.commands.executeCommand('vscode.open', location.uri, { selection: location.range });
+                }
+            }
+        })
+
+        context.subscriptions.push(tree);
+    }
 }
 
 class FileItem extends vscode.TreeItem {
@@ -79,24 +135,17 @@ class FileItem extends vscode.TreeItem {
 
 class LocationItem extends vscode.TreeItem {
     constructor(public readonly data: EffectResponseData) {
+        let start = data.location.range.start;
         super(
-            `${data.effect_type}: ${data.location.range.start.line + 1}:${data.location.range.start.character + 1}`,
+            `${data.effect_type}: ${start.line + 1}:${start.character + 1}`,
             vscode.TreeItemCollapsibleState.None
         );
-        this.tooltip = data.effect_id;
+
+        this.tooltip = data.callee;
         this.command = {
-            command: 'effectsView.openLocation',
+            command: 'vscode.open',
             title: 'Open Location',
-            arguments: [this.data.location],
+            arguments: [data.location.uri, { selection: data.location.range }]
         };
     }
-}
-
-export async function openLocation(location: vscode.Location) {
-    const uri = vscode.Uri.parse(location.uri.toString());
-    const document = await vscode.workspace.openTextDocument(uri);
-    const editor = await vscode.window.showTextDocument(document);
-    const range = new vscode.Range(location.range.start, location.range.end);
-    editor.selection = new vscode.Selection(range.start, range.end);
-    editor.revealRange(range);
 }
