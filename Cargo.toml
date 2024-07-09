@@ -1,6 +1,6 @@
 [workspace]
 members = ["lang_server"]
-exclude = ["data/packages/", "data/test-packages/"] 
+exclude = ["data/packages/", "data/test-packages/"]
 
 [package]
 name = "cargo-scan"
@@ -25,8 +25,8 @@ codegen-units = 16
 [dependencies]
 anyhow.workspace = true
 assert_cmd = "2.0.12"
-cargo = "0.74.0"
-cargo_toml = "0.17.0"
+cargo = "0.80.0"
+cargo_toml = "0.20.3"
 cargo-lock = { version = "9.0.0", features = ["dependency-tree"] }
 clap = { version = "4.4.8", features = ["derive"] }
 codespan-reporting = "0.11.1"

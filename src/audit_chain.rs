@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Context, Result};
-use cargo::ops::{fetch, FetchOptions};
-use cargo::{core::Workspace, ops::generate_lockfile, util::config};
+use cargo::ops::{fetch, generate_lockfile, FetchOptions};
+use cargo::core::Workspace;
+use cargo::util::context::GlobalContext;
 use cargo_lock::{Dependency, Lockfile, Package};
 use cargo_toml::Manifest;
 use clap::Args as ClapArgs;
@@ -169,7 +170,7 @@ impl AuditChain {
             Ok(l)
         } else {
             println!("Lockfile missing: generating new lockfile");
-            let config = config::Config::default()?;
+            let config = GlobalContext::default()?;
             crate_path.pop();
             crate_path.push("Cargo.toml");
             let workspace = Workspace::new(&crate_path, &config)?;
@@ -475,10 +476,10 @@ pub fn create_new_audit_chain(
 
     let root_name = format!("{}-{}", crate_data.crate_name, crate_data.version);
 
-    let config = config::Config::default()?;
+    let config = GlobalContext::default()?;
     crate_path_buf.push("Cargo.toml");
     let workspace = Workspace::new(Path::new(&crate_path_buf), &config)?;
-    let fetch_options = FetchOptions { config: &config, targets: Vec::new() };
+    let fetch_options = FetchOptions { gctx: &config, targets: Vec::new() };
     let (_resolve, package_set) = fetch(&workspace, &fetch_options)?;
 
     let crate_paths: HashMap<CrateId, PathBuf> =
