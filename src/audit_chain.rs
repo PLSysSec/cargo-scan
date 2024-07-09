@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context, Result};
-use cargo::ops::{fetch, generate_lockfile, FetchOptions};
 use cargo::core::Workspace;
+use cargo::ops::{fetch, generate_lockfile, FetchOptions};
 use cargo::util::context::GlobalContext;
 use cargo_lock::{Dependency, Lockfile, Package};
 use cargo_toml::Manifest;
