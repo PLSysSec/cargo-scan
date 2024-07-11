@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     fs::{create_dir_all, File},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use anyhow::{anyhow, Error};
@@ -65,7 +65,7 @@ impl AuditCommandResponse {
     }
 
     pub fn to_json_value(&self) -> Result<Value, Error> {
-        serde_json::to_value(self).map_err(|e| Error::new(e))
+        serde_json::to_value(self).map_err(Error::new)
     }
 }
 
@@ -80,23 +80,23 @@ impl ScanCommandResponse {
     }
 
     pub fn to_json_value(&self) -> Result<Value, Error> {
-        serde_json::to_value(self).map_err(|e| Error::new(e))
+        serde_json::to_value(self).map_err(Error::new)
     }
 }
 
 /// Scan crate in root path and get crate stats
-fn get_simple_scan_results(path: &PathBuf) -> CrateStats {
+fn get_simple_scan_results(path: &Path) -> CrateStats {
     let res = get_crate_stats_default(path.to_path_buf(), false);
     info!("Finished scanning. Found {} effects.", res.effects.len());
 
     res
 }
-pub fn scan_req(crate_path: &PathBuf) -> Result<Value, Error> {
-    let stats = get_simple_scan_results(&crate_path);
+pub fn scan_req(crate_path: &Path) -> Result<Value, Error> {
+    let stats = get_simple_scan_results(crate_path);
     ScanCommandResponse::new(&stats.effects)?.to_json_value()
 }
 
-pub fn audit_req(path: &PathBuf) -> Result<(AuditFile, PathBuf), Error> {
+pub fn audit_req(path: &Path) -> Result<(AuditFile, PathBuf), Error> {
     // The audit file path defaults to "~/.cargo_audits"
     let mut audit_file_path = home_dir().ok_or_else(||
         anyhow!("Error: couldn't find the home directory (required for default audit file path)"))?;
@@ -117,11 +117,13 @@ pub fn audit_req(path: &PathBuf) -> Result<(AuditFile, PathBuf), Error> {
             }
             File::create(audit_file_path.clone())?;
 
-            let mut pf =
-                AuditFile::empty(path.clone(), effect::DEFAULT_EFFECT_TYPES.to_vec())?;
+            let mut pf = AuditFile::empty(
+                path.to_path_buf(),
+                effect::DEFAULT_EFFECT_TYPES.to_vec(),
+            )?;
 
             // Scan crate and set base effects to the audit file
-            let effects = get_simple_scan_results(&path).effects;
+            let effects = get_simple_scan_results(path).effects;
             pf.set_base_audit_trees(effects.iter());
             pf.save_to_file(audit_file_path.clone())?;
             info!("Created new audit file `{}`", audit_file_path.display());

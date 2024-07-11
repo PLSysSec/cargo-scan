@@ -82,7 +82,7 @@ fn runner(
 
     // Determine the root URI from the first workspace folder if available
     let root_uri = workspace_folders
-        .and_then(|folders| folders.get(0).map(|folder| folder.uri.clone()))
+        .and_then(|folders| folders.first().map(|folder| folder.uri.clone()))
         .ok_or_else(|| anyhow!("Couldn't get root path from workspace folders"))?;
 
     let root_crate_path = std::path::PathBuf::from_str(root_uri.path())?;
@@ -114,7 +114,7 @@ fn runner(
                         .map(|(eff, tree)| {
                             let ann = tree
                                 .get_leaf_annotation()
-                                .map_or_else(|| String::new(), |a| a.to_string());
+                                .map_or_else(String::new, |a| a.to_string());
 
                             (eff, ann)
                         })
