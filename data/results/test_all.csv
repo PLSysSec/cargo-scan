@@ -18,6 +18,7 @@ cfg_ex, cfg_ex::foo1, std::fs::write, std::fs, data/test-packages/cfg-ex/src, ma
 cfg_ex, cfg_ex::foo2, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 24, 4
 cfg_ex, cfg_ex::test_2, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 41, 4
 dependency_ex, dependency_ex::read_fn, std::fs::File::open, std::fs, data/test-packages/dependency-ex/src, lib.rs, 5, 24
+dependency_ex, dependency_ex::read_fn, std::fs::<File as Read>::read_to_end, std::fs, data/test-packages/dependency-ex/src, lib.rs, 8, 17
 dependency_ex, dependency_ex::unsafe_deref, dependency_ex::unsafe_deref::y, [PtrDeref], data/test-packages/dependency-ex/src, lib.rs, 21, 9
 dependency_parent, dependency_parent::internal_unsafe_deref, dependency_parent::internal_unsafe_deref::y, [PtrDeref], data/test-packages/dependency-parent/src, main.rs, 5, 9
 ffi_ex, ffi_ex::SCDynamicStoreGetTypeID, ffi_ex::SCDynamicStoreGetTypeID, [FFI Declaration], data/test-packages/ffi-ex/src, main.rs, 38, 4
@@ -42,7 +43,6 @@ fns_closures, fns_closures::closure_effects::return_file_reader_2, std::fs::read
 fns_closures, fns_closures::closure_effects::return_file_reader_2, CLOSURE::data::test_packages::fns_closures::src::closure_effects::9::4, [ClosureCreation], data/test-packages/fns-closures/src, closure_effects.rs, 9, 4
 fns_closures, fns_closures::closure_effects::main, std::path::Path::new, std::path, data/test-packages/fns-closures/src, closure_effects.rs, 14, 12
 fns_closures, fns_closures::consts::terrible_code_execution_attack, std::process::Command::new, std::process, data/test-packages/fns-closures/src, consts.rs, 40, 4
-fns_closures, fns_closures::consts::terrible_code_execution_attack, std::process::Command::output, std::process, data/test-packages/fns-closures/src, consts.rs, 40, 50
 fns_closures, fns_closures::unsafe_fn_pointers::bar, fns_closures::unsafe_fn_pointers::foo, [FnPtrCreation], data/test-packages/fns-closures/src, unsafe_fn_pointers.rs, 10, 4
 libc_ex, libc_ex::main, libc::unix::sysconf, [FFI Call], data/test-packages/libc-ex/src, main.rs, 6, 8
 libc_ex, libc_ex::main, libc::sysctlbyname, libc, data/test-packages/libc-ex/src, main.rs, 8, 8
