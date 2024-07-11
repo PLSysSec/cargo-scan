@@ -12,7 +12,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     location::{convert_annotation, to_src_loc},
-    request::{audit_req, scan_req, EffectsResponse, ScanCommandResponse},
+    request::{
+        audit_req, scan_req, AuditCommandResponse, EffectsResponse, ScanCommandResponse,
+    },
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -97,7 +99,6 @@ fn runner(
                 }
 
                 if req.method == ScanCommand::METHOD {
-                    // let stats = get_simple_scan_results(&root_crate_path);
                     let res = scan_req(&root_crate_path)?;
                     conn.sender.send(Message::Response(lsp_server::Response {
                         id: req.id,
@@ -107,15 +108,21 @@ fn runner(
                 } else if req.method == AuditCommand::METHOD {
                     let (af, fp) = audit_req(&root_crate_path)?;
                     let effects = af
+                        .clone()
                         .audit_trees
-                        .keys()
                         .into_iter()
-                        .map(|x| x.clone())
-                        .collect::<Vec<EffectInstance>>();
+                        .map(|(eff, tree)| {
+                            let ann = tree
+                                .get_leaf_annotation()
+                                .map_or_else(|| String::new(), |a| a.to_string());
+
+                            (eff, ann)
+                        })
+                        .collect::<Vec<(EffectInstance, String)>>();
 
                     audit_file = Some(af);
                     audit_file_path = fp;
-                    let res = ScanCommandResponse::new(&effects)?.to_json_value()?;
+                    let res = AuditCommandResponse::new(&effects)?.to_json_value()?;
                     conn.sender.send(Message::Response(lsp_server::Response {
                         id: req.id,
                         result: Some(res),

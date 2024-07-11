@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs::{create_dir_all, File},
     path::PathBuf,
 };
@@ -16,10 +17,11 @@ use cargo_scan::{
     scan_stats::{get_crate_stats_default, CrateStats},
     util::load_cargo_toml,
 };
+use serde_with::serde_as;
 
 use crate::location::from_src_loc;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Debug)]
 pub struct EffectsResponse {
     pub caller: String,
     pub callee: String,
@@ -43,6 +45,28 @@ impl EffectsResponse {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ScanCommandResponse {
     effects: Vec<EffectsResponse>,
+}
+
+#[serde_as]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
+pub struct AuditCommandResponse {
+    #[serde_as(as = "Vec<(_, _)>")]
+    effects: HashMap<EffectsResponse, String>,
+}
+
+impl AuditCommandResponse {
+    pub fn new(effs: &Vec<(EffectInstance, String)>) -> Result<Self, Error> {
+        let mut effects = HashMap::new();
+        for (e, a) in effs {
+            effects.insert(EffectsResponse::new(e)?, a.to_owned());
+        }
+
+        Ok(Self { effects })
+    }
+
+    pub fn to_json_value(&self) -> Result<Value, Error> {
+        serde_json::to_value(self).map_err(|e| Error::new(e))
+    }
 }
 
 impl ScanCommandResponse {
@@ -82,7 +106,10 @@ pub fn audit_req(path: &PathBuf) -> Result<(AuditFile, PathBuf), Error> {
     audit_file_path.push(format!("{}.audit", crate_id));
 
     let audit_file = match AuditFile::read_audit_file(audit_file_path.clone())? {
-        Some(p) => p,
+        Some(p) => {
+            info!("Loaded audit file `{}`", audit_file_path.display());
+            p
+        }
         None => {
             // No audit file yet, so make a new one
             if let Some(parent_dir) = audit_file_path.parent() {

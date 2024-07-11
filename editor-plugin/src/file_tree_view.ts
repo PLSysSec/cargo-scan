@@ -1,8 +1,6 @@
 import * as vscode from 'vscode';
-import { window } from 'vscode';
-import { LanguageClient } from 'vscode-languageclient/node';
 
-interface EffectResponseData {
+export interface EffectResponseData {
     caller: string;
     callee: string;
     effect_type: string;
@@ -11,11 +9,6 @@ interface EffectResponseData {
 
 export interface EffectsResponse {
     effects: EffectResponseData[];
-}
-
-interface AuditNotification {
-    safety_annotation: string;
-    effect: EffectResponseData;
 }
 
 // Class to present the locations of the effects as a TreeView in VSCode's sidebar
@@ -28,11 +21,9 @@ export class LocationsProvider
 
     private groupedEffects: { [file: string]: EffectResponseData[] } = {};
 
-    constructor(private client: LanguageClient) {}
-
     setLocations(effects: EffectResponseData[]) {
         this.groupedEffects = this.groupByFile(effects);
-        this._onDidChangeTreeData.fire(undefined);
+        this._onDidChangeTreeData.fire(undefined);    
     }
 
     getTreeItem(element: LocationItem): vscode.TreeItem {
@@ -77,52 +68,12 @@ export class LocationsProvider
         );
     }
 
-    private remove_item(item: LocationItem) {
-        const uri = vscode.Uri.parse(item.data.location.uri.toString());
-        const file = uri.fsPath;
-        let effects = this.groupedEffects[file];
-
-        // Remove effect item from the list
-        if (effects) {
-            this.groupedEffects[file] = effects.filter(eff => eff !== item.data);
-        }
-        // If there no remaining effects for `file`,
-        // delete it from the TreeView as well
-        if (this.groupedEffects[file].length === 0) {
-            delete this.groupedEffects[file];
-        }
-        // Update TreeView
-        this._onDidChangeTreeData.fire(undefined);
+    getGroupedEffects(): { [file: string]: EffectResponseData[] } {
+        return this.groupedEffects;
     }
 
     register(context: vscode.ExtensionContext) {
-        const tree = vscode.window.createTreeView('effectsView', { treeDataProvider: this });
-
-        tree.onDidChangeSelection(async (e) => {
-            const annotate_effects = context.globalState.get('annotateEffects', false);
-            const selectedItem = e.selection[0];
-
-            if (selectedItem instanceof LocationItem) {
-                if (annotate_effects) {
-                    const selection = await vscode.window.showQuickPick(['Safe', 'Unsafe', 'Caller-Checked'], {
-                        placeHolder: 'Choose a safety annotation for this effect instance'
-                    });
-                    if (selection) {
-                        vscode.window.showInformationMessage(`You marked effect "${selectedItem.tooltip}" as ${selection}.`);
-                        this.remove_item(selectedItem);
-
-                        // Notify server about the received safety annotation from the user
-                        const params: AuditNotification = { safety_annotation: selection, effect: selectedItem.data };
-                        this.client.sendNotification('cargo-scan.set_annotation', params);
-                    }
-                } else {
-                    // Preview effects
-                    let location = selectedItem.data.location;
-                    vscode.commands.executeCommand('vscode.open', location.uri, { selection: location.range });
-                }
-            }
-        })
-
+        const tree = vscode.window.createTreeView('effectsView', { treeDataProvider: this });    
         context.subscriptions.push(tree);
     }
 }

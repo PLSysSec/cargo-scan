@@ -7,11 +7,14 @@ import {
     TransportKind,
 } from 'vscode-languageclient/node';
 import {
-    EffectsResponse,
     LocationsProvider,
 } from './file_tree_view';
+import { registerCommands } from './commands';
+import { AuditAnnotations } from './audit_annotations';
 
-let client: LanguageClient;
+export let client: LanguageClient;
+export const locationsProvider = new LocationsProvider();
+export const annotations = new AuditAnnotations();
 
 export function activate(context: vscode.ExtensionContext) {
     const outputChannel = vscode.window.createOutputChannel('Cargo Scan Client');
@@ -29,7 +32,6 @@ export function activate(context: vscode.ExtensionContext) {
     let serverModule = context.asAbsolutePath(
         path.join('..', 'target', 'debug', 'lang_server')
     );
-    outputChannel.appendLine(`server mod: ${serverModule}`);
     let serverOptions: ServerOptions = {
         command: serverModule,
         args: [],
@@ -55,26 +57,12 @@ export function activate(context: vscode.ExtensionContext) {
 
     client.start();
     outputChannel.appendLine('Cargo Scan extension is now active!');
-
-    // Register the tree view provider
-    const locationsProvider = new LocationsProvider(client);
-    locationsProvider.register(context);
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('cargo-scan.scan', async () => {
-            const response = await client.sendRequest<EffectsResponse>('cargo-scan.scan');
-            context.globalState.update('annotateEffects', false);
-            locationsProvider.setLocations(response.effects);
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('cargo-scan.audit', async () => {
-            const response = await client.sendRequest<EffectsResponse>('cargo-scan.audit');
-            context.globalState.update('annotateEffects', true);
-            locationsProvider.setLocations(response.effects);
-        })
-    );
+    
+    
+    // Register everything
+    registerCommands(context);
+    annotations.register(context);
+    locationsProvider.register(context);    
 }
 
 export function deactivate() { }

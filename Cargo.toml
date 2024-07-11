@@ -54,7 +54,7 @@ ra_ap_vfs = "0.0.185"
 ra_ap_cfg = "0.0.185"
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
-serde_with = "3.4.0"
+serde_with.workspace = true
 semver = "1.0.20"
 sha2 = "0.10.8"
 syn = { version = "2.0", features = ["full", "extra-traits"] }
@@ -73,3 +73,4 @@ serde = { version = "1.0.192", features = ["derive"] }
 anyhow = "1.0.75"
 env_logger = "0.10.1"
 home = "0.5.5"
+serde_with = "3.4.0"
