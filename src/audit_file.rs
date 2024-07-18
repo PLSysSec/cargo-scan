@@ -76,9 +76,11 @@ impl EffectTree {
     pub fn get_all_annotations(&self) -> Vec<(EffectInfo, String)> {
         match self {
             EffectTree::Leaf(i, a) => vec![(i.clone(), a.to_string())],
-            EffectTree::Branch(i, next) => {  
-                let mut annotations = next.iter().flat_map(|t| t.get_all_annotations()).collect::<Vec<_>>();
-                annotations.push((i.clone(), SafetyAnnotation::CallerChecked.to_string()));
+            EffectTree::Branch(i, next) => {
+                let mut annotations =
+                    next.iter().flat_map(|t| t.get_all_annotations()).collect::<Vec<_>>();
+                annotations
+                    .push((i.clone(), SafetyAnnotation::CallerChecked.to_string()));
 
                 annotations
             }
@@ -105,7 +107,9 @@ impl EffectTree {
         match self {
             EffectTree::Leaf(e, _) if e == eff_info => Some(self),
             EffectTree::Branch(e, _) if e == eff_info => Some(self),
-            EffectTree::Branch(_, next) => next.iter_mut().find_map(|t| t.get_leaf_mut(eff_info)),
+            EffectTree::Branch(_, next) => {
+                next.iter_mut().find_map(|t| t.get_leaf_mut(eff_info))
+            }
             _ => None,
         }
     }
