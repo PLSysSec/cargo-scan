@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use cargo_scan::{
-    audit_file::AuditFile,
+    audit_file::{AuditFile, EffectInfo, EffectTree},
     effect::{self, EffectInstance},
     scan_stats::{get_crate_stats_default, CrateStats},
     util::load_cargo_toml,
@@ -21,7 +21,7 @@ use serde_with::serde_as;
 
 use crate::location::from_src_loc;
 
-#[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Debug)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Debug, Clone)]
 pub struct EffectsResponse {
     pub caller: String,
     pub callee: String,
@@ -40,6 +40,37 @@ impl EffectsResponse {
             location,
         })
     }
+
+    pub fn from_effect_info(
+        eff_info: &EffectInfo,
+        callee: String,
+        effect_type: String,
+    ) -> Result<Self, Error> {
+        let location = from_src_loc(&eff_info.callee_loc)?;
+
+        Ok(Self {
+            caller: eff_info.caller_path.to_string(),
+            callee,
+            effect_type,
+            location,
+        })
+    }
+
+    pub fn get_caller(&self) -> String {
+        self.caller.to_owned()
+    }
+
+    pub fn get_callee(&self) -> String {
+        self.callee.to_owned()
+    }
+
+    pub fn get_effect_type(&self) -> String {
+        self.effect_type.to_owned()
+    }
+
+    pub fn from_json_value(e: Value) -> Result<Self, Error> {
+        serde_json::from_value(e).map_err(Error::new)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -55,10 +86,18 @@ pub struct AuditCommandResponse {
 }
 
 impl AuditCommandResponse {
-    pub fn new(effs: &Vec<(EffectInstance, String)>) -> Result<Self, Error> {
+    pub fn new(
+        effs: &HashMap<EffectInstance, Vec<(EffectInfo, String)>>,
+    ) -> Result<Self, Error> {
         let mut effects = HashMap::new();
-        for (e, a) in effs {
-            effects.insert(EffectsResponse::new(e)?, a.to_owned());
+
+        for (inst, anns) in effs.iter() {
+            for (i, a) in anns {
+                let callee = inst.callee().to_string();
+                let eff_type = inst.eff_type().to_csv();
+                let resp = EffectsResponse::from_effect_info(i, callee, eff_type)?;
+                effects.insert(resp, a.to_owned());
+            }
         }
 
         Ok(Self { effects })
@@ -133,4 +172,34 @@ pub fn audit_req(path: &Path) -> Result<(AuditFile, PathBuf), Error> {
     };
 
     Ok((audit_file, audit_file_path))
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CallerCheckedResponse {
+    pub effects: Vec<EffectsResponse>,
+}
+
+impl CallerCheckedResponse {
+    pub fn new(
+        effect: &EffectsResponse,
+        new_audit_locs: &[EffectTree],
+    ) -> Result<Self, Error> {
+        let mut effects = vec![];
+
+        for tree in new_audit_locs.iter() {
+            for eff_info in tree.get_effect_infos().iter() {
+                let callee = effect.get_callee();
+                let effect_type = effect.get_effect_type();
+                let caller =
+                    EffectsResponse::from_effect_info(eff_info, callee, effect_type)?;
+                effects.push(caller);
+            }
+        }
+
+        Ok(Self { effects })
+    }
+
+    pub fn to_json_value(&self) -> Result<Value, Error> {
+        serde_json::to_value(self).map_err(Error::new)
+    }
 }

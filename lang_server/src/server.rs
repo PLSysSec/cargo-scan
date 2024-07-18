@@ -1,7 +1,12 @@
-use std::{error::Error, path::PathBuf, str::FromStr};
+use std::{collections::HashMap, error::Error, path::PathBuf, str::FromStr};
 
 use anyhow::anyhow;
-use cargo_scan::{audit_file::AuditFile, effect::EffectInstance, ident::CanonicalPath};
+use cargo_scan::{
+    audit_file::{AuditFile, EffectInfo},
+    effect::{self},
+    ident::CanonicalPath,
+    scanner,
+};
 use log::{debug, info};
 use lsp_server::{Connection, Message};
 use lsp_types::{
@@ -12,9 +17,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     location::{convert_annotation, to_src_loc},
+    notification::{AuditNotification, AuditNotificationParams},
     request::{
-        audit_req, scan_req, AuditCommandResponse, EffectsResponse, ScanCommandResponse,
+        audit_req, scan_req, AuditCommandResponse, CallerCheckedResponse,
+        EffectsResponse, ScanCommandResponse,
     },
+    util::{add_callers_to_tree, find_effect_instance, get_new_audit_locs},
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -22,8 +30,14 @@ struct ScanCommandParams {
     params: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct CallerCheckedCommandParams {
+    effect: EffectsResponse,
+}
+
 struct ScanCommand;
 struct AuditCommand;
+struct CallerCheckedCommand;
 
 impl Request for ScanCommand {
     type Params = ScanCommandParams;
@@ -37,17 +51,10 @@ impl Request for AuditCommand {
     const METHOD: &'static str = "cargo-scan.audit";
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-struct AuditNotificationParams {
-    safety_annotation: String,
-    effect: EffectsResponse,
-}
-
-struct AuditNotification;
-
-impl Notification for AuditNotification {
-    type Params = AuditNotificationParams;
-    const METHOD: &'static str = "cargo-scan.set_annotation";
+impl Request for CallerCheckedCommand {
+    type Params = CallerCheckedCommandParams;
+    type Result = String;
+    const METHOD: &'static str = "cargo-scan.get_callers";
 }
 
 pub fn run_server() -> anyhow::Result<(), Box<dyn Error + Sync + Send>> {
@@ -88,6 +95,9 @@ fn runner(
     let root_crate_path = std::path::PathBuf::from_str(root_uri.path())?;
     debug!("Crate path received in cargo-scan LSP server: {}", root_crate_path.display());
 
+    let scan_res =
+        scanner::scan_crate(&root_crate_path, effect::DEFAULT_EFFECT_TYPES, false)?;
+
     info!("Starting main server loop\n");
     let mut audit_file: Option<AuditFile> = None;
     let mut audit_file_path = PathBuf::new();
@@ -107,22 +117,38 @@ fn runner(
                     }))?;
                 } else if req.method == AuditCommand::METHOD {
                     let (af, fp) = audit_req(&root_crate_path)?;
-                    let effects = af
-                        .clone()
-                        .audit_trees
-                        .into_iter()
-                        .map(|(eff, tree)| {
-                            let ann = tree
-                                .get_leaf_annotation()
-                                .map_or_else(String::new, |a| a.to_string());
+                    let mut effects = HashMap::new();
 
-                            (eff, ann)
-                        })
-                        .collect::<Vec<(EffectInstance, String)>>();
+                    af.clone().audit_trees.iter().for_each(|(eff, tree)| {
+                        effects.insert(eff.clone(), tree.get_all_annotations());
+                    });
 
                     audit_file = Some(af);
                     audit_file_path = fp;
                     let res = AuditCommandResponse::new(&effects)?.to_json_value()?;
+                    conn.sender.send(Message::Response(lsp_server::Response {
+                        id: req.id,
+                        result: Some(res),
+                        error: None,
+                    }))?;
+                } else if req.method == CallerCheckedCommand::METHOD {
+                    let effect = EffectsResponse::from_json_value(req.params)?;
+                    let caller_path = CanonicalPath::new_owned(effect.get_caller());
+                    let callee_loc = to_src_loc(&effect.location)?;
+
+                    let new_audit_locs = get_new_audit_locs(&scan_res, &caller_path)?;
+                    let callers = CallerCheckedResponse::new(&effect, &new_audit_locs)?;
+
+                    if let Some(af) = audit_file.as_mut() {
+                        if let Some(tree) = find_effect_instance(af, effect)? {
+                            let curr_effect = EffectInfo { caller_path, callee_loc };
+                            add_callers_to_tree(new_audit_locs, tree, curr_effect);
+                            af.save_to_file(audit_file_path.clone())?;
+                        }
+                    }
+
+                    // send the new audit locations to the client
+                    let res = callers.to_json_value()?;
                     conn.sender.send(Message::Response(lsp_server::Response {
                         id: req.id,
                         result: Some(res),
@@ -137,18 +163,12 @@ fn runner(
                         serde_json::from_value(notif.params)?;
                     let annotation = params.safety_annotation;
                     let effect = params.effect;
-                    let src_loc = to_src_loc(effect.location)?;
-                    let callee = CanonicalPath::new_owned(effect.callee);
 
-                    if let Some(audit_) = audit_file.as_mut() {
-                        if let Some((_, tree)) =
-                            audit_.audit_trees.iter_mut().find(|(i, _)| {
-                                *i.callee() == callee && *i.call_loc() == src_loc
-                            })
-                        {
+                    if let Some(af) = audit_file.as_mut() {
+                        if let Some(tree) = find_effect_instance(af, effect)? {
                             let new_ann = convert_annotation(annotation);
                             tree.set_annotation(new_ann);
-                            audit_.save_to_file(audit_file_path.clone())?;
+                            af.save_to_file(audit_file_path.clone())?;
                         }
                     }
                 }

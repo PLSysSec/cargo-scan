@@ -22,7 +22,7 @@ export class LocationsProvider
     private groupedEffects: { [file: string]: EffectResponseData[] } = {};
 
     setLocations(effects: EffectResponseData[]) {
-        this.groupedEffects = this.groupByFile(effects);
+        this.groupByFile(effects);
         this._onDidChangeTreeData.fire(undefined);    
     }
 
@@ -50,22 +50,20 @@ export class LocationsProvider
     }
 
     // Group effects by their containing file
-    private groupByFile(effects: EffectResponseData[]): {
-        [file: string]: EffectResponseData[];
-    } {
-        return effects.reduce(
-            (grouped, effect) => {
-                const uri = vscode.Uri.parse(effect.location.uri.toString());
-                const file = uri.fsPath;
+    private groupByFile(effects: EffectResponseData[]) {
+        for (const effect of effects) {
+            const uri =  effect.location.uri;
+            const file = uri.fsPath;
 
-                if (!grouped[file]) {
-                    grouped[file] = [];
-                }
-                grouped[file].push(effect);
-                return grouped;
-            },
-            {} as { [file: string]: EffectResponseData[] }
-        );
+            if (!this.groupedEffects[file]) {
+                this.groupedEffects[file] = [];
+            }
+            
+            if (!this.groupedEffects[file].some(e => e.location.range.isEqual(effect.location.range) 
+                && e.callee == effect.callee)) {
+                this.groupedEffects[file].push(effect);
+            }
+        }
     }
 
     getGroupedEffects(): { [file: string]: EffectResponseData[] } {
@@ -75,6 +73,11 @@ export class LocationsProvider
     register(context: vscode.ExtensionContext) {
         const tree = vscode.window.createTreeView('effectsView', { treeDataProvider: this });    
         context.subscriptions.push(tree);
+    }
+
+    clear() {
+        this.groupedEffects = {};
+        this._onDidChangeTreeData.fire(undefined); 
     }
 }
 

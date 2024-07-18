@@ -30,15 +30,17 @@ export function activate(context: vscode.ExtensionContext) {
     }));
 
     let serverModule = context.asAbsolutePath(
-        path.join('..', 'target', 'debug', 'lang_server')
+        path.join('out', 'lang_server')
     );
+
+    outputChannel.appendLine(serverModule);
     let serverOptions: ServerOptions = {
         command: serverModule,
         args: [],
         options: {
             env: { ...process.env, RUST_LOG: 'info' },
         },
-        // transport: TransportKind.stdio,
+        transport: TransportKind.stdio,
     };
 
     let clientOptions: LanguageClientOptions = {

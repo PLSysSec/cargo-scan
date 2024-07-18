@@ -28,7 +28,7 @@ pub fn from_src_loc(loc: &SrcLoc) -> Result<Location, Error> {
 
 /// Converts an LSP `Location` received from the client
 /// back to Cargo Scan's `SrcLoc`
-pub fn to_src_loc(location: Location) -> Result<SrcLoc, Error> {
+pub fn to_src_loc(location: &Location) -> Result<SrcLoc, Error> {
     let path = PathBuf::from_str(location.uri.path())?;
     let start_line = location.range.start.line as usize + 1;
     let start_col = location.range.start.character as usize;

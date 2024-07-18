@@ -73,6 +73,18 @@ impl EffectTree {
         }
     }
 
+    pub fn get_all_annotations(&self) -> Vec<(EffectInfo, String)> {
+        match self {
+            EffectTree::Leaf(i, a) => vec![(i.clone(), a.to_string())],
+            EffectTree::Branch(i, next) => {  
+                let mut annotations = next.iter().flat_map(|t| t.get_all_annotations()).collect::<Vec<_>>();
+                annotations.push((i.clone(), SafetyAnnotation::CallerChecked.to_string()));
+
+                annotations
+            }
+        }
+    }
+
     /// Sets the annotation for a leaf node and returns Some previous annotation,
     /// or None if it was a branch node
     pub fn set_annotation(
@@ -89,6 +101,14 @@ impl EffectTree {
         }
     }
 
+    pub fn get_leaf_mut(&mut self, eff_info: &EffectInfo) -> Option<&mut EffectTree> {
+        match self {
+            EffectTree::Leaf(e, _) if e == eff_info => Some(self),
+            EffectTree::Branch(e, _) if e == eff_info => Some(self),
+            EffectTree::Branch(_, next) => next.iter_mut().find_map(|t| t.get_leaf_mut(eff_info)),
+            _ => None,
+        }
+    }
     pub fn get_effect_infos(&self) -> HashSet<EffectInfo> {
         match self {
             EffectTree::Leaf(e, _) => vec![e.clone()].into_iter().collect::<HashSet<_>>(),

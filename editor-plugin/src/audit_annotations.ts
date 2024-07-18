@@ -15,7 +15,7 @@ export class AuditAnnotations implements vscode.CodeLensProvider {
     private onDidChangeCodeLensesEmitter = new vscode.EventEmitter<void>();
     readonly onDidChangeCodeLenses = this.onDidChangeCodeLensesEmitter.event;
 
-    private prevAnnotations: Map<EffectResponseData, string> = new Map();
+    prevAnnotations: Map<EffectResponseData, string> = new Map();
 
     provideCodeLenses(document: vscode.TextDocument, __token: vscode.CancellationToken): vscode.CodeLens[] {
         let annotations: vscode.CodeLens[] = [];
@@ -32,19 +32,22 @@ export class AuditAnnotations implements vscode.CodeLensProvider {
             const safe: vscode.Command = {
                 title: prevAnnotation === 'Safe' ? 'Marked as [[  SAFE  ]]' : '✔️ Safe',
                 command: 'cargo-scan.safeAnnotation',
-                arguments: [effect]
+                arguments: [effect],
+                tooltip: `Effect Instance : ${effect.callee}`
             };
     
             const unsafe: vscode.Command = {
                 title: prevAnnotation === 'Unsafe' ? 'Marked as [[  UNSAFE  ]]' : '❗ Unsafe',
                 command: 'cargo-scan.unsafeAnnotation',
-                arguments: [effect]
+                arguments: [effect],
+                tooltip: `Effect Instance : ${effect.callee}`
             };
     
             const cc: vscode.Command = {
                 title: prevAnnotation === 'Caller-checked' ? 'Marked as [[ CALLER-CHECKED ]]' : '❔ Caller-Checked',
-                command: 'cargo-scan.ccAnnotation',
-                arguments: [effect]
+                command: 'cargo-scan.get_callers',
+                arguments: [effect],
+                tooltip: `Effect Instance : ${effect.callee}`
             };
             annotations.push(new vscode.CodeLens(range, safe));
             annotations.push(new vscode.CodeLens(range, unsafe));
@@ -58,25 +61,39 @@ export class AuditAnnotations implements vscode.CodeLensProvider {
         return codeLens;
     }
 
-    clearAnnotations() {
-        this.effects = {};
+    refresh() {
         this.onDidChangeCodeLensesEmitter.fire();
+    }
+
+    clear() {
+        this.effects = {};
+        this.refresh();
     }
 
     setPreviousAnnotations(effects: { [file: string]: EffectResponseData[] }, prevAnnotations: Map<EffectResponseData, string>) {
         this.effects = effects;
         this.prevAnnotations = prevAnnotations;
-        this.onDidChangeCodeLensesEmitter.fire();
+        this.refresh();
     }
 
     trackUserAnnotations(effect: EffectResponseData, ann: string) {
         this.prevAnnotations.set(effect, ann);
-        this.onDidChangeCodeLensesEmitter.fire();
+        this.refresh();
     }
 
     register(context: vscode.ExtensionContext) {
         context.subscriptions.push(
             vscode.languages.registerCodeLensProvider({ pattern: '**/*' }, this)
         );
+    }
+
+    showCallers(effect: EffectResponseData, callers: EffectResponseData[]) {
+        const uri = effect.location.uri;
+        const line = effect.location.range.start.line;
+        const col = effect.location.range.start.character;
+        const position = new vscode.Position(line, col);
+        let locations: vscode.Location[] = callers.map(caller => caller.location);
+
+        vscode.commands.executeCommand('editor.action.peekLocations', uri, position, locations, 'peek');
     }
 }

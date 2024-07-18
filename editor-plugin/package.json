@@ -36,6 +36,17 @@
       ]
     }
   },
+  "configuration": {
+    "type": "object",
+    "title": "Cargo Scan",
+    "properties": {
+      "cargo-scan.serverPath": {
+        "type": "string",
+        "default": "./out/lang_server",
+        "description": "Path to 'cargo-scan' executable"
+      }
+    }
+  },
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./"
