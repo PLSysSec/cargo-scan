@@ -3,7 +3,7 @@
 BINARY_NAME=lang_server
 CARGO_SCAN_DIR=../
 OUT_DIR=./out
-CLIENT_DIR=./  #$$(pwd)
+CLIENT_DIR=./
 
 all: build_server build_client package
 
@@ -23,7 +23,7 @@ package: build_server build_client
 	@npm run package
 
 clean:
-	#@cd $(CARGO_SCAN_DIR) && cargo clean
+	@cd $(CARGO_SCAN_DIR) && cargo clean
 	@rm -rf $(OUT_DIR)
 	@cd $(CLIENT_DIR) && npm run clean
 	@rm -f *.vsix
