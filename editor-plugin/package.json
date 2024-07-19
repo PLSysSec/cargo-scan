@@ -2,13 +2,19 @@
   "name": "cargo-scan",
   "displayName": "cargo-scan",
   "description": "",
+  "publisher": "PLSysSec",
   "version": "0.0.1",
+  "license":"MIT",
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
     "Programming Languages"
   ],
+  "repository": {
+    "url": "https://github.com/PLSysSec/cargo-scan",
+    "type": "git"
+  },
   "activationEvents": [
     "workspaceContains:Cargo.toml",
     "workspaceContains:*/Cargo.toml"
@@ -49,7 +55,11 @@
   },
   "scripts": {
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "build-debug": "esbuild ./src/extension.ts --bundle --outdir=./out/ --external:vscode --format=cjs --platform=node",
+    "build-release": "npm run build-debug -- --minify",
+    "clean": "rm -rf ./out",
+    "package": "vsce package"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
@@ -63,6 +73,8 @@
     "@vscode/test-cli": "^0.0.9",
     "@vscode/test-electron": "^2.4.0",
     "eslint": "^8.57.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "esbuild": "^0.23.0",
+    "@vscode/vsce": "^2.31.0"
   }
 }

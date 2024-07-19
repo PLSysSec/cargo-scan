@@ -10,3 +10,4 @@ target
 editor-plugin/node_modules
 editor-plugin/out
 editor-plugin/CHANGELOG.md
+**/*.vsix
