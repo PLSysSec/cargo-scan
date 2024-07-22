@@ -5,6 +5,7 @@ use cargo::util::context::GlobalContext;
 use cargo_lock::{Dependency, Lockfile, Package};
 use cargo_toml::Manifest;
 use clap::Args as ClapArgs;
+use log::info;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::DfsPostOrder;
 use serde::{Deserialize, Serialize};
@@ -271,7 +272,7 @@ impl AuditChain {
     }
 }
 
-#[derive(Clone, ClapArgs, Debug)]
+#[derive(Clone, ClapArgs, Debug, Serialize, Deserialize)]
 pub struct Create {
     /// Path to crate
     pub crate_path: String,
@@ -331,6 +332,31 @@ impl Create {
             download_root_crate,
             download_version,
             effect_types,
+        }
+    }
+}
+
+impl Default for Create {
+    fn default() -> Self {
+        Self {
+            crate_path: ".".to_string(),
+            manifest_path: "./policy.manifest".to_string(),
+            audit_path: ".audit_files".to_string(),
+            force_overwrite: false,
+            download_root_crate: None,
+            download_version: None,
+            effect_types: [
+                EffectType::SinkCall,
+                EffectType::FFICall,
+                EffectType::UnsafeCall,
+                EffectType::RawPointer,
+                EffectType::UnionField,
+                EffectType::StaticMut,
+                EffectType::StaticExt,
+                EffectType::FnPtrCreation,
+                EffectType::ClosureCreation,
+            ]
+            .to_vec(),
         }
     }
 }
@@ -458,7 +484,7 @@ pub fn create_new_audit_chain(
     crate_download_path: &str,
     quick_mode: bool,
 ) -> Result<AuditChain> {
-    println!("Creating audit chain");
+    info!("Creating audit chain");
     let mut chain = AuditChain::new(
         PathBuf::from(&args.manifest_path),
         PathBuf::from(&args.crate_path),
@@ -467,7 +493,7 @@ pub fn create_new_audit_chain(
 
     create_audit_chain_dirs(&args, crate_download_path)?;
 
-    println!("Loading audit package lockfile");
+    info!("Loading audit package lockfile");
     // If the lockfile doesn't exist, generate it
     let lockfile = chain.load_lockfile()?;
 
@@ -488,13 +514,13 @@ pub fn create_new_audit_chain(
             (crate_id, p.root().to_path_buf())
         }));
 
-    println!("Creating dependency graph");
+    info!("Creating dependency graph");
     let (graph, package_map, root_node) =
         make_dependency_graph(&lockfile.packages, &root_name);
     let mut traverse = DfsPostOrder::new(&graph, root_node);
     while let Some(node) = traverse.next(&graph) {
         let package = package_map.get(&node).unwrap();
-        println!("Making default audit for {} v{}", package.name, package.version);
+        info!("Making default audit for {} v{}", package.name, package.version);
 
         let audit_type = if node == root_node {
             DefaultAuditType::Empty
@@ -518,7 +544,7 @@ pub fn create_new_audit_chain(
         )?;
     }
 
-    println!("Finished creating audit chain");
+    info!("Finished creating audit chain");
     Ok(chain)
 }
 
