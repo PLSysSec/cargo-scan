@@ -11,6 +11,7 @@ import {
 } from './file_tree_view';
 import { registerCommands } from './commands';
 import { AuditAnnotations } from './audit_annotations';
+import { setEnvironment } from './util';
 
 export let client: LanguageClient;
 export const locationsProvider = new LocationsProvider();
@@ -33,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
         path.join('out', 'lang_server')
     );
 
-    outputChannel.appendLine(serverModule);
+    setEnvironment();
     let serverOptions: ServerOptions = {
         command: serverModule,
         args: [],

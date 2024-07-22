@@ -74,4 +74,11 @@ export function registerCommands(context: vscode.ExtensionContext) {
             annotations.showCallers(effect, callers);
         })
     );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cargo-scan.create_chain', async () => {
+            client.sendRequest('cargo-scan.create_chain');
+            context.globalState.update('annotateEffects', false);            
+        })
+    );
 }
