@@ -166,9 +166,13 @@ fn runner(
                         let create_args = Create {
                             crate_path: root_crate_path
                                 .to_str()
-                                .unwrap_or_else(|| "./")
+                                .unwrap_or("./")
                                 .to_string(),
-                            manifest_path: root_crate_path.join("policy.manifest").to_str().unwrap_or_else(|| "./policy.manifest").to_string(),
+                            manifest_path: root_crate_path
+                                .join("policy.manifest")
+                                .to_str()
+                                .unwrap_or("./policy.manifest")
+                                .to_string(),
                             force_overwrite: true,
                             ..Default::default()
                         };
