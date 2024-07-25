@@ -78,7 +78,26 @@ export function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('cargo-scan.create_chain', async () => {
             client.sendRequest('cargo-scan.create_chain');
-            context.globalState.update('annotateEffects', false);            
+            context.globalState.update('annotateEffects', false);
+            locationsProvider.clear();
+            annotations.clear();         
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cargo-scan.audit_chain', async () => {
+            const response = await client.sendRequest<AuditResponse>('cargo-scan.audit_chain');
+            context.globalState.update('annotateEffects', true);              
+            let effectsMap = new Map<EffectResponseData, string>();    
+            
+            response.effects.forEach(x => {
+                const location = convertLocation(x[0].location);
+                effectsMap.set({ ...x[0], location }, x[1]);
+            });
+            
+            locationsProvider.clear();
+            locationsProvider.setLocations([...effectsMap.keys()]);                       
+            annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);
         })
     );
 }

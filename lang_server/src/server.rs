@@ -7,8 +7,10 @@ use cargo_scan::{
     auditing::chain::{Command, CommandRunner, OuterArgs},
     effect::{self},
     ident::CanonicalPath,
-    scanner,
+    scanner::{self},
+    util::load_cargo_toml,
 };
+use home::home_dir;
 use log::{debug, info};
 use lsp_server::{Connection, Message};
 use lsp_types::{
@@ -18,13 +20,16 @@ use lsp_types::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    location::{convert_annotation, to_src_loc},
+    location::to_src_loc,
     notification::{AuditNotification, AuditNotificationParams},
     request::{
         audit_req, scan_req, AuditCommandResponse, CallerCheckedResponse,
         EffectsResponse, ScanCommandResponse,
     },
-    util::{add_callers_to_tree, find_effect_instance, get_new_audit_locs},
+    util::{
+        add_callers_to_tree, find_effect_instance, get_all_chain_effects,
+        get_new_audit_locs,
+    },
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -95,7 +100,7 @@ fn runner(
         .ok_or_else(|| anyhow!("Couldn't get root path from workspace folders"))?;
 
     let root_crate_path = std::path::PathBuf::from_str(root_uri.path())?;
-    debug!("Crate path received in cargo-scan LSP server: {}", root_crate_path.display());
+    info!("Crate path received in cargo-scan LSP server: {}", root_crate_path.display());
 
     let scan_res =
         scanner::scan_crate(&root_crate_path, effect::DEFAULT_EFFECT_TYPES, false)?;
@@ -103,6 +108,7 @@ fn runner(
     info!("Starting main server loop\n");
     let mut audit_file: Option<AuditFile> = None;
     let mut audit_file_path = PathBuf::new();
+    let mut chain_manifest = PathBuf::new();
     for msg in &conn.receiver {
         match msg {
             Message::Request(req) => {
@@ -163,16 +169,19 @@ fn runner(
                     }
                     "cargo-scan.create_chain" => {
                         let outer_args = OuterArgs::default();
+                        let root_crate_id = load_cargo_toml(&root_crate_path)?;
+
+                        if let Some(mut dir) = home_dir() {
+                            dir.push(".cargo_audits");
+                            dir.push("chain_policies");
+                            dir.push(format!("{}.manifest", root_crate_id));
+
+                            chain_manifest = dir;
+                        };
+
                         let create_args = Create {
-                            crate_path: root_crate_path
-                                .to_str()
-                                .unwrap_or("./")
-                                .to_string(),
-                            manifest_path: root_crate_path
-                                .join("policy.manifest")
-                                .to_str()
-                                .unwrap_or("./policy.manifest")
-                                .to_string(),
+                            crate_path: root_crate_path.to_string_lossy().to_string(),
+                            manifest_path: chain_manifest.to_string_lossy().to_string(),
                             force_overwrite: true,
                             ..Default::default()
                         };
@@ -182,6 +191,27 @@ fn runner(
                             outer_args,
                         )?;
                     }
+                    "cargo-scan.audit_chain" => {
+                        let root_crate_id = load_cargo_toml(&root_crate_path)?;
+                        chain_manifest = home_dir()
+                            .ok_or_else(|| anyhow!("Could not find homw directory"))?;
+                        chain_manifest.push(".cargo_audits");
+                        chain_manifest.push("chain_policies");
+                        chain_manifest.push(format!("{}.manifest", root_crate_id));
+
+                        debug!(
+                            "Auditing chain with manifest path: {}",
+                            chain_manifest.display()
+                        );
+                        let effects = get_all_chain_effects(&chain_manifest)?;
+                        let res = AuditCommandResponse::new(&effects)?.to_json_value()?;
+
+                        conn.sender.send(Message::Response(lsp_server::Response {
+                            id: req.id,
+                            result: Some(res),
+                            error: None,
+                        }))?;
+                    }
                     _ => {}
                 };
             }
@@ -190,15 +220,21 @@ fn runner(
                 if notif.method == AuditNotification::METHOD {
                     let params: AuditNotificationParams =
                         serde_json::from_value(notif.params)?;
-                    let annotation = params.safety_annotation;
-                    let effect = params.effect;
 
                     if let Some(af) = audit_file.as_mut() {
-                        if let Some(tree) = find_effect_instance(af, effect)? {
-                            let new_ann = convert_annotation(annotation);
-                            tree.set_annotation(new_ann);
-                            af.save_to_file(audit_file_path.clone())?;
-                        }
+                        AuditNotification::annotate_effects_in_single_audit(
+                            params,
+                            af,
+                            &scan_res,
+                            audit_file_path.clone(),
+                        )?;
+                    } else if chain_manifest.is_file() {
+                        AuditNotification::annotate_effects_in_chain_audit(
+                            params,
+                            &chain_manifest,
+                            &scan_res,
+                            &root_crate_path,
+                        )?;
                     }
                 }
             }

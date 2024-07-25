@@ -1,6 +1,10 @@
-use anyhow::Error;
+use std::{collections::HashMap, path::Path};
+
+use anyhow::{anyhow, Error};
 use cargo_scan::{
+    audit_chain::AuditChain,
     audit_file::{AuditFile, EffectInfo, EffectTree, SafetyAnnotation},
+    effect::EffectInstance,
     ident::CanonicalPath,
     scanner::ScanResults,
 };
@@ -52,4 +56,24 @@ pub fn add_callers_to_tree(
     } else {
         *tree = EffectTree::Branch(curr_effect, new_audit_locs);
     }
+}
+
+pub fn get_all_chain_effects(
+    chain_manifest: &Path,
+) -> Result<HashMap<EffectInstance, Vec<(EffectInfo, String)>>, Error> {
+    let mut effects = HashMap::new();
+    let mut chain = AuditChain::read_audit_chain(chain_manifest.to_path_buf())?
+        .ok_or_else(|| {
+            anyhow!("Couldn't find audit chain manifest at {}", chain_manifest.display())
+        })?;
+
+    for crate_id in chain.to_owned().all_crates() {
+        if let Some(af) = chain.read_audit_file(crate_id)? {
+            for (effect_instance, audit_tree) in &af.audit_trees {
+                effects.insert(effect_instance.clone(), audit_tree.get_all_annotations());
+            }
+        }
+    }
+
+    Ok(effects)
 }

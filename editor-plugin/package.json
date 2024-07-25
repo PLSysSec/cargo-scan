@@ -36,6 +36,11 @@
         "command": "cargo-scan.create_chain",
         "title": "Create Chain",
         "category": "cargo-scan"
+      },
+      {
+        "command": "cargo-scan.audit_chain",
+        "title": "Audit Chain",
+        "category": "cargo-scan"
       }
     ],
     "views": {

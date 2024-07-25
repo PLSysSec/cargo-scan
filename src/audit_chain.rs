@@ -19,11 +19,11 @@ use std::str::FromStr;
 use toml;
 
 use crate::audit_file::{AuditFile, AuditVersion, DefaultAuditType};
-use crate::effect::EffectType;
-use crate::ident::{CanonicalPath, IdentPath};
+use crate::effect::{EffectType, DEFAULT_EFFECT_TYPES};
+use crate::ident::{replace_hyphens, CanonicalPath, IdentPath};
 use crate::util::{load_cargo_toml, CrateId};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AuditChain {
     #[serde(skip)]
     manifest_path: PathBuf,
@@ -127,7 +127,9 @@ impl AuditChain {
     pub fn resolve_all_crates(&self, search_name: &str) -> Vec<CrateId> {
         let mut res = Vec::new();
         for (crate_id, _) in self.crate_policies.iter() {
-            if crate_id.crate_name == search_name {
+            let mut crate_name = crate_id.crate_name.clone();
+            replace_hyphens(&mut crate_name);
+            if crate_name == search_name || crate_id.crate_name == search_name {
                 res.push(crate_id.clone());
             }
         }
@@ -338,25 +340,23 @@ impl Create {
 
 impl Default for Create {
     fn default() -> Self {
+        let audit_path = home::home_dir()
+            .map(|mut dir| {
+                dir.push(".cargo_audits");
+                dir
+            })
+            .unwrap_or_else(|| PathBuf::from(".audit_files"))
+            .to_string_lossy()
+            .to_string();
+
         Self {
             crate_path: ".".to_string(),
             manifest_path: "./policy.manifest".to_string(),
-            audit_path: ".audit_files".to_string(),
+            audit_path,
             force_overwrite: false,
             download_root_crate: None,
             download_version: None,
-            effect_types: [
-                EffectType::SinkCall,
-                EffectType::FFICall,
-                EffectType::UnsafeCall,
-                EffectType::RawPointer,
-                EffectType::UnionField,
-                EffectType::StaticMut,
-                EffectType::StaticExt,
-                EffectType::FnPtrCreation,
-                EffectType::ClosureCreation,
-            ]
-            .to_vec(),
+            effect_types: DEFAULT_EFFECT_TYPES.to_vec(),
         }
     }
 }
