@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Error};
 use cargo_scan::{
     audit_chain::AuditChain,
-    audit_file::AuditFile,
+    audit_file::{AuditFile, EffectTree},
     ident::CanonicalPath,
     scanner::{scan_crate, ScanResults},
 };
@@ -28,18 +28,31 @@ impl Notification for AuditNotification {
 }
 
 impl AuditNotification {
+    // If we're trying to annotate a branch, then we should
+    // remove all its callers from the audit file and make it
+    // a leaf before setting the new safety annotation
+    fn update_annotation(tree: &mut EffectTree, ann: String) {
+        let ann = convert_annotation(ann);
+        match tree {
+            EffectTree::Leaf(_, _) => {
+                tree.set_annotation(ann);
+            }
+            EffectTree::Branch(i, _) => {
+                *tree = EffectTree::Leaf(i.to_owned(), ann);
+            }
+        };
+    }
+
     pub fn annotate_effects_in_single_audit(
         params: AuditNotificationParams,
         af: &mut AuditFile,
         scan_res: &ScanResults,
         audit_file_path: PathBuf,
     ) -> Result<(), Error> {
-        let annotation = params.safety_annotation;
         let effect = params.effect;
 
         if let Some(tree) = find_effect_instance(af, effect)? {
-            let new_ann = convert_annotation(annotation);
-            tree.set_annotation(new_ann);
+            Self::update_annotation(tree, params.safety_annotation);
             af.recalc_pub_caller_checked(&scan_res.pub_fns);
             af.version += 1;
 
@@ -55,7 +68,6 @@ impl AuditNotification {
         scan_res: &ScanResults,
         root_crate_path: &PathBuf,
     ) -> Result<(), Error> {
-        let annotation = params.safety_annotation;
         let effect = params.effect;
 
         let crate_name =
@@ -71,8 +83,7 @@ impl AuditNotification {
             if let Some(prev_af) = chain.read_audit_file(&crate_id)? {
                 let mut new_af = prev_af.clone();
                 if let Some(tree) = find_effect_instance(&mut new_af, effect.clone())? {
-                    let new_ann = convert_annotation(annotation);
-                    tree.set_annotation(new_ann);
+                    Self::update_annotation(tree, params.safety_annotation);
 
                     if new_af.base_dir != *root_crate_path {
                         let scan_res =
