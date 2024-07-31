@@ -98,10 +98,17 @@ impl AuditChain {
         match AuditFile::read_audit_file(audit_file_path.clone())? {
             Some(audit_file) => {
                 if audit_file.version != expected_version {
+                    // Update version in chain manifest, so we don't loop infinitely
+                    self.crate_policies
+                        .get_mut(crate_id)
+                        .context("Couldn't find the crate in the chain manifest")?
+                        .1 = audit_file.version;
+
                     // The audit file has been updated in a different audit, so we need to
-                    // recalculate the policies for its parents
+                    // recalculate the policies for its parents and save the changes
                     let potentially_removed = audit_file.safe_pub_fns();
                     self.remove_cross_crate_effects(potentially_removed, crate_id)?;
+                    self.clone().save_to_file()?;
 
                     // re-read the audit file so changes have taken effect
                     // NOTE: This assumes there aren't concurrent audits modifying policies
