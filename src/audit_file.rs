@@ -1,6 +1,6 @@
 use super::effect::{EffectInstance, SrcLoc};
 use crate::auditing::util::{
-    hash_dir, MAX_AUDIT_FILE_SIZE, MAX_CALLER_CHECKED_TREE_SIZE,
+    hash_dir, MAX_AUDIT_FILE_SIZE,
 };
 use crate::effect::{Effect, EffectType};
 use crate::ident::CanonicalPath;
@@ -225,9 +225,9 @@ impl AuditFile {
         tree_size: &mut i32,
     ) -> Result<()> {
         // TODO: Make this configurable/obsolete
-        if *tree_size > MAX_CALLER_CHECKED_TREE_SIZE {
-            return Err(anyhow!("exceeded maximum effect tree size"));
-        }
+        // if *tree_size > MAX_CALLER_CHECKED_TREE_SIZE {
+        //     return Err(anyhow!("exceeded maximum effect tree size"));
+        // }
         if let EffectTree::Leaf(effect_info, annotation) = tree {
             // Add the function to the list of sinks if it is public
             if scan_res.pub_fns.contains(&effect_info.caller_path) {
@@ -272,7 +272,6 @@ impl AuditFile {
                         prev_callers,
                         tree_size,
                     )?;
-                    prev_callers.remove(&next_caller);
                 }
                 *tree = EffectTree::Branch(effect_info.clone(), callers);
             }
