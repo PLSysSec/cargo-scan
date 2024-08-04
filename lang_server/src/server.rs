@@ -152,11 +152,18 @@ fn runner(
                             CallerCheckedResponse::new(&effect, &new_audit_locs)?;
 
                         if let Some(af) = audit_file.as_mut() {
-                            if let Some(tree) = find_effect_instance(af, effect)? {
-                                let curr_effect = EffectInfo { caller_path, callee_loc };
-                                add_callers_to_tree(new_audit_locs, tree, curr_effect);
-                                af.save_to_file(audit_file_path.clone())?;
+                            for tree in find_effect_instance(af, effect)? {
+                                let curr_effect = EffectInfo {
+                                    caller_path: caller_path.clone(),
+                                    callee_loc: callee_loc.clone(),
+                                };
+                                add_callers_to_tree(
+                                    new_audit_locs.clone(),
+                                    tree,
+                                    curr_effect,
+                                );
                             }
+                            af.save_to_file(audit_file_path.clone())?;
                         }
 
                         // send the new audit locations to the client
@@ -232,8 +239,6 @@ fn runner(
                         AuditNotification::annotate_effects_in_chain_audit(
                             params,
                             &chain_manifest,
-                            &scan_res,
-                            &root_crate_path,
                         )?;
                     }
                 }

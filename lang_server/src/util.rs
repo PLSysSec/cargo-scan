@@ -14,23 +14,20 @@ use crate::{location::to_src_loc, request::EffectsResponse};
 pub fn find_effect_instance(
     audit_file: &mut AuditFile,
     effect: EffectsResponse,
-) -> Result<Option<&mut EffectTree>, Error> {
+) -> Result<Vec<&mut EffectTree>, Error> {
     let callee_loc = to_src_loc(&effect.location)?;
     let callee = CanonicalPath::new_owned(effect.clone().callee);
     let caller_path = CanonicalPath::new_owned(effect.clone().caller);
     let curr_effect = EffectInfo { caller_path, callee_loc };
+    let mut trees = vec![];
 
-    match audit_file.audit_trees.iter_mut().find_map(|(i, t)| {
-        let leaf = t.get_leaf_mut(&curr_effect);
-        if *i.callee() == callee {
-            leaf
-        } else {
-            None
-        }
-    }) {
-        Some(tree) => Ok(Some(tree)),
-        None => Ok(None),
-    }
+    audit_file.audit_trees.iter_mut().filter(|(i, _)| *i.callee() == callee).for_each(
+        |(_, t)| {
+            t.get_trees_mut(&curr_effect, &mut trees);
+        },
+    );
+
+    Ok(trees)
 }
 
 pub fn get_new_audit_locs(

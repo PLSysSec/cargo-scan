@@ -103,14 +103,20 @@ impl EffectTree {
         }
     }
 
-    pub fn get_leaf_mut(&mut self, eff_info: &EffectInfo) -> Option<&mut EffectTree> {
+    pub fn get_trees_mut<'a>(
+        &'a mut self,
+        eff_info: &EffectInfo,
+        trees: &mut Vec<&'a mut EffectTree>,
+    ) {
         match self {
-            EffectTree::Leaf(e, _) if e == eff_info => Some(self),
-            EffectTree::Branch(e, _) if e == eff_info => Some(self),
+            EffectTree::Leaf(e, _) if e == eff_info => trees.push(self),
+            EffectTree::Branch(e, _) if e == eff_info => trees.push(self),
             EffectTree::Branch(_, next) => {
-                next.iter_mut().find_map(|t| t.get_leaf_mut(eff_info))
+                for t in next {
+                    t.get_trees_mut(eff_info, trees);
+                }
             }
-            _ => None,
+            _ => {}
         }
     }
     pub fn get_effect_infos(&self) -> HashSet<EffectInfo> {
