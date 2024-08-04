@@ -56,8 +56,12 @@ impl AuditNotification {
         let trees = find_effect_instance(af, effect)?;
 
         Self::update_annotation(trees, params.safety_annotation);
-        af.recalc_pub_caller_checked(&scan_res.pub_fns);
-        af.version += 1;
+        af.recalc_pub_cc_with_safe(&scan_res.pub_fns);
+        // If any public caller-checked functions have been removed,
+        // bump audit version to notify any chains this crates belongs to
+        if !af.safe_pub_fns().is_empty() {
+            af.version += 1;
+        }
 
         af.save_to_file(audit_file_path)?;
 
@@ -80,19 +84,19 @@ impl AuditNotification {
                 .resolve_crate_id(&crate_name)
                 .context(format!("Couldn't resolve crate_name for {}", &crate_name))?;
 
-            if let Some(prev_af) = chain.read_audit_file(&crate_id)? {
-                let mut new_af = prev_af.clone();
-                let trees = find_effect_instance(&mut new_af, effect.clone())?;
+            if let Some(mut af) = chain.read_audit_file(&crate_id)? {
+                let trees = find_effect_instance(&mut af, effect.clone())?;
                 Self::update_annotation(trees, params.safety_annotation);
-                new_af.recalc_pub_caller_checked(
-                    &new_af.pub_caller_checked.keys().cloned().collect(),
+                af.recalc_pub_cc_with_safe(
+                    &af.pub_caller_checked.keys().cloned().collect(),
                 );
-
-                chain.save_audit_file(&crate_id, &new_af)?;
-                // update parent crates based off updated effects
-                let removed_fns = AuditFile::pub_diff(&prev_af, &new_af);
-                chain.remove_cross_crate_effects(removed_fns, &chain.root_crate()?)?;
-                chain.save_to_file()?;
+                
+                // If any public caller-checked functions have been removed,
+                // bump audit version to notify any chains this crates belongs to
+                if !af.safe_pub_fns().is_empty() {
+                    af.version += 1;
+                }
+                chain.save_audit_file(&crate_id, &af)?;               
             }
         }
 
