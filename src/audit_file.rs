@@ -1,7 +1,5 @@
 use super::effect::{EffectInstance, SrcLoc};
-use crate::auditing::util::{
-    hash_dir, MAX_AUDIT_FILE_SIZE,
-};
+use crate::auditing::util::{hash_dir, MAX_AUDIT_FILE_SIZE};
 use crate::effect::{Effect, EffectType};
 use crate::ident::CanonicalPath;
 use crate::scanner;
@@ -361,7 +359,7 @@ impl AuditFile {
     }
 
     /// Mirror of `recalc_pub_caller_checked`, but retains safe public functions.
-    /// Useful when auditing through the IDE extension, where we use 
+    /// Useful when auditing through the IDE extension, where we use
     /// the same audit file both when auditing chain and a single crate.
     pub fn recalc_pub_cc_with_safe(&mut self, pub_fns: &HashSet<CanonicalPath>) {
         // NOTE: initialize everything at the start so we don't have to check for

@@ -90,13 +90,13 @@ impl AuditNotification {
                 af.recalc_pub_cc_with_safe(
                     &af.pub_caller_checked.keys().cloned().collect(),
                 );
-                
+
                 // If any public caller-checked functions have been removed,
                 // bump audit version to notify any chains this crates belongs to
                 if !af.safe_pub_fns().is_empty() {
                     af.version += 1;
                 }
-                chain.save_audit_file(&crate_id, &af)?;               
+                chain.save_audit_file(&crate_id, &af)?;
             }
         }
 
