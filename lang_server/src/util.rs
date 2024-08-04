@@ -64,6 +64,11 @@ pub fn get_all_chain_effects(
             anyhow!("Couldn't find audit chain manifest at {}", chain_manifest.display())
         })?;
 
+    // Check if any dependency sinks were removed by other audits
+    // and update chain before loading all existing effects
+    let removed_sinks = chain.collect_all_safe_sinks()?;
+    chain.remove_cross_crate_effects(removed_sinks, &chain.root_crate()?)?;
+
     for crate_id in chain.to_owned().all_crates() {
         if let Some(af) = chain.read_audit_file(crate_id)? {
             for (effect_instance, audit_tree) in &af.audit_trees {

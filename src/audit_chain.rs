@@ -121,6 +121,18 @@ impl AuditChain {
         }
     }
 
+    pub fn collect_all_safe_sinks(&mut self) -> Result<HashSet<CanonicalPath>> {
+        let mut safe_sinks = HashSet::new();
+        for (crate_id, (af_path, _)) in &self.crate_policies {
+            let audit_file = AuditFile::read_audit_file(af_path.clone())?.context(
+                format!("Can't find an associated audit for crate `{}`", crate_id),
+            )?;
+            safe_sinks.extend(audit_file.safe_pub_fns());
+        }
+
+        Ok(safe_sinks)
+    }
+
     /// Returns the full package name with version if there is exactly one
     /// package matching the input, or none otherwise
     pub fn resolve_crate_id(&self, crate_name: &str) -> Option<CrateId> {
@@ -179,7 +191,7 @@ impl AuditChain {
         if let Ok(l) = Lockfile::load(&crate_path) {
             Ok(l)
         } else {
-            println!("Lockfile missing: generating new lockfile");
+            info!("Lockfile missing: generating new lockfile");
             let config = GlobalContext::default()?;
             crate_path.pop();
             crate_path.push("Cargo.toml");

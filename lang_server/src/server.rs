@@ -163,6 +163,7 @@ fn runner(
                                     curr_effect,
                                 );
                             }
+                            af.recalc_pub_caller_checked(&scan_res.pub_fns);
                             af.save_to_file(audit_file_path.clone())?;
                         }
 

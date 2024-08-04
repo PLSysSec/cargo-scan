@@ -361,6 +361,26 @@ impl AuditFile {
             pub_caller_checked.into_iter().filter(|(_, v)| !v.is_empty()).collect();
     }
 
+    /// Mirror of `recalc_pub_caller_checked`, but retains safe public functions.
+    /// Useful when auditing through the IDE extension, where we use 
+    /// the same audit file both when auditing chain and a single crate.
+    pub fn recalc_pub_cc_with_safe(&mut self, pub_fns: &HashSet<CanonicalPath>) {
+        // NOTE: initialize everything at the start so we don't have to check for
+        //       entries and clone keys every time
+        let mut pub_caller_checked =
+            HashMap::from_iter(pub_fns.iter().map(|p| (p.clone(), HashSet::new())));
+        for (effect, tree) in self.audit_trees.iter() {
+            AuditFile::recalc_pub_caller_checked_tree(
+                effect,
+                tree,
+                &mut pub_caller_checked,
+                pub_fns,
+            );
+        }
+
+        self.pub_caller_checked = pub_caller_checked;
+    }
+
     /// Returns the list of all safe public functions (these include all the
     /// public functions which have been removed since the last audit update).
     pub fn safe_pub_fns(&self) -> HashSet<CanonicalPath> {
