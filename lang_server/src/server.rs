@@ -229,17 +229,17 @@ fn runner(
                     let params: AuditNotificationParams =
                         serde_json::from_value(notif.params)?;
 
-                    if let Some(af) = audit_file.as_mut() {
+                    if params.chain_audit_mode {
+                        AuditNotification::annotate_effects_in_chain_audit(
+                            params,
+                            &chain_manifest,
+                        )?;
+                    } else if let Some(af) = audit_file.as_mut() {
                         AuditNotification::annotate_effects_in_single_audit(
                             params,
                             af,
                             &scan_res,
                             audit_file_path.clone(),
-                        )?;
-                    } else if chain_manifest.is_file() {
-                        AuditNotification::annotate_effects_in_chain_audit(
-                            params,
-                            &chain_manifest,
                         )?;
                     }
                 }

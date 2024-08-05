@@ -18,6 +18,7 @@ use crate::{
 pub struct AuditNotificationParams {
     pub safety_annotation: String,
     pub effect: EffectsResponse,
+    pub chain_audit_mode: bool,
 }
 
 pub struct AuditNotification;

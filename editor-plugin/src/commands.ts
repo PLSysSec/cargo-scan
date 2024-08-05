@@ -9,6 +9,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('cargo-scan.scan', async () => {
             const response = await client.sendRequest<EffectsResponse>('cargo-scan.scan');
             context.globalState.update('annotateEffects', false);
+            context.globalState.update('chainAudit', false);
             
             const effects = response.effects.map(effect => ({
                 ...effect,
@@ -25,6 +26,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('cargo-scan.audit', async () => {
             const response = await client.sendRequest<AuditResponse>('cargo-scan.audit');
             context.globalState.update('annotateEffects', true);
+            context.globalState.update('chainAudit', false);
 
             let effectsMap = new Map<EffectResponseData, string>();    
             
@@ -41,21 +43,35 @@ export function registerCommands(context: vscode.ExtensionContext) {
     
     context.subscriptions.push(
         vscode.commands.registerCommand('cargo-scan.safeAnnotation', async (effect: EffectResponseData) => {
+            const chain_audit_mode = context.globalState.get('chainAudit');
             annotations.trackUserAnnotations(effect, 'Safe');
             const eff = { ...effect, location: { uri: effect.location.uri.toString(), range: effect.location.range }};
 
             // Notify server about the received safety annotation from the user
-            client.sendNotification('cargo-scan.set_annotation', { safety_annotation: 'Safe', effect: eff });                           
+            client.sendNotification('cargo-scan.set_annotation', { safety_annotation: 'Safe', effect: eff, chain_audit_mode });
+            
+            // If we're annotating effects in a chain audit,
+            // reload chain to update the previewed effects
+            if (chain_audit_mode) {
+                vscode.commands.executeCommand('cargo-scan.audit_chain');
+            }
         })
     );
 
     context.subscriptions.push(
         vscode.commands.registerCommand('cargo-scan.unsafeAnnotation', async (effect: EffectResponseData) => {
+            const chain_audit_mode = context.globalState.get('chainAudit');
             annotations.trackUserAnnotations(effect, 'Unsafe');  
             const eff = { ...effect, location: { uri: effect.location.uri.toString(), range: effect.location.range }};
 
             // Notify server about the received safety annotation from the user
-            client.sendNotification('cargo-scan.set_annotation', { safety_annotation: 'Unsafe', effect: eff });                           
+            client.sendNotification('cargo-scan.set_annotation', { safety_annotation: 'Unsafe', effect: eff, chain_audit_mode }); 
+            
+            // If we're annotating effects in a chain audit,
+            // reload chain to update the previewed effects
+            if (chain_audit_mode) {
+                vscode.commands.executeCommand('cargo-scan.audit_chain');
+            }
         })
     );
 
@@ -79,6 +95,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('cargo-scan.create_chain', async () => {
             client.sendRequest('cargo-scan.create_chain');
             context.globalState.update('annotateEffects', false);
+            context.globalState.update('chainAudit', false);
             locationsProvider.clear();
             annotations.clear();         
         })
@@ -87,7 +104,8 @@ export function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('cargo-scan.audit_chain', async () => {
             const response = await client.sendRequest<AuditResponse>('cargo-scan.audit_chain');
-            context.globalState.update('annotateEffects', true);              
+            context.globalState.update('annotateEffects', true);
+            context.globalState.update('chainAudit', true);
             let effectsMap = new Map<EffectResponseData, string>();    
             
             response.effects.forEach(x => {
