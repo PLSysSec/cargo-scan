@@ -69,4 +69,11 @@ export function activate(context: vscode.ExtensionContext) {
     locationsProvider.register(context);    
 }
 
-export function deactivate() { }
+export function deactivate() { 
+    return new Promise<void>((resolve) => {
+        client.sendRequest('shutdown').then(() => {
+            client.sendNotification('exit');
+            resolve();
+        });
+    });
+}
