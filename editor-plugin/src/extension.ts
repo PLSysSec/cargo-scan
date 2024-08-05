@@ -30,16 +30,17 @@ export function activate(context: vscode.ExtensionContext) {
         name: folder.name,
     }));
 
-    let serverModule = context.asAbsolutePath(
-        path.join('out', 'lang_server')
-    );
-
-    setEnvironment();
+    const config = vscode.workspace.getConfiguration('cargo-scan');
+    const serverModule = config.get<string>('serverPath');
+    setEnvironment(config);
+    
     let serverOptions: ServerOptions = {
-        command: serverModule,
+        command: serverModule && serverModule.trim().length !== 0
+            ? serverModule
+            : context.asAbsolutePath(path.join("out", "lang_server")),
         args: [],
         options: {
-            env: { ...process.env, RUST_LOG: 'info' },
+            env: { ...process.env },
         },
         transport: TransportKind.stdio,
     };

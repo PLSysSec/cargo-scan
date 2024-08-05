@@ -1,6 +1,6 @@
 {
   "name": "cargo-scan",
-  "displayName": "cargo-scan",
+  "displayName": "Cargo Scan",
   "description": "",
   "publisher": "PLSysSec",
   "version": "0.0.1",
@@ -50,16 +50,26 @@
           "name": "Effects"
         }
       ]
-    }
-  },
-  "configuration": {
-    "type": "object",
-    "title": "Cargo Scan",
-    "properties": {
-      "cargo-scan.serverPath": {
-        "type": "string",
-        "default": "./out/lang_server",
-        "description": "Path to 'cargo-scan' executable"
+    },
+    "configuration": {
+      "type": "object",
+      "title": "Cargo Scan",
+      "properties": {
+        "cargo-scan.serverPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to Cargo Scan's executable.\nIf not specified, the extension uses the pre-built and bundled instance."
+        },
+        "cargo-scan.rustPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to locate the Rust Toolchain, that's necessary when performing a chain audit.\nIf not specified, the extension will try to use the default installation paths."
+        },
+        "cargo-scan.log.level": {
+          "type": "string",
+          "default": "info",
+          "enum": ["off", "error", "warn", "info", "debug", "trace"]
+        }
       }
     }
   },

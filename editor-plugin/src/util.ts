@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { execSync } from 'child_process';
 import * as path from 'path';
+import { homedir } from 'os';
 
 export function convertLocation(obj: any): vscode.Location {
     const uri = vscode.Uri.parse(obj.uri.toString());
@@ -12,13 +13,33 @@ export function convertLocation(obj: any): vscode.Location {
     return new vscode.Location(uri, range);
 }
 
-export function setEnvironment() {
+export function setEnvironment(config: vscode.WorkspaceConfiguration) {
+    let rustPath = config.get<string>('rustPath');
+
+    // If `rustPath` is not set in the extension configurations,
+    // determine default Rust installation paths based on platform
+    if (!rustPath || rustPath.trim().length === 0) {
+        rustPath = process.platform === 'win32' ?
+            path.join(process.env.USERPROFILE || '', '.cargo', 'bin') :
+            path.join(homedir(), '.cargo', 'bin');
+    }
+    
+    // Export Rust toolchain to `$PATH`
+    process.env.PATH = `${rustPath}${path.delimiter}${process.env.PATH || ''}`;
+    checkRustToolchain(rustPath);
+
+    // Set RUST_LOG environment variable to the configured log level
+    const level = config.get<string>('log.level');
+    process.env.RUST_LOG = level;
+}
+
+function checkRustToolchain(rustPath: string) {
     try {
-        const cmd = process.platform === 'win32' ? 'where' : 'which';
-        const rustcPath = execSync(`${cmd} rustc`, {encoding: 'utf8'}).trim();
-        const currPath = process.env.PATH || '';
-        process.env.PATH = `${path.dirname(rustcPath)}${path.delimiter}${currPath}`;
+        // Verify rustc can be executed
+        execSync(`${path.join(rustPath, 'rustc')} -vV`, { encoding: 'utf8' }).trim();
+
     } catch (error) {
-        throw error;
+        vscode.window.showErrorMessage(`Failed to set environment: Could not find Rust 
+            toolchain in "${rustPath}". Try setting the path in the extension Settings.`); 
     }
 }
