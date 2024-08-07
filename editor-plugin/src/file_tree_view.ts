@@ -23,6 +23,7 @@ export class LocationsProvider
 
     setLocations(effects: EffectResponseData[]) {
         this.groupByFile(effects);
+        this.sortGroupedEffects();
         this._onDidChangeTreeData.fire(undefined);    
     }
 
@@ -32,19 +33,17 @@ export class LocationsProvider
 
     getChildren(element?: vscode.TreeItem): Thenable<vscode.TreeItem[]> {
         if (!element) {
-            // Return top-level file items
-            return Promise.resolve(
-                Object.keys(this.groupedEffects).map(
-                    (file) => new FileItem(file)
-                )
-            );
+            // Return top-level file items in alphabetic order
+            const fileItems = Object.keys(this.groupedEffects)
+                .sort()
+                .map((file) => new FileItem(file));
+            return Promise.resolve(fileItems);
         } else if (element instanceof FileItem) {
-            // Return effects' locations within a file
-            return Promise.resolve(
-                this.groupedEffects[element.label as string].map(
-                    (location) => new LocationItem(location)
-                )
-            );
+            // Return effects' locations within a file sorted by location
+            const locationItems = this.groupedEffects[element.label as string]
+                .sort((a, b) => a.location.range.start.compareTo(b.location.range.start))
+                .map((location) => new LocationItem(location));
+            return Promise.resolve(locationItems);
         }
         return Promise.resolve([]);
     }
@@ -78,6 +77,12 @@ export class LocationsProvider
     clear() {
         this.groupedEffects = {};
         this._onDidChangeTreeData.fire(undefined); 
+    }
+
+    private sortGroupedEffects() {
+        for (const file in this.groupedEffects) {
+            this.groupedEffects[file].sort((a, b) => a.location.range.start.compareTo(b.location.range.start));
+        }
     }
 }
 
