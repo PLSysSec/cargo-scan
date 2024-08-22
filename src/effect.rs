@@ -197,7 +197,7 @@ impl Effect {
     }
 
     pub fn to_csv(&self) -> String {
-        csv::sanitize_comma(self.simple_str())
+        csv::sanitize(self.simple_str())
     }
 
     pub fn is_ffi_decl(&self) -> bool {
@@ -378,9 +378,9 @@ impl EffectInstance {
     }
 
     pub fn to_csv(&self) -> String {
-        let crt = self.caller.crate_name().to_string();
-        let caller = self.caller.to_string();
-        let callee = csv::sanitize_comma(self.callee.as_str());
+        let crt = csv::sanitize(self.caller.crate_name().as_str());
+        let caller = csv::sanitize(self.caller.as_str());
+        let callee = csv::sanitize(self.callee.as_str());
         let effect = self.eff_type.to_csv();
         let call_loc_csv = self.call_loc.to_csv();
 

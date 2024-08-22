@@ -25,18 +25,15 @@ pub mod csv {
     use log::warn;
     use std::path::Path;
 
-    pub fn sanitize_comma(s: &str) -> String {
-        if s.contains(',') {
-            warn!("Warning: ignoring unexpected comma when generating CSV: {s}");
-        }
-        s.replace(',', "")
+    pub fn sanitize(s: &str) -> String {
+        s.replace(',', "\\,")
     }
     pub fn sanitize_path(p: &Path) -> String {
         match p.to_str() {
-            Some(s) => sanitize_comma(s),
+            Some(s) => sanitize(s),
             None => {
                 warn!("Warning: path is invalid unicode: {:?}", p);
-                sanitize_comma(&p.to_string_lossy())
+                sanitize(&p.to_string_lossy())
             }
         }
     }
