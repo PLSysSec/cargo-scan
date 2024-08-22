@@ -1,13 +1,24 @@
 crate, fn_decl, callee, effect, dir, file, line, col
 caller_checked, caller_checked::has_direct_effect, libc::unix::sysconf, [FFI Call], data/test-packages/caller-checked/src, lib.rs, 9, 8
+caller_checked, caller_checked::local_effect, UNKNOWN_METHOD::as_ptr, [UnsafeCall], data/test-packages/caller-checked/src, main.rs, 10, 27
+caller_checked, caller_checked::local_effect, core::ptr::null_mut, [UnsafeCall], data/test-packages/caller-checked/src, main.rs, 12, 12
+caller_checked, caller_checked::local_effect, core::ptr::null_mut, [UnsafeCall], data/test-packages/caller-checked/src, main.rs, 13, 12
+caller_checked, caller_checked::local_effect, core::ptr::null_mut, [UnsafeCall], data/test-packages/caller-checked/src, main.rs, 14, 12
 caller_checked, caller_checked::local_effect, libc::unix::linux_like::linux::gnu::b64::x86_64::not_x32::sysctl, [FFI Call], data/test-packages/caller-checked/src, main.rs, 9, 8
 caller_checked, caller_checked::unsafe_effect, caller_checked::unsafe_effect::x, [PtrDeref], data/test-packages/caller-checked/src, main.rs, 24, 9
 caller_checked, caller_checked::sub::effect, libc::unix::sysconf, [FFI Call], data/test-packages/caller-checked/src, sub.rs, 6, 8
+caller_checked, caller_checked::sub::effect, core::ffi::CStr::from_bytes_with_nul, [UnsafeCall], data/test-packages/caller-checked/src, sub.rs, 7, 29
+caller_checked, caller_checked::sub::effect, UNKNOWN_METHOD::unwrap, [UnsafeCall], data/test-packages/caller-checked/src, sub.rs, 7, 76
+caller_checked, caller_checked::sub::effect, UNKNOWN_METHOD::as_ptr, [UnsafeCall], data/test-packages/caller-checked/src, sub.rs, 9, 27
+caller_checked, caller_checked::sub::effect, core::ptr::null_mut, [UnsafeCall], data/test-packages/caller-checked/src, sub.rs, 11, 12
+caller_checked, caller_checked::sub::effect, core::ptr::null_mut, [UnsafeCall], data/test-packages/caller-checked/src, sub.rs, 12, 12
+caller_checked, caller_checked::sub::effect, core::ptr::null_mut, [UnsafeCall], data/test-packages/caller-checked/src, sub.rs, 13, 12
 caller_checked, caller_checked::sub::effect, libc::unix::linux_like::linux::gnu::b64::x86_64::not_x32::sysctl, [FFI Call], data/test-packages/caller-checked/src, sub.rs, 8, 8
 cfg_ex, cfg_ex::foo1, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 14, 4
 cfg_ex, cfg_ex::foo2, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 24, 4
 cfg_ex, cfg_ex::test_2, std::fs::write, std::fs, data/test-packages/cfg-ex/src, main.rs, 41, 4
 dependency_ex, dependency_ex::read_fn, std::fs::File::open, std::fs, data/test-packages/dependency-ex/src, lib.rs, 5, 24
+dependency_ex, dependency_ex::read_fn, std::fs::<File as Read>::read_to_end, std::fs, data/test-packages/dependency-ex/src, lib.rs, 8, 17
 dependency_ex, dependency_ex::unsafe_deref, dependency_ex::unsafe_deref::y, [PtrDeref], data/test-packages/dependency-ex/src, lib.rs, 21, 9
 dependency_parent, dependency_parent::internal_unsafe_deref, dependency_parent::internal_unsafe_deref::y, [PtrDeref], data/test-packages/dependency-parent/src, main.rs, 5, 9
 ffi_ex, ffi_ex::SCDynamicStoreGetTypeID, ffi_ex::SCDynamicStoreGetTypeID, [FFI Declaration], data/test-packages/ffi-ex/src, main.rs, 38, 4
