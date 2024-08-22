@@ -1,14 +1,15 @@
 # Cargo Scan
 
-`cargo scan` is a tool for auditing Rust crates.
+Cargo Scan is a tool for auditing Rust crates.
 
-**⚠️ `cargo scan` is under active development. Some interfaces may be subject to change.**
+**⚠️ Cargo Scan is under active development. Some interfaces may be subject to change.**
 
 ## Installation
 
-1. Make sure you have [Rust](https://www.rust-lang.org/tools/install)
-2. Run `rustup update` to ensure you have the latest version of Rust.
-3. Run `make install`.
+1. Clone this repository.
+2. Make sure you have [Rust](https://www.rust-lang.org/tools/install).
+3. Run `rustup update` to ensure you have the latest version of Rust.
+4. Run `make install`.
 
 This installs [cargo-download](https://crates.io/crates/cargo-download) and builds the Rust source.
 
@@ -16,7 +17,7 @@ Known working builds:
 
 - August 22, 2024 on Mac OS (Sonoma) using Rust 1.80.1.
 
-<!-- TODO on Linux (Arch Linux). -->
+- August 22, 2024 on Linux (Arch Linux) using Rust 1.80.1.
 
 ## Quick-start
 
@@ -49,15 +50,7 @@ $ cargo run --bin scan data/packages/rand
 crate, fn_decl, callee, effect, dir, file, line, col
 rand, rand::distributions::other::<Standard as Distribution<char>>::sample, core::char::from_u32_unchecked, [UnsafeCall], data/packages/rand/src/distributions, other.rs, 94, 17
 rand, rand::distributions::other::<Alphanumeric as DistString>::append_string, alloc::string::String::as_mut_vec, [UnsafeCall], data/packages/rand/src/distributions, other.rs, 136, 27
-rand, rand::distributions::other::<Standard as Distribution<[T; N]>>::sample, core::mem::maybe_uninit::MaybeUninit::assume_init, [UnsafeCall], data/packages/rand/src/distributions, other.rs, 247, 75
-rand, rand::distributions::other::<Standard as Distribution<[T; N]>>::sample, core::mem::transmute_copy, [UnsafeCall], data/packages/rand/src/distributions, other.rs, 253, 17
-rand, rand::distributions::slice::<Slice<'_, T> as Distribution<&'a T>>::sample, core::slice::get_unchecked, [UnsafeCall], data/packages/rand/src/distributions, slice.rs, 108, 28
-rand, rand::distributions::uniform::<UniformChar as UniformSampler>::sample, core::char::from_u32_unchecked, [UnsafeCall], data/packages/rand/src/distributions, uniform.rs, 843, 17
-rand, rand::rngs::thread::ThreadRng::reseed, core::cell::UnsafeCell::get, [PtrDeref], data/packages/rand/src/rngs, thread.rs, 93, 33
-rand, rand::rngs::thread::<ThreadRng as RngCore>::next_u32, core::cell::UnsafeCell::get, [PtrDeref], data/packages/rand/src/rngs, thread.rs, 152, 33
-rand, rand::rngs::thread::<ThreadRng as RngCore>::next_u64, core::cell::UnsafeCell::get, [PtrDeref], data/packages/rand/src/rngs, thread.rs, 160, 33
-rand, rand::rngs::thread::<ThreadRng as RngCore>::fill_bytes, core::cell::UnsafeCell::get, [PtrDeref], data/packages/rand/src/rngs, thread.rs, 167, 33
-rand, rand::rngs::thread::<ThreadRng as RngCore>::try_fill_bytes, core::cell::UnsafeCell::get, [PtrDeref], data/packages/rand/src/rngs, thread.rs, 174, 33
+...
 rand, rand::distributions::uniform::<Uniform<char> as super::DistString>::append_string, core::char::methods::len_utf8, [FnPtrCreation], data/packages/rand/src/distributions, uniform.rs, 860, 50
 
 num_effects, total, loc_lb, loc_ub, macros, loc_lb, loc_ub, conditional_code, loc_lb, loc_ub, skipped_calls, loc_lb, loc_ub, skipped_fn_ptrs, loc_lb, loc_ub, skipped_other, loc_lb, loc_ub, unsafe_trait, loc_lb, loc_ub, unsafe_impl, loc_lb, loc_ub, pub_fns, pub_fns_with_effects, pub_total_effects, audited_fns, audited_loc
@@ -75,15 +68,9 @@ cargo run --bin scan -- --help
 
 See [Wikipedia](https://en.wikipedia.org/wiki/Side_effect_(computer_science)). Basically, it represents some behavior of a function that might or might not be dangerous (e.g., operating system calls, memory unsafety, or filesystem/network access). These are behaviors that you may want to look into further when auditing a crate.
 
-### If you don't have a crate on your system -- running on example crates
+### If you don't have a crate on your system
 
-For example, you can download a crate using `cargo download` and run:
-```
-cargo download -x fs-extra
-cargo run --bin scan fs_extra-<version number>/
-```
-
-Or you can run on a provided test crate in `data/test-packages`:
+You can run one of our provided example crates in `data/test-packages`:
 ```
 cargo run --bin scan data/test-packages/permissions-ex
 ```
