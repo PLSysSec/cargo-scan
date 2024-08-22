@@ -1,3 +1,10 @@
+/*
+    This binary is intended for internal use.
+
+    The main supported binaries are `--bin scan` and `--bin audit`.
+    See README.md for usage instructions.
+*/
+
 #![allow(unused_variables)]
 
 use std::path::PathBuf;
@@ -26,6 +33,8 @@ struct Args {
 }
 
 pub fn main() -> Result<()> {
+    eprintln!("Warning: `--bin check_resolution` is intended for internal use. The primary supported binaries are `--bin scan` and `--bin audit`.");
+
     cargo_scan::util::init_logging();
     let args = Args::parse();
 

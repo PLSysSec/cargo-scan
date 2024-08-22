@@ -1,3 +1,10 @@
+/*
+    This binary is intended for internal use.
+
+    The main supported binaries are `--bin scan` and `--bin audit`.
+    See README.md for usage instructions.
+*/
+
 use std::{collections::HashSet, path::PathBuf};
 
 use cargo_scan::{audit_file::AuditFile, effect::EffectType};
@@ -66,6 +73,8 @@ fn runner(args: Args) -> Result<()> {
 }
 
 fn main() {
+    eprintln!("Warning: `--bin default_audit` is intended for internal use. The primary supported binaries are `--bin scan` and `--bin audit`.");
+
     cargo_scan::util::init_logging();
     let args = Args::parse();
 

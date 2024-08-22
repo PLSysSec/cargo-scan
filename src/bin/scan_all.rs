@@ -1,4 +1,9 @@
-//! Run a scan for a list of crates in parallel.
+//! The scan_all binary: Scan a set of crates in parallel.
+//!
+//! This binary is used in our test suites and experiments (see the Makefile);
+//! however, it is not recommended to call it directly.
+//!
+//! See README for current usage information.
 
 use cargo_scan::effect::EffectInstance;
 use cargo_scan::scan_stats::{self, CrateStats};

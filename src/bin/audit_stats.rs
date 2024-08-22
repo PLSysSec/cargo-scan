@@ -1,3 +1,10 @@
+/*
+    This binary is intended for internal use.
+
+    The main supported binaries are `--bin scan` and `--bin audit`.
+    See README.md for usage instructions.
+*/
+
 use anyhow::{anyhow, Result};
 use cargo_lock::{Lockfile, Package};
 use clap::Parser;
@@ -388,6 +395,8 @@ fn dump_sinks(all_stats: &Vec<AuditingStats>) -> Result<()> {
     Ok(())
 }
 fn main() -> Result<()> {
+    eprintln!("Warning: `--bin audit_stats` is intended for internal use. The primary supported binaries are `--bin scan` and `--bin audit`.");
+
     cargo_scan::util::init_logging();
     let args = Args::parse();
     let mut all_stats = Vec::new();

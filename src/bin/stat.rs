@@ -1,3 +1,10 @@
+/*
+    This binary is intended for internal use.
+
+    The main supported binaries are `--bin scan` and `--bin audit`.
+    See README.md for usage instructions.
+*/
+
 use std::fs::create_dir_all;
 use std::{fs::remove_dir_all, path::PathBuf};
 
@@ -69,6 +76,8 @@ impl std::fmt::Display for PathType {
 // TODO: Figure out who is responsible for clearing the audit path so we don't
 //       re-use audited policies.
 fn main() -> Result<()> {
+    eprintln!("Warning: `--bin stat` is intended for internal use. The primary supported binaries are `--bin scan` and `--bin audit`.");
+
     cargo_scan::util::init_logging();
     let args = Args::parse();
 

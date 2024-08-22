@@ -1,3 +1,7 @@
+//! The audit binary: Interactively audit side effects in a crate.
+//!
+//! See README for current usage information.
+
 use cargo_scan::audit_file::*;
 use cargo_scan::auditing::audit::start_audit;
 use cargo_scan::auditing::info::Config;

@@ -1,8 +1,9 @@
-//! Run a scan for a single crate.
+//! The scan binary: Scan a crate and print side effects to stdout in CSV format.
 //!
 //! Prints out potentially dangerous effects to stdout (one per line),
-//! in CSV format,
-//! followed by various metadata.
+//! as well as metadata.
+//!
+//! See README for current usage information.
 
 use cargo_scan::effect::EffectInstance;
 use cargo_scan::scan_stats::{self, CrateStats};
