@@ -5,6 +5,7 @@
 //!
 //! See README for current usage information.
 
+use cargo_scan::download_crate;
 use cargo_scan::effect::EffectInstance;
 use cargo_scan::scan_stats::{self, CrateStats};
 use cargo_scan::util;
@@ -15,7 +16,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::sync::mpsc;
 use threadpool::ThreadPool;
 
@@ -38,7 +38,7 @@ const RESULTS_PATTERNS_SUFFIX: &str = "_patterns.csv";
 const RESULTS_METADATA_SUFFIX: &str = "_metadata.csv";
 
 // Whether to remove and re-download old downloaded packages
-const UPDATE_DOWNLOADS: bool = false;
+const UPDATE_DOWNLOADS: bool = true;
 
 /*
     CLI
@@ -90,14 +90,7 @@ fn crate_stats(
         if !output_dir.is_dir() {
             info!("Downloading {} to: {:?}", crt, output_dir);
 
-            let _output = Command::new("cargo")
-                .arg("download")
-                .arg("-x")
-                .arg(crt)
-                .arg("-o")
-                .arg(&output_dir)
-                .output()
-                .expect("failed to run cargo download");
+            download_crate::download_latest_crate_version(crt, CRATES_DIR).expect("failed to download crate");
         }
     }
 

@@ -1,10 +1,12 @@
 use std::fs::{create_dir_all, remove_file, write, File};
 use std::path::PathBuf;
+use std::process::Command;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use cargo_lock::Package;
 use curl::easy::Easy;
 use flate2::read::GzDecoder;
+use regex::Regex;
 use log::info;
 use tar::Archive;
 
@@ -84,6 +86,50 @@ pub fn download_crate_from_info(
 ) -> Result<PathBuf> {
     let url = get_crates_io_url(package_name, package_version);
     download_crate(&url, package_name, package_version, download_dir)
+}
+
+/// Get the latest version of a crate from only the package name.
+pub fn get_latest_version(
+    package_name: &str,
+) -> Result<String> {
+
+    // Query `cargo search`.
+    let result = Command::new("cargo")
+        .arg("search")
+        .arg(package_name)
+        .arg("--limit")
+        .arg("1")
+        .output()?;
+
+    // Convert the output to a string.
+    let output = String::from_utf8(result.stdout)?;
+
+    // Debug
+    println!("{:?}", output);
+
+    // Parse the output. It should contain <crate name> = "<version>"
+    let re = Regex::new(r#"^([a-zA-Z0-9_-]+) = "(\d+\.\d+\.\d+)""#).unwrap();
+    if let Some(caps) = re.captures(&output) {
+        let name = &caps[1];
+        let version = &caps[2];
+        if name == package_name {
+            // Debug
+            println!("Found version: {} for package: {}", version, package_name);
+
+            return Ok(version.to_string());
+        }
+    }
+
+    Err(anyhow!("No match found for package name: {}", package_name))
+}
+
+/// Downloads the latest version of a crate from only the package name
+pub fn download_latest_crate_version(
+    package_name: &str,
+    download_dir: &str,
+) -> Result<PathBuf> {
+    let latest_version = get_latest_version(package_name)?;
+    download_crate_from_info(package_name, &latest_version, download_dir)
 }
 
 /// Downloads the crate from the `cargo_lock::Package`
