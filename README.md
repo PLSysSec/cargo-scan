@@ -67,6 +67,11 @@ num_effects, total, loc_lb, loc_ub, macros, loc_lb, loc_ub, conditional_code, lo
 
 If you don't want the last two lines (totals at the bottom), suppress them with the `-s` option.
 
+For additional usage options, run `help`:
+```
+cargo run --bin scan -- --help
+```
+
 ### If you don't have a crate on your system -- running on example crates
 
 For example, you can download a crate using `cargo download` and run:
@@ -119,7 +124,10 @@ help[Audit location]:
 If the command is run a second time, it continues the existing audit.
 To review the audit, use `-r`.
 
-Please see the file `AUDITING.md` for further instructions about auditing.
+For additional usage options, run `help`:
+```
+cargo run --bin scan -- --help
+```
 
 ## Method 3: Using the VSCode extension
 
