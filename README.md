@@ -1,7 +1,6 @@
 # Cargo Scan
 
-`cargo scan` is a supply chain auditing tool for Cargo (Rust) dependencies using static analysis.
-It can also be used in tandem with [cargo vet](https://mozilla.github.io/cargo-vet/).
+`cargo scan` is a tool for auditing Rust crates.
 
 **⚠️ `cargo scan` is under active development. Some interfaces may be subject to change.**
 
@@ -39,7 +38,7 @@ To scan a crate, you run the binary (from this repository), and provide it a pat
 cargo run --bin scan <path to crate>
 ```
 
-This is the simplest available output, which is returned in CSV format as a list of effects, one per line.
+This is the simplest available output, which is returned in CSV format as a list of *side effects,* one per line.
 The beginning of the line gives the crate name, the function body and callee that contains the effect, and the effect type or pattern that it matches.
 The last four items on each line give the directory, file, line, and column where the effect occurs.
 Example output is as follows:
@@ -71,6 +70,10 @@ For additional usage options, run `help`:
 ```
 cargo run --bin scan -- --help
 ```
+
+### What's a side effect?
+
+See [Wikipedia](https://en.wikipedia.org/wiki/Side_effect_(computer_science)). Basically, it represents some behavior of a function that might or might not be dangerous (e.g., operating system calls, memory unsafety, or filesystem/network access). These are behaviors that you may want to look into further when auditing a crate.
 
 ### If you don't have a crate on your system -- running on example crates
 
@@ -148,6 +151,11 @@ More details and instructions will be included soon!
 
 You can also run `./scripts/scan.py -h` to see options for running an experiment; this is useful for running a scan on a large list of crates, e.g. the top 100 crates on crates.io or your own provided list. Alternatively, see `Makefile` for some pre-defined experiments to run, such as `make top10`.
 
+### Running in tandem with other tools
+
+Cargo Scan can also be used in tandem with other Rust supply chain auditing tools, such as [cargo vet](https://mozilla.github.io/cargo-vet/).
+We are interested in exploring other use cases for integration; if you think Cargo Scan would be useful for your project, let us know!
+
 ## Additional information
 
 ### Repository structure
@@ -175,4 +183,4 @@ The current draft (in submission) is available below:
 
 You may also cite the repository directly:
 
-- Cargo Scan: a tool for auditing Rust crates. Lydia Zoghbi, David Thien, Ranjit Jhala, Deian Stefan, and Caleb Stanford. GitHub repository (2024). GitHub URL: https://github.com/PLSysSec/cargo-scan/tree/main.
+- Cargo Scan: a tool for auditing Rust crates. Lydia Zoghbi, David Thien, Ranjit Jhala, Deian Stefan, and Caleb Stanford. GitHub repository (2024). [GitHub Link](https://github.com/PLSysSec/cargo-scan)
