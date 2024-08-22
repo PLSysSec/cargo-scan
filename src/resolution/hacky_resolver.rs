@@ -294,10 +294,10 @@ impl<'a> HackyResolver<'a> {
     fn save_scope_use_under(&mut self, lookup_key: &'a syn::Ident) {
         // save the use scope under an identifier/lookup key
         let v_new = self.scope_use_snapshot();
-        if log_enabled!(Level::Warn) && self.use_names.contains_key(lookup_key) {
+        if log_enabled!(Level::Debug) && self.use_names.contains_key(lookup_key) {
             let v_old = self.use_names.get(lookup_key).unwrap();
             if *v_old != v_new {
-                warn!(
+                debug!(
                     "Name conflict found in use scope: {:?} (old: {:?} new: {:?})",
                     lookup_key, v_old, v_new
                 );

@@ -24,9 +24,13 @@ struct Args {
     #[clap(short = 'd', long = "crate-download-path", default_value = ".stats_tmp")]
     crate_download_path: String,
 
-    // Run in quick mode (turns off RustAnalyzer)
+    /// Run in quick mode (turns off RustAnalyzer)
     #[clap(short, long, default_value_t = false)]
     quick_mode: bool,
+
+    /// Suppress "total" lines at the bottom of the output
+    #[clap(short, long, default_value_t = false)]
+    suppress_total: bool,
 }
 
 fn main() {
@@ -42,7 +46,9 @@ fn main() {
         println!("{}", effect.to_csv());
     }
 
-    println!();
-    println!("{}", CrateStats::metadata_csv_header());
-    println!("{}", stats.metadata_csv());
+    if !args.suppress_total {
+        println!();
+        println!("{}", CrateStats::metadata_csv_header());
+        println!("{}", stats.metadata_csv());
+    }
 }
