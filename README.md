@@ -22,15 +22,17 @@ Known working builds:
 ## Quick-start
 
 To use Cargo Scan you first need a Rust crate somewhere on your system (any Rust code with a `Cargo.toml` file).
-There are two ways to run Cargo Scan:
+There are three ways to run Cargo Scan:
 
-1. Using the command-line interface (easiest: `cargo run --bin scan <path to crate>`); or
+1. Using the basic command-line interface (easiest: `cargo run --bin scan <path to crate>`);
 
-2. Using the VSCode extension.
+2. Using interactive auditing mode (`cargo run --bin audit <path to crate> -i`); or
 
-Instructions for both are included below.
+3. Using the VSCode extension.
 
-## Method 1. Using the command-line interface
+Instructions for these are included below.
+
+## Method 1: Using the basic command-line interface
 
 To scan a crate, you run the binary (from this repository), and provide it a path to the crate:
 ```
@@ -78,7 +80,7 @@ Or you can run on a provided test crate in `data/test-packages`:
 cargo run --bin scan data/test-packages/permissions-ex
 ```
 
-### Running in interactive mode
+## Method 2: Interactive mode
 
 Interactive mode is a variant of the command-line interface that allows you to mark
 audits as safe or unsafe as you go through them.
@@ -119,7 +121,7 @@ To review the audit, use `-r`.
 
 Please see the file `AUDITING.md` for further instructions about auditing.
 
-## Method 2: Using the VSCode extension
+## Method 3: Using the VSCode extension
 
 We are currently developing a VSCode extension to use the tool directly.
 More details and instructions will be included soon!
