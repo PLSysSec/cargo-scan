@@ -83,14 +83,15 @@ fn crate_stats(
     let output_dir = download_loc.join(Path::new(crt));
 
     if !test_run {
-        if UPDATE_DOWNLOADS {
+        if UPDATE_DOWNLOADS && output_dir.is_dir() {
             fs::remove_dir_all(&output_dir).expect("failed to remove old dir");
         }
 
         if !output_dir.is_dir() {
-            info!("Downloading {} to: {:?}", crt, output_dir);
+            info!("Downloading {} to: {}", crt, output_dir.to_string_lossy());
 
-            download_crate::download_latest_crate_version(crt, CRATES_DIR).expect("failed to download crate");
+            download_crate::download_latest_crate_version(crt, CRATES_DIR)
+                .expect("failed to download crate");
         }
     }
 
