@@ -7,11 +7,8 @@ Cargo Scan is a tool for auditing Rust crates.
 ## Installation
 
 1. Clone this repository.
-2. Make sure you have [Rust](https://www.rust-lang.org/tools/install).
-3. Run `rustup update` to ensure you have the latest version of Rust.
-4. Run `make install`.
-
-This installs [cargo-download](https://crates.io/crates/cargo-download) and builds the Rust source.
+2. Run `rustup update` to ensure you have the latest version of Rust (or install it via the [official website]((https://www.rust-lang.org/tools/install))).
+3. Run `cargo build`.
 
 Known working builds:
 

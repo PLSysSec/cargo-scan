@@ -4,10 +4,7 @@
 SCAN_ALL := cargo run --release --bin scan_all --
 UPDATE_TEST_CRATES_CSV := ./scripts/update_test_crates_csv.py
 
-dependencies:
-	- cargo install cargo-download
-
-install: dependencies
+install:
 	cargo build && cargo build --release
 
 checks:

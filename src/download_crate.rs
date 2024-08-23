@@ -1,12 +1,18 @@
 use std::fs::{create_dir_all, remove_file, write, File};
 use std::path::PathBuf;
+use std::process::Command;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use cargo_lock::Package;
 use curl::easy::Easy;
 use flate2::read::GzDecoder;
 use log::info;
+use regex::Regex;
 use tar::Archive;
+
+// Regexes to match crate names and versions
+const CRATE_NAME_REGEX: &str = r"[a-zA-Z0-9_-]+";
+const SEMVER_REGEX: &str = r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?";
 
 fn get_crates_io_url(package_name: &str, package_version: &str) -> String {
     format!(
@@ -84,6 +90,54 @@ pub fn download_crate_from_info(
 ) -> Result<PathBuf> {
     let url = get_crates_io_url(package_name, package_version);
     download_crate(&url, package_name, package_version, download_dir)
+}
+
+/// Get the latest version of a crate from only the package name.
+pub fn get_latest_version(package_name: &str) -> Result<String> {
+    // Query `cargo search`.
+    let result = Command::new("cargo")
+        .arg("search")
+        .arg(package_name)
+        .arg("--limit")
+        .arg("1")
+        .output()?;
+
+    // Convert the output to a string.
+    let output = String::from_utf8(result.stdout)?;
+
+    // Parse the output. It should contain <crate name> = "<version>"
+    let re_str = format!("^({}) = \"({})\"", CRATE_NAME_REGEX, SEMVER_REGEX);
+    let re = Regex::new(&re_str).unwrap();
+    if let Some(caps) = re.captures(&output) {
+        // Debug
+        // println!("Match found: {:?}", caps);
+
+        let name = &caps[1];
+        let version = &caps[2];
+        if name == package_name {
+            // Debug
+            // println!("Found version: {} for package: {}", version, package_name);
+
+            return Ok(version.to_string());
+        }
+    }
+
+    Err(anyhow!("No match found for package name: {}", package_name))
+}
+
+/// Downloads the latest version of a crate from only the package name
+/// Also, moves the output directory to just use the package name in the final output folder.
+pub fn download_latest_crate_version(
+    package_name: &str,
+    download_dir: &str,
+) -> Result<PathBuf> {
+    let latest_version = get_latest_version(package_name)?;
+    let result = download_crate_from_info(package_name, &latest_version, download_dir)?;
+    let _output = Command::new("mv")
+        .arg(format!("{}/{}-{}", download_dir, package_name, latest_version))
+        .arg(format!("{}/{}", download_dir, package_name))
+        .output()?;
+    Ok(result)
 }
 
 /// Downloads the crate from the `cargo_lock::Package`
