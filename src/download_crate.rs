@@ -11,8 +11,8 @@ use regex::Regex;
 use tar::Archive;
 
 // Regexes to match crate names and versions
-const CRATE_NAME_REGEX: &'static str = r"[a-zA-Z0-9_-]+";
-const SEMVER_REGEX: &'static str = r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?";
+const CRATE_NAME_REGEX: &str = r"[a-zA-Z0-9_-]+";
+const SEMVER_REGEX: &str = r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?";
 
 fn get_crates_io_url(package_name: &str, package_version: &str) -> String {
     format!(
