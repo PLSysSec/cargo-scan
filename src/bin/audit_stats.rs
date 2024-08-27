@@ -132,7 +132,7 @@ fn compute_stats(
     // Collect total lines of code for audited functions
     for f in &total_fns {
         match results.fn_loc_tracker.get(f) {
-            Some(tracker) => audited_loc += tracker.get_loc_lb(),
+            Some(tracker) => audited_loc += tracker.get_loc(),
             None => debug!(
                 "failed to find tracker node for `{:?}`. possibly it is a trait method.",
                 f.as_str()
@@ -147,8 +147,7 @@ fn compute_stats(
     });
     sink_calls.extend(sink_effects.cloned());
 
-    let total_loc =
-        results.fn_loc_tracker.values().fold(0, |acc, x| acc + x.get_loc_lb());
+    let total_loc = results.fn_loc_tracker.values().fold(0, |acc, x| acc + x.get_loc());
 
     AuditingStats {
         crate_id,

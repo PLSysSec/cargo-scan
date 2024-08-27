@@ -1,14 +1,11 @@
 //! Abstract tracker for calculating total lines of code (LoC)
-//! in a sequence of code excerpts.
+//! in a sequence of code blocks.
 //!
-//! Supports a simple interface using add(s) for s: Spanned
-//! to add a code excerpt.
+//! Code blocks are added through the interface add(s) for s: Spanned.
 //!
 //! Important note:
-//! - Assumes that code excerpts do not overlap.
-//! - If multiple code excerpts start and end on the same line, this
-//!   may result in an overapproximation as get_loc() counts zero
-//!   sized excerpts as one line each.
+//! - The "length" of each block is defined to be the end line, minus the start line,
+//!   plus one if the excerpt starts and ends on the same line.
 
 use syn::spanned::Spanned;
 
@@ -49,23 +46,18 @@ impl LoCTracker {
         self.instances
     }
 
-    /// Get lines of code lower bound
-    pub fn get_loc_lb(&self) -> usize {
-        self.lines
-    }
-
-    /// Get lines of code upper bound
-    pub fn get_loc_ub(&self) -> usize {
+    /// Get total lines of code added
+    pub fn get_loc(&self) -> usize {
         self.lines + self.zero_size_lines
     }
 
     /// Summary as a CSV
     pub fn as_csv(&self) -> String {
-        format!("{}, {}, {}", self.get_instances(), self.get_loc_lb(), self.get_loc_ub())
+        format!("{}, {}", self.get_instances(), self.get_loc())
     }
 
-    /// Header for CSV output
-    pub fn csv_header() -> &'static str {
-        "Instances, LoC (lower bound), LoC (upper bound)"
-    }
+    // Header for CSV output (unused)
+    // pub fn csv_header() -> &'static str {
+    //     "Instances, LoC"
+    // }
 }

@@ -44,24 +44,22 @@ pub struct CrateStats {
 impl CrateStats {
     pub fn metadata_csv_header() -> &'static str {
         "\
-        num_effects, \
-        total, loc_lb, loc_ub, \
-        macros, loc_lb, loc_ub, \
-        conditional_code, loc_lb, loc_ub, \
-        skipped_calls, loc_lb, loc_ub, \
-        skipped_fn_ptrs, loc_lb, loc_ub, \
-        skipped_other, loc_lb, loc_ub, \
-        unsafe_trait, loc_lb, loc_ub, \
-        unsafe_impl, loc_lb, loc_ub, \
-        pub_fns, pub_fns_with_effects, pub_total_effects, \
-        audited_fns, audited_loc\
+        effects, \
+        macros, macro LoC, \
+        conditional blocks, conditional LoC, \
+        skipped calls, skipped call LoC, \
+        skipped fn pointers, skipped pointers LoC, \
+        skipped other, skipped other LoC, \
+        unsafe traits, unsafe trait LoC, \
+        unsafe impls, unsafe impl LoC, \
+        public fns, public fns with effects, public total effects, \
+        audited fns, audited LoC, total LoC\
         "
     }
     pub fn metadata_csv(&self) -> String {
         format!(
             "{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}",
             self.effects.len(),
-            self.total_loc.as_csv(),
             self.skipped_macros.as_csv(),
             self.skipped_conditional_code.as_csv(),
             self.skipped_fn_calls.as_csv(),
@@ -74,6 +72,7 @@ impl CrateStats {
             self.pub_total_effects,
             self.audited_fns,
             self.audited_loc,
+            self.total_loc.get_loc(),
         )
     }
 }
@@ -143,7 +142,7 @@ fn get_auditing_metrics(audit: &AuditFile, results: &ScanResults) -> (usize, usi
 
     for f in &total_fns {
         if let Some(tracker) = results.fn_loc_tracker.get(f) {
-            total_loc += tracker.get_loc_lb();
+            total_loc += tracker.get_loc();
         } else {
             // This case happens in the case of abstract trait method nodes
             debug!("no tracker found for a method -- possibly an abstract trait method");
