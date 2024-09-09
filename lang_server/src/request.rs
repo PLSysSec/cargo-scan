@@ -27,10 +27,12 @@ pub struct EffectsResponse {
     pub callee: String,
     pub effect_type: String,
     pub location: Location,
+    pub crate_name: String,
 }
 
 impl EffectsResponse {
     pub fn new(effect: &EffectInstance) -> Result<Self, Error> {
+        let crate_name = effect.caller().crate_name().to_string();
         let location = from_src_loc(effect.call_loc())?;
 
         Ok(Self {
@@ -38,6 +40,7 @@ impl EffectsResponse {
             callee: effect.callee().to_string(),
             effect_type: effect.eff_type().to_csv(),
             location,
+            crate_name,
         })
     }
 
@@ -47,12 +50,14 @@ impl EffectsResponse {
         effect_type: String,
     ) -> Result<Self, Error> {
         let location = from_src_loc(&eff_info.callee_loc)?;
+        let crate_name = eff_info.caller_path.crate_name().to_string();
 
         Ok(Self {
             caller: eff_info.caller_path.to_string(),
             callee,
             effect_type,
             location,
+            crate_name,
         })
     }
 
