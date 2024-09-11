@@ -31,15 +31,15 @@ export class AuditAnnotations implements vscode.CodeLensProvider {
 
             const safe: vscode.Command = {
                 title: prevAnnotation === 'Safe' ? 'Marked as [[  SAFE  ]]' : '✔️ Safe',
-                command: 'cargo-scan.safeAnnotation',
-                arguments: [effect],
+                command: 'cargo-scan.set_annotation',
+                arguments: [effect, 'Safe'],
                 tooltip: `Effect Instance : ${effect.callee}`
             };
     
             const unsafe: vscode.Command = {
                 title: prevAnnotation === 'Unsafe' ? 'Marked as [[  UNSAFE  ]]' : '❗ Unsafe',
-                command: 'cargo-scan.unsafeAnnotation',
-                arguments: [effect],
+                command: 'cargo-scan.set_annotation',
+                arguments: [effect, 'Unsafe'],
                 tooltip: `Effect Instance : ${effect.callee}`
             };
     
@@ -70,7 +70,10 @@ export class AuditAnnotations implements vscode.CodeLensProvider {
         this.refresh();
     }
 
-    setPreviousAnnotations(effects: { [file: string]: EffectResponseData[] }, prevAnnotations: Map<EffectResponseData, string>) {
+    setPreviousAnnotations(
+        effects: { [file: string]: EffectResponseData[] },
+        prevAnnotations: Map<EffectResponseData, string>
+    ) {
         this.effects = effects;
         this.prevAnnotations = prevAnnotations;
         this.refresh();

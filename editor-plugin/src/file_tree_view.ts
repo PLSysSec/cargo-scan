@@ -161,7 +161,7 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
                 );
 
                 if ( result === 'Yes' ) {
-                    vscode.commands.executeCommand('cargo-scan.resetAnnotation', effect);
+                    vscode.commands.executeCommand('cargo-scan.set_annotation', effect, 'Skipped');
                 }
                 else {
                     item[0].checkboxState = vscode.TreeItemCheckboxState.Checked;
