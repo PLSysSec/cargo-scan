@@ -35,7 +35,12 @@ export function registerCommands(context: vscode.ExtensionContext) {
                 effectsMap.set({ ...x[0], location }, x[1]);
             });
             
+            const auditedEffects = Array.from(effectsMap)
+                .filter(([_, value]) => value !== 'Skipped')
+                .map(([key, _]) => key);
+
             locationsProvider.clear();
+            locationsProvider.addAuditedEffects(auditedEffects);
             locationsProvider.setLocations([...effectsMap.keys()]);                       
             annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);
         })
@@ -45,6 +50,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('cargo-scan.safeAnnotation', async (effect: EffectResponseData) => {
             const chain_audit_mode = context.globalState.get('chainAudit');
             annotations.trackUserAnnotations(effect, 'Safe');
+            locationsProvider.addAuditedEffects([effect]);
             const eff = { ...effect, location: { uri: effect.location.uri.toString(), range: effect.location.range }};
 
             // Notify server about the received safety annotation from the user
@@ -61,7 +67,8 @@ export function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('cargo-scan.unsafeAnnotation', async (effect: EffectResponseData) => {
             const chain_audit_mode = context.globalState.get('chainAudit');
-            annotations.trackUserAnnotations(effect, 'Unsafe');  
+            annotations.trackUserAnnotations(effect, 'Unsafe');
+            locationsProvider.addAuditedEffects([effect]); 
             const eff = { ...effect, location: { uri: effect.location.uri.toString(), range: effect.location.range }};
 
             // Notify server about the received safety annotation from the user
@@ -86,6 +93,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
             }));
 
             locationsProvider.setLocations(callers);
+            locationsProvider.addAuditedEffects([effect]);
             annotations.trackUserAnnotations(effect, 'Caller-checked');
             annotations.showCallers(effect, callers);
         })
@@ -112,10 +120,45 @@ export function registerCommands(context: vscode.ExtensionContext) {
                 const location = convertLocation(x[0].location);
                 effectsMap.set({ ...x[0], location }, x[1]);
             });
+
+            const auditedEffects = Array.from(effectsMap)
+                .filter(([_, value]) => value !== 'Skipped')
+                .map(([key, _]) => key);
             
             locationsProvider.clear();
+            locationsProvider.addAuditedEffects(auditedEffects);
             locationsProvider.setLocations([...effectsMap.keys()]);                       
-            annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);
+            annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);          
         })
     );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cargo-scan.resetAnnotation', async (effect: EffectResponseData) => {
+            const chain_audit_mode = context.globalState.get('chainAudit');
+            annotations.trackUserAnnotations(effect, 'Skipped');
+            locationsProvider.unmarkAuditedEffect(effect);
+
+            const eff = {
+                ...effect,
+                location: {
+                    uri: effect.location.uri.toString(),
+                    range: effect.location.range
+                }
+            };
+
+            // Notify server about the received safety annotation from the user
+            client.sendNotification('cargo-scan.set_annotation', {
+                safety_annotation: 'Skipped',
+                effect: eff,
+                chain_audit_mode
+            }); 
+            
+            // If we're annotating effects in a chain audit,
+            // reload chain to update the previewed effects
+            if (chain_audit_mode) {
+                vscode.commands.executeCommand('cargo-scan.audit_chain');
+            }
+        })
+    );
+
 }

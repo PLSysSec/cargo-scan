@@ -14,19 +14,29 @@ export interface EffectsResponse {
 }
 
 // Class to present the locations of the effects as a TreeView in VSCode's sidebar
-export class LocationsProvider
-    implements vscode.TreeDataProvider<vscode.TreeItem> {
+export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined> =
         new vscode.EventEmitter<vscode.TreeItem | undefined>();
     readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined> =
         this._onDidChangeTreeData.event;
 
+    private audited: Set<EffectResponseData> = new Set();
     private groupedEffects: { [file: string]: EffectResponseData[] } = {};
 
     setLocations(effects: EffectResponseData[]) {
         this.groupByFile(effects);
         this.sortGroupedEffects();
-        this._onDidChangeTreeData.fire(undefined);    
+        this.refresh();    
+    }
+
+    addAuditedEffects(effects: EffectResponseData[]) {
+        effects.forEach(e => this.audited.add(e));
+        this.refresh();
+    }
+
+    unmarkAuditedEffect(effect: EffectResponseData) {
+        this.audited.delete(effect);
+        this.refresh();
     }
 
     getTreeItem(element: LocationItem): vscode.TreeItem {
@@ -111,7 +121,7 @@ export class LocationsProvider
         segments.forEach((segment, index) => {
             if (index === segments.length - 1) {
                 // The last segment is the filename
-                const fileItem = new FileItem(vscode.Uri.file(filePath), effects);
+                const fileItem = new FileItem(vscode.Uri.file(filePath), effects, this.audited);
                 parentItems.push(fileItem);
             } else {
                 let dirItem = parentItems.find(
@@ -133,13 +143,44 @@ export class LocationsProvider
     }
 
     register(context: vscode.ExtensionContext) {
-        const tree = vscode.window.createTreeView('effectsView', { treeDataProvider: this });    
+        const tree = vscode.window.createTreeView('effectsView', { treeDataProvider: this });
+        tree.onDidChangeCheckboxState(async (event) => {
+            // Get the first item that triggered the event,
+            // which is an audited effect that the user wants
+            // to reset its safety annotation.
+            const item = event.items[0];
+            const effect = (item[0] as LocationItem).data;
+
+            if (item[1] === vscode.TreeItemCheckboxState.Unchecked) {
+                // Confirm that the user wants to proceed with the resetting
+                const result = await vscode.window.showWarningMessage(
+                    'Are you sure you want to reset this annotation?', 
+                    { modal: true },
+                    'Yes',
+                    'No'
+                );
+
+                if ( result === 'Yes' ) {
+                    vscode.commands.executeCommand('cargo-scan.resetAnnotation', effect);
+                }
+                else {
+                    item[0].checkboxState = vscode.TreeItemCheckboxState.Checked;
+                    this.refresh();
+                }
+            }
+        });
+
         context.subscriptions.push(tree);
     }
 
     clear() {
+        this.audited.clear();
         this.groupedEffects = {};
-        this._onDidChangeTreeData.fire(undefined); 
+        this.refresh();
+    }
+
+    refresh() {
+        this._onDidChangeTreeData.fire(undefined);
     }
 
     private sortGroupedEffects() {
@@ -170,7 +211,8 @@ class DirectoryItem extends vscode.TreeItem {
 class FileItem extends vscode.TreeItem {
     constructor(
         public readonly resourceUri: vscode.Uri,
-        public readonly effects: EffectResponseData[]
+        public readonly effects: EffectResponseData[],
+        private readonly audited: Set<EffectResponseData>
     ) {
         const label = `${path.basename(resourceUri.fsPath)}`;
         super(label, vscode.TreeItemCollapsibleState.Collapsed);
@@ -178,20 +220,27 @@ class FileItem extends vscode.TreeItem {
 
     getChildren(): vscode.TreeItem[] {
         // Return the effects' locations within the file
-        return this.effects.map(
-            (effect) => new LocationItem(effect)
-        );
+        return this.effects.map((effect) => {
+            const state = this.audited.has(effect) 
+                ? vscode.TreeItemCheckboxState.Checked : undefined;
+
+            return new LocationItem(effect, state);
+        });
     }
 }
 
 class LocationItem extends vscode.TreeItem {
-    constructor(public readonly data: EffectResponseData) {
+    constructor(
+        public readonly data: EffectResponseData, 
+        public readonly state: vscode.TreeItemCheckboxState | undefined
+    ) {
         let start = data.location.range.start;
         super(
             `${data.effect_type}: ${start.line + 1}:${start.character + 1}`,
             vscode.TreeItemCollapsibleState.None
         );
 
+        this.checkboxState = state;
         this.tooltip = data.callee;
         this.command = {
             command: 'vscode.open',
