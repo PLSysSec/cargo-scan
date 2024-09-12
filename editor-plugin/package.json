@@ -41,6 +41,11 @@
         "command": "cargo-scan.audit_chain",
         "title": "Audit Chain",
         "category": "cargo-scan"
+      },
+      {
+        "command": "cargo-scan.filterEffects",
+        "title": "Filter Effects by Type",
+        "icon": "$(filter)"
       }
     ],
     "views": {
@@ -48,6 +53,15 @@
         {
           "id": "effectsView",
           "name": "Effects"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "cargo-scan.filterEffects",
+          "when": "view == effectsView",
+          "group": "navigation"
         }
       ]
     },

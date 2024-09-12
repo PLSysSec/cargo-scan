@@ -91,8 +91,8 @@ export function registerCommands(context: vscode.ExtensionContext) {
             
             locationsProvider.clear();
             locationsProvider.addAuditedEffects(auditedEffects);
-            locationsProvider.setLocations([...effectsMap.keys()]);                       
-            annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);          
+            locationsProvider.setLocations([...effectsMap.keys()]);
+            annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);
         })
     );
 
@@ -136,4 +136,33 @@ export function registerCommands(context: vscode.ExtensionContext) {
         })
     );
 
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cargo-scan.filterEffects', () => {
+            const effectTypes = [
+                'Sink',
+                '[PtrDeref]',
+                '[FFI Call]',
+                '[UnsafeCall]',
+                '[UnionField]',
+                '[StaticMutVar]',
+                '[StaticExtVar]',
+                '[FnPtrCreation]',
+                '[ClosureCreation]',
+                '[FFI Declaration]'
+            ];
+
+            vscode.window.showQuickPick(
+                effectTypes, 
+                { canPickMany: true, placeHolder: 'Select filters' }
+            )
+            .then(input => {
+                if (input !== undefined && input.length > 0) {
+                    const filters = input.length === effectTypes.length
+                        ? ["[All]"] 
+                        : [ ...input ];
+                    locationsProvider.filterEffectsByType(filters);
+                }
+            });     
+        })
+    );
 }

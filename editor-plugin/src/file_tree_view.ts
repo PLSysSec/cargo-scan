@@ -20,12 +20,16 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
     readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined> =
         this._onDidChangeTreeData.event;
 
+    private currentFilters: string[] = ["[All]"];
     private audited: Set<EffectResponseData> = new Set();
-    private groupedEffects: { [file: string]: EffectResponseData[] } = {};
+    private groupedEffects:  { [file: string]: EffectResponseData[] } = {};
+    private filteredEffects: { [file: string]: EffectResponseData[] } = {};
 
     setLocations(effects: EffectResponseData[]) {
         this.groupByFile(effects);
         this.sortGroupedEffects();
+        // this.filteredEffects = { ...this.groupedEffects };
+        this.filterEffectsByType(this.currentFilters);
         this.refresh();    
     }
 
@@ -85,8 +89,11 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         const crates: vscode.TreeItem[] = [];
     
         // Loop through the effects and build directory hierarchy
-        for (const file in this.groupedEffects) {
-            const effects = this.groupedEffects[file];
+        for (const file in this.filteredEffects) {
+            const effects = this.filteredEffects[file];
+            if (effects.length === 0) {
+                return crates;
+            }
             const crateName = effects[0].crate_name; 
             const relativePath = this.getRelativeFilePath(file, crateName);
             this.buildDirectories(relativePath, effects, crates);
@@ -176,6 +183,8 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
     clear() {
         this.audited.clear();
         this.groupedEffects = {};
+        this.filteredEffects = {};
+        this.currentFilters = ["[All]"];
         this.refresh();
     }
 
@@ -185,8 +194,33 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
 
     private sortGroupedEffects() {
         for (const file in this.groupedEffects) {
-            this.groupedEffects[file].sort((a, b) => a.location.range.start.compareTo(b.location.range.start));
+            this.groupedEffects[file].sort((a, b) => 
+                a.location.range.start.compareTo(b.location.range.start));
         }
+    }
+
+    // Filter effects that match a given type
+    filterEffectsByType(filters: string[]) {
+        if(!filters)
+            return;
+    
+        this.currentFilters = [ ...filters ];
+        if( filters.includes("[All]") ) {
+            this.filteredEffects = { ...this.groupedEffects };
+            this.refresh();
+            return;
+        }
+
+        for (const [file, effects] of Object.entries(this.groupedEffects)) {
+            this.filteredEffects[file] = [
+                ...effects.filter(e => {
+                    const ty = e.effect_type.startsWith('[') ? e.effect_type : "Sink";
+                    return filters.includes(ty)
+                })
+            ];
+        }
+
+        this.refresh();
     }
 }
 
