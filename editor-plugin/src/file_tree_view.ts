@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { DecorationProvider } from './decorations';
 
 export interface EffectResponseData {
     caller: string;
@@ -59,6 +60,9 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
             const wsName = vscode.workspace.workspaceFolders?.map((folder) => folder.name)[0];
             crates.forEach(crate => crate.label === wsName ? root.addChild(crate) : deps.addChild(crate));
 
+            root.updateDecorations(false);
+            deps.updateDecorations(true);
+
             return Promise.resolve([root, deps]);
         } else if (element instanceof DirectoryItem) {
             return Promise.resolve(element.getChildren());
@@ -99,6 +103,12 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
             this.buildDirectories(relativePath, effects, crates);
         }
 
+        crates.forEach(item => {
+            if (item instanceof DirectoryItem) {
+                item.updateDescription();
+            }
+        });
+
         // Sort alphabetically by crate name
         return crates.sort((a, b) => {
             const aLabel = typeof a.label === 'string' ? a.label : a.label?.label ?? '';
@@ -136,7 +146,7 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
                 ) as DirectoryItem;
     
                 if (!dirItem) {
-                    dirItem = new DirectoryItem(vscode.Uri.file(segment), segment);
+                    dirItem = new DirectoryItem(vscode.Uri.file(filePath), segment);
                     parentItems.push(dirItem);
                 }
     
@@ -150,6 +160,7 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
     }
 
     register(context: vscode.ExtensionContext) {
+        vscode.window.registerFileDecorationProvider(DecorationProvider);
         const tree = vscode.window.createTreeView('effectsView', { treeDataProvider: this });
         tree.onDidChangeCheckboxState(async (event) => {
             // Get the first item that triggered the event,
@@ -214,7 +225,7 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         for (const [file, effects] of Object.entries(this.groupedEffects)) {
             this.filteredEffects[file] = [
                 ...effects.filter(e => {
-                    const ty = e.effect_type.startsWith('[') ? e.effect_type : "Sink";
+                    const ty = e.effect_type.startsWith('[') ? e.effect_type : "[Sink Call]";
                     return filters.includes(ty)
                 })
             ];
@@ -226,15 +237,51 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
 
 class DirectoryItem extends vscode.TreeItem {
     private children: vscode.TreeItem[] = [];
+    private total: number;
+    private unaudited: number;
     constructor(
         public readonly resourceUri: vscode.Uri,
         public readonly label: string
     ) {
         super(label, vscode.TreeItemCollapsibleState.Collapsed);
+        this.total = 0;
+        this.unaudited = 0;
     }
 
     getChildren(): vscode.TreeItem[] {
         return this.children;
+    }
+
+    totalEffects(): number {
+        return this.total;
+    }
+
+    totalUnaudited(): number {
+        return this.unaudited;
+    }
+
+    updateDescription() {
+        for (const child of this.children) {
+            if (child instanceof DirectoryItem) {
+                child.updateDescription();
+                this.total += child.totalEffects();
+                this.unaudited += child.totalUnaudited();
+            }
+            else if (child instanceof FileItem) {
+                this.total += child.totalEffects();
+                this.unaudited += child.totalUnaudited();
+            }
+        }
+
+        this.description = this.total > 0
+            ? `[ ${this.total - this.unaudited} / ${this.total} ]` 
+            : undefined;
+    }
+
+    updateDecorations(deps: boolean) {
+        const symbol = deps ? 'type-hierarchy' : 'symbol-folder';
+        this.iconPath = new vscode.ThemeIcon(symbol);
+        DecorationProvider.decorateChainRoots(this.resourceUri);
     }
 
     addChild(item: vscode.TreeItem) {
@@ -243,6 +290,8 @@ class DirectoryItem extends vscode.TreeItem {
 }
 
 class FileItem extends vscode.TreeItem {
+    private total: number = 0;
+    private unaudited: number = 0;
     constructor(
         public readonly resourceUri: vscode.Uri,
         public readonly effects: EffectResponseData[],
@@ -250,6 +299,25 @@ class FileItem extends vscode.TreeItem {
     ) {
         const label = `${path.basename(resourceUri.fsPath)}`;
         super(label, vscode.TreeItemCollapsibleState.Collapsed);
+        this.updateDecorations();
+    }
+
+    private updateDecorations() {  
+        this.total = this.effects.length;
+        this.unaudited = this.effects.reduce((count, item) => {
+            return !this.audited.has(item) ? count += 1 : count;
+        }, 0);
+
+        this.description = `[ ${this.total - this.unaudited} / ${this.total} ]`;        
+        DecorationProvider.updateDecorations(this.resourceUri, this.unaudited);
+    }
+
+    totalEffects(): number {
+        return this.total;
+    }
+
+    totalUnaudited(): number {
+        return this.unaudited;
     }
 
     getChildren(): vscode.TreeItem[] {
@@ -270,7 +338,7 @@ class LocationItem extends vscode.TreeItem {
     ) {
         let start = data.location.range.start;
         super(
-            `${data.effect_type}: ${start.line + 1}:${start.character + 1}`,
+            `${data.effect_type}`,
             vscode.TreeItemCollapsibleState.None
         );
 
@@ -281,5 +349,6 @@ class LocationItem extends vscode.TreeItem {
             title: 'Open Location',
             arguments: [data.location.uri, { selection: data.location.range }]
         };
+        this.description = `${start.line + 1}:${start.character + 1}`;
     }
 }

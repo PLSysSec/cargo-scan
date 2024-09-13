@@ -3,6 +3,7 @@ import { EffectResponseData, EffectsResponse } from './file_tree_view';
 import { annotations, client, locationsProvider } from './extension';
 import { AuditResponse } from './audit_annotations';
 import { convertLocation } from './util';
+import { highlightEffectLocations } from './decorations';
 
 export function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(
@@ -43,6 +44,11 @@ export function registerCommands(context: vscode.ExtensionContext) {
             locationsProvider.addAuditedEffects(auditedEffects);
             locationsProvider.setLocations([...effectsMap.keys()]);                       
             annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);
+
+            const editor = vscode.window.activeTextEditor;
+            if(editor) {
+                highlightEffectLocations(editor, locationsProvider.getGroupedEffects());
+            }
         })
     );  
     
@@ -93,6 +99,11 @@ export function registerCommands(context: vscode.ExtensionContext) {
             locationsProvider.addAuditedEffects(auditedEffects);
             locationsProvider.setLocations([...effectsMap.keys()]);
             annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);
+
+            const editor = vscode.window.activeTextEditor;
+            if(editor) {
+                highlightEffectLocations(editor, locationsProvider.getGroupedEffects());
+            }
         })
     );
 
@@ -139,7 +150,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('cargo-scan.filterEffects', () => {
             const effectTypes = [
-                'Sink',
+                '[Sink Call]',
                 '[PtrDeref]',
                 '[FFI Call]',
                 '[UnsafeCall]',
@@ -163,6 +174,25 @@ export function registerCommands(context: vscode.ExtensionContext) {
                     locationsProvider.filterEffectsByType(filters);
                 }
             });     
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.window.onDidChangeActiveTextEditor(editor => {
+            const auditMode =  context.globalState.get('annotateEffects');
+            if (editor && auditMode) {
+                highlightEffectLocations(editor, locationsProvider.getGroupedEffects());
+            }
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeTextDocument(event => {
+            const auditMode =  context.globalState.get('annotateEffects');
+            const editor = vscode.window.visibleTextEditors.find(e => e.document === event.document);
+            if (editor && auditMode) {
+                highlightEffectLocations(editor, locationsProvider.getGroupedEffects());
+            }
         })
     );
 }
