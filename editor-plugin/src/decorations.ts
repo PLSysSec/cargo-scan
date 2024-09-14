@@ -24,8 +24,11 @@ export function highlightEffectLocations(
     effects: { [file: string]: EffectResponseData[] }
 ) {
     const file = editor?.document.fileName;
-    const ranges = effects[file].map( effect => effect.location.range );
-    editor.setDecorations(highlightDecorationType, ranges);
+    const fileEffects = effects[file];
+    if (fileEffects) {
+        const ranges = fileEffects.map( effect => effect.location.range );
+        editor.setDecorations(highlightDecorationType, ranges);
+    }
 }
 
 
@@ -48,14 +51,14 @@ export class TreeDecorationProvider implements vscode.FileDecorationProvider {
             }; 
         }
 
-        const remaining = this.decorations[uri.toString()];       
+        const remaining = this.decorations[uri.toString()];
         if (remaining === undefined) {
             return undefined;
         }
 
         const color = remaining > 0
             ? new vscode.ThemeColor('list.warningForeground')
-            : new vscode.ThemeColor('disabledForeground'); //statusBarItem.prominentBackground
+            : new vscode.ThemeColor('disabledForeground');
 
         return {
             badge:   remaining > 0 ? 'E' : undefined,

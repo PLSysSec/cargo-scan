@@ -29,7 +29,6 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
     setLocations(effects: EffectResponseData[]) {
         this.groupByFile(effects);
         this.sortGroupedEffects();
-        // this.filteredEffects = { ...this.groupedEffects };
         this.filterEffectsByType(this.currentFilters);
         this.refresh();    
     }
@@ -96,7 +95,7 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         for (const file in this.filteredEffects) {
             const effects = this.filteredEffects[file];
             if (effects.length === 0) {
-                return crates;
+                continue;
             }
             const crateName = effects[0].crate_name; 
             const relativePath = this.getRelativeFilePath(file, crateName);
