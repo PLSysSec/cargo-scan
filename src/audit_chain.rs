@@ -7,7 +7,7 @@ use cargo_toml::Manifest;
 use clap::Args as ClapArgs;
 use log::info;
 use petgraph::graph::{DiGraph, NodeIndex};
-use petgraph::visit::DfsPostOrder;
+use petgraph::visit::{Dfs, DfsPostOrder};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs::{create_dir_all, remove_file, File};
@@ -18,8 +18,8 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use toml;
 
-use crate::audit_file::{AuditFile, AuditVersion, DefaultAuditType};
-use crate::effect::{EffectType, DEFAULT_EFFECT_TYPES};
+use crate::audit_file::{AuditFile, AuditVersion, DefaultAuditType, EffectInfo};
+use crate::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 use crate::ident::{replace_hyphens, CanonicalPath, IdentPath};
 use crate::util::{load_cargo_toml, CrateId};
 
@@ -565,6 +565,78 @@ pub fn create_new_audit_chain(
 
     info!("Finished creating audit chain");
     Ok(chain)
+}
+
+/// Collect all the sink calls that are propagated
+/// from the dependencies to the top-level package.
+pub fn collect_propagated_sinks(
+    chain: &mut AuditChain,
+) -> Result<HashMap<EffectInstance, Vec<(EffectInfo, String)>>> {
+    let mut current_path: Vec<NodeIndex> = Vec::new();
+    let mut effects = HashMap::new();
+
+    let root_name = chain.root_crate()?;
+    let lockfile = chain.load_lockfile()?;
+
+    let (graph, package_map, root_node) =
+        make_dependency_graph(&lockfile.packages, &root_name.to_string());
+    let mut traverse = Dfs::new(&graph, root_node);
+    while let Some(node) = traverse.next(&graph) {
+        let package = package_map.get(&node).unwrap();
+        let id = CrateId::new(package.name.to_string(), package.version.clone());
+        let af = chain
+            .read_audit_file(&id)?
+            .context("Couldn't read audit file while collecting dependency sinks")?;
+
+        if node == root_node {
+            for (effect_instance, audit_tree) in &af.audit_trees {
+                effects.insert(effect_instance.clone(), audit_tree.get_all_annotations());
+            }
+            continue;
+        }
+
+        current_path.push(node);
+        check_sink_calls(af, &mut effects)?;
+
+        // If we have already visited a current package's
+        // dependency, revisit it now to check if any of
+        // its public caller-checked functions are called
+        // in the current package.
+        for neighbor in graph.neighbors(node) {
+            if current_path.contains(&neighbor) {
+                let package = package_map.get(&neighbor).unwrap();
+                let id = CrateId::new(package.name.to_string(), package.version.clone());
+                let af = chain.read_audit_file(&id)?.context(
+                    "Couldn't read audit file while collecting dependency sinks",
+                )?;
+                check_sink_calls(af, &mut effects)?;
+            }
+        }
+    }
+
+    Ok(effects)
+}
+
+fn check_sink_calls(
+    af: AuditFile,
+    effects: &mut HashMap<EffectInstance, Vec<(EffectInfo, String)>>,
+) -> Result<()> {
+    for (pub_cc_fn, base_effs) in af.pub_caller_checked {
+        if effects.keys().any(|i| {
+            *i.callee() == pub_cc_fn && i.caller().crate_name() != pub_cc_fn.crate_name()
+        }) {
+            for inst in base_effs {
+                let tree = af
+                    .audit_trees
+                    .get(&inst)
+                    .ok_or_else(|| anyhow!("couldn't find tree for effect instance"))?;
+
+                effects.insert(inst.clone(), tree.get_all_annotations());
+            }
+        }
+    }
+
+    Ok(())
 }
 
 // Mirror of the above that returns HashSet of sinks

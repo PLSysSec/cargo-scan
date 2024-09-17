@@ -87,7 +87,7 @@ pub struct ScanCommandResponse {
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
 pub struct AuditCommandResponse {
     #[serde_as(as = "Vec<(_, _)>")]
-    effects: HashMap<EffectsResponse, Vec<(EffectsResponse,String)>>,
+    effects: HashMap<EffectsResponse, Vec<(EffectsResponse, String)>>,
 }
 
 impl AuditCommandResponse {
