@@ -51,6 +51,11 @@
         "command": "cargo-scan.viewCallers",
         "title": "View all callers of this caller-checked base effect",
         "icon": "$(call-incoming)"
+      },
+      {
+        "command": "cargo-scan.refreshEffects",
+        "title": "Refresh to restore initial state",
+        "icon": "$(refresh)"
       }
     ],
     "views": {
@@ -65,6 +70,11 @@
       "view/title": [
         {
           "command": "cargo-scan.filterEffects",
+          "when": "view == effectsView",
+          "group": "navigation"
+        },
+        {
+          "command": "cargo-scan.refreshEffects",
           "when": "view == effectsView",
           "group": "navigation"
         }

@@ -214,4 +214,10 @@ export function registerCommands(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('cargo-scan.viewCallers', (item: LocationItem) => {
         locationsProvider.filterByCallers(item);
     });
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cargo-scan.refreshEffects', () => {
+            locationsProvider.restore();     
+        })
+    );
 }

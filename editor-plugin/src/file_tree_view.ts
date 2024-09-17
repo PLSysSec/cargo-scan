@@ -226,6 +226,13 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         this._onDidChangeTreeData.fire(undefined);
     }
 
+    restore() {
+        this.filteredEffects = {};
+        this.currentFilters = ["[All]"];
+        this.filterEffectsByType(this.currentFilters);
+        this.refresh();
+    }
+
     private sortGroupedEffects() {
         for (const file in this.groupedEffects) {
             this.groupedEffects[file].sort((a, b) => 
