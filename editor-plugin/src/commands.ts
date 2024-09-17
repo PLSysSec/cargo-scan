@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { EffectResponseData, EffectsResponse } from './file_tree_view';
+import { EffectResponseData, EffectsResponse, LocationItem } from './file_tree_view';
 import { annotations, client, locationsProvider } from './extension';
 import { AuditResponse } from './audit_annotations';
 import { convertLocation } from './util';
@@ -29,12 +29,19 @@ export function registerCommands(context: vscode.ExtensionContext) {
             context.globalState.update('annotateEffects', true);
             context.globalState.update('chainAudit', false);
 
-            let effectsMap = new Map<EffectResponseData, string>();    
+            let effectsMap = new Map<EffectResponseData, string>();
+            let callStackMap = new Map<string, EffectResponseData[]>();  
             
-            response.effects.forEach(x => {
-                const location = convertLocation(x[0].location);
-                effectsMap.set({ ...x[0], location }, x[1]);
-            });
+            for (let [baseEffect, callers] of response.effects) {
+                baseEffect.location = convertLocation(baseEffect.location);
+                callers.forEach((e: [EffectResponseData, string]) => {
+                    e[0].location = convertLocation(e[0].location);
+                    effectsMap.set(e[0], e[1]);
+                });
+
+                const callStack = callers.map((e: [EffectResponseData, string]) => e[0]);
+                callStackMap.set(JSON.stringify(baseEffect), callStack);
+            }
             
             const auditedEffects = Array.from(effectsMap)
                 .filter(([_, value]) => value !== 'Skipped')
@@ -42,7 +49,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
 
             locationsProvider.clear();
             locationsProvider.addAuditedEffects(auditedEffects);
-            locationsProvider.setLocations([...effectsMap.keys()]);                       
+            locationsProvider.setLocations([...effectsMap.keys()], callStackMap);                       
             annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);
 
             const editor = vscode.window.activeTextEditor;
@@ -64,6 +71,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
 
             locationsProvider.setLocations(callers);
             locationsProvider.addAuditedEffects([effect]);
+            locationsProvider.updateEffectCallStack(effect, callers);
             annotations.trackUserAnnotations(effect, 'Caller-checked');
             annotations.showCallers(effect, callers);
         })
@@ -85,11 +93,18 @@ export function registerCommands(context: vscode.ExtensionContext) {
             context.globalState.update('annotateEffects', true);
             context.globalState.update('chainAudit', true);
             let effectsMap = new Map<EffectResponseData, string>();    
+            let callStackMap = new Map<string, EffectResponseData[]>();  
             
-            response.effects.forEach(x => {
-                const location = convertLocation(x[0].location);
-                effectsMap.set({ ...x[0], location }, x[1]);
-            });
+            for (let [baseEffect, callers] of response.effects) {
+                baseEffect.location = convertLocation(baseEffect.location);
+                callers.forEach((e: [EffectResponseData, string]) => {
+                    e[0].location = convertLocation(e[0].location);
+                    effectsMap.set(e[0], e[1]);
+                });
+
+                const callStack = callers.map((e: [EffectResponseData, string]) => e[0]);
+                callStackMap.set(JSON.stringify(baseEffect), callStack);
+            }
 
             const auditedEffects = Array.from(effectsMap)
                 .filter(([_, value]) => value !== 'Skipped')
@@ -97,7 +112,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
             
             locationsProvider.clear();
             locationsProvider.addAuditedEffects(auditedEffects);
-            locationsProvider.setLocations([...effectsMap.keys()]);
+            locationsProvider.setLocations([...effectsMap.keys()], callStackMap);
             annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);
 
             const editor = vscode.window.activeTextEditor;
@@ -195,4 +210,8 @@ export function registerCommands(context: vscode.ExtensionContext) {
             }
         })
     );
+
+    vscode.commands.registerCommand('cargo-scan.viewCallers', (item: LocationItem) => {
+        locationsProvider.filterByCallers(item);
+    });
 }

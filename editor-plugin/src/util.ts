@@ -10,6 +10,10 @@ export function convertLocation(obj: any): vscode.Location {
         new vscode.Position(obj.range.end.line, obj.range.end.character)
     );
 
+    // `fsPath` is lazily initialized, so we access it here to trigger its initialization. 
+    //  We need it to correctly stringify locations when handling a base effect's callstack.
+    uri.fsPath;
+
     return new vscode.Location(uri, range);
 }
 

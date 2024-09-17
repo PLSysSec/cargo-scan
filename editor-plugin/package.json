@@ -46,6 +46,11 @@
         "command": "cargo-scan.filterEffects",
         "title": "Filter Effects by Type",
         "icon": "$(filter)"
+      },
+      {
+        "command": "cargo-scan.viewCallers",
+        "title": "View all callers of this caller-checked base effect",
+        "icon": "$(call-incoming)"
       }
     ],
     "views": {
@@ -62,6 +67,13 @@
           "command": "cargo-scan.filterEffects",
           "when": "view == effectsView",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "cargo-scan.viewCallers",
+          "when": "view == effectsView && viewItem == isCC",
+          "group": "inline"
         }
       ]
     },

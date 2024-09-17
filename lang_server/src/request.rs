@@ -87,7 +87,7 @@ pub struct ScanCommandResponse {
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
 pub struct AuditCommandResponse {
     #[serde_as(as = "Vec<(_, _)>")]
-    effects: HashMap<EffectsResponse, String>,
+    effects: HashMap<EffectsResponse, Vec<(EffectsResponse,String)>>,
 }
 
 impl AuditCommandResponse {
@@ -97,12 +97,15 @@ impl AuditCommandResponse {
         let mut effects = HashMap::new();
 
         for (inst, anns) in effs.iter() {
+            let mut callers = vec![];
             for (i, a) in anns {
                 let callee = inst.callee().to_string();
                 let eff_type = inst.eff_type().to_csv();
                 let resp = EffectsResponse::from_effect_info(i, callee, eff_type)?;
-                effects.insert(resp, a.to_owned());
+                callers.push((resp, a.to_owned()));
             }
+            let base_effect = EffectsResponse::new(inst)?;
+            effects.insert(base_effect, callers);
         }
 
         Ok(Self { effects })

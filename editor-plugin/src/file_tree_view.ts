@@ -23,14 +23,37 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
 
     private currentFilters: string[] = ["[All]"];
     private audited: Set<EffectResponseData> = new Set();
+    private callStack?: Map<string, EffectResponseData[]>;
     private groupedEffects:  { [file: string]: EffectResponseData[] } = {};
     private filteredEffects: { [file: string]: EffectResponseData[] } = {};
 
-    setLocations(effects: EffectResponseData[]) {
+    setLocations(
+        effects: EffectResponseData[],
+        callStack?: Map<string, EffectResponseData[]>
+    ) {
+        if (callStack !== undefined) {
+            this.callStack = callStack;
+        }
         this.groupByFile(effects);
         this.sortGroupedEffects();
         this.filterEffectsByType(this.currentFilters);
         this.refresh();    
+    }
+
+    updateEffectCallStack(baseEffect: EffectResponseData, callers: EffectResponseData[]) {
+        const baseEffectStr = JSON.stringify(baseEffect);
+        this.callStack = this.callStack ?? new Map<string, EffectResponseData[]>();
+
+        if (this.callStack.has(baseEffectStr)) {
+            const currentStack = this.callStack.get(baseEffectStr);
+            if (currentStack) {
+                this.callStack.set(baseEffectStr, [...currentStack, ...callers]);
+            }
+        } else {
+            this.callStack.set(baseEffectStr, [baseEffect, ...callers]);
+        }
+
+        this.refresh();
     }
 
     addAuditedEffects(effects: EffectResponseData[]) {
@@ -137,7 +160,7 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         segments.forEach((segment, index) => {
             if (index === segments.length - 1) {
                 // The last segment is the filename
-                const fileItem = new FileItem(vscode.Uri.file(filePath), effects, this.audited);
+                const fileItem = new FileItem(vscode.Uri.file(filePath), effects, this.audited, this.callStack);
                 parentItems.push(fileItem);
             } else {
                 let dirItem = parentItems.find(
@@ -160,7 +183,7 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
 
     register(context: vscode.ExtensionContext) {
         vscode.window.registerFileDecorationProvider(DecorationProvider);
-        const tree = vscode.window.createTreeView('effectsView', { treeDataProvider: this });
+        const tree = vscode.window.createTreeView('effectsView', { treeDataProvider: this, showCollapseAll: true });
         tree.onDidChangeCheckboxState(async (event) => {
             // Get the first item that triggered the event,
             // which is an audited effect that the user wants
@@ -194,6 +217,7 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         this.audited.clear();
         this.groupedEffects = {};
         this.filteredEffects = {};
+        this.callStack = undefined;
         this.currentFilters = ["[All]"];
         this.refresh();
     }
@@ -231,6 +255,24 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         }
 
         this.refresh();
+    }
+
+    filterByCallers(item: LocationItem) {
+        if (item.contextValue == 'isCC') {
+            const callers = this.callStack?.get(JSON.stringify(item.data));
+            if (callers && callers.length > 1) {
+                this.filteredEffects = {};
+                
+                for (const caller of callers) {
+                    const file = caller.location.uri.fsPath;
+                    if (!this.filteredEffects[file]) {
+                        this.filteredEffects[file] = [];
+                    }
+                    this.filteredEffects[file].push(caller);
+                }
+            }
+            this.refresh();
+        }  
     }
 }
 
@@ -294,7 +336,8 @@ class FileItem extends vscode.TreeItem {
     constructor(
         public readonly resourceUri: vscode.Uri,
         public readonly effects: EffectResponseData[],
-        private readonly audited: Set<EffectResponseData>
+        private readonly audited: Set<EffectResponseData>,
+        private readonly callStack?: Map<string, EffectResponseData[]>
     ) {
         const label = `${path.basename(resourceUri.fsPath)}`;
         super(label, vscode.TreeItemCollapsibleState.Collapsed);
@@ -324,16 +367,18 @@ class FileItem extends vscode.TreeItem {
         return this.effects.map((effect) => {
             const state = this.audited.has(effect) 
                 ? vscode.TreeItemCheckboxState.Checked : undefined;
-
-            return new LocationItem(effect, state);
+            
+            const isCCBaseEffect = (this.callStack?.get(JSON.stringify(effect))?.length ?? 0) > 1;
+            return new LocationItem(effect, state, isCCBaseEffect);
         });
     }
 }
 
-class LocationItem extends vscode.TreeItem {
+export class LocationItem extends vscode.TreeItem {
     constructor(
         public readonly data: EffectResponseData, 
-        public readonly state: vscode.TreeItemCheckboxState | undefined
+        public readonly state: vscode.TreeItemCheckboxState | undefined,
+        private readonly isCCBaseEffect: boolean
     ) {
         let start = data.location.range.start;
         super(
@@ -349,5 +394,6 @@ class LocationItem extends vscode.TreeItem {
             arguments: [data.location.uri, { selection: data.location.range }]
         };
         this.description = `${start.line + 1}:${start.character + 1}`;
+        this.contextValue = this.isCCBaseEffect ? 'isCC' : undefined;
     }
 }

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { EffectResponseData } from './file_tree_view';
 
 export interface AuditResponse {
-    effects: [EffectResponseData, string][];
+    effects: Map<EffectResponseData, [EffectResponseData, string][]>;
 }
 
 export interface AuditNotification {
