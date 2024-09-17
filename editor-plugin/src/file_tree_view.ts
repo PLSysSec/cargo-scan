@@ -168,7 +168,8 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
                 ) as DirectoryItem;
     
                 if (!dirItem) {
-                    dirItem = new DirectoryItem(vscode.Uri.file(filePath), segment);
+                    const dirPath = path.join(...segments.slice(0, index+1));
+                    dirItem = new DirectoryItem(vscode.Uri.file(dirPath), segment);
                     parentItems.push(dirItem);
                 }
     
@@ -324,6 +325,8 @@ class DirectoryItem extends vscode.TreeItem {
         this.description = this.total > 0
             ? `[ ${this.total - this.unaudited} / ${this.total} ]` 
             : undefined;
+        
+        DecorationProvider.updateDecorations(this.resourceUri, this.unaudited);
     }
 
     updateDecorations(deps: boolean) {

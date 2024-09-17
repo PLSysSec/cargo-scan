@@ -63,8 +63,7 @@ export class TreeDecorationProvider implements vscode.FileDecorationProvider {
         return {
             badge:   remaining > 0 ? 'E' : undefined,
             tooltip: remaining > 0 ? "Contains unaudited effects" : undefined,
-            color:   color,
-            propagate: true
+            color:   color
         };  
     }
 
