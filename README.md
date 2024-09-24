@@ -118,10 +118,25 @@ cargo run --bin scan -- --help
 
 ## Method 3: Using the VSCode extension
 
-We are currently developing a VSCode extension to use the tool directly.
-More details and instructions will be included soon!
+### Installing the extension in VSCode
 
-<!-- TODO include instructions here -->
+1. Build the extension by running `make` in the `editor-plugin` directory. This will produce a `.vsix` file in that location.
+2. Launch VSCode and install the extension from the `.vsix` file:
+    - Press `Ctrl + Shift + P` (Windows/Linux) or `Cmd + Shift + P` (macOS) to open the Command Palette.
+    - Type "Extensions: Install from VSIX..." and select it.
+    - Navigate to the folder where the .vsix file is located and open it.
+
+The extension is automatically activated when a Rust package is detected in the workspace.
+
+### Performing an audit in VSCode
+
+There are two types of audits you can perform with Cargo Scan in VSCode
+1. **Single Crate Audit** that scans only the currently open package for effects.
+- To run a single crate audit type `cargo-scan: Audit Crate` in the Command Palette. 
+2. **Chain Audit** that performs a full audit and also scans the transitive dependencies of the open package.
+- To run a chain audit, create the chain by typing `cargo-scan: Create Chain` in the Command Palette and then perform the actual audit by running the command `cargo-scan: Audit Chain`.
+
+The set of effects that Cargo Scan identifies are shown in the Effects view of the Explorer side bar.
 
 ## Other usage
 
