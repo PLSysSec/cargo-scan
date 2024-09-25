@@ -205,7 +205,11 @@ impl AuditFile {
             Err(anyhow!("Audit path is a directory"))
         } else if path.is_file() {
             let json_string = std::fs::read_to_string(path.as_path())?;
-            let audit_file = serde_json::from_str(&json_string)?;
+            let mut deserializer = serde_json::Deserializer::from_str(&json_string);
+            deserializer.disable_recursion_limit();
+            let deserializer = serde_stacker::Deserializer::new(&mut deserializer);
+            let audit_file = AuditFile::deserialize(deserializer).unwrap();
+
             Ok(Some(audit_file))
         } else {
             Ok(None)
