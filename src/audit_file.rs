@@ -208,7 +208,7 @@ impl AuditFile {
             let mut deserializer = serde_json::Deserializer::from_str(&json_string);
             deserializer.disable_recursion_limit();
             let deserializer = serde_stacker::Deserializer::new(&mut deserializer);
-            let audit_file = AuditFile::deserialize(deserializer).unwrap();
+            let audit_file = AuditFile::deserialize(deserializer)?;
 
             Ok(Some(audit_file))
         } else {
