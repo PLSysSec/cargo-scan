@@ -154,8 +154,8 @@ export function registerCommands(context: vscode.ExtensionContext) {
             if (chain_audit_mode) {
                 vscode.commands.executeCommand('cargo-scan.audit_chain');
             }
-            else if (ann === 'Skipped') {
-                // If we're resetting an effect annotation, a caller-checked
+            else {
+                // If we're updating an effect annotation, a caller-checked
                 // hierarchy might also change. Reload the audit to update it
                 vscode.commands.executeCommand('cargo-scan.audit');
             }
