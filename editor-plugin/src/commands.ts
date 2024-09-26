@@ -220,4 +220,14 @@ export function registerCommands(context: vscode.ExtensionContext) {
             locationsProvider.restore();     
         })
     );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cargo-scan.view_annotations', async (effects: EffectResponseData[]) => { 
+            const callees: string[] = effects.map(effect => effect.callee);
+            const input = await vscode.window.showQuickPick( callees, { placeHolder: 'Select effect to audit' });
+            const selected = effects.find(e => e.callee === input);
+            annotations.effectToAudit(selected); 
+        })
+    );
+
 }

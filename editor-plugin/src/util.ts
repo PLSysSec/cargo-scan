@@ -17,6 +17,10 @@ export function convertLocation(obj: any): vscode.Location {
     return new vscode.Location(uri, range);
 }
 
+export function rangeToString(range: vscode.Range): string {
+    return `${range.start.line}:${range.start.character}-${range.end.line}:${range.end.character}`;
+}
+
 export function setEnvironment(config: vscode.WorkspaceConfiguration) {
     let rustPath = config.get<string>('rustPath');
 
