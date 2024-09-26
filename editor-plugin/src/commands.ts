@@ -80,10 +80,26 @@ export function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('cargo-scan.create_chain', async () => {
             client.sendRequest('cargo-scan.create_chain');
+            
+            client.onNotification('cargo-scan.info', (message: string) => {                
+                vscode.window.showInformationMessage(
+                message, 
+                'View Logs',
+                // 'Settings'
+                ).then(selection => {
+                    if (selection === 'View Logs') {
+                        client.outputChannel.show();
+                    }
+                    // else if (selection === 'Settings') {
+                    //     vscode.commands.executeCommand('workbench.action.openSettings', '@ext:PLsysSec.cargo-scan');
+                    // }
+                });
+            });
+
             context.globalState.update('annotateEffects', false);
             context.globalState.update('chainAudit', false);
             locationsProvider.clear();
-            annotations.clear();         
+            annotations.clear();      
         })
     );
 

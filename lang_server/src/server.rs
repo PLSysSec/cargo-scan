@@ -64,6 +64,16 @@ impl Request for CallerCheckedCommand {
     const METHOD: &'static str = "cargo-scan.get_callers";
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct InfoMessageParams {
+    pub message: String,
+}
+
+impl Notification for InfoMessageParams {
+    const METHOD: &'static str = "cargo-scan.info";
+    type Params = InfoMessageParams;
+}
+
 pub fn run_server() -> anyhow::Result<(), Box<dyn Error + Sync + Send>> {
     let (connection, io_threads) = Connection::stdio();
 
@@ -190,9 +200,22 @@ fn runner(
                         let create_args = Create {
                             crate_path: root_crate_path.to_string_lossy().to_string(),
                             manifest_path: chain_manifest.to_string_lossy().to_string(),
-                            force_overwrite: true,
                             ..Default::default()
                         };
+
+                        if !create_args.force_overwrite {
+                            let params = InfoMessageParams {
+                                message: "May reuse existing audits for chain"
+                                    .to_string(),
+                            };
+                            let value = serde_json::to_value(params.message)?;
+                            let notification =
+                                Message::Notification(lsp_server::Notification {
+                                    method: InfoMessageParams::METHOD.to_string(),
+                                    params: value,
+                                });
+                            conn.sender.send(notification)?;
+                        }
 
                         CommandRunner::run_command(
                             Command::Create(create_args),

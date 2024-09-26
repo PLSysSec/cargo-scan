@@ -479,10 +479,23 @@ fn make_new_audit_file(
         if args.force_overwrite {
             remove_file(audit_file_path.clone())?;
         } else {
-            return Err(anyhow!("Audit file already exists"));
+            info!(
+                "Using existing audit for {} v{} ({})",
+                package.name,
+                package.version,
+                audit_file_path.display()
+            );
+            let audit_file = AuditFile::read_audit_file(audit_file_path.clone())?
+                .ok_or_else(|| {
+                    anyhow!("Couldn't read audit: {}", audit_file_path.display())
+                })?;
+            chain.add_crate_audit_file(package, audit_file_path, audit_file.version);
+
+            return Ok(());
         }
     }
 
+    info!("Making default audit for {} v{}", package.name, package.version);
     let sinks = collect_dependency_sinks(chain, &package.dependencies)?;
     let audit_file = AuditFile::new_default_with_sinks(
         &package_path,
@@ -539,7 +552,6 @@ pub fn create_new_audit_chain(
     let mut traverse = DfsPostOrder::new(&graph, root_node);
     while let Some(node) = traverse.next(&graph) {
         let package = package_map.get(&node).unwrap();
-        info!("Making default audit for {} v{}", package.name, package.version);
 
         let audit_type = if node == root_node {
             DefaultAuditType::Empty
