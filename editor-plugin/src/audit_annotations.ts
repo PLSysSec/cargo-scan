@@ -14,6 +14,7 @@ export interface AuditNotification {
 export class AuditAnnotations implements vscode.CodeLensProvider {    
     private selected?: EffectResponseData;
     private annotations: vscode.CodeLens[] = [];
+    private ccLocations: vscode.Location[] = [];
     private effects: { [file: string]: EffectResponseData[] } = {};
     private prevAnnotations: Map<EffectResponseData, string> = new Map();
     private onDidChangeCodeLensesEmitter = new vscode.EventEmitter<void>();
@@ -156,9 +157,16 @@ export class AuditAnnotations implements vscode.CodeLensProvider {
         const line = effect.location.range.start.line;
         const col = effect.location.range.start.character;
         const position = new vscode.Position(line, col);
-        let locations: vscode.Location[] = callers.map(caller => caller.location);
+        
+        const editor = vscode.window.activeTextEditor;
+        if (editor && !editor.viewColumn) {
+            this.ccLocations = this.ccLocations.concat(callers.map(caller => caller.location));
+        }
+        else {
+            this.ccLocations = callers.map(caller => caller.location);
+        }
 
-        vscode.commands.executeCommand('editor.action.peekLocations', uri, position, locations, 'peek');
+        vscode.commands.executeCommand('editor.action.peekLocations', uri, position, this.ccLocations, 'peek');
     }
 
     private groupByRange(effects: EffectResponseData[]): { [range: string]: EffectResponseData[] } {
