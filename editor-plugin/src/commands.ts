@@ -25,39 +25,51 @@ export function registerCommands(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('cargo-scan.audit', async () => {
-            const response = await client.sendRequest<AuditResponse>('cargo-scan.audit');
-            context.globalState.update('annotateEffects', true);
-            context.globalState.update('chainAudit', false);
-
-            let effectsMap = new Map<EffectResponseData, string>();
-            let callStackMap = new Map<string, EffectResponseData[]>();  
-            
-            for (let [baseEffect, callers] of response.effects) {
-                baseEffect.location = convertLocation(baseEffect.location);
-                callers.forEach((e: [EffectResponseData, string]) => {
-                    e[0].location = convertLocation(e[0].location);
-                    effectsMap.set(e[0], e[1]);
-                });
-
-                const callStack = callers.map((e: [EffectResponseData, string]) => e[0]);
-                callStackMap.set(JSON.stringify(baseEffect), callStack);
-            }
-            
-            const auditedEffects = Array.from(effectsMap)
-                .filter(([_, value]) => value !== 'Skipped')
-                .map(([key, _]) => key);
-
-            locationsProvider.clear();
-            locationsProvider.addAuditedEffects(auditedEffects);
-            locationsProvider.setLocations([...effectsMap.keys()], callStackMap);                       
-            annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);
-
-            const editor = vscode.window.activeTextEditor;
-            if(editor) {
-                highlightEffectLocations(editor, locationsProvider.getGroupedEffects());
-            }
+            vscode.window.withProgress(
+                {
+                    location: vscode.ProgressLocation.Notification,
+                    title: "Cargo Scan Audit"
+                },
+                async (progress) => {
+                    progress.report({ message: "Scanning crate..." });
+                    const response = await client.sendRequest<AuditResponse>('cargo-scan.audit');
+                    
+                    context.globalState.update('annotateEffects', true);
+                    context.globalState.update('chainAudit', false);
+    
+                    let effectsMap = new Map<EffectResponseData, string>();
+                    let callStackMap = new Map<string, EffectResponseData[]>();
+    
+                    for (let [baseEffect, callers] of response.effects) {
+                        baseEffect.location = convertLocation(baseEffect.location);
+                        callers.forEach((e: [EffectResponseData, string]) => {
+                            e[0].location = convertLocation(e[0].location);
+                            effectsMap.set(e[0], e[1]);
+                        });
+    
+                        const callStack = callers.map((e: [EffectResponseData, string]) => e[0]);
+                        callStackMap.set(JSON.stringify(baseEffect), callStack);
+                    }
+    
+                    const auditedEffects = Array.from(effectsMap)
+                        .filter(([_, value]) => value !== 'Skipped')
+                        .map(([key, _]) => key);
+    
+                    locationsProvider.clear();
+                    locationsProvider.addAuditedEffects(auditedEffects);
+                    locationsProvider.setLocations([...effectsMap.keys()], callStackMap);
+                    annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);
+    
+                    const editor = vscode.window.activeTextEditor;
+                    if (editor) {
+                        highlightEffectLocations(editor, locationsProvider.getGroupedEffects());
+                    }
+                    
+                    vscode.window.showInformationMessage("Scan completed -- You can now start auditing!");
+                }
+            );
         })
-    );  
+    );
     
     context.subscriptions.push(
         vscode.commands.registerCommand('cargo-scan.get_callers', async (effect: EffectResponseData) => {
