@@ -28,10 +28,11 @@ export function registerCommands(context: vscode.ExtensionContext) {
             vscode.window.withProgress(
                 {
                     location: vscode.ProgressLocation.Notification,
-                    title: "Cargo Scan Audit"
                 },
                 async (progress) => {
-                    progress.report({ message: "Scanning crate..." });
+                    setTimeout(() => {
+                        progress.report({ message: "Cargo Scan: Scanning crate..." });
+                    }, 2000);
                     const response = await client.sendRequest<AuditResponse>('cargo-scan.audit');
                     
                     context.globalState.update('annotateEffects', true);
@@ -63,9 +64,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
                     const editor = vscode.window.activeTextEditor;
                     if (editor) {
                         highlightEffectLocations(editor, locationsProvider.getGroupedEffects());
-                    }
-                    
-                    vscode.window.showInformationMessage("Scan completed -- You can now start auditing!");
+                    }                    
                 }
             );
         })
