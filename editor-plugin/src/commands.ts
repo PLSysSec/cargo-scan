@@ -257,4 +257,15 @@ export function registerCommands(context: vscode.ExtensionContext) {
         })
     );
 
+    const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+    statusBar.text = '$(output) Cargo Scan logs';
+    statusBar.tooltip = 'Open server logs';
+    statusBar.command = 'cargo-scan.openLogs';
+    statusBar.show();
+
+    context.subscriptions.push(
+        statusBar, vscode.commands.registerCommand("cargo-scan.openLogs", () => {
+            client.outputChannel.show();
+        })
+    );
 }
