@@ -20,7 +20,7 @@ use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::{Bfs, EdgeRef};
 use petgraph::Direction;
-use proc_macro2::{TokenStream, TokenTree};
+use proc_macro2::{Group, TokenStream, TokenTree};
 use quote::ToTokens;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -30,6 +30,8 @@ use std::io::Read;
 use std::path::Path as FilePath;
 use syn::spanned::Spanned;
 use syn::ForeignItemFn;
+use syn::{ItemMacro,ForeignItemMacro,StmtMacro,ExprMacro,ImplItemMacro,TraitItemMacro,Attribute};
+use quote::quote;
 
 /// Results of a scan
 ///
@@ -46,6 +48,8 @@ pub struct ScanResults {
     pub trait_meths: HashSet<CanonicalPath>,
     fns_with_effects: HashSet<CanonicalPath>,
 
+    pub decl_marco_def: HashMap<proc_macro2::Ident,syn::ItemMacro>,
+    pub decl_marco_invoke: HashMap<proc_macro2::Ident,SynMacro>,
     pub call_graph: DiGraph<CanonicalPath, SrcLoc>,
     pub node_idxs: HashMap<CanonicalPath, NodeIndex>,
 
@@ -121,6 +125,18 @@ impl ScanResults {
         let callee_idx = self.update_call_graph(callee);
         self.call_graph.add_edge(caller_idx, callee_idx, loc);
     }
+
+    
+}
+
+#[derive(Debug)]
+enum SynMacro {
+    ExprMacro(ExprMacro),
+    ItemMacro(ItemMacro),
+    StmtMacro(StmtMacro),
+    ForeignItemMacro(ForeignItemMacro),
+    TraitItemMacro(TraitItemMacro),
+    ImplItemMacro(ImplItemMacro)
 }
 
 #[derive(Debug)]
@@ -229,7 +245,8 @@ where
             syn::Item::Trait(t) => self.scan_trait(t),
             syn::Item::ForeignMod(fm) => self.scan_foreign_mod(fm),
             syn::Item::Macro(m) => {
-                self.data.skipped_macros.add(m);
+                println!("Item Macro: {:#?}", m);
+                self.data.decl_marco_def.insert(m.ident.as_ref().unwrap().clone(),m.clone());
             }
             _ => (),
             // For all syntax elements see
@@ -336,7 +353,13 @@ where
         match i {
             syn::ForeignItem::Fn(f) => self.scan_foreign_fn(f),
             syn::ForeignItem::Macro(m) => {
-                self.data.skipped_macros.add(m);
+                println!("Foreign Item Macro: {:#?}", m);
+                if let Some(ident) = m.mac.path.get_ident() {
+                    self.data.decl_marco_invoke.insert(ident.clone(), SynMacro::ForeignItemMacro(m.clone()));
+                } else {
+                    self.data.skipped_macros.add(m);
+                }
+                
             }
             other => {
                 self.data.skipped_other.add(other);
@@ -408,7 +431,13 @@ where
                     self.scan_trait_method(m, &t.vis, impls_for_meth);
                 }
                 syn::TraitItem::Macro(m) => {
-                    self.data.skipped_macros.add(m);
+                    println!("Trait Item Macro: {:#?}", m);
+                    if let Some(ident) = m.mac.path.get_ident() {
+                        self.data.decl_marco_invoke.insert(ident.clone(), SynMacro::TraitItemMacro(m.clone()));
+                    }
+                    else {
+                        self.data.skipped_macros.add(m);
+                    }
                 }
                 syn::TraitItem::Verbatim(v) => {
                     self.syn_info("skipping Verbatim expression", v);
@@ -438,7 +467,12 @@ where
                     self.scan_method(m);
                 }
                 syn::ImplItem::Macro(m) => {
-                    self.data.skipped_macros.add(m);
+                    println!("Impl Item Macro: {:#?}", m);
+                    if let Some(ident) = m.mac.path.get_ident() {
+                        self.data.decl_marco_invoke.insert(ident.clone(), SynMacro::ImplItemMacro(m.clone()));
+                    } else{
+                        self.data.skipped_macros.add(m);
+                    }
                 }
                 syn::ImplItem::Verbatim(v) => {
                     self.syn_info("skipping Verbatim expression", v);
@@ -603,7 +637,12 @@ where
             syn::Stmt::Expr(e, _semi) => self.scan_expr(e),
             syn::Stmt::Item(i) => self.scan_item_in_fn(i),
             syn::Stmt::Macro(m) => {
-                self.data.skipped_macros.add(m);
+                println!("Stmt Macro: {:#?}", m);
+                if let Some(ident) = m.mac.path.get_ident() {
+                    self.data.decl_marco_invoke.insert(ident.clone(), SynMacro::StmtMacro(m.clone()));
+                } else{
+                    self.data.skipped_macros.add(m);
+                }
             }
         }
     }
@@ -816,7 +855,12 @@ where
                 }
             }
             syn::Expr::Macro(m) => {
-                self.data.skipped_macros.add(m);
+                println!("Expr Macro: {:#?}", m);
+                if let Some(ident) = m.mac.path.get_ident() {
+                    self.data.decl_marco_invoke.insert(ident.clone(), SynMacro::ExprMacro(m.clone()));
+                } else{
+                    self.data.skipped_macros.add(m);
+                }
             }
             syn::Expr::Match(x) => {
                 if self.skip_attrs(&x.attrs) {
@@ -1210,7 +1254,12 @@ where
                 self.scan_expr_call_field(&x.member)
             }
             syn::Expr::Macro(m) => {
-                self.data.skipped_macros.add(m);
+                println!("Expr All Macro: {:#?}", m);
+                if let Some(ident) = m.mac.path.get_ident() {
+                    self.data.decl_marco_invoke.insert(ident.clone(), SynMacro::ExprMacro(m.clone()));
+                } else{
+                    self.data.skipped_macros.add(m);
+                }
             }
             other => {
                 // anything else could be a function, too -- could return a closure
@@ -1242,6 +1291,208 @@ where
     fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
         let is_unsafe = self.resolver.resolve_unsafe_ident(i) && self.scope_unsafe > 0;
         self.push_callsite(i, self.resolver.resolve_method(i), None, is_unsafe);
+    }
+/** 
+    pub fn process_macros(&mut self) {
+        for (ident,m) in &self.data.decl_marco_invoke {
+            match self.expand_macro_recursively(ident, m) {
+                Ok(expanded_ast) => {
+                    for item in expanded_ast.items {
+                        self.scan_item(&item);
+                    }
+                },
+                Err(err) => {
+                    self.syn_warning("Failed to expand macro", ident);
+                }
+            }
+        }
+        self.data.decl_marco_invoke.clear();
+    }
+*/
+    fn expand_macro_recursively(&mut self, ident: &proc_macro2::Ident, macro_invocation: &SynMacro) -> Result<syn::File, syn::Error> {
+        let expanded_code;
+        if self.data.decl_marco_def.contains_key(ident) {
+            let macro_decl = self.data.decl_marco_def.get(ident);
+            expanded_code = macro_expand(ident,macro_invocation,macro_decl.unwrap());
+        }
+        else {
+            expanded_code = "".to_string();
+            // self.data.skipped_macros.add(macro_invocation);
+        }
+        return syn::parse_file(&expanded_code);
+
+    }
+}
+
+
+fn macro_expand(ident: &proc_macro2::Ident, macro_invocation: &SynMacro,macro_decl: &ItemMacro) -> String {
+    let macro_tokens = &macro_decl.mac.tokens;
+    let tokens_iter = macro_tokens.clone().into_iter();
+    let mut pattern = TokenStream::new();
+    let mut replacement = TokenStream::new();
+    let mut in_replacement = false;
+
+    println!("parsing token for macro decl");
+    for token in tokens_iter.clone() {
+        println!("token: {}",token.to_string());
+        if let proc_macro2::TokenTree::Punct(ref punct) = token {
+            if punct.as_char() == '=' {
+                in_replacement = true;
+                continue;
+            }
+        }
+        if in_replacement {
+            replacement.extend(Some(token));
+        } else {
+            pattern.extend(Some(token));
+        }
+    }
+
+    let matched_values;
+    println!("getting matched value");
+    match macro_invocation {
+        SynMacro::TraitItemMacro(trait_item_macro) => {
+            matched_values = match_macro_invocation(pattern,&trait_item_macro.mac.tokens);
+        }
+        SynMacro::ItemMacro(item_macro) => {
+            matched_values = match_macro_invocation(pattern,&item_macro.mac.tokens);
+        }
+        SynMacro::ExprMacro(expr_macro) => {
+            matched_values = match_macro_invocation(pattern,&expr_macro.mac.tokens);
+        }
+        SynMacro::ImplItemMacro(impl_Item_macro) => {
+            matched_values = match_macro_invocation(pattern,&impl_Item_macro.mac.tokens);
+        }
+        SynMacro::ImplItemMacro(impl_Item_macro) => {
+            matched_values = match_macro_invocation(pattern,&impl_Item_macro.mac.tokens);
+        }
+        SynMacro::StmtMacro(stmt_macro) => {
+            matched_values = match_macro_invocation(pattern,&stmt_macro.mac.tokens);
+        }
+        SynMacro::ForeignItemMacro(foreign_item_Macro) => {
+            matched_values = match_macro_invocation(pattern,&foreign_item_Macro.mac.tokens);
+        }
+    }
+    println!("got matched value");
+    for val in matched_values.clone().unwrap().into_keys(){
+        println!("matched value: {}", val);
+    }
+    let macro_content = replacement.into_iter().find(|token| matches!(token, TokenTree::Group(_)));
+    let expanded = substitute_replacement(macro_content.to_token_stream(), matched_values.unwrap())
+        .unwrap().to_string();
+    expanded
+}
+
+fn match_macro_invocation(pattern: TokenStream, tokens: &TokenStream) -> Result<HashMap<String, TokenStream>, String> {
+    let mut values = HashMap::new();
+    let mut tokens_iter = tokens.clone().into_iter();
+
+    for pattern_token in pattern {
+        match pattern_token {
+            TokenTree::Group(group) => {
+                let inner_tokens = group.stream();
+                let mut inner_iter = inner_tokens.into_iter();
+
+                while let Some(inner_token) = inner_iter.next() {
+                    match inner_token {
+                        TokenTree::Punct(punct) if punct.as_char() == '$' => {
+                            // Look for an identifier following `$`
+                            if let Some(TokenTree::Ident(ident)) = inner_iter.next() {
+                                // Capture the corresponding token from the invocation
+                                if let Some(value_token) = tokens_iter.next() {
+                                    values.insert(ident.to_string(), value_token.into_token_stream());
+                                } else {
+                                    return Err("Mismatched invocation for pattern".into());
+                                }
+
+                                // Skip over pattern specifiers (e.g., `:expr`) if present
+                                if let Some(TokenTree::Punct(colon)) = inner_iter.next() {
+                                    if colon.as_char() == ':' {
+                                        inner_iter.next();
+                                    }
+                                }
+                            }
+                        }
+                        // Skip non-placeholder tokens (like commas and other delimiters)
+                        _ => {
+                            tokens_iter.next();
+                        }
+                    }
+                }
+            }
+            _ => {
+                tokens_iter.next();
+            }
+        }
+    }
+
+    Ok(values)
+}
+
+
+fn substitute_replacement(replacement: TokenStream, values: HashMap<String, TokenStream>) -> Result<TokenStream, String> {
+    let mut expanded = TokenStream::new();
+    let mut replacement_iter = replacement.into_iter();
+
+    while let Some(token) = replacement_iter.next() {
+        match token {
+            TokenTree::Punct(punct) if punct.as_char() == '$' => {
+                // Check if `$` is followed by a placeholder identifier
+                if let Some(TokenTree::Ident(ident)) = replacement_iter.next() {
+                    if let Some(value) = values.get(&ident.to_string()) {
+                        expanded.extend(value.clone().into_iter());
+                        continue;
+                    }
+                }
+            }
+            TokenTree::Group(group) => {
+                // Recursively expand within groups
+                let inner_stream = substitute_replacement(group.stream(), values.clone())?;
+                let mut new_group = Group::new(group.delimiter(), inner_stream);
+                new_group.set_span(group.span());
+                expanded.extend(Some(TokenTree::Group(new_group)));
+            }
+            _ => {
+                expanded.extend(Some(token));
+            }
+        }
+    }
+
+    Ok(expanded)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use syn::{parse_quote,ItemMacro};
+
+    #[test]
+    fn test_expand_declarative_macro() {
+        // Define a simple declarative macro as `macro_rules! example { ($arg:expr) => { $arg }; }`
+
+        let macro_def: ItemMacro = parse_quote! {
+            macro_rules! multiply_add {
+                ($a:expr, $b:expr, $c:expr) => {$a * ($b + $c)};
+            }
+        };
+
+        let invocation_stmt: syn::Stmt = parse_quote! {
+            multiply_add!(2,9,1);
+        };
+
+        // Extract the macro from the statement
+        let invocation_mac = match invocation_stmt {
+            syn::Stmt::Macro(stmt_macro) => stmt_macro,
+            _ => panic!("Expected a Stmt::Macro"),
+        };
+
+        let invocation = SynMacro::StmtMacro(invocation_mac.clone());
+        // Expand the macro invocation
+        println!("Entering macro_expand");
+        let expanded = macro_expand(&macro_def.ident.clone().unwrap(), &invocation, &macro_def.clone());
+
+        // Assert that the expansion is as expected
+        assert_eq!(expanded, "{ 2 * (9 + 1) }");
     }
 }
 
