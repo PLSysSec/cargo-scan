@@ -30,8 +30,7 @@ use std::io::Read;
 use std::path::Path as FilePath;
 use syn::spanned::Spanned;
 use syn::ForeignItemFn;
-use syn::{ItemMacro,ForeignItemMacro,StmtMacro,ExprMacro,ImplItemMacro,TraitItemMacro,Attribute};
-use quote::quote;
+use syn::{ItemMacro,ForeignItemMacro,StmtMacro,ExprMacro,ImplItemMacro,TraitItemMacro};
 
 /// Results of a scan
 ///
@@ -49,7 +48,9 @@ pub struct ScanResults {
     fns_with_effects: HashSet<CanonicalPath>,
 
     pub decl_marco_def: HashMap<proc_macro2::Ident,syn::ItemMacro>,
-    pub decl_marco_invoke: HashMap<proc_macro2::Ident,SynMacro>,
+    decl_marco_invoke: HashMap<proc_macro2::Ident,SynMacro>,
+    pub macro_expanded: HashMap<proc_macro2::Ident, syn::File>,
+
     pub call_graph: DiGraph<CanonicalPath, SrcLoc>,
     pub node_idxs: HashMap<CanonicalPath, NodeIndex>,
 
@@ -232,7 +233,25 @@ where
         for i in &f.items {
             self.scan_item(i);
         }
+        self.process_macros();
+        
     }
+
+    // pub fn scan_expand_macro(&mut self) {
+    //     for (_, expanded_file) in &self.data.macro_expanded {
+    //         for i in &expanded_file.items {
+    //             self.scan_item(i);
+    //         }
+    //     }
+    // }
+
+    // pub fn scan_macro_expanded(&mut self) {
+    //     for (_, expanded_file) in &self.data.macro_expanded {
+    //         for i in &expanded_file.items {
+    //             self.scan_item(i);
+    //         }
+    //     }
+    // }
 
     pub fn scan_item(&mut self, i: &'a syn::Item) {
         match i {
@@ -245,8 +264,16 @@ where
             syn::Item::Trait(t) => self.scan_trait(t),
             syn::Item::ForeignMod(fm) => self.scan_foreign_mod(fm),
             syn::Item::Macro(m) => {
-                println!("Item Macro: {:#?}", m);
-                self.data.decl_marco_def.insert(m.ident.as_ref().unwrap().clone(),m.clone());
+                // println!("Item Macro: {:#?}", m);
+                // self.data.decl_marco_def.insert(m.ident.as_ref().unwrap().clone(),m.clone());
+                match m.ident.as_ref() {
+                    Some(ident) => {
+                        self.data.decl_marco_def.insert(ident.clone(), m.clone());
+                    }
+                    _ => {
+                        println!("ItemMacro has None ident");
+                    }
+                } 
             }
             _ => (),
             // For all syntax elements see
@@ -1292,30 +1319,35 @@ where
         let is_unsafe = self.resolver.resolve_unsafe_ident(i) && self.scope_unsafe > 0;
         self.push_callsite(i, self.resolver.resolve_method(i), None, is_unsafe);
     }
-/** 
+
     pub fn process_macros(&mut self) {
         for (ident,m) in &self.data.decl_marco_invoke {
-            match self.expand_macro_recursively(ident, m) {
+            let res = self.expand_macro_recursively(&ident, &m);
+            match res {
                 Ok(expanded_ast) => {
-                    for item in expanded_ast.items {
-                        self.scan_item(&item);
-                    }
+                    self.data.macro_expanded.insert(ident.clone(), expanded_ast);
                 },
-                Err(err) => {
+                Err(_) => {
                     self.syn_warning("Failed to expand macro", ident);
-                }
+                },
             }
         }
         self.data.decl_marco_invoke.clear();
+        // for (_, ast) in &self.data.macro_expanded {
+        //     for item in &ast.items {
+        //         self.scan_item(item);
+        //     }
+        // }
     }
-*/
-    fn expand_macro_recursively(&mut self, ident: &proc_macro2::Ident, macro_invocation: &SynMacro) -> Result<syn::File, syn::Error> {
+
+    fn expand_macro_recursively(&self, ident: &proc_macro2::Ident, macro_invocation: &SynMacro) -> Result<syn::File, syn::Error> {
         let expanded_code;
         if self.data.decl_marco_def.contains_key(ident) {
             let macro_decl = self.data.decl_marco_def.get(ident);
             expanded_code = macro_expand(ident,macro_invocation,macro_decl.unwrap());
         }
         else {
+            // todo: if use the imported macro, or macro in prelude, check the dependency.
             expanded_code = "".to_string();
             // self.data.skipped_macros.add(macro_invocation);
         }
@@ -1360,17 +1392,14 @@ fn macro_expand(ident: &proc_macro2::Ident, macro_invocation: &SynMacro,macro_de
         SynMacro::ExprMacro(expr_macro) => {
             matched_values = match_macro_invocation(pattern,&expr_macro.mac.tokens);
         }
-        SynMacro::ImplItemMacro(impl_Item_macro) => {
-            matched_values = match_macro_invocation(pattern,&impl_Item_macro.mac.tokens);
-        }
-        SynMacro::ImplItemMacro(impl_Item_macro) => {
-            matched_values = match_macro_invocation(pattern,&impl_Item_macro.mac.tokens);
+        SynMacro::ImplItemMacro(impl_item_macro) => {
+            matched_values = match_macro_invocation(pattern,&impl_item_macro.mac.tokens);
         }
         SynMacro::StmtMacro(stmt_macro) => {
             matched_values = match_macro_invocation(pattern,&stmt_macro.mac.tokens);
         }
-        SynMacro::ForeignItemMacro(foreign_item_Macro) => {
-            matched_values = match_macro_invocation(pattern,&foreign_item_Macro.mac.tokens);
+        SynMacro::ForeignItemMacro(foreign_item_macro) => {
+            matched_values = match_macro_invocation(pattern,&foreign_item_macro.mac.tokens);
         }
     }
     println!("got matched value");
@@ -1546,6 +1575,13 @@ pub fn scan_file(
 
     // Scan file contents
     scanner.scan_file(&syntax_tree);
+    let macro_expanded = scanner.data.macro_expanded.clone(); // 克隆一个引用副本
+    println!("begin scan macro expanded");
+    for (_, macro_file) in &macro_expanded {
+        for item in &macro_file.items {
+            scanner.scan_item(item);
+        }
+    }
 
     Ok(())
 }
