@@ -22,6 +22,7 @@ use petgraph::visit::{Bfs, EdgeRef};
 use petgraph::Direction;
 use proc_macro2::{Group, TokenStream, TokenTree};
 use quote::ToTokens;
+use serde::de::value;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -30,7 +31,9 @@ use std::io::Read;
 use std::path::Path as FilePath;
 use syn::spanned::Spanned;
 use syn::ForeignItemFn;
-use syn::{ItemMacro,ForeignItemMacro,StmtMacro,ExprMacro,ImplItemMacro,TraitItemMacro};
+use syn::{
+    ExprMacro, ForeignItemMacro, ImplItemMacro, ItemMacro, StmtMacro, TraitItemMacro,
+};
 
 /// Results of a scan
 ///
@@ -47,8 +50,8 @@ pub struct ScanResults {
     pub trait_meths: HashSet<CanonicalPath>,
     fns_with_effects: HashSet<CanonicalPath>,
 
-    pub decl_marco_def: HashMap<proc_macro2::Ident,syn::ItemMacro>,
-    decl_marco_invoke: HashMap<proc_macro2::Ident,SynMacro>,
+    pub decl_marco_def: HashMap<proc_macro2::Ident, syn::ItemMacro>,
+    decl_marco_invoke: HashMap<proc_macro2::Ident, SynMacro>,
     pub macro_expanded: HashMap<proc_macro2::Ident, syn::File>,
 
     pub call_graph: DiGraph<CanonicalPath, SrcLoc>,
@@ -126,8 +129,6 @@ impl ScanResults {
         let callee_idx = self.update_call_graph(callee);
         self.call_graph.add_edge(caller_idx, callee_idx, loc);
     }
-
-    
 }
 
 #[derive(Debug)]
@@ -137,7 +138,7 @@ enum SynMacro {
     StmtMacro(StmtMacro),
     ForeignItemMacro(ForeignItemMacro),
     TraitItemMacro(TraitItemMacro),
-    ImplItemMacro(ImplItemMacro)
+    ImplItemMacro(ImplItemMacro),
 }
 
 #[derive(Debug)]
@@ -234,7 +235,6 @@ where
             self.scan_item(i);
         }
         self.process_macros();
-        
     }
 
     // pub fn scan_expand_macro(&mut self) {
@@ -271,9 +271,15 @@ where
                         self.data.decl_marco_def.insert(ident.clone(), m.clone());
                     }
                     _ => {
-                        println!("ItemMacro has None ident");
+                        if let Some(ident) = m.mac.path.get_ident() {
+                            self.data
+                                .decl_marco_invoke
+                                .insert(ident.clone(), SynMacro::ItemMacro(m.clone()));
+                        } else {
+                            self.data.skipped_macros.add(m);
+                        }
                     }
-                } 
+                }
             }
             _ => (),
             // For all syntax elements see
@@ -382,11 +388,12 @@ where
             syn::ForeignItem::Macro(m) => {
                 println!("Foreign Item Macro: {:#?}", m);
                 if let Some(ident) = m.mac.path.get_ident() {
-                    self.data.decl_marco_invoke.insert(ident.clone(), SynMacro::ForeignItemMacro(m.clone()));
+                    self.data
+                        .decl_marco_invoke
+                        .insert(ident.clone(), SynMacro::ForeignItemMacro(m.clone()));
                 } else {
                     self.data.skipped_macros.add(m);
                 }
-                
             }
             other => {
                 self.data.skipped_other.add(other);
@@ -460,9 +467,10 @@ where
                 syn::TraitItem::Macro(m) => {
                     println!("Trait Item Macro: {:#?}", m);
                     if let Some(ident) = m.mac.path.get_ident() {
-                        self.data.decl_marco_invoke.insert(ident.clone(), SynMacro::TraitItemMacro(m.clone()));
-                    }
-                    else {
+                        self.data
+                            .decl_marco_invoke
+                            .insert(ident.clone(), SynMacro::TraitItemMacro(m.clone()));
+                    } else {
                         self.data.skipped_macros.add(m);
                     }
                 }
@@ -494,10 +502,12 @@ where
                     self.scan_method(m);
                 }
                 syn::ImplItem::Macro(m) => {
-                    println!("Impl Item Macro: {:#?}", m);
+                    // println!("Impl Item Macro: {:#?}", m);
                     if let Some(ident) = m.mac.path.get_ident() {
-                        self.data.decl_marco_invoke.insert(ident.clone(), SynMacro::ImplItemMacro(m.clone()));
-                    } else{
+                        self.data
+                            .decl_marco_invoke
+                            .insert(ident.clone(), SynMacro::ImplItemMacro(m.clone()));
+                    } else {
                         self.data.skipped_macros.add(m);
                     }
                 }
@@ -664,10 +674,12 @@ where
             syn::Stmt::Expr(e, _semi) => self.scan_expr(e),
             syn::Stmt::Item(i) => self.scan_item_in_fn(i),
             syn::Stmt::Macro(m) => {
-                println!("Stmt Macro: {:#?}", m);
+                // println!("Stmt Macro: {:#?}", m);
                 if let Some(ident) = m.mac.path.get_ident() {
-                    self.data.decl_marco_invoke.insert(ident.clone(), SynMacro::StmtMacro(m.clone()));
-                } else{
+                    self.data
+                        .decl_marco_invoke
+                        .insert(ident.clone(), SynMacro::StmtMacro(m.clone()));
+                } else {
                     self.data.skipped_macros.add(m);
                 }
             }
@@ -882,10 +894,12 @@ where
                 }
             }
             syn::Expr::Macro(m) => {
-                println!("Expr Macro: {:#?}", m);
+                // println!("Expr Macro: {:#?}", m);
                 if let Some(ident) = m.mac.path.get_ident() {
-                    self.data.decl_marco_invoke.insert(ident.clone(), SynMacro::ExprMacro(m.clone()));
-                } else{
+                    self.data
+                        .decl_marco_invoke
+                        .insert(ident.clone(), SynMacro::ExprMacro(m.clone()));
+                } else {
                     self.data.skipped_macros.add(m);
                 }
             }
@@ -1281,10 +1295,12 @@ where
                 self.scan_expr_call_field(&x.member)
             }
             syn::Expr::Macro(m) => {
-                println!("Expr All Macro: {:#?}", m);
+                // println!("Expr All Macro: {:#?}", m);
                 if let Some(ident) = m.mac.path.get_ident() {
-                    self.data.decl_marco_invoke.insert(ident.clone(), SynMacro::ExprMacro(m.clone()));
-                } else{
+                    self.data
+                        .decl_marco_invoke
+                        .insert(ident.clone(), SynMacro::ExprMacro(m.clone()));
+                } else {
                     self.data.skipped_macros.add(m);
                 }
             }
@@ -1321,15 +1337,15 @@ where
     }
 
     pub fn process_macros(&mut self) {
-        for (ident,m) in &self.data.decl_marco_invoke {
+        for (ident, m) in &self.data.decl_marco_invoke {
             let res = self.expand_macro_recursively(&ident, &m);
             match res {
                 Ok(expanded_ast) => {
                     self.data.macro_expanded.insert(ident.clone(), expanded_ast);
-                },
+                }
                 Err(_) => {
                     self.syn_warning("Failed to expand macro", ident);
-                },
+                }
             }
         }
         self.data.decl_marco_invoke.clear();
@@ -1340,24 +1356,32 @@ where
         // }
     }
 
-    fn expand_macro_recursively(&self, ident: &proc_macro2::Ident, macro_invocation: &SynMacro) -> Result<syn::File, syn::Error> {
+    fn expand_macro_recursively(
+        &self,
+        ident: &proc_macro2::Ident,
+        macro_invocation: &SynMacro,
+    ) -> Result<syn::File, syn::Error> {
         let expanded_code;
+
         if self.data.decl_marco_def.contains_key(ident) {
             let macro_decl = self.data.decl_marco_def.get(ident);
-            expanded_code = macro_expand(ident,macro_invocation,macro_decl.unwrap());
-        }
-        else {
+            expanded_code = macro_expand(ident, macro_invocation, macro_decl.unwrap());
+        } else {
             // todo: if use the imported macro, or macro in prelude, check the dependency.
             expanded_code = "".to_string();
             // self.data.skipped_macros.add(macro_invocation);
         }
+        println!("expaanded ident: {:#?}", ident);
+        println!("expanded code: {}", expanded_code);
         return syn::parse_file(&expanded_code);
-
     }
 }
 
-
-fn macro_expand(ident: &proc_macro2::Ident, macro_invocation: &SynMacro,macro_decl: &ItemMacro) -> String {
+fn macro_expand(
+    ident: &proc_macro2::Ident,
+    macro_invocation: &SynMacro,
+    macro_decl: &ItemMacro,
+) -> String {
     let macro_tokens = &macro_decl.mac.tokens;
     let tokens_iter = macro_tokens.clone().into_iter();
     let mut pattern = TokenStream::new();
@@ -1366,7 +1390,7 @@ fn macro_expand(ident: &proc_macro2::Ident, macro_invocation: &SynMacro,macro_de
 
     println!("parsing token for macro decl");
     for token in tokens_iter.clone() {
-        println!("token: {}",token.to_string());
+        println!("token: {}", token.to_string());
         if let proc_macro2::TokenTree::Punct(ref punct) = token {
             if punct.as_char() == '=' {
                 in_replacement = true;
@@ -1384,35 +1408,43 @@ fn macro_expand(ident: &proc_macro2::Ident, macro_invocation: &SynMacro,macro_de
     println!("getting matched value");
     match macro_invocation {
         SynMacro::TraitItemMacro(trait_item_macro) => {
-            matched_values = match_macro_invocation(pattern,&trait_item_macro.mac.tokens);
+            matched_values =
+                match_macro_invocation(pattern, &trait_item_macro.mac.tokens);
         }
         SynMacro::ItemMacro(item_macro) => {
-            matched_values = match_macro_invocation(pattern,&item_macro.mac.tokens);
+            matched_values = match_macro_invocation(pattern, &item_macro.mac.tokens);
         }
         SynMacro::ExprMacro(expr_macro) => {
-            matched_values = match_macro_invocation(pattern,&expr_macro.mac.tokens);
+            matched_values = match_macro_invocation(pattern, &expr_macro.mac.tokens);
         }
         SynMacro::ImplItemMacro(impl_item_macro) => {
-            matched_values = match_macro_invocation(pattern,&impl_item_macro.mac.tokens);
+            matched_values = match_macro_invocation(pattern, &impl_item_macro.mac.tokens);
         }
         SynMacro::StmtMacro(stmt_macro) => {
-            matched_values = match_macro_invocation(pattern,&stmt_macro.mac.tokens);
+            matched_values = match_macro_invocation(pattern, &stmt_macro.mac.tokens);
         }
         SynMacro::ForeignItemMacro(foreign_item_macro) => {
-            matched_values = match_macro_invocation(pattern,&foreign_item_macro.mac.tokens);
+            matched_values =
+                match_macro_invocation(pattern, &foreign_item_macro.mac.tokens);
         }
     }
     println!("got matched value");
-    for val in matched_values.clone().unwrap().into_keys(){
+    for val in matched_values.clone().unwrap().into_keys() {
         println!("matched value: {}", val);
     }
-    let macro_content = replacement.into_iter().find(|token| matches!(token, TokenTree::Group(_)));
-    let expanded = substitute_replacement(macro_content.to_token_stream(), matched_values.unwrap())
-        .unwrap().to_string();
+    let macro_content =
+        replacement.into_iter().find(|token| matches!(token, TokenTree::Group(_)));
+    let expanded =
+        substitute_replacement(macro_content.to_token_stream(), matched_values.unwrap())
+            .unwrap()
+            .to_string();
     expanded
 }
 
-fn match_macro_invocation(pattern: TokenStream, tokens: &TokenStream) -> Result<HashMap<String, TokenStream>, String> {
+fn match_macro_invocation(
+    pattern: TokenStream,
+    tokens: &TokenStream,
+) -> Result<HashMap<String, Vec<TokenStream>>, String> {
     let mut values = HashMap::new();
     let mut tokens_iter = tokens.clone().into_iter();
 
@@ -1428,10 +1460,20 @@ fn match_macro_invocation(pattern: TokenStream, tokens: &TokenStream) -> Result<
                             // Look for an identifier following `$`
                             if let Some(TokenTree::Ident(ident)) = inner_iter.next() {
                                 // Capture the corresponding token from the invocation
+                                let mut value_tokens = Vec::new();
                                 if let Some(value_token) = tokens_iter.next() {
-                                    values.insert(ident.to_string(), value_token.into_token_stream());
+                                    value_tokens.push(value_token.to_token_stream());
+                                    if value_token.to_string() == "mod" {
+                                        let value_token2 = tokens_iter.next().unwrap();
+                                        value_tokens.push(value_token2.to_token_stream());
+                                        values.insert(ident.to_string(), value_tokens);
+                                    } else {
+                                        values.insert(ident.to_string(), value_tokens);
+                                    }
                                 } else {
-                                    return Err("Mismatched invocation for pattern".into());
+                                    return Err(
+                                        "Mismatched invocation for pattern".into()
+                                    );
                                 }
 
                                 // Skip over pattern specifiers (e.g., `:expr`) if present
@@ -1458,8 +1500,10 @@ fn match_macro_invocation(pattern: TokenStream, tokens: &TokenStream) -> Result<
     Ok(values)
 }
 
-
-fn substitute_replacement(replacement: TokenStream, values: HashMap<String, TokenStream>) -> Result<TokenStream, String> {
+fn substitute_replacement(
+    replacement: TokenStream,
+    values: HashMap<String, Vec<TokenStream>>,
+) -> Result<TokenStream, String> {
     let mut expanded = TokenStream::new();
     let mut replacement_iter = replacement.into_iter();
 
@@ -1476,7 +1520,8 @@ fn substitute_replacement(replacement: TokenStream, values: HashMap<String, Toke
             }
             TokenTree::Group(group) => {
                 // Recursively expand within groups
-                let inner_stream = substitute_replacement(group.stream(), values.clone())?;
+                let inner_stream =
+                    substitute_replacement(group.stream(), values.clone())?;
                 let mut new_group = Group::new(group.delimiter(), inner_stream);
                 new_group.set_span(group.span());
                 expanded.extend(Some(TokenTree::Group(new_group)));
@@ -1493,7 +1538,7 @@ fn substitute_replacement(replacement: TokenStream, values: HashMap<String, Toke
 #[cfg(test)]
 mod tests {
     use super::*;
-    use syn::{parse_quote,ItemMacro};
+    use syn::{parse_quote, ItemMacro};
 
     #[test]
     fn test_expand_declarative_macro() {
@@ -1518,7 +1563,11 @@ mod tests {
         let invocation = SynMacro::StmtMacro(invocation_mac.clone());
         // Expand the macro invocation
         println!("Entering macro_expand");
-        let expanded = macro_expand(&macro_def.ident.clone().unwrap(), &invocation, &macro_def.clone());
+        let expanded = macro_expand(
+            &macro_def.ident.clone().unwrap(),
+            &invocation,
+            &macro_def.clone(),
+        );
 
         // Assert that the expansion is as expected
         assert_eq!(expanded, "{ 2 * (9 + 1) }");
@@ -1660,6 +1709,13 @@ pub fn scan_crate_with_sinks(
             &enabled_cfg,
             quick_mode,
         );
+    }
+
+    for i in scan_results.decl_marco_def.clone().into_keys() {
+        println!("decl_marco_def: {}", i);
+    }
+    for i in scan_results.decl_marco_invoke.keys() {
+        println!("decl_marco_invoke: {}", i);
     }
 
     filter_fn_ptr_effects(&mut scan_results, crate_name);
