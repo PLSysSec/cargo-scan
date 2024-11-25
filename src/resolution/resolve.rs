@@ -11,6 +11,9 @@ use crate::ident::{CanonicalPath, CanonicalType, Ident};
 
 use anyhow::Result;
 use log::debug;
+use ra_ap_hir::Macro;
+use ra_ap_syntax::ast::MacroCall;
+use ra_ap_syntax::SyntaxNode;
 use std::fmt::Display;
 use std::path::Path as FilePath;
 use syn::{self, spanned::Spanned};
@@ -89,6 +92,13 @@ impl<'a> FileResolver<'a> {
         let backup = HackyResolver::new(crate_name, filepath)?;
         let imp = ResolverImpl::new(resolver, filepath)?;
         Ok(Self { filepath, resolver: imp, backup })
+    }
+
+    // pub fn resolve_macro_call(&self, i: &MacroCall) -> Option<Macro> {
+    //     self.resolver.sems.resolve_macro_call(&i)
+    // }
+    pub fn expand_macro(&self, i: &MacroCall) -> Option<SyntaxNode> {
+        self.resolver.sems.expand(i)
     }
 
     fn resolve_core(&self, i: &syn::Ident) -> Result<CanonicalPath> {

@@ -22,6 +22,16 @@ use petgraph::visit::{Bfs, EdgeRef};
 use petgraph::Direction;
 use proc_macro2::{Group, TokenStream, TokenTree};
 use quote::ToTokens;
+use ra_ap_hir::db::{DefDatabase, ExpandDatabase};
+use ra_ap_hir::{InFile, Macro};
+use ra_ap_hir_def::{Macro2Loc, MacroId, MacroRulesLoc};
+use ra_ap_hir_expand::{MacroCallId, MacroCallLoc, MacroDefId};
+use ra_ap_hir_ty::Cast;
+use ra_ap_ide::{CrateId, RootDatabase};
+use ra_ap_ide_db::base_db::SourceDatabase;
+use ra_ap_syntax::ast::MacroCall;
+use ra_ap_syntax::{AstNode, SyntaxNode};
+use ra_ap_vfs::FileId;
 use serde::de::value;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -234,24 +244,8 @@ where
         for i in &f.items {
             self.scan_item(i);
         }
-        self.process_macros();
+        // self.process_macros();
     }
-
-    // pub fn scan_expand_macro(&mut self) {
-    //     for (_, expanded_file) in &self.data.macro_expanded {
-    //         for i in &expanded_file.items {
-    //             self.scan_item(i);
-    //         }
-    //     }
-    // }
-
-    // pub fn scan_macro_expanded(&mut self) {
-    //     for (_, expanded_file) in &self.data.macro_expanded {
-    //         for i in &expanded_file.items {
-    //             self.scan_item(i);
-    //         }
-    //     }
-    // }
 
     pub fn scan_item(&mut self, i: &'a syn::Item) {
         match i {
@@ -264,22 +258,22 @@ where
             syn::Item::Trait(t) => self.scan_trait(t),
             syn::Item::ForeignMod(fm) => self.scan_foreign_mod(fm),
             syn::Item::Macro(m) => {
-                // println!("Item Macro: {:#?}", m);
+                println!("Item Macro: {:#?}", m);
                 // self.data.decl_marco_def.insert(m.ident.as_ref().unwrap().clone(),m.clone());
-                match m.ident.as_ref() {
-                    Some(ident) => {
-                        self.data.decl_marco_def.insert(ident.clone(), m.clone());
-                    }
-                    _ => {
-                        if let Some(ident) = m.mac.path.get_ident() {
-                            self.data
-                                .decl_marco_invoke
-                                .insert(ident.clone(), SynMacro::ItemMacro(m.clone()));
-                        } else {
-                            self.data.skipped_macros.add(m);
-                        }
-                    }
-                }
+                // match m.ident.as_ref() {
+                //     Some(ident) => {
+                //         self.data.decl_marco_def.insert(ident.clone(), m.clone());
+                //     }
+                //     _ => {
+                //         if let Some(ident) = m.mac.path.get_ident() {
+                //             self.data
+                //                 .decl_marco_invoke
+                //                 .insert(ident.clone(), SynMacro::ItemMacro(m.clone()));
+                //         } else {
+                //             self.data.skipped_macros.add(m);
+                //         }
+                //     }
+                // }
             }
             _ => (),
             // For all syntax elements see
@@ -502,7 +496,7 @@ where
                     self.scan_method(m);
                 }
                 syn::ImplItem::Macro(m) => {
-                    // println!("Impl Item Macro: {:#?}", m);
+                    println!("Impl Item Macro: {:#?}", m);
                     if let Some(ident) = m.mac.path.get_ident() {
                         self.data
                             .decl_marco_invoke
@@ -674,7 +668,7 @@ where
             syn::Stmt::Expr(e, _semi) => self.scan_expr(e),
             syn::Stmt::Item(i) => self.scan_item_in_fn(i),
             syn::Stmt::Macro(m) => {
-                // println!("Stmt Macro: {:#?}", m);
+                println!("Stmt Macro: {:#?}", m);
                 if let Some(ident) = m.mac.path.get_ident() {
                     self.data
                         .decl_marco_invoke
@@ -894,7 +888,7 @@ where
                 }
             }
             syn::Expr::Macro(m) => {
-                // println!("Expr Macro: {:#?}", m);
+                println!("Expr Macro: {:#?}", m);
                 if let Some(ident) = m.mac.path.get_ident() {
                     self.data
                         .decl_marco_invoke
@@ -1295,7 +1289,7 @@ where
                 self.scan_expr_call_field(&x.member)
             }
             syn::Expr::Macro(m) => {
-                // println!("Expr All Macro: {:#?}", m);
+                println!("Expr All Macro: {:#?}", m);
                 if let Some(ident) = m.mac.path.get_ident() {
                     self.data
                         .decl_marco_invoke
@@ -1623,13 +1617,22 @@ pub fn scan_file(
     scanner.add_sinks(sinks);
 
     // Scan file contents
-    scanner.scan_file(&syntax_tree);
-    let macro_expanded = scanner.data.macro_expanded.clone(); // 克隆一个引用副本
-    println!("begin scan macro expanded");
-    for (_, macro_file) in &macro_expanded {
-        for item in &macro_file.items {
-            scanner.scan_item(item);
-        }
+    // scanner.scan_file(&syntax_tree);
+    let macro_expanded = scanner.data.macro_expanded.clone();
+    // for (_, macro_file) in &macro_expanded {
+    //     for item in &macro_file.items {
+    //         scanner.scan_item(item);
+    //     }
+    // }
+    let current_file_id = resolver.find_file_id(&filepath).context("cannot find current file id")?;
+    let syntax = resolver.db().parse_or_expand(current_file_id.into());
+    
+    let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
+    for macro_call in find_macro_calls(&syntax) {
+        // println!("{:#}", macro_call)
+        // let macro_id = &file_resolver.resolve_macro_call(&macro_call).context("cannot find current macro call's macroid")?;
+        // let def_id = macro_def(resolver.db(), );
+        println!("{}", &file_resolver.expand_macro(&macro_call).unwrap())
     }
 
     Ok(())
@@ -1699,6 +1702,7 @@ pub fn scan_crate_with_sinks(
         util::fs::walk_files_with_extension(crate_path, "rs")
     };
 
+    // scan every file 
     for entry in file_iter {
         try_scan_file(
             &crate_name,
@@ -1711,12 +1715,14 @@ pub fn scan_crate_with_sinks(
         );
     }
 
-    for i in scan_results.decl_marco_def.clone().into_keys() {
-        println!("decl_marco_def: {}", i);
-    }
-    for i in scan_results.decl_marco_invoke.keys() {
-        println!("decl_marco_invoke: {}", i);
-    }
+
+
+    // for i in scan_results.decl_marco_def.clone().into_keys() {
+    //     println!("decl_marco_def: {}", i);
+    // }
+    // for i in scan_results.decl_marco_invoke.keys() {
+    //     println!("decl_marco_invoke: {}", i);
+    // }
 
     filter_fn_ptr_effects(&mut scan_results, crate_name);
     scan_results
@@ -1725,6 +1731,101 @@ pub fn scan_crate_with_sinks(
 
     Ok(scan_results)
 }
+
+fn find_macro_calls(syntax: &SyntaxNode) -> Vec<MacroCall> {
+    syntax
+        .descendants()
+        .filter_map(<ra_ap_syntax::ast::MacroCall as AstNode>::cast)
+        .collect()
+}
+
+// fn get_macro_call_loc(db: &dyn ExpandDatabase, macro_id: MacroId) -> MacroCallLoc {
+//     // Use the database query to resolve the MacroCallLoc
+//     return 
+// }
+
+fn macro_def(db: &dyn DefDatabase, id: MacroId) -> MacroDefId {
+    use ra_ap_hir_expand::InFile;
+
+    use ra_ap_hir_def::{Lookup, MacroExpander};
+
+    use ra_ap_hir_expand::MacroDefKind;
+
+    let kind = |expander, file_id, m| {
+        let in_file = InFile::new(file_id, m);
+        match expander {
+            MacroExpander::Declarative => MacroDefKind::Declarative(in_file),
+            MacroExpander::BuiltIn(it) => MacroDefKind::BuiltIn(it, in_file),
+            MacroExpander::BuiltInAttr(it) => MacroDefKind::BuiltInAttr(it, in_file),
+            MacroExpander::BuiltInDerive(it) => MacroDefKind::BuiltInDerive(it, in_file),
+            MacroExpander::BuiltInEager(it) => MacroDefKind::BuiltInEager(it, in_file),
+        }
+    };
+
+    match id {
+        MacroId::Macro2Id(it) => {
+            let loc: Macro2Loc = it.lookup(db);
+
+            let item_tree = loc.id.item_tree(db);
+            let makro = &item_tree[loc.id.value];
+            MacroDefId {
+                krate: loc.container.krate(),
+                kind: kind(loc.expander, loc.id.file_id(), makro.ast_id.upcast()),
+                local_inner: false,
+                allow_internal_unsafe: loc.allow_internal_unsafe
+            }
+        }
+        MacroId::MacroRulesId(it) => {
+            let loc: MacroRulesLoc = it.lookup(db);
+
+            let item_tree = loc.id.item_tree(db);
+            let makro = &item_tree[loc.id.value];
+            MacroDefId {
+                krate: loc.container.krate(),
+                kind: kind(loc.expander, loc.id.file_id(), makro.ast_id.upcast()),
+                local_inner: loc.local_inner,
+                allow_internal_unsafe: loc.allow_internal_unsafe
+            }
+        }
+        MacroId::ProcMacroId(it) => {
+            let loc = it.lookup(db);
+
+            let item_tree = loc.id.item_tree(db);
+            let makro = &item_tree[loc.id.value];
+            MacroDefId {
+                krate: loc.container.krate(),
+                kind: MacroDefKind::ProcMacro(
+                    loc.expander,
+                    loc.kind,
+                    InFile::new(loc.id.file_id(), makro.ast_id),
+        
+                ),
+                local_inner: false,
+                allow_internal_unsafe: false,
+            }
+        }
+    }
+}
+
+// fn resolve_macro_calls(
+//     db: &dyn ExpandDatabase,
+//     file_id: FileId,
+//     macro_calls: Vec<MacroCall>,
+// ) -> Vec<MacroCallId> {
+//     let ast_id_map = db.ast_id_map(file_id.into());
+    
+//     macro_calls
+//         .into_iter()
+//         .filter_map(|macro_call| {
+//             let ast_id = ast_id_map.ast_id(&macro_call);
+//             Some(db.intern_macro_call(MacroCallLoc {
+//                 def: InFile::new(file_id.into(), macro_call.path().and_then(|path| db.resolve_path(file_id, path))?),
+//                 krate: db.crate_id(file_id),
+//                 parent_context: Some(file_id), // Customize based on your setup
+//             }))
+//         })
+//         .collect()
+// }
 
 /// Scan the supplied crate
 pub fn scan_crate(
