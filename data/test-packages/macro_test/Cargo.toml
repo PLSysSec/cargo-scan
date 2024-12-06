@@ -1,0 +1,8 @@
+[package]
+name = "macro_test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+log = "0.4.19"
+wasm-bindgen = { version = "0.2.68", features = ["serde-serialize"] }

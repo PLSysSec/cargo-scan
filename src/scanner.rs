@@ -16,23 +16,19 @@ use super::util;
 use crate::resolution::resolve::{FileResolver, Resolve};
 
 use anyhow::{anyhow, Context, Result};
+use flate2::write;
 use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::{Bfs, EdgeRef};
 use petgraph::Direction;
-use proc_macro2::{Group, TokenStream, TokenTree};
+use proc_macro2::{TokenStream, TokenTree};
 use quote::ToTokens;
-use ra_ap_hir::db::{DefDatabase, ExpandDatabase};
-use ra_ap_hir::{InFile, Macro};
-use ra_ap_hir_def::{Macro2Loc, MacroId, MacroRulesLoc};
-use ra_ap_hir_expand::{MacroCallId, MacroCallLoc, MacroDefId};
-use ra_ap_hir_ty::Cast;
-use ra_ap_ide::{CrateId, RootDatabase};
-use ra_ap_ide_db::base_db::SourceDatabase;
+use ra_ap_hir::db::ExpandDatabase;
+use ra_ap_ide::RootDatabase;
+use ra_ap_ide_db::syntax_helpers::insert_whitespace_into_node::insert_ws_into;
 use ra_ap_syntax::ast::MacroCall;
-use ra_ap_syntax::{AstNode, SyntaxNode};
+use ra_ap_syntax::{AstNode, SyntaxKind, SyntaxNode};
 use ra_ap_vfs::FileId;
-use serde::de::value;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -40,10 +36,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path as FilePath;
 use syn::spanned::Spanned;
-use syn::ForeignItemFn;
-use syn::{
-    ExprMacro, ForeignItemMacro, ImplItemMacro, ItemMacro, StmtMacro, TraitItemMacro,
-};
+use syn::{ForeignItemFn, Token};
 
 /// Results of a scan
 ///
@@ -59,10 +52,6 @@ pub struct ScanResults {
     pub fn_locs: HashMap<CanonicalPath, SrcLoc>,
     pub trait_meths: HashSet<CanonicalPath>,
     fns_with_effects: HashSet<CanonicalPath>,
-
-    pub decl_marco_def: HashMap<proc_macro2::Ident, syn::ItemMacro>,
-    decl_marco_invoke: HashMap<proc_macro2::Ident, SynMacro>,
-    pub macro_expanded: HashMap<proc_macro2::Ident, syn::File>,
 
     pub call_graph: DiGraph<CanonicalPath, SrcLoc>,
     pub node_idxs: HashMap<CanonicalPath, NodeIndex>,
@@ -139,16 +128,6 @@ impl ScanResults {
         let callee_idx = self.update_call_graph(callee);
         self.call_graph.add_edge(caller_idx, callee_idx, loc);
     }
-}
-
-#[derive(Debug)]
-enum SynMacro {
-    ExprMacro(ExprMacro),
-    ItemMacro(ItemMacro),
-    StmtMacro(StmtMacro),
-    ForeignItemMacro(ForeignItemMacro),
-    TraitItemMacro(TraitItemMacro),
-    ImplItemMacro(ImplItemMacro),
 }
 
 #[derive(Debug)]
@@ -258,22 +237,8 @@ where
             syn::Item::Trait(t) => self.scan_trait(t),
             syn::Item::ForeignMod(fm) => self.scan_foreign_mod(fm),
             syn::Item::Macro(m) => {
-                println!("Item Macro: {:#?}", m);
-                // self.data.decl_marco_def.insert(m.ident.as_ref().unwrap().clone(),m.clone());
-                // match m.ident.as_ref() {
-                //     Some(ident) => {
-                //         self.data.decl_marco_def.insert(ident.clone(), m.clone());
-                //     }
-                //     _ => {
-                //         if let Some(ident) = m.mac.path.get_ident() {
-                //             self.data
-                //                 .decl_marco_invoke
-                //                 .insert(ident.clone(), SynMacro::ItemMacro(m.clone()));
-                //         } else {
-                //             self.data.skipped_macros.add(m);
-                //         }
-                //     }
-                // }
+                // println!("Item Macro: {:#?}", m);
+                self.data.skipped_macros.add(m);
             }
             _ => (),
             // For all syntax elements see
@@ -380,14 +345,8 @@ where
         match i {
             syn::ForeignItem::Fn(f) => self.scan_foreign_fn(f),
             syn::ForeignItem::Macro(m) => {
-                println!("Foreign Item Macro: {:#?}", m);
-                if let Some(ident) = m.mac.path.get_ident() {
-                    self.data
-                        .decl_marco_invoke
-                        .insert(ident.clone(), SynMacro::ForeignItemMacro(m.clone()));
-                } else {
-                    self.data.skipped_macros.add(m);
-                }
+                self.data.skipped_macros.add(m);
+                
             }
             other => {
                 self.data.skipped_other.add(other);
@@ -459,17 +418,11 @@ where
                     self.scan_trait_method(m, &t.vis, impls_for_meth);
                 }
                 syn::TraitItem::Macro(m) => {
-                    println!("Trait Item Macro: {:#?}", m);
-                    if let Some(ident) = m.mac.path.get_ident() {
-                        self.data
-                            .decl_marco_invoke
-                            .insert(ident.clone(), SynMacro::TraitItemMacro(m.clone()));
-                    } else {
-                        self.data.skipped_macros.add(m);
-                    }
+                    // println!("Trait Item Macro: {:#?}", m);
+                    self.data.skipped_macros.add(m);
                 }
                 syn::TraitItem::Verbatim(v) => {
-                    self.syn_info("skipping Verbatim expression", v);
+                    // self.syn_info("skipping Verbatim expression", v);
                 }
                 other => {
                     self.data.skipped_other.add(other);
@@ -496,14 +449,8 @@ where
                     self.scan_method(m);
                 }
                 syn::ImplItem::Macro(m) => {
-                    println!("Impl Item Macro: {:#?}", m);
-                    if let Some(ident) = m.mac.path.get_ident() {
-                        self.data
-                            .decl_marco_invoke
-                            .insert(ident.clone(), SynMacro::ImplItemMacro(m.clone()));
-                    } else {
-                        self.data.skipped_macros.add(m);
-                    }
+                    // println!("Impl Item Macro: {:#?}", m);
+                    self.data.skipped_macros.add(m);
                 }
                 syn::ImplItem::Verbatim(v) => {
                     self.syn_info("skipping Verbatim expression", v);
@@ -668,14 +615,8 @@ where
             syn::Stmt::Expr(e, _semi) => self.scan_expr(e),
             syn::Stmt::Item(i) => self.scan_item_in_fn(i),
             syn::Stmt::Macro(m) => {
-                println!("Stmt Macro: {:#?}", m);
-                if let Some(ident) = m.mac.path.get_ident() {
-                    self.data
-                        .decl_marco_invoke
-                        .insert(ident.clone(), SynMacro::StmtMacro(m.clone()));
-                } else {
-                    self.data.skipped_macros.add(m);
-                }
+                // println!("Stmt Macro: {:#?}", m);
+                self.data.skipped_macros.add(m);
             }
         }
     }
@@ -888,14 +829,8 @@ where
                 }
             }
             syn::Expr::Macro(m) => {
-                println!("Expr Macro: {:#?}", m);
-                if let Some(ident) = m.mac.path.get_ident() {
-                    self.data
-                        .decl_marco_invoke
-                        .insert(ident.clone(), SynMacro::ExprMacro(m.clone()));
-                } else {
-                    self.data.skipped_macros.add(m);
-                }
+                // println!("Expr Macro: {:#?}", m);
+                self.data.skipped_macros.add(m);
             }
             syn::Expr::Match(x) => {
                 if self.skip_attrs(&x.attrs) {
@@ -1289,14 +1224,8 @@ where
                 self.scan_expr_call_field(&x.member)
             }
             syn::Expr::Macro(m) => {
-                println!("Expr All Macro: {:#?}", m);
-                if let Some(ident) = m.mac.path.get_ident() {
-                    self.data
-                        .decl_marco_invoke
-                        .insert(ident.clone(), SynMacro::ExprMacro(m.clone()));
-                } else {
-                    self.data.skipped_macros.add(m);
-                }
+                // println!("Expr All Macro: {:#?}", m);
+                self.data.skipped_macros.add(m);
             }
             other => {
                 // anything else could be a function, too -- could return a closure
@@ -1328,243 +1257,6 @@ where
     fn scan_expr_call_method(&mut self, i: &'a syn::Ident) {
         let is_unsafe = self.resolver.resolve_unsafe_ident(i) && self.scope_unsafe > 0;
         self.push_callsite(i, self.resolver.resolve_method(i), None, is_unsafe);
-    }
-
-    pub fn process_macros(&mut self) {
-        for (ident, m) in &self.data.decl_marco_invoke {
-            let res = self.expand_macro_recursively(&ident, &m);
-            match res {
-                Ok(expanded_ast) => {
-                    self.data.macro_expanded.insert(ident.clone(), expanded_ast);
-                }
-                Err(_) => {
-                    self.syn_warning("Failed to expand macro", ident);
-                }
-            }
-        }
-        self.data.decl_marco_invoke.clear();
-        // for (_, ast) in &self.data.macro_expanded {
-        //     for item in &ast.items {
-        //         self.scan_item(item);
-        //     }
-        // }
-    }
-
-    fn expand_macro_recursively(
-        &self,
-        ident: &proc_macro2::Ident,
-        macro_invocation: &SynMacro,
-    ) -> Result<syn::File, syn::Error> {
-        let expanded_code;
-
-        if self.data.decl_marco_def.contains_key(ident) {
-            let macro_decl = self.data.decl_marco_def.get(ident);
-            expanded_code = macro_expand(ident, macro_invocation, macro_decl.unwrap());
-        } else {
-            // todo: if use the imported macro, or macro in prelude, check the dependency.
-            expanded_code = "".to_string();
-            // self.data.skipped_macros.add(macro_invocation);
-        }
-        println!("expaanded ident: {:#?}", ident);
-        println!("expanded code: {}", expanded_code);
-        return syn::parse_file(&expanded_code);
-    }
-}
-
-fn macro_expand(
-    ident: &proc_macro2::Ident,
-    macro_invocation: &SynMacro,
-    macro_decl: &ItemMacro,
-) -> String {
-    let macro_tokens = &macro_decl.mac.tokens;
-    let tokens_iter = macro_tokens.clone().into_iter();
-    let mut pattern = TokenStream::new();
-    let mut replacement = TokenStream::new();
-    let mut in_replacement = false;
-
-    println!("parsing token for macro decl");
-    for token in tokens_iter.clone() {
-        println!("token: {}", token.to_string());
-        if let proc_macro2::TokenTree::Punct(ref punct) = token {
-            if punct.as_char() == '=' {
-                in_replacement = true;
-                continue;
-            }
-        }
-        if in_replacement {
-            replacement.extend(Some(token));
-        } else {
-            pattern.extend(Some(token));
-        }
-    }
-
-    let matched_values;
-    println!("getting matched value");
-    match macro_invocation {
-        SynMacro::TraitItemMacro(trait_item_macro) => {
-            matched_values =
-                match_macro_invocation(pattern, &trait_item_macro.mac.tokens);
-        }
-        SynMacro::ItemMacro(item_macro) => {
-            matched_values = match_macro_invocation(pattern, &item_macro.mac.tokens);
-        }
-        SynMacro::ExprMacro(expr_macro) => {
-            matched_values = match_macro_invocation(pattern, &expr_macro.mac.tokens);
-        }
-        SynMacro::ImplItemMacro(impl_item_macro) => {
-            matched_values = match_macro_invocation(pattern, &impl_item_macro.mac.tokens);
-        }
-        SynMacro::StmtMacro(stmt_macro) => {
-            matched_values = match_macro_invocation(pattern, &stmt_macro.mac.tokens);
-        }
-        SynMacro::ForeignItemMacro(foreign_item_macro) => {
-            matched_values =
-                match_macro_invocation(pattern, &foreign_item_macro.mac.tokens);
-        }
-    }
-    println!("got matched value");
-    for val in matched_values.clone().unwrap().into_keys() {
-        println!("matched value: {}", val);
-    }
-    let macro_content =
-        replacement.into_iter().find(|token| matches!(token, TokenTree::Group(_)));
-    let expanded =
-        substitute_replacement(macro_content.to_token_stream(), matched_values.unwrap())
-            .unwrap()
-            .to_string();
-    expanded
-}
-
-fn match_macro_invocation(
-    pattern: TokenStream,
-    tokens: &TokenStream,
-) -> Result<HashMap<String, Vec<TokenStream>>, String> {
-    let mut values = HashMap::new();
-    let mut tokens_iter = tokens.clone().into_iter();
-
-    for pattern_token in pattern {
-        match pattern_token {
-            TokenTree::Group(group) => {
-                let inner_tokens = group.stream();
-                let mut inner_iter = inner_tokens.into_iter();
-
-                while let Some(inner_token) = inner_iter.next() {
-                    match inner_token {
-                        TokenTree::Punct(punct) if punct.as_char() == '$' => {
-                            // Look for an identifier following `$`
-                            if let Some(TokenTree::Ident(ident)) = inner_iter.next() {
-                                // Capture the corresponding token from the invocation
-                                let mut value_tokens = Vec::new();
-                                if let Some(value_token) = tokens_iter.next() {
-                                    value_tokens.push(value_token.to_token_stream());
-                                    if value_token.to_string() == "mod" {
-                                        let value_token2 = tokens_iter.next().unwrap();
-                                        value_tokens.push(value_token2.to_token_stream());
-                                        values.insert(ident.to_string(), value_tokens);
-                                    } else {
-                                        values.insert(ident.to_string(), value_tokens);
-                                    }
-                                } else {
-                                    return Err(
-                                        "Mismatched invocation for pattern".into()
-                                    );
-                                }
-
-                                // Skip over pattern specifiers (e.g., `:expr`) if present
-                                if let Some(TokenTree::Punct(colon)) = inner_iter.next() {
-                                    if colon.as_char() == ':' {
-                                        inner_iter.next();
-                                    }
-                                }
-                            }
-                        }
-                        // Skip non-placeholder tokens (like commas and other delimiters)
-                        _ => {
-                            tokens_iter.next();
-                        }
-                    }
-                }
-            }
-            _ => {
-                tokens_iter.next();
-            }
-        }
-    }
-
-    Ok(values)
-}
-
-fn substitute_replacement(
-    replacement: TokenStream,
-    values: HashMap<String, Vec<TokenStream>>,
-) -> Result<TokenStream, String> {
-    let mut expanded = TokenStream::new();
-    let mut replacement_iter = replacement.into_iter();
-
-    while let Some(token) = replacement_iter.next() {
-        match token {
-            TokenTree::Punct(punct) if punct.as_char() == '$' => {
-                // Check if `$` is followed by a placeholder identifier
-                if let Some(TokenTree::Ident(ident)) = replacement_iter.next() {
-                    if let Some(value) = values.get(&ident.to_string()) {
-                        expanded.extend(value.clone().into_iter());
-                        continue;
-                    }
-                }
-            }
-            TokenTree::Group(group) => {
-                // Recursively expand within groups
-                let inner_stream =
-                    substitute_replacement(group.stream(), values.clone())?;
-                let mut new_group = Group::new(group.delimiter(), inner_stream);
-                new_group.set_span(group.span());
-                expanded.extend(Some(TokenTree::Group(new_group)));
-            }
-            _ => {
-                expanded.extend(Some(token));
-            }
-        }
-    }
-
-    Ok(expanded)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use syn::{parse_quote, ItemMacro};
-
-    #[test]
-    fn test_expand_declarative_macro() {
-        // Define a simple declarative macro as `macro_rules! example { ($arg:expr) => { $arg }; }`
-
-        let macro_def: ItemMacro = parse_quote! {
-            macro_rules! multiply_add {
-                ($a:expr, $b:expr, $c:expr) => {$a * ($b + $c)};
-            }
-        };
-
-        let invocation_stmt: syn::Stmt = parse_quote! {
-            multiply_add!(2,9,1);
-        };
-
-        // Extract the macro from the statement
-        let invocation_mac = match invocation_stmt {
-            syn::Stmt::Macro(stmt_macro) => stmt_macro,
-            _ => panic!("Expected a Stmt::Macro"),
-        };
-
-        let invocation = SynMacro::StmtMacro(invocation_mac.clone());
-        // Expand the macro invocation
-        println!("Entering macro_expand");
-        let expanded = macro_expand(
-            &macro_def.ident.clone().unwrap(),
-            &invocation,
-            &macro_def.clone(),
-        );
-
-        // Assert that the expansion is as expected
-        assert_eq!(expanded, "{ 2 * (9 + 1) }");
     }
 }
 
@@ -1610,32 +1302,132 @@ pub fn scan_file(
     let syntax_tree = syn::parse_file(&src)?;
 
     // Initialize resolver
+    let current_file_id =
+        resolver.find_file_id(&filepath).context("cannot find current file id")?;
+    let syntax = resolver.db().parse_or_expand(current_file_id.into());
+    let file_resolver_expand = FileResolver::new(crate_name, resolver, filepath)?;
     let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
 
     // Initialize scanner
     let mut scanner = Scanner::new(filepath, file_resolver, scan_results, enabled_cfg);
     scanner.add_sinks(sinks);
 
-    // Scan file contents
-    // scanner.scan_file(&syntax_tree);
-    let macro_expanded = scanner.data.macro_expanded.clone();
-    // for (_, macro_file) in &macro_expanded {
-    //     for item in &macro_file.items {
-    //         scanner.scan_item(item);
-    //     }
-    // }
-    let current_file_id = resolver.find_file_id(&filepath).context("cannot find current file id")?;
-    let syntax = resolver.db().parse_or_expand(current_file_id.into());
-    
-    let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
+    let mut expanded_files: Vec<syn::File> = Vec::new();
+    let mut expanded_items: Vec<syn::Item> = Vec::new();
+    let mut expanded_stmts: Vec<syn::Stmt> = Vec::new();
+    let mut expanded_exprs: Vec<syn::Expr> = Vec::new();
+    let mut expanded_blocks: Vec<syn::Block> = Vec::new();
+
     for macro_call in find_macro_calls(&syntax) {
-        // println!("{:#}", macro_call)
-        // let macro_id = &file_resolver.resolve_macro_call(&macro_call).context("cannot find current macro call's macroid")?;
-        // let def_id = macro_def(resolver.db(), );
-        println!("{}", &file_resolver.expand_macro(&macro_call).unwrap())
+        // println!("original macro call node: {:#?}", &macro_call);
+        if let Some(expanded_syntax_node) = file_resolver_expand.expand_macro(&macro_call)
+        {
+            let expansion = format(
+                resolver.db(),
+                macro_call
+                    .syntax()
+                    .parent()
+                    .map(|it| it.kind())
+                    .unwrap_or(SyntaxKind::MACRO_ITEMS),
+                current_file_id,
+                expanded_syntax_node,
+            );
+            // println!("expanded syntax node: {}", expansion);
+
+            // match all possible parsed syntax tree
+            match try_parse_expansion(&expansion) {
+                Ok(ParseResult::File(parsed_file)) => {
+                    expanded_files.push(parsed_file);
+                }
+                Ok(ParseResult::Item(parsed_item)) => {
+                    expanded_items.push(parsed_item);
+                }
+                Ok(ParseResult::Stmt(parsed_stmt)) => {
+                    println!("Parsed as statement: {}", expansion);
+                    expanded_stmts.push(parsed_stmt);
+                }
+                Ok(ParseResult::Expr(parsed_expr)) => {
+                    expanded_exprs.push(parsed_expr);
+                    // println!("Parsed as expression: {:?}", parsed_expr);
+                }
+                Ok(ParseResult::Block(parsed_block)) => {
+                    expanded_blocks.push(parsed_block);
+                    // println!("Parsed as block: {:?}", parsed_block);
+                }
+                Err(e) => {
+                    println!("Failed to parse expansion: {}", e);
+                    println!("Original macro call: {}; parent kind: {:#?}", macro_call, macro_call.syntax().parent().map(|it| it.kind()).unwrap_or(SyntaxKind::MACRO_ITEMS));
+                    println!("Expanded code: {}", expansion);
+                }
+            }
+        }
+    }
+    scanner.scan_file(&syntax_tree);
+    for i in 0..expanded_files.len() {
+        scanner.scan_file(&expanded_files[i]);
     }
 
+    for i in 0..expanded_items.len() {
+        scanner.scan_item(&expanded_items[i]);
+    }
+
+    for i in 0..expanded_stmts.len() {
+        println!("Scanning statement: {:#?}", expanded_stmts[i]);
+        scanner.scan_fn_statement(&expanded_stmts[i]);
+    }
+
+    for i in 0..expanded_exprs.len() {
+        println!("Scanning expression: {:#?}", expanded_exprs[i]);
+        scanner.scan_expr(&expanded_exprs[i]);
+    }
     Ok(())
+}
+
+/// Enum to represent the possible parsing results
+enum ParseResult {
+    File(syn::File),
+    Item(syn::Item),
+    Stmt(syn::Stmt),
+    Expr(syn::Expr),
+    Block(syn::Block),
+}
+
+/// Try to parse the given string into different `syn` types
+fn try_parse_expansion(expansion: &str) -> Result<ParseResult> {
+    let mut error: Vec<_> = Vec::new();
+
+    // Attempt parsing as a full file
+    if let Ok(parsed_file) = syn::parse_file(expansion) {
+        return Ok(ParseResult::File(parsed_file));
+    }
+    error.push(syn::parse_file(expansion).err());
+
+    // Attempt parsing as a single item
+    if let Ok(parsed_item) = syn::parse_str::<syn::Item>(expansion) {
+        return Ok(ParseResult::Item(parsed_item));
+    }
+    error.push(syn::parse_str::<syn::Item>(expansion).err());
+
+    // Attempt parsing as a statement
+    if let Ok(parsed_stmt) = syn::parse_str::<syn::Stmt>(expansion) {
+        return Ok(ParseResult::Stmt(parsed_stmt));
+    }
+    error.push(syn::parse_str::<syn::Stmt>(expansion).err());
+
+    // Attempt parsing as an expression
+    if let Ok(parsed_expr) = syn::parse_str::<syn::Expr>(expansion) {
+        return Ok(ParseResult::Expr(parsed_expr));
+    }
+    error.push(syn::parse_str::<syn::Expr>(expansion).err());
+
+    // Attempt parsing as a Block
+    if let Ok(parsed_block) = syn::parse_str::<syn::Block>(expansion) {
+        return Ok(ParseResult::Block(parsed_block));
+    }
+    error.push(syn::parse_str::<syn::Block>(expansion).err());
+
+    // If none of the parsers worked, return the raw input for debugging
+    Err(anyhow!("Failed to parse expansion: {:#?}", error))
 }
 
 /// Try to run scan_file, reporting any errors back to the user
@@ -1702,7 +1494,7 @@ pub fn scan_crate_with_sinks(
         util::fs::walk_files_with_extension(crate_path, "rs")
     };
 
-    // scan every file 
+    // scan every file
     for entry in file_iter {
         try_scan_file(
             &crate_name,
@@ -1714,15 +1506,6 @@ pub fn scan_crate_with_sinks(
             quick_mode,
         );
     }
-
-
-
-    // for i in scan_results.decl_marco_def.clone().into_keys() {
-    //     println!("decl_marco_def: {}", i);
-    // }
-    // for i in scan_results.decl_marco_invoke.keys() {
-    //     println!("decl_marco_invoke: {}", i);
-    // }
 
     filter_fn_ptr_effects(&mut scan_results, crate_name);
     scan_results
@@ -1739,92 +1522,67 @@ fn find_macro_calls(syntax: &SyntaxNode) -> Vec<MacroCall> {
         .collect()
 }
 
-// fn get_macro_call_loc(db: &dyn ExpandDatabase, macro_id: MacroId) -> MacroCallLoc {
-//     // Use the database query to resolve the MacroCallLoc
-//     return 
-// }
+// fn macro_def(db: &dyn DefDatabase, id: MacroId) -> MacroDefId {
+//     use ra_ap_hir_expand::InFile;
 
-fn macro_def(db: &dyn DefDatabase, id: MacroId) -> MacroDefId {
-    use ra_ap_hir_expand::InFile;
+//     use ra_ap_hir_def::{Lookup, MacroExpander};
 
-    use ra_ap_hir_def::{Lookup, MacroExpander};
+//     use ra_ap_hir_expand::MacroDefKind;
 
-    use ra_ap_hir_expand::MacroDefKind;
+//     let kind = |expander, file_id, m| {
+//         let in_file = InFile::new(file_id, m);
+//         match expander {
+//             MacroExpander::Declarative => MacroDefKind::Declarative(in_file),
+//             MacroExpander::BuiltIn(it) => MacroDefKind::BuiltIn(it, in_file),
+//             MacroExpander::BuiltInAttr(it) => MacroDefKind::BuiltInAttr(it, in_file),
+//             MacroExpander::BuiltInDerive(it) => MacroDefKind::BuiltInDerive(it, in_file),
+//             MacroExpander::BuiltInEager(it) => MacroDefKind::BuiltInEager(it, in_file),
+//         }
+//     };
 
-    let kind = |expander, file_id, m| {
-        let in_file = InFile::new(file_id, m);
-        match expander {
-            MacroExpander::Declarative => MacroDefKind::Declarative(in_file),
-            MacroExpander::BuiltIn(it) => MacroDefKind::BuiltIn(it, in_file),
-            MacroExpander::BuiltInAttr(it) => MacroDefKind::BuiltInAttr(it, in_file),
-            MacroExpander::BuiltInDerive(it) => MacroDefKind::BuiltInDerive(it, in_file),
-            MacroExpander::BuiltInEager(it) => MacroDefKind::BuiltInEager(it, in_file),
-        }
-    };
+//     match id {
+//         MacroId::Macro2Id(it) => {
+//             let loc: Macro2Loc = it.lookup(db);
 
-    match id {
-        MacroId::Macro2Id(it) => {
-            let loc: Macro2Loc = it.lookup(db);
+//             let item_tree = loc.id.item_tree(db);
+//             let makro = &item_tree[loc.id.value];
+//             MacroDefId {
+//                 krate: loc.container.krate(),
+//                 kind: kind(loc.expander, loc.id.file_id(), makro.ast_id.upcast()),
+//                 local_inner: false,
+//                 allow_internal_unsafe: loc.allow_internal_unsafe
+//             }
+//         }
+//         MacroId::MacroRulesId(it) => {
+//             let loc: MacroRulesLoc = it.lookup(db);
 
-            let item_tree = loc.id.item_tree(db);
-            let makro = &item_tree[loc.id.value];
-            MacroDefId {
-                krate: loc.container.krate(),
-                kind: kind(loc.expander, loc.id.file_id(), makro.ast_id.upcast()),
-                local_inner: false,
-                allow_internal_unsafe: loc.allow_internal_unsafe
-            }
-        }
-        MacroId::MacroRulesId(it) => {
-            let loc: MacroRulesLoc = it.lookup(db);
+//             let item_tree = loc.id.item_tree(db);
+//             let makro = &item_tree[loc.id.value];
+//             MacroDefId {
+//                 krate: loc.container.krate(),
+//                 kind: kind(loc.expander, loc.id.file_id(), makro.ast_id.upcast()),
+//                 local_inner: loc.local_inner,
+//                 allow_internal_unsafe: loc.allow_internal_unsafe
+//             }
+//         }
+//         MacroId::ProcMacroId(it) => {
+//             let loc = it.lookup(db);
 
-            let item_tree = loc.id.item_tree(db);
-            let makro = &item_tree[loc.id.value];
-            MacroDefId {
-                krate: loc.container.krate(),
-                kind: kind(loc.expander, loc.id.file_id(), makro.ast_id.upcast()),
-                local_inner: loc.local_inner,
-                allow_internal_unsafe: loc.allow_internal_unsafe
-            }
-        }
-        MacroId::ProcMacroId(it) => {
-            let loc = it.lookup(db);
+//             let item_tree = loc.id.item_tree(db);
+//             let makro = &item_tree[loc.id.value];
+//             MacroDefId {
+//                 krate: loc.container.krate(),
+//                 kind: MacroDefKind::ProcMacro(
+//                     loc.expander,
+//                     loc.kind,
+//                     InFile::new(loc.id.file_id(), makro.ast_id),
 
-            let item_tree = loc.id.item_tree(db);
-            let makro = &item_tree[loc.id.value];
-            MacroDefId {
-                krate: loc.container.krate(),
-                kind: MacroDefKind::ProcMacro(
-                    loc.expander,
-                    loc.kind,
-                    InFile::new(loc.id.file_id(), makro.ast_id),
-        
-                ),
-                local_inner: false,
-                allow_internal_unsafe: false,
-            }
-        }
-    }
-}
-
-// fn resolve_macro_calls(
-//     db: &dyn ExpandDatabase,
-//     file_id: FileId,
-//     macro_calls: Vec<MacroCall>,
-// ) -> Vec<MacroCallId> {
-//     let ast_id_map = db.ast_id_map(file_id.into());
-    
-//     macro_calls
-//         .into_iter()
-//         .filter_map(|macro_call| {
-//             let ast_id = ast_id_map.ast_id(&macro_call);
-//             Some(db.intern_macro_call(MacroCallLoc {
-//                 def: InFile::new(file_id.into(), macro_call.path().and_then(|path| db.resolve_path(file_id, path))?),
-//                 krate: db.crate_id(file_id),
-//                 parent_context: Some(file_id), // Customize based on your setup
-//             }))
-//         })
-//         .collect()
+//                 ),
+//                 local_inner: false,
+//                 allow_internal_unsafe: false,
+//             }
+//         }
+//     }
 // }
 
 /// Scan the supplied crate
@@ -1869,4 +1627,69 @@ fn check_fn_for_effects(scan_results: &ScanResults, fn_: &CanonicalPath) -> bool
     }
 
     false
+}
+
+fn format(
+    db: &RootDatabase,
+    kind: SyntaxKind,
+    file_id: FileId,
+    expanded: SyntaxNode,
+) -> String {
+    let expansion = insert_ws_into(expanded).to_string();
+
+    _format(db, kind, file_id, &expansion).unwrap_or(expansion)
+}
+
+fn _format(
+    db: &RootDatabase,
+    kind: SyntaxKind,
+    file_id: FileId,
+    expansion: &str,
+) -> Option<String> {
+    use ra_ap_ide_db::base_db::{FileLoader, SourceDatabase};
+    // hack until we get hygiene working (same character amount to preserve formatting as much as possible)
+    const DOLLAR_CRATE_REPLACE: &str = "__r_a_";
+    let expansion = expansion.replace("$crate", DOLLAR_CRATE_REPLACE);
+    let (prefix, suffix) = match kind {
+        SyntaxKind::MACRO_PAT => ("fn __(", ": u32);"),
+        SyntaxKind::MACRO_EXPR | SyntaxKind::MACRO_STMTS => ("fn __() {", "}"),
+        SyntaxKind::MACRO_TYPE => ("type __ =", ";"),
+        _ => ("", ""),
+    };
+    let expansion = format!("{prefix}{expansion}{suffix}");
+
+    let &crate_id = db.relevant_crates(file_id).iter().next()?;
+    let edition = db.crate_graph()[crate_id].edition;
+
+    let mut cmd = std::process::Command::new(ra_ap_toolchain::rustfmt());
+    cmd.arg("--edition");
+    cmd.arg(edition.to_string());
+
+    let mut rustfmt = cmd
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .ok()?;
+
+    std::io::Write::write_all(&mut rustfmt.stdin.as_mut()?, expansion.as_bytes()).ok()?;
+
+    let output = rustfmt.wait_with_output().ok()?;
+    let captured_stdout = String::from_utf8(output.stdout).ok()?;
+
+    if output.status.success() && !captured_stdout.trim().is_empty() {
+        // let output = captured_stdout.replace(DOLLAR_CRATE_REPLACE, "$crate");
+        let output = captured_stdout.trim().strip_prefix(prefix)?;
+        let output = match kind {
+            SyntaxKind::MACRO_PAT => output
+                .strip_suffix(suffix)
+                .or_else(|| output.strip_suffix(": u32,\n);"))?,
+            _ => output.strip_suffix(suffix)?,
+        };
+        let trim_indent = ra_ap_stdx::trim_indent(output);
+        // tracing::debug!("expand_macro: formatting succeeded");
+        Some(trim_indent)
+    } else {
+        None
+    }
 }
