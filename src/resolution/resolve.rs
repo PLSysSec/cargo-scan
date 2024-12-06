@@ -11,7 +11,6 @@ use crate::ident::{CanonicalPath, CanonicalType, Ident};
 
 use anyhow::Result;
 use log::debug;
-use ra_ap_hir::Macro;
 use ra_ap_syntax::ast::MacroCall;
 use ra_ap_syntax::SyntaxNode;
 use std::fmt::Display;

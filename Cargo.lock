@@ -431,6 +431,7 @@ dependencies = [
  "ra_ap_project_model",
  "ra_ap_stdx",
  "ra_ap_syntax",
+ "ra_ap_text_edit",
  "ra_ap_toolchain",
  "ra_ap_vfs",
  "regex",

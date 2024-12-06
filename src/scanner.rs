@@ -1294,13 +1294,12 @@ pub fn scan_file(
     enabled_cfg: &HashMap<String, Vec<String>>,
 ) -> Result<()> {
     debug!("Scanning file: {:?}", filepath);
-
+    
     // Load file contents
     let mut file = File::open(filepath)?;
     let mut src = String::new();
     file.read_to_string(&mut src)?;
-    let syntax_tree = syn::parse_file(&src)?;
-
+    //let syntax_tree = syn::parse_file(&src)?;
     // Initialize resolver
     let current_file_id =
         resolver.find_file_id(&filepath).context("cannot find current file id")?;
@@ -1466,7 +1465,6 @@ pub fn scan_crate_with_sinks(
     if !crate_path.is_dir() {
         return Err(anyhow!("Path is not a crate; not a directory: {:?}", crate_path));
     }
-
     let mut cargo_toml_path = crate_path.to_path_buf();
     cargo_toml_path.push("Cargo.toml");
     if !cargo_toml_path.try_exists()? || !cargo_toml_path.is_file() {
