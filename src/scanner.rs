@@ -26,7 +26,7 @@ use quote::ToTokens;
 use ra_ap_hir::db::ExpandDatabase;
 use ra_ap_ide::RootDatabase;
 use ra_ap_ide_db::syntax_helpers::insert_whitespace_into_node::insert_ws_into;
-use ra_ap_syntax::ast::MacroCall;
+use ra_ap_syntax::ast::{HasName, MacroCall, PathSegmentKind};
 use ra_ap_syntax::{AstNode, SyntaxKind, SyntaxNode};
 use ra_ap_vfs::FileId;
 use std::collections::HashMap;
@@ -101,7 +101,7 @@ impl ScanResults {
 
     pub fn add_fn_dec(&mut self, f: FnDec) {
         let fn_name = f.fn_name;
-
+        println!("fn_name {}",fn_name);
         // Update call graph
         self.update_call_graph(&fn_name);
 
@@ -237,7 +237,6 @@ where
             syn::Item::Trait(t) => self.scan_trait(t),
             syn::Item::ForeignMod(fm) => self.scan_foreign_mod(fm),
             syn::Item::Macro(m) => {
-                // println!("Item Macro: {:#?}", m);
                 self.data.skipped_macros.add(m);
             }
             _ => (),
@@ -418,7 +417,6 @@ where
                     self.scan_trait_method(m, &t.vis, impls_for_meth);
                 }
                 syn::TraitItem::Macro(m) => {
-                    // println!("Trait Item Macro: {:#?}", m);
                     self.data.skipped_macros.add(m);
                 }
                 syn::TraitItem::Verbatim(v) => {
@@ -449,7 +447,6 @@ where
                     self.scan_method(m);
                 }
                 syn::ImplItem::Macro(m) => {
-                    // println!("Impl Item Macro: {:#?}", m);
                     self.data.skipped_macros.add(m);
                 }
                 syn::ImplItem::Verbatim(v) => {
@@ -615,7 +612,6 @@ where
             syn::Stmt::Expr(e, _semi) => self.scan_expr(e),
             syn::Stmt::Item(i) => self.scan_item_in_fn(i),
             syn::Stmt::Macro(m) => {
-                // println!("Stmt Macro: {:#?}", m);
                 self.data.skipped_macros.add(m);
             }
         }
@@ -829,7 +825,6 @@ where
                 }
             }
             syn::Expr::Macro(m) => {
-                // println!("Expr Macro: {:#?}", m);
                 self.data.skipped_macros.add(m);
             }
             syn::Expr::Match(x) => {
@@ -1137,9 +1132,10 @@ where
     where
         S: Debug + Spanned,
     {
-        let caller = if eff_type.is_ffi_decl() {
+        let caller: &CanonicalPath = if eff_type.is_ffi_decl() {
             &callee
         } else {
+            
             let containing_fn = self.scope_fns.last().expect("not inside a function!");
             &containing_fn.fn_name
         };
@@ -1224,7 +1220,6 @@ where
                 self.scan_expr_call_field(&x.member)
             }
             syn::Expr::Macro(m) => {
-                // println!("Expr All Macro: {:#?}", m);
                 self.data.skipped_macros.add(m);
             }
             other => {
@@ -1299,7 +1294,7 @@ pub fn scan_file(
     let mut file = File::open(filepath)?;
     let mut src = String::new();
     file.read_to_string(&mut src)?;
-    //let syntax_tree = syn::parse_file(&src)?;
+    let syntax_tree = syn::parse_file(&src)?;
     // Initialize resolver
     let current_file_id =
         resolver.find_file_id(&filepath).context("cannot find current file id")?;
@@ -1317,8 +1312,41 @@ pub fn scan_file(
     let mut expanded_exprs: Vec<syn::Expr> = Vec::new();
     let mut expanded_blocks: Vec<syn::Block> = Vec::new();
 
+    let ignored_macros: HashSet<&str> = [
+        "println", "eprintln", "dbg",
+        "assert", "assert_eq", "assert_ne",
+        "debug_assert", "debug_assert_eq", "debug_assert_ne",
+        "todo", "unimplemented",
+        "cfg", "cfg_attr", "compile_error",
+        "info", "warn", "error", "trace", "debug",
+        "json", "Serialize", "Deserialize",
+        "tracing", "tracing::info", "tracing::warn", "tracing::debug", "tracing::trace",
+        "arg", "command",
+        "test", "bench",
+        "vec",
+    ]
+    .iter()
+    .cloned()
+    .collect();
+    
     for macro_call in find_macro_calls(&syntax) {
-        // println!("original macro call node: {:#?}", &macro_call);
+        if let Some(macro_name) = MacroCall::cast(macro_call.syntax().clone())
+            .and_then(|mc| mc.path())
+            .and_then(|path| path.segment())
+            .and_then(|segment| match segment.kind().unwrap() {
+                PathSegmentKind::Name(name_ref) => Some(name_ref.text().to_string()),
+                _ => None,
+            })
+        {
+            let macro_name = macro_name.as_str();
+            if ignored_macros.contains(macro_name) {
+                println!("Ignored macro call: {}", macro_name);
+                continue;
+            }
+        }
+
+        let canonical_path =get_canonical_path_from_ast(macro_call.syntax());
+        println!("canonical_path : {}", canonical_path.unwrap());
         if let Some(expanded_syntax_node) = file_resolver_expand.expand_macro(&macro_call)
         {
             let expansion = format(
@@ -1331,14 +1359,15 @@ pub fn scan_file(
                 current_file_id,
                 expanded_syntax_node,
             );
-            // println!("expanded syntax node: {}", expansion);
-
+            println!("expanded string: {}",expansion);
             // match all possible parsed syntax tree
             match try_parse_expansion(&expansion) {
                 Ok(ParseResult::File(parsed_file)) => {
+                    println!("Parsed as parsed_file: {:#?}", parsed_file);
                     expanded_files.push(parsed_file);
                 }
                 Ok(ParseResult::Item(parsed_item)) => {
+                    println!("Parsed as parsed_item: {:#?}", parsed_item);
                     expanded_items.push(parsed_item);
                 }
                 Ok(ParseResult::Stmt(parsed_stmt)) => {
@@ -1346,10 +1375,12 @@ pub fn scan_file(
                     expanded_stmts.push(parsed_stmt);
                 }
                 Ok(ParseResult::Expr(parsed_expr)) => {
+                    println!("Parsed as parsed_expr: {:#?}", parsed_expr);
                     expanded_exprs.push(parsed_expr);
                     // println!("Parsed as expression: {:?}", parsed_expr);
                 }
                 Ok(ParseResult::Block(parsed_block)) => {
+                    println!("Parsed as parsed_block: {:#?}", parsed_block);
                     expanded_blocks.push(parsed_block);
                     // println!("Parsed as block: {:?}", parsed_block);
                 }
@@ -1690,4 +1721,41 @@ fn _format(
     } else {
         None
     }
+}
+
+
+/// Get the canonical path of a function, method, or module containing the macro call.
+pub fn get_canonical_path_from_ast(macro_call: &SyntaxNode) -> Option<String> {
+    let mut current_node = macro_call.clone();
+    let mut path_components = Vec::new();
+
+    while let Some(parent) = current_node.parent() {
+        current_node = parent;
+
+        // Case 1: Macro inside a function
+        if let Some(func) = ra_ap_syntax::ast::Fn::cast(current_node.clone()) {
+            if let Some(name) = func.name() {
+                path_components.push(name.text().to_string());
+                break; // Stop at the function level
+            }
+        }
+
+        // Case 2: Macro inside an `impl` block (method)
+        if let Some(impl_block) = ra_ap_syntax::ast::Impl::cast(current_node.clone()) {
+            if let Some(ty) = impl_block.self_ty() {
+                path_components.push(ty.syntax().text().to_string());
+            }
+        }
+
+        // Case 3: Macro at module level
+        if let Some(module) = ra_ap_syntax::ast::Module::cast(current_node.clone()) {
+            if let Some(name) = module.name() {
+                path_components.push(name.text().to_string());
+            }
+        }
+    }
+
+    path_components.push("crate".to_string());
+    path_components.reverse();
+    Some(path_components.join("::"))
 }
