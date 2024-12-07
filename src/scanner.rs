@@ -16,7 +16,6 @@ use super::util;
 use crate::resolution::resolve::{FileResolver, Resolve};
 
 use anyhow::{anyhow, Context, Result};
-use flate2::write;
 use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::{Bfs, EdgeRef};
@@ -26,7 +25,7 @@ use quote::ToTokens;
 use ra_ap_hir::db::ExpandDatabase;
 use ra_ap_ide::RootDatabase;
 use ra_ap_ide_db::syntax_helpers::insert_whitespace_into_node::insert_ws_into;
-use ra_ap_syntax::ast::{HasName, MacroCall, PathSegmentKind};
+use ra_ap_syntax::ast::{HasName, MacroCall};
 use ra_ap_syntax::{AstNode, SyntaxKind, SyntaxNode};
 use ra_ap_vfs::FileId;
 use std::collections::HashMap;
@@ -36,7 +35,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path as FilePath;
 use syn::spanned::Spanned;
-use syn::{ForeignItemFn, Token};
+use syn::ForeignItemFn;
 
 /// Results of a scan
 ///
@@ -101,7 +100,6 @@ impl ScanResults {
 
     pub fn add_fn_dec(&mut self, f: FnDec) {
         let fn_name = f.fn_name;
-        println!("fn_name {}",fn_name);
         // Update call graph
         self.update_call_graph(&fn_name);
 
@@ -167,6 +165,8 @@ where
 
     /// The set of enabled cfg options for this crate.
     enabled_cfg: &'a HashMap<String, Vec<String>>,
+
+    current_macro_context: Option<String>,
 }
 
 impl<'a, R> Scanner<'a, R>
@@ -194,6 +194,7 @@ where
             data,
             sinks: Sink::default_sinks(),
             enabled_cfg,
+            current_macro_context: None,
         }
     }
 
@@ -419,7 +420,7 @@ where
                 syn::TraitItem::Macro(m) => {
                     self.data.skipped_macros.add(m);
                 }
-                syn::TraitItem::Verbatim(v) => {
+                syn::TraitItem::Verbatim(_v) => {
                     // self.syn_info("skipping Verbatim expression", v);
                 }
                 other => {
@@ -1132,12 +1133,13 @@ where
     where
         S: Debug + Spanned,
     {
-        let caller: &CanonicalPath = if eff_type.is_ffi_decl() {
-            &callee
+        let caller: CanonicalPath = if let Some(ref macro_context) = self.current_macro_context {
+            CanonicalPath::new(&macro_context.clone())
+        } else if eff_type.is_ffi_decl() {
+            callee.clone()
         } else {
-            
             let containing_fn = self.scope_fns.last().expect("not inside a function!");
-            &containing_fn.fn_name
+            containing_fn.fn_name.clone()
         };
 
         let eff = EffectInstance::new_effect(
@@ -1173,10 +1175,14 @@ where
     ) where
         S: Debug + Spanned,
     {
-        let containing_fn = self.scope_fns.last().expect("not inside a function!");
-        let caller = &containing_fn.fn_name;
+        let caller: CanonicalPath = if let Some(ref macro_context) = self.current_macro_context {
+            CanonicalPath::new(&macro_context.clone())
+        } else {
+            let containing_fn = self.scope_fns.last().expect("not inside a function!");
+            containing_fn.fn_name.clone()
+        };
         self.data.add_call(
-            caller,
+            &caller,
             &callee,
             SrcLoc::from_span(self.filepath, &callee_span.span()),
         );
@@ -1306,11 +1312,11 @@ pub fn scan_file(
     let mut scanner = Scanner::new(filepath, file_resolver, scan_results, enabled_cfg);
     scanner.add_sinks(sinks);
 
-    let mut expanded_files: Vec<syn::File> = Vec::new();
-    let mut expanded_items: Vec<syn::Item> = Vec::new();
-    let mut expanded_stmts: Vec<syn::Stmt> = Vec::new();
-    let mut expanded_exprs: Vec<syn::Expr> = Vec::new();
-    let mut expanded_blocks: Vec<syn::Block> = Vec::new();
+    let mut expanded_files: Vec<(syn::File, String)> = Vec::new();
+    let mut expanded_items: Vec<(syn::Item, String)> = Vec::new();
+    let mut expanded_stmts: Vec<(syn::Stmt, String)> = Vec::new();
+    let mut expanded_exprs: Vec<(syn::Expr, String)> = Vec::new();
+    let mut expanded_blocks: Vec<(syn::Block, String)> = Vec::new();
 
     let ignored_macros: HashSet<&str> = [
         "println", "eprintln", "dbg",
@@ -1328,25 +1334,21 @@ pub fn scan_file(
     .iter()
     .cloned()
     .collect();
-    
+
     for macro_call in find_macro_calls(&syntax) {
-        if let Some(macro_name) = MacroCall::cast(macro_call.syntax().clone())
-            .and_then(|mc| mc.path())
-            .and_then(|path| path.segment())
-            .and_then(|segment| match segment.kind().unwrap() {
-                PathSegmentKind::Name(name_ref) => Some(name_ref.text().to_string()),
-                _ => None,
-            })
-        {
-            let macro_name = macro_name.as_str();
-            if ignored_macros.contains(macro_name) {
+        if let Some(path) = macro_call.path() {
+            let macro_name = path.syntax().text().to_string();
+            if ignored_macros.contains(macro_name.as_str()) {
                 println!("Ignored macro call: {}", macro_name);
                 continue;
             }
+        } else {
+            println!("Failed to resolve macro path.");
         }
-
-        let canonical_path =get_canonical_path_from_ast(macro_call.syntax());
-        println!("canonical_path : {}", canonical_path.unwrap());
+        let canonical_path = match get_canonical_path_from_ast(macro_call.syntax()) {
+            Some(path) => path,       
+            None => continue,     
+        };
         if let Some(expanded_syntax_node) = file_resolver_expand.expand_macro(&macro_call)
         {
             let expansion = format(
@@ -1359,30 +1361,22 @@ pub fn scan_file(
                 current_file_id,
                 expanded_syntax_node,
             );
-            println!("expanded string: {}",expansion);
             // match all possible parsed syntax tree
             match try_parse_expansion(&expansion) {
                 Ok(ParseResult::File(parsed_file)) => {
-                    println!("Parsed as parsed_file: {:#?}", parsed_file);
-                    expanded_files.push(parsed_file);
+                    expanded_files.push((parsed_file, canonical_path.clone()));
                 }
                 Ok(ParseResult::Item(parsed_item)) => {
-                    println!("Parsed as parsed_item: {:#?}", parsed_item);
-                    expanded_items.push(parsed_item);
+                    expanded_items.push((parsed_item, canonical_path.clone()));
                 }
                 Ok(ParseResult::Stmt(parsed_stmt)) => {
-                    println!("Parsed as statement: {}", expansion);
-                    expanded_stmts.push(parsed_stmt);
+                    expanded_stmts.push((parsed_stmt, canonical_path.clone()));
                 }
                 Ok(ParseResult::Expr(parsed_expr)) => {
-                    println!("Parsed as parsed_expr: {:#?}", parsed_expr);
-                    expanded_exprs.push(parsed_expr);
-                    // println!("Parsed as expression: {:?}", parsed_expr);
+                    expanded_exprs.push((parsed_expr, canonical_path.clone()));
                 }
                 Ok(ParseResult::Block(parsed_block)) => {
-                    println!("Parsed as parsed_block: {:#?}", parsed_block);
-                    expanded_blocks.push(parsed_block);
-                    // println!("Parsed as block: {:?}", parsed_block);
+                    expanded_blocks.push((parsed_block, canonical_path.clone()));
                 }
                 Err(e) => {
                     println!("Failed to parse expansion: {}", e);
@@ -1394,21 +1388,27 @@ pub fn scan_file(
     }
     scanner.scan_file(&syntax_tree);
     for i in 0..expanded_files.len() {
-        scanner.scan_file(&expanded_files[i]);
+        scanner.current_macro_context = Some(expanded_files[i].1.clone());
+        scanner.scan_file(&expanded_files[i].0);
+        scanner.current_macro_context = None;
     }
 
     for i in 0..expanded_items.len() {
-        scanner.scan_item(&expanded_items[i]);
+        scanner.current_macro_context = Some(expanded_items[i].1.clone());
+        scanner.scan_item(&expanded_items[i].0);
+        scanner.current_macro_context = None;
     }
 
     for i in 0..expanded_stmts.len() {
-        println!("Scanning statement: {:#?}", expanded_stmts[i]);
-        scanner.scan_fn_statement(&expanded_stmts[i]);
+        scanner.current_macro_context = Some(expanded_stmts[i].1.clone());
+        scanner.scan_fn_statement(&expanded_stmts[i].0);
+        scanner.current_macro_context = None;
     }
 
     for i in 0..expanded_exprs.len() {
-        println!("Scanning expression: {:#?}", expanded_exprs[i]);
-        scanner.scan_expr(&expanded_exprs[i]);
+        scanner.current_macro_context = Some(expanded_exprs[i].1.clone());
+        scanner.scan_expr(&expanded_exprs[i].0);
+        scanner.current_macro_context = None;
     }
     Ok(())
 }
