@@ -1389,24 +1389,28 @@ pub fn scan_file(
     scanner.scan_file(&syntax_tree);
     for i in 0..expanded_files.len() {
         scanner.current_macro_context = Some(expanded_files[i].1.clone());
+        //println!("expanded_files: {:?}",expanded_files[i].0 );
         scanner.scan_file(&expanded_files[i].0);
         scanner.current_macro_context = None;
     }
 
     for i in 0..expanded_items.len() {
         scanner.current_macro_context = Some(expanded_items[i].1.clone());
+        // println!("expanded_items: {}",scanner.current_macro_context.clone().unwrap()  );
         scanner.scan_item(&expanded_items[i].0);
         scanner.current_macro_context = None;
     }
 
     for i in 0..expanded_stmts.len() {
         scanner.current_macro_context = Some(expanded_stmts[i].1.clone());
+        // println!("expanded_stmts: {}",scanner.current_macro_context.clone().unwrap()  );
         scanner.scan_fn_statement(&expanded_stmts[i].0);
         scanner.current_macro_context = None;
     }
 
     for i in 0..expanded_exprs.len() {
         scanner.current_macro_context = Some(expanded_exprs[i].1.clone());
+        // println!("expanded_exprs: {}",scanner.current_macro_context.clone().unwrap() );
         scanner.scan_expr(&expanded_exprs[i].0);
         scanner.current_macro_context = None;
     }
@@ -1456,6 +1460,17 @@ fn try_parse_expansion(expansion: &str) -> Result<ParseResult> {
     }
     error.push(syn::parse_str::<syn::Block>(expansion).err());
 
+    let wrapped_stmts = format!("{{{}}}", expansion);
+    if let Ok(parsed_wrapped_stmts) = syn::parse_str::<syn::Stmt>(&wrapped_stmts) {
+        return Ok(ParseResult::Stmt(parsed_wrapped_stmts));
+    }
+    error.push(syn::parse_str::<syn::Stmt>(expansion).err());
+
+    let wrapped_file = format!("fn dummy() {{\n{}\n}}", expansion);
+    if let Ok(parsed_wrapped_file) = syn::parse_file(&wrapped_file) {
+        return Ok(ParseResult::File(parsed_wrapped_file));
+    }
+    error.push(syn::parse_file(expansion).err());
     // If none of the parsers worked, return the raw input for debugging
     Err(anyhow!("Failed to parse expansion: {:#?}", error))
 }
