@@ -308,7 +308,7 @@ fn get_auditing_stats(
     let crate_path = &audit_file.base_dir;
 
     // Need to re-run the scan for this package to retrieve information about the functions present in the audit.
-    let results = scan_crate(crate_path, &audit_file.scanned_effects, false)?;
+    let results = scan_crate(crate_path, &audit_file.scanned_effects, false, false)?;
 
     // Load lockfile to get dependencies of audited package
     let lockfile = get_lockfile(crate_path)?;

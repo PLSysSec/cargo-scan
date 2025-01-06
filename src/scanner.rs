@@ -1293,6 +1293,7 @@ pub fn scan_file(
     scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
     enabled_cfg: &HashMap<String, Vec<String>>,
+    expand_macro:bool,
 ) -> Result<()> {
     debug!("Scanning file: {:?}", filepath);
     
@@ -1302,117 +1303,117 @@ pub fn scan_file(
     file.read_to_string(&mut src)?;
     let syntax_tree = syn::parse_file(&src)?;
     // Initialize resolver
-    let current_file_id =
-        resolver.find_file_id(&filepath).context("cannot find current file id")?;
-    let syntax = resolver.db().parse_or_expand(current_file_id.into());
-    let file_resolver_expand = FileResolver::new(crate_name, resolver, filepath)?;
     let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
-
     // Initialize scanner
     let mut scanner = Scanner::new(filepath, file_resolver, scan_results, enabled_cfg);
     scanner.add_sinks(sinks);
-
-    let mut expanded_files: Vec<(syn::File, String)> = Vec::new();
-    let mut expanded_items: Vec<(syn::Item, String)> = Vec::new();
-    let mut expanded_stmts: Vec<(syn::Stmt, String)> = Vec::new();
-    let mut expanded_exprs: Vec<(syn::Expr, String)> = Vec::new();
-    let mut expanded_blocks: Vec<(syn::Block, String)> = Vec::new();
-
-    let ignored_macros: HashSet<&str> = [
-        "println", "eprintln", "dbg",
-        "assert", "assert_eq", "assert_ne",
-        "debug_assert", "debug_assert_eq", "debug_assert_ne",
-        "todo", "unimplemented",
-        "cfg", "cfg_attr", "compile_error",
-        "info", "warn", "error", "trace", "debug",
-        "json", "Serialize", "Deserialize",
-        "tracing", "tracing::info", "tracing::warn", "tracing::debug", "tracing::trace",
-        "arg", "command",
-        "test", "bench",
-        "vec",
-    ]
-    .iter()
-    .cloned()
-    .collect();
-
-    for macro_call in find_macro_calls(&syntax) {
-        if let Some(path) = macro_call.path() {
-            let macro_name = path.syntax().text().to_string();
-            if ignored_macros.contains(macro_name.as_str()) {
-                println!("Ignored macro call: {}", macro_name);
-                continue;
-            }
-        } else {
-            println!("Failed to resolve macro path.");
-        }
-        let canonical_path = match get_canonical_path_from_ast(macro_call.syntax()) {
-            Some(path) => path,       
-            None => continue,     
-        };
-        if let Some(expanded_syntax_node) = file_resolver_expand.expand_macro(&macro_call)
-        {
-            let expansion = format(
-                resolver.db(),
-                macro_call
-                    .syntax()
-                    .parent()
-                    .map(|it| it.kind())
-                    .unwrap_or(SyntaxKind::MACRO_ITEMS),
-                current_file_id,
-                expanded_syntax_node,
-            );
-            // match all possible parsed syntax tree
-            match try_parse_expansion(&expansion) {
-                Ok(ParseResult::File(parsed_file)) => {
-                    expanded_files.push((parsed_file, canonical_path.clone()));
-                }
-                Ok(ParseResult::Item(parsed_item)) => {
-                    expanded_items.push((parsed_item, canonical_path.clone()));
-                }
-                Ok(ParseResult::Stmt(parsed_stmt)) => {
-                    expanded_stmts.push((parsed_stmt, canonical_path.clone()));
-                }
-                Ok(ParseResult::Expr(parsed_expr)) => {
-                    expanded_exprs.push((parsed_expr, canonical_path.clone()));
-                }
-                Ok(ParseResult::Block(parsed_block)) => {
-                    expanded_blocks.push((parsed_block, canonical_path.clone()));
-                }
-                Err(e) => {
-                    println!("Failed to parse expansion: {}", e);
-                    println!("Original macro call: {}; parent kind: {:#?}", macro_call, macro_call.syntax().parent().map(|it| it.kind()).unwrap_or(SyntaxKind::MACRO_ITEMS));
-                    println!("Expanded code: {}", expansion);
-                }
-            }
-        }
-    }
     scanner.scan_file(&syntax_tree);
-    for i in 0..expanded_files.len() {
-        scanner.current_macro_context = Some(expanded_files[i].1.clone());
-        //println!("expanded_files: {:?}",expanded_files[i].0 );
-        scanner.scan_file(&expanded_files[i].0);
-        scanner.current_macro_context = None;
-    }
+    if expand_macro {
+        let current_file_id =
+            resolver.find_file_id(&filepath).context("cannot find current file id")?;
+        let syntax = resolver.db().parse_or_expand(current_file_id.into());
+        let file_resolver_expand = FileResolver::new(crate_name, resolver, filepath)?;
+        let mut expanded_files: Vec<(syn::File, String)> = Vec::new();
+        let mut expanded_items: Vec<(syn::Item, String)> = Vec::new();
+        let mut expanded_stmts: Vec<(syn::Stmt, String)> = Vec::new();
+        let mut expanded_exprs: Vec<(syn::Expr, String)> = Vec::new();
+        let mut expanded_blocks: Vec<(syn::Block, String)> = Vec::new();
 
-    for i in 0..expanded_items.len() {
-        scanner.current_macro_context = Some(expanded_items[i].1.clone());
-        // println!("expanded_items: {}",scanner.current_macro_context.clone().unwrap()  );
-        scanner.scan_item(&expanded_items[i].0);
-        scanner.current_macro_context = None;
-    }
+        let ignored_macros: HashSet<&str> = [
+            "println", "eprintln", "dbg",
+            "assert", "assert_eq", "assert_ne",
+            "debug_assert", "debug_assert_eq", "debug_assert_ne",
+            "todo", "unimplemented",
+            "cfg", "cfg_attr", "compile_error",
+            "info", "warn", "error", "trace", "debug",
+            "json", "Serialize", "Deserialize",
+            "tracing", "tracing::info", "tracing::warn", "tracing::debug", "tracing::trace",
+            "arg", "command",
+            "test", "bench",
+            "vec",
+        ]
+        .iter()
+        .cloned()
+        .collect();
 
-    for i in 0..expanded_stmts.len() {
-        scanner.current_macro_context = Some(expanded_stmts[i].1.clone());
-        // println!("expanded_stmts: {}",scanner.current_macro_context.clone().unwrap()  );
-        scanner.scan_fn_statement(&expanded_stmts[i].0);
-        scanner.current_macro_context = None;
-    }
-
-    for i in 0..expanded_exprs.len() {
-        scanner.current_macro_context = Some(expanded_exprs[i].1.clone());
-        // println!("expanded_exprs: {}",scanner.current_macro_context.clone().unwrap() );
-        scanner.scan_expr(&expanded_exprs[i].0);
-        scanner.current_macro_context = None;
+        for macro_call in find_macro_calls(&syntax) {
+            if let Some(path) = macro_call.path() {
+                let macro_name = path.syntax().text().to_string();
+                if ignored_macros.contains(macro_name.as_str()) {
+                    debug!("Ignored macro call: {}", macro_name);
+                    continue;
+                }
+            } else {
+                println!("Failed to resolve macro path.");
+            }
+            let canonical_path = match get_canonical_path_from_ast(macro_call.syntax()) {
+                Some(path) => path,       
+                None => continue,     
+            };
+            if let Some(expanded_syntax_node) = file_resolver_expand.expand_macro(&macro_call)
+            {
+                let expansion = format(
+                    resolver.db(),
+                    macro_call
+                        .syntax()
+                        .parent()
+                        .map(|it| it.kind())
+                        .unwrap_or(SyntaxKind::MACRO_ITEMS),
+                    current_file_id,
+                    expanded_syntax_node,
+                );
+                // match all possible parsed syntax tree
+                match try_parse_expansion(&expansion) {
+                    Ok(ParseResult::File(parsed_file)) => {
+                        expanded_files.push((parsed_file, canonical_path.clone()));
+                    }
+                    Ok(ParseResult::Item(parsed_item)) => {
+                        expanded_items.push((parsed_item, canonical_path.clone()));
+                    }
+                    Ok(ParseResult::Stmt(parsed_stmt)) => {
+                        expanded_stmts.push((parsed_stmt, canonical_path.clone()));
+                    }
+                    Ok(ParseResult::Expr(parsed_expr)) => {
+                        expanded_exprs.push((parsed_expr, canonical_path.clone()));
+                    }
+                    Ok(ParseResult::Block(parsed_block)) => {
+                        expanded_blocks.push((parsed_block, canonical_path.clone()));
+                    }
+                    Err(e) => {
+                        debug!("Failed to parse expansion: {}", e);
+                        debug!("Original macro call: {}; parent kind: {:#?}", macro_call, macro_call.syntax().parent().map(|it| it.kind()).unwrap_or(SyntaxKind::MACRO_ITEMS));
+                        debug!("Expanded code: {}", expansion);
+                    }
+                }
+            }
+        }
+        for i in 0..expanded_files.len() {
+            scanner.current_macro_context = Some(expanded_files[i].1.clone());
+            //println!("expanded_files: {:?}",expanded_files[i].0 );
+            scanner.scan_file(&expanded_files[i].0);
+            scanner.current_macro_context = None;
+        }
+    
+        for i in 0..expanded_items.len() {
+            scanner.current_macro_context = Some(expanded_items[i].1.clone());
+            // println!("expanded_items: {}",scanner.current_macro_context.clone().unwrap()  );
+            scanner.scan_item(&expanded_items[i].0);
+            scanner.current_macro_context = None;
+        }
+    
+        for i in 0..expanded_stmts.len() {
+            scanner.current_macro_context = Some(expanded_stmts[i].1.clone());
+            // println!("expanded_stmts: {}",scanner.current_macro_context.clone().unwrap()  );
+            scanner.scan_fn_statement(&expanded_stmts[i].0);
+            scanner.current_macro_context = None;
+        }
+    
+        for i in 0..expanded_exprs.len() {
+            scanner.current_macro_context = Some(expanded_exprs[i].1.clone());
+            // println!("expanded_exprs: {}",scanner.current_macro_context.clone().unwrap() );
+            scanner.scan_expr(&expanded_exprs[i].0);
+            scanner.current_macro_context = None;
+        }
     }
     Ok(())
 }
@@ -1484,6 +1485,7 @@ pub fn try_scan_file(
     sinks: HashSet<IdentPath>,
     enabled_cfg: &HashMap<String, Vec<String>>,
     quick_mode: bool,
+    expand_macro:bool,
 ) {
     if quick_mode {
         scan_file_quick(crate_name, filepath, scan_results, sinks, enabled_cfg)
@@ -1491,7 +1493,7 @@ pub fn try_scan_file(
                 info!("Failed to scan file {} ({})", filepath.to_string_lossy(), err);
             })
     } else {
-        scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg)
+        scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg, expand_macro)
             .unwrap_or_else(|err| {
                 info!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
             });
@@ -1504,6 +1506,7 @@ pub fn scan_crate_with_sinks(
     sinks: HashSet<IdentPath>,
     relevant_effects: &[EffectType],
     quick_mode: bool,
+    expand_macro:bool,
 ) -> Result<ScanResults> {
     info!("Scanning crate: {:?}", crate_path);
 
@@ -1548,6 +1551,7 @@ pub fn scan_crate_with_sinks(
             sinks.clone(),
             &enabled_cfg,
             quick_mode,
+            expand_macro,
         );
     }
 
@@ -1634,8 +1638,9 @@ pub fn scan_crate(
     crate_path: &FilePath,
     relevant_effects: &[EffectType],
     quick_mode: bool,
+    expand_macro:bool,
 ) -> Result<ScanResults> {
-    scan_crate_with_sinks(crate_path, HashSet::new(), relevant_effects, quick_mode)
+    scan_crate_with_sinks(crate_path, HashSet::new(), relevant_effects, quick_mode,expand_macro)
 }
 
 /// Keep only the `FnPtrCreation` effect instances for the pointers that

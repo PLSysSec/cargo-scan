@@ -65,7 +65,7 @@ pub fn review_audit(
     //       the scan results to get the function locations, so it doesn't matter.
     println!("Scanning crate...");
     let scan_res =
-        scanner::scan_crate(crate_path, &audit_file.scanned_effects, quick_mode)?;
+        scanner::scan_crate(crate_path, &audit_file.scanned_effects, quick_mode, false)?;
     if !ignore_hash && !is_audit_scan_valid(audit_file, crate_path)? {
         println!("Error: crate has changed since last audit file scan.");
         return Err(anyhow!("Invalid audit file during review"));

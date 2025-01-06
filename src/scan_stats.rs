@@ -77,8 +77,8 @@ impl CrateStats {
     }
 }
 
-pub fn get_crate_stats_default(crate_path: PathBuf, quick_mode: bool) -> CrateStats {
-    get_crate_stats(crate_path.clone(), DEFAULT_EFFECT_TYPES, quick_mode).unwrap_or_else(
+pub fn get_crate_stats_default(crate_path: PathBuf, quick_mode: bool, expand_macro:bool) -> CrateStats {
+    get_crate_stats(crate_path.clone(), DEFAULT_EFFECT_TYPES, quick_mode, expand_macro).unwrap_or_else(
         |_| {
             warn!("Scan crashed, skipping crate: {}", crate_path.to_string_lossy());
             CrateStats { crate_path, ..Default::default() }
@@ -90,11 +90,13 @@ pub fn get_crate_stats(
     crate_path: PathBuf,
     effect_types: &[EffectType],
     quick_mode: bool,
+    expand_macro:bool
 ) -> Result<CrateStats> {
     let (audit, results) = AuditFile::new_caller_checked_default_with_results(
         &crate_path,
         effect_types,
         quick_mode,
+        expand_macro,
     )?;
 
     let pub_fns = results.pub_fns.len();
