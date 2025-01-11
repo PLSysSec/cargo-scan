@@ -1296,7 +1296,7 @@ pub fn scan_file(
     expand_macro:bool,
 ) -> Result<()> {
     debug!("Scanning file: {:?}", filepath);
-    
+    // println!("filePath: {}\n", filepath.to_str().unwrap());
     // Load file contents
     let mut file = File::open(filepath)?;
     let mut src = String::new();
@@ -1337,16 +1337,18 @@ pub fn scan_file(
         .collect();
 
         for macro_call in find_macro_calls(&syntax) {
+            let macro_name;
             if let Some(path) = macro_call.path() {
-                let macro_name = path.syntax().text().to_string();
+                macro_name = path.syntax().text().to_string();
                 if ignored_macros.contains(macro_name.as_str()) {
                     debug!("Ignored macro call: {}", macro_name);
                     continue;
                 }
             } else {
                 println!("Failed to resolve macro path.");
+                continue;
             }
-            let canonical_path = match get_canonical_path_from_ast(macro_call.syntax()) {
+            let canonical_path = match get_canonical_path_from_ast(filepath,macro_call.syntax(),macro_name) {
                 Some(path) => path,       
                 None => continue,     
             };
@@ -1389,28 +1391,24 @@ pub fn scan_file(
         }
         for i in 0..expanded_files.len() {
             scanner.current_macro_context = Some(expanded_files[i].1.clone());
-            //println!("expanded_files: {:?}",expanded_files[i].0 );
             scanner.scan_file(&expanded_files[i].0);
             scanner.current_macro_context = None;
         }
     
         for i in 0..expanded_items.len() {
             scanner.current_macro_context = Some(expanded_items[i].1.clone());
-            // println!("expanded_items: {}",scanner.current_macro_context.clone().unwrap()  );
             scanner.scan_item(&expanded_items[i].0);
             scanner.current_macro_context = None;
         }
     
         for i in 0..expanded_stmts.len() {
             scanner.current_macro_context = Some(expanded_stmts[i].1.clone());
-            // println!("expanded_stmts: {}",scanner.current_macro_context.clone().unwrap()  );
             scanner.scan_fn_statement(&expanded_stmts[i].0);
             scanner.current_macro_context = None;
         }
     
         for i in 0..expanded_exprs.len() {
             scanner.current_macro_context = Some(expanded_exprs[i].1.clone());
-            // println!("expanded_exprs: {}",scanner.current_macro_context.clone().unwrap() );
             scanner.scan_expr(&expanded_exprs[i].0);
             scanner.current_macro_context = None;
         }
@@ -1524,7 +1522,6 @@ pub fn scan_crate_with_sinks(
 
     // TODO: this should *not* be created in the quick-mode case
     let resolver = Resolver::new(crate_path)?;
-
     let mut scan_results = ScanResults::new();
 
     let enabled_cfg = resolver.get_cfg_options_for_crate(&crate_name).unwrap_or_default();
@@ -1745,9 +1742,10 @@ fn _format(
 
 
 /// Get the canonical path of a function, method, or module containing the macro call.
-pub fn get_canonical_path_from_ast(macro_call: &SyntaxNode) -> Option<String> {
+pub fn get_canonical_path_from_ast(filepath: &FilePath, macro_call: &SyntaxNode, macro_name:String) -> Option<String> {
     let mut current_node = macro_call.clone();
     let mut path_components = Vec::new();
+    let mut file_components = Vec::new();
 
     while let Some(parent) = current_node.parent() {
         current_node = parent;
@@ -1775,7 +1773,28 @@ pub fn get_canonical_path_from_ast(macro_call: &SyntaxNode) -> Option<String> {
         }
     }
 
-    path_components.push("crate".to_string());
+    let filepath = filepath.to_str();
+    if let Some(path) = filepath{
+        let components: Vec<&str> = path.split('/').collect();
+        if let Some(src_index) = components.iter().position(|&c| c == "src") {
+            if src_index > 0 {
+                // Insert the component before "src" at the head
+                file_components.insert(0, components[src_index - 1].to_string());
+                // Push all components after src to the tail
+                for after_src in &components[src_index + 1..] {
+                    if after_src.ends_with(".rs") {
+                        // Remove the `.rs` extension
+                        let without_extension = &after_src[..after_src.len() - 3];
+                        file_components.push(without_extension.to_string());
+                    } else {
+                        file_components.push(after_src.to_string());
+                    }
+                }
+            }
+        }
+    }
     path_components.reverse();
-    Some(path_components.join("::"))
+    file_components.append(&mut path_components);
+    file_components.push(macro_name);
+    Some(file_components.join("::"))
 }
