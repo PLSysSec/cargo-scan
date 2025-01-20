@@ -93,9 +93,6 @@ impl<'a> FileResolver<'a> {
         Ok(Self { filepath, resolver: imp, backup })
     }
 
-    // pub fn resolve_macro_call(&self, i: &MacroCall) -> Option<Macro> {
-    //     self.resolver.sems.resolve_macro_call(&i)
-    // }
     pub fn expand_macro(&self, i: &MacroCall) -> Option<SyntaxNode> {
         self.resolver.sems.expand(i)
     }

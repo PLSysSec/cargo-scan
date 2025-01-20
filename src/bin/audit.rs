@@ -334,7 +334,8 @@ fn runner(args: Args) -> Result<()> {
         println!("Previewing crate effects.");
         println!("Scanning crate...");
 
-        let res = scan_crate(&args.crate_path, &args.effect_types, args.quick_mode, false)?;
+        let res =
+            scan_crate(&args.crate_path, &args.effect_types, args.quick_mode, false)?;
         for effect in res.effects {
             println!("{}", effect.to_csv());
         }

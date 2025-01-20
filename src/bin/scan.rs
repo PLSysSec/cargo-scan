@@ -44,7 +44,11 @@ fn main() {
 
     // Note: old version without default_audit:
     // scanner::scan_crate(&args.crate_path, &args.effect_types)?
-    let stats = scan_stats::get_crate_stats_default(args.crate_path, args.quick_mode,args.expand_macro);
+    let stats = scan_stats::get_crate_stats_default(
+        args.crate_path,
+        args.quick_mode,
+        args.expand_macro,
+    );
 
     println!("{}", EffectInstance::csv_header());
     for effect in &stats.effects {

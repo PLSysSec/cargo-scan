@@ -133,7 +133,7 @@ impl ScanCommandResponse {
 
 /// Scan crate in root path and get crate stats
 fn get_simple_scan_results(path: &Path) -> CrateStats {
-    let res = get_crate_stats_default(path.to_path_buf(), false);
+    let res = get_crate_stats_default(path.to_path_buf(), false, false);
     info!("Finished scanning. Found {} effects.", res.effects.len());
 
     res

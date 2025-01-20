@@ -112,8 +112,12 @@ fn runner(
     let root_crate_path = std::path::PathBuf::from_str(root_uri.path())?;
     info!("Crate path received in cargo-scan LSP server: {}", root_crate_path.display());
 
-    let scan_res =
-        scanner::scan_crate(&root_crate_path, effect::DEFAULT_EFFECT_TYPES, false)?;
+    let scan_res = scanner::scan_crate(
+        &root_crate_path,
+        effect::DEFAULT_EFFECT_TYPES,
+        false,
+        false,
+    )?;
 
     info!("Starting main server loop\n");
     let mut audit_file: Option<AuditFile> = None;

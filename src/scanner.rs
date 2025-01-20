@@ -54,6 +54,8 @@ pub struct ScanResults {
 
     pub call_graph: DiGraph<CanonicalPath, SrcLoc>,
     pub node_idxs: HashMap<CanonicalPath, NodeIndex>,
+    pub macro_call_graph: DiGraph<CanonicalPath, SrcLoc>,
+    pub macro_node_idxs: HashMap<CanonicalPath, NodeIndex>,
 
     /* Tracking lines of code (LoC) and skipped/unsupported cases */
     pub total_loc: LoCTracker,
@@ -81,20 +83,43 @@ impl ScanResults {
     }
 
     pub fn get_callers(&self, callee: &CanonicalPath) -> Result<HashSet<EffectInfo>> {
-        let callee_node = self
-            .node_idxs
-            .get(callee)
-            .context("Missing callee for get_callers in results graph")?;
-        let effects = self
-            .call_graph
-            .edges_directed(*callee_node, Direction::Incoming)
-            .map(|e| {
-                let caller_node = e.source();
-                let caller = self.call_graph[caller_node].clone();
-                let src_loc = e.weight();
-                EffectInfo::new(caller, src_loc.clone())
-            })
-            .collect::<HashSet<_>>();
+        // First, attempt to find the callee node in `node_idxs`
+        let callee_node = if let Some(node) = self.node_idxs.get(callee) {
+            *node
+        } else {
+            // If not found in `node_idxs`, try `macro_node_idxs`
+            self.macro_node_idxs
+                .get(callee)
+                .context("Missing callee in both results graph and macro results graph")?
+                .to_owned()
+        };
+
+        // Try to collect edges from the primary `call_graph`
+        let effects = if let Some(_edges) =
+            self.call_graph.edges_directed(callee_node, Direction::Incoming).next()
+        {
+            self.call_graph
+                .edges_directed(callee_node, Direction::Incoming)
+                .map(|e| {
+                    let caller_node = e.source();
+                    let caller = self.call_graph[caller_node].clone();
+                    let src_loc = e.weight();
+                    EffectInfo::new(caller, src_loc.clone())
+                })
+                .collect::<HashSet<_>>()
+        } else {
+            // If no edges found in `call_graph`, try `macro_call_graph`
+            self.macro_call_graph
+                .edges_directed(callee_node, Direction::Incoming)
+                .map(|e| {
+                    let caller_node = e.source();
+                    let caller = self.macro_call_graph[caller_node].clone();
+                    let src_loc = e.weight();
+                    EffectInfo::new(caller, src_loc.clone())
+                })
+                .collect::<HashSet<_>>()
+        };
+
         Ok(effects)
     }
 
@@ -125,6 +150,36 @@ impl ScanResults {
         let caller_idx = self.update_call_graph(caller);
         let callee_idx = self.update_call_graph(callee);
         self.call_graph.add_edge(caller_idx, callee_idx, loc);
+    }
+
+    pub fn combine_scan_results(&mut self, other: ScanResults) {
+        // Merge `Vec` fields
+        self.effects.extend(other.effects);
+        self.fn_ptr_effects.extend(other.fn_ptr_effects);
+
+        // Merge `HashSet` fields
+        self.pub_fns.extend(other.pub_fns);
+        self.trait_meths.extend(other.trait_meths);
+        self.fns_with_effects.extend(other.fns_with_effects);
+
+        // Merge `HashMap` fields
+        self.fn_locs.extend(other.fn_locs);
+        self.fn_loc_tracker.extend(other.fn_loc_tracker);
+
+        // Merge `DiGraph` fields
+        self.macro_call_graph = other.call_graph.clone();
+        self.macro_node_idxs = other.node_idxs.clone();
+        // Merge `LoCTracker` fields
+        self.total_loc.merge(other.total_loc);
+        self.skipped_macros.merge(other.skipped_macros);
+        self.skipped_conditional_code.merge(other.skipped_conditional_code);
+        self.skipped_fn_calls.merge(other.skipped_fn_calls);
+        self.skipped_fn_ptrs.merge(other.skipped_fn_ptrs);
+        self.skipped_other.merge(other.skipped_other);
+        self.unsafe_traits.merge(other.unsafe_traits);
+        self.unsafe_impls.merge(other.unsafe_impls);
+        self._effects_loc.merge(other._effects_loc);
+        self._skipped_build_rs.merge(other._skipped_build_rs);
     }
 }
 
@@ -346,7 +401,6 @@ where
             syn::ForeignItem::Fn(f) => self.scan_foreign_fn(f),
             syn::ForeignItem::Macro(m) => {
                 self.data.skipped_macros.add(m);
-                
             }
             other => {
                 self.data.skipped_other.add(other);
@@ -420,8 +474,8 @@ where
                 syn::TraitItem::Macro(m) => {
                     self.data.skipped_macros.add(m);
                 }
-                syn::TraitItem::Verbatim(_v) => {
-                    // self.syn_info("skipping Verbatim expression", v);
+                syn::TraitItem::Verbatim(v) => {
+                     self.syn_info("skipping Verbatim expression", v);
                 }
                 other => {
                     self.data.skipped_other.add(other);
@@ -1133,7 +1187,9 @@ where
     where
         S: Debug + Spanned,
     {
-        let caller: CanonicalPath = if let Some(ref macro_context) = self.current_macro_context {
+        let caller: CanonicalPath = if let Some(ref macro_context) =
+            self.current_macro_context
+        {
             CanonicalPath::new(&macro_context.clone())
         } else if eff_type.is_ffi_decl() {
             callee.clone()
@@ -1175,7 +1231,9 @@ where
     ) where
         S: Debug + Spanned,
     {
-        let caller: CanonicalPath = if let Some(ref macro_context) = self.current_macro_context {
+        let caller: CanonicalPath = if let Some(ref macro_context) =
+            self.current_macro_context
+        {
             CanonicalPath::new(&macro_context.clone())
         } else {
             let containing_fn = self.scope_fns.last().expect("not inside a function!");
@@ -1291,12 +1349,12 @@ pub fn scan_file(
     filepath: &FilePath,
     resolver: &Resolver,
     scan_results: &mut ScanResults,
+    macro_scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
     enabled_cfg: &HashMap<String, Vec<String>>,
-    expand_macro:bool,
+    expand_macro: bool,
 ) -> Result<()> {
     debug!("Scanning file: {:?}", filepath);
-    // println!("filePath: {}\n", filepath.to_str().unwrap());
     // Load file contents
     let mut file = File::open(filepath)?;
     let mut src = String::new();
@@ -1306,9 +1364,18 @@ pub fn scan_file(
     let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
     // Initialize scanner
     let mut scanner = Scanner::new(filepath, file_resolver, scan_results, enabled_cfg);
-    scanner.add_sinks(sinks);
+    scanner.add_sinks(sinks.clone());
     scanner.scan_file(&syntax_tree);
     if expand_macro {
+        let macro_hacky_resolver = HackyResolver::new(crate_name, filepath);
+        let mut macro_scanner = Scanner::new(
+            filepath,
+            macro_hacky_resolver.unwrap(),
+            macro_scan_results,
+            enabled_cfg,
+        );
+        macro_scanner.add_sinks(sinks);
+
         let current_file_id =
             resolver.find_file_id(&filepath).context("cannot find current file id")?;
         let syntax = resolver.db().parse_or_expand(current_file_id.into());
@@ -1320,16 +1387,37 @@ pub fn scan_file(
         let mut expanded_blocks: Vec<(syn::Block, String)> = Vec::new();
 
         let ignored_macros: HashSet<&str> = [
-            "println", "eprintln", "dbg",
-            "assert", "assert_eq", "assert_ne",
-            "debug_assert", "debug_assert_eq", "debug_assert_ne",
-            "todo", "unimplemented",
-            "cfg", "cfg_attr", "compile_error",
-            "info", "warn", "error", "trace", "debug",
-            "json", "Serialize", "Deserialize",
-            "tracing", "tracing::info", "tracing::warn", "tracing::debug", "tracing::trace",
-            "arg", "command",
-            "test", "bench",
+            "println",
+            "eprintln",
+            "dbg",
+            "assert",
+            "assert_eq",
+            "assert_ne",
+            "debug_assert",
+            "debug_assert_eq",
+            "debug_assert_ne",
+            "todo",
+            "unimplemented",
+            "cfg",
+            "cfg_attr",
+            "compile_error",
+            "info",
+            "warn",
+            "error",
+            "trace",
+            "debug",
+            "json",
+            "Serialize",
+            "Deserialize",
+            "tracing",
+            "tracing::info",
+            "tracing::warn",
+            "tracing::debug",
+            "tracing::trace",
+            "arg",
+            "command",
+            "test",
+            "bench",
             "vec",
         ]
         .iter()
@@ -1345,14 +1433,19 @@ pub fn scan_file(
                     continue;
                 }
             } else {
-                println!("Failed to resolve macro path.");
+                debug!("Failed to resolve macro path.");
                 continue;
             }
-            let canonical_path = match get_canonical_path_from_ast(filepath,macro_call.syntax(),macro_name) {
-                Some(path) => path,       
-                None => continue,     
+            let canonical_path = match get_canonical_path_from_ast(
+                filepath,
+                macro_call.syntax(),
+                macro_name,
+            ) {
+                Some(path) => path,
+                None => continue,
             };
-            if let Some(expanded_syntax_node) = file_resolver_expand.expand_macro(&macro_call)
+            if let Some(expanded_syntax_node) =
+                file_resolver_expand.expand_macro(&macro_call)
             {
                 let expansion = format(
                     resolver.db(),
@@ -1383,34 +1476,42 @@ pub fn scan_file(
                     }
                     Err(e) => {
                         debug!("Failed to parse expansion: {}", e);
-                        debug!("Original macro call: {}; parent kind: {:#?}", macro_call, macro_call.syntax().parent().map(|it| it.kind()).unwrap_or(SyntaxKind::MACRO_ITEMS));
+                        debug!(
+                            "Original macro call: {}; parent kind: {:#?}",
+                            macro_call,
+                            macro_call
+                                .syntax()
+                                .parent()
+                                .map(|it| it.kind())
+                                .unwrap_or(SyntaxKind::MACRO_ITEMS)
+                        );
                         debug!("Expanded code: {}", expansion);
                     }
                 }
             }
         }
         for i in 0..expanded_files.len() {
-            scanner.current_macro_context = Some(expanded_files[i].1.clone());
-            scanner.scan_file(&expanded_files[i].0);
-            scanner.current_macro_context = None;
+            macro_scanner.current_macro_context = Some(expanded_files[i].1.clone());
+            macro_scanner.scan_file(&expanded_files[i].0);
+            macro_scanner.current_macro_context = None;
         }
-    
+
         for i in 0..expanded_items.len() {
-            scanner.current_macro_context = Some(expanded_items[i].1.clone());
-            scanner.scan_item(&expanded_items[i].0);
-            scanner.current_macro_context = None;
+            macro_scanner.current_macro_context = Some(expanded_items[i].1.clone());
+            macro_scanner.scan_item(&expanded_items[i].0);
+            macro_scanner.current_macro_context = None;
         }
-    
+
         for i in 0..expanded_stmts.len() {
-            scanner.current_macro_context = Some(expanded_stmts[i].1.clone());
-            scanner.scan_fn_statement(&expanded_stmts[i].0);
-            scanner.current_macro_context = None;
+            macro_scanner.current_macro_context = Some(expanded_stmts[i].1.clone());
+            macro_scanner.scan_fn_statement(&expanded_stmts[i].0);
+            macro_scanner.current_macro_context = None;
         }
-    
+
         for i in 0..expanded_exprs.len() {
-            scanner.current_macro_context = Some(expanded_exprs[i].1.clone());
-            scanner.scan_expr(&expanded_exprs[i].0);
-            scanner.current_macro_context = None;
+            macro_scanner.current_macro_context = Some(expanded_exprs[i].1.clone());
+            macro_scanner.scan_expr(&expanded_exprs[i].0);
+            macro_scanner.current_macro_context = None;
         }
     }
     Ok(())
@@ -1480,10 +1581,11 @@ pub fn try_scan_file(
     filepath: &FilePath,
     resolver: &Resolver,
     scan_results: &mut ScanResults,
+    macro_scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
     enabled_cfg: &HashMap<String, Vec<String>>,
     quick_mode: bool,
-    expand_macro:bool,
+    expand_macro: bool,
 ) {
     if quick_mode {
         scan_file_quick(crate_name, filepath, scan_results, sinks, enabled_cfg)
@@ -1491,10 +1593,19 @@ pub fn try_scan_file(
                 info!("Failed to scan file {} ({})", filepath.to_string_lossy(), err);
             })
     } else {
-        scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg, expand_macro)
-            .unwrap_or_else(|err| {
-                info!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
-            });
+        scan_file(
+            crate_name,
+            filepath,
+            resolver,
+            scan_results,
+            macro_scan_results,
+            sinks,
+            enabled_cfg,
+            expand_macro,
+        )
+        .unwrap_or_else(|err| {
+            info!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
+        });
     }
 }
 
@@ -1504,7 +1615,7 @@ pub fn scan_crate_with_sinks(
     sinks: HashSet<IdentPath>,
     relevant_effects: &[EffectType],
     quick_mode: bool,
-    expand_macro:bool,
+    expand_macro: bool,
 ) -> Result<ScanResults> {
     info!("Scanning crate: {:?}", crate_path);
 
@@ -1523,6 +1634,7 @@ pub fn scan_crate_with_sinks(
     // TODO: this should *not* be created in the quick-mode case
     let resolver = Resolver::new(crate_path)?;
     let mut scan_results = ScanResults::new();
+    let mut macro_scan_results = ScanResults::new();
 
     let enabled_cfg = resolver.get_cfg_options_for_crate(&crate_name).unwrap_or_default();
 
@@ -1545,18 +1657,22 @@ pub fn scan_crate_with_sinks(
             entry.as_path(),
             &resolver,
             &mut scan_results,
+            &mut macro_scan_results,
             sinks.clone(),
             &enabled_cfg,
             quick_mode,
             expand_macro,
         );
     }
-
-    filter_fn_ptr_effects(&mut scan_results, crate_name);
+    filter_fn_ptr_effects(&mut scan_results, crate_name.clone());
+    filter_fn_ptr_effects(&mut macro_scan_results, crate_name);
     scan_results
         .effects
         .retain(|e| EffectType::matches_effect(relevant_effects, e.eff_type()));
-
+    macro_scan_results
+        .effects
+        .retain(|e| EffectType::matches_effect(relevant_effects, e.eff_type()));
+    scan_results.combine_scan_results(macro_scan_results);
     Ok(scan_results)
 }
 
@@ -1567,77 +1683,20 @@ fn find_macro_calls(syntax: &SyntaxNode) -> Vec<MacroCall> {
         .collect()
 }
 
-// fn macro_def(db: &dyn DefDatabase, id: MacroId) -> MacroDefId {
-//     use ra_ap_hir_expand::InFile;
-
-//     use ra_ap_hir_def::{Lookup, MacroExpander};
-
-//     use ra_ap_hir_expand::MacroDefKind;
-
-//     let kind = |expander, file_id, m| {
-//         let in_file = InFile::new(file_id, m);
-//         match expander {
-//             MacroExpander::Declarative => MacroDefKind::Declarative(in_file),
-//             MacroExpander::BuiltIn(it) => MacroDefKind::BuiltIn(it, in_file),
-//             MacroExpander::BuiltInAttr(it) => MacroDefKind::BuiltInAttr(it, in_file),
-//             MacroExpander::BuiltInDerive(it) => MacroDefKind::BuiltInDerive(it, in_file),
-//             MacroExpander::BuiltInEager(it) => MacroDefKind::BuiltInEager(it, in_file),
-//         }
-//     };
-
-//     match id {
-//         MacroId::Macro2Id(it) => {
-//             let loc: Macro2Loc = it.lookup(db);
-
-//             let item_tree = loc.id.item_tree(db);
-//             let makro = &item_tree[loc.id.value];
-//             MacroDefId {
-//                 krate: loc.container.krate(),
-//                 kind: kind(loc.expander, loc.id.file_id(), makro.ast_id.upcast()),
-//                 local_inner: false,
-//                 allow_internal_unsafe: loc.allow_internal_unsafe
-//             }
-//         }
-//         MacroId::MacroRulesId(it) => {
-//             let loc: MacroRulesLoc = it.lookup(db);
-
-//             let item_tree = loc.id.item_tree(db);
-//             let makro = &item_tree[loc.id.value];
-//             MacroDefId {
-//                 krate: loc.container.krate(),
-//                 kind: kind(loc.expander, loc.id.file_id(), makro.ast_id.upcast()),
-//                 local_inner: loc.local_inner,
-//                 allow_internal_unsafe: loc.allow_internal_unsafe
-//             }
-//         }
-//         MacroId::ProcMacroId(it) => {
-//             let loc = it.lookup(db);
-
-//             let item_tree = loc.id.item_tree(db);
-//             let makro = &item_tree[loc.id.value];
-//             MacroDefId {
-//                 krate: loc.container.krate(),
-//                 kind: MacroDefKind::ProcMacro(
-//                     loc.expander,
-//                     loc.kind,
-//                     InFile::new(loc.id.file_id(), makro.ast_id),
-
-//                 ),
-//                 local_inner: false,
-//                 allow_internal_unsafe: false,
-//             }
-//         }
-//     }
-// }
-
 /// Scan the supplied crate
 pub fn scan_crate(
     crate_path: &FilePath,
     relevant_effects: &[EffectType],
     quick_mode: bool,
-    expand_macro:bool,
+    expand_macro: bool,
 ) -> Result<ScanResults> {
-    scan_crate_with_sinks(crate_path, HashSet::new(), relevant_effects, quick_mode,expand_macro)
+    scan_crate_with_sinks(
+        crate_path,
+        HashSet::new(),
+        relevant_effects,
+        quick_mode,
+        expand_macro,
+    )
 }
 
 /// Keep only the `FnPtrCreation` effect instances for the pointers that
@@ -1660,14 +1719,25 @@ fn filter_fn_ptr_effects(scan_results: &mut ScanResults, crate_name: String) {
 // function the pointer points to might not have effects, but it might call other
 // functions with potentially dangerous behavior.
 fn check_fn_for_effects(scan_results: &ScanResults, fn_: &CanonicalPath) -> bool {
-    let Some(node) = scan_results.node_idxs.get(fn_) else {
+    let Some(node) =
+        scan_results.node_idxs.get(fn_).or_else(|| scan_results.macro_node_idxs.get(fn_))
+    else {
         return true;
     };
-    let graph = &scan_results.call_graph;
+
+    // Determine the appropriate graph based on where the node was found
+    let graph = if scan_results.node_idxs.contains_key(fn_) {
+        &scan_results.call_graph
+    } else {
+        &scan_results.macro_call_graph
+    };
+
     let mut bfs = Bfs::new(graph, *node);
 
+    // Traverse the graph using BFS
     while let Some(node) = bfs.next(graph) {
-        if scan_results.fns_with_effects.contains(&graph[node]) {
+        let path = &graph[node];
+        if scan_results.fns_with_effects.contains(path) {
             return true;
         }
     }
@@ -1740,9 +1810,12 @@ fn _format(
     }
 }
 
-
 /// Get the canonical path of a function, method, or module containing the macro call.
-pub fn get_canonical_path_from_ast(filepath: &FilePath, macro_call: &SyntaxNode, macro_name:String) -> Option<String> {
+pub fn get_canonical_path_from_ast(
+    filepath: &FilePath,
+    macro_call: &SyntaxNode,
+    macro_name: String,
+) -> Option<String> {
     let mut current_node = macro_call.clone();
     let mut path_components = Vec::new();
     let mut file_components = Vec::new();
@@ -1774,7 +1847,7 @@ pub fn get_canonical_path_from_ast(filepath: &FilePath, macro_call: &SyntaxNode,
     }
 
     let filepath = filepath.to_str();
-    if let Some(path) = filepath{
+    if let Some(path) = filepath {
         let components: Vec<&str> = path.split('/').collect();
         if let Some(src_index) = components.iter().position(|&c| c == "src") {
             if src_index > 0 {
@@ -1782,9 +1855,8 @@ pub fn get_canonical_path_from_ast(filepath: &FilePath, macro_call: &SyntaxNode,
                 file_components.insert(0, components[src_index - 1].to_string());
                 // Push all components after src to the tail
                 for after_src in &components[src_index + 1..] {
-                    if after_src.ends_with(".rs") {
-                        // Remove the `.rs` extension
-                        let without_extension = &after_src[..after_src.len() - 3];
+                    if let Some(stripped) = after_src.strip_suffix(".rs") {
+                        let without_extension = stripped;
                         file_components.push(without_extension.to_string());
                     } else {
                         file_components.push(after_src.to_string());

@@ -9,6 +9,7 @@ fns-closures
 fnv_minimal
 inline-ex
 libc-ex
+macro_test
 num_cpus_minimal
 parsing-ex
 permissions-ex

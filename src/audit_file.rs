@@ -516,7 +516,7 @@ impl AuditFile {
         sinks: HashSet<CanonicalPath>,
         relevant_effects: &[EffectType],
         quick: bool,
-        expand_macro:bool,
+        expand_macro: bool,
     ) -> Result<(AuditFile, ScanResults)> {
         let mut audit_file =
             AuditFile::empty(crate_path.to_path_buf(), relevant_effects.to_vec())?;
@@ -551,14 +551,14 @@ impl AuditFile {
         crate_path: &FilePath,
         relevant_effects: &[EffectType],
         quick: bool,
-        expand_macro:bool,
+        expand_macro: bool,
     ) -> Result<(AuditFile, ScanResults)> {
         Self::new_caller_checked_default_with_sinks_and_results(
             crate_path,
             HashSet::new(),
             relevant_effects,
             quick,
-            expand_macro
+            expand_macro,
         )
     }
 
@@ -583,10 +583,15 @@ impl AuditFile {
         sinks: HashSet<CanonicalPath>,
         relevant_effects: &[EffectType],
         quick: bool,
-        expand_macro:bool
+        expand_macro: bool,
     ) -> Result<(AuditFile, ScanResults)> {
-        let (mut audit_file, scan_res) =
-            Self::scan_with_sinks(crate_path, sinks, relevant_effects, quick,expand_macro)?;
+        let (mut audit_file, scan_res) = Self::scan_with_sinks(
+            crate_path,
+            sinks,
+            relevant_effects,
+            quick,
+            expand_macro,
+        )?;
 
         let mut total_size = 0i32;
         let mut pub_caller_checked = HashMap::new();
