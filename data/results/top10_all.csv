@@ -10,6 +10,24 @@ rand, rand::rngs::thread::<ThreadRng as RngCore>::next_u32, core::cell::UnsafeCe
 rand, rand::rngs::thread::<ThreadRng as RngCore>::next_u64, core::cell::UnsafeCell::get, [PtrDeref], data/packages/rand/src/rngs, thread.rs, 181, 33
 rand, rand::rngs::thread::<ThreadRng as RngCore>::fill_bytes, core::cell::UnsafeCell::get, [PtrDeref], data/packages/rand/src/rngs, thread.rs, 189, 33
 rand, rand::distr::uniform::other::<Uniform<char> as crate::distr::SampleString>::append_string, core::char::methods::len_utf8, [FnPtrCreation], data/packages/rand/src/distr, uniform_other.rs, 107, 50
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, UNKNOWN_METHOD::into, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 5, 47
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, UNKNOWN_METHOD::into, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 5, 57
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, _mm_mulhi_epu16, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 5, 26
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, UNKNOWN_METHOD::into, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 6, 47
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, UNKNOWN_METHOD::into, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 6, 57
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, _mm_mullo_epi16, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 6, 26
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, UNKNOWN_METHOD::into, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 5, 50
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, UNKNOWN_METHOD::into, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 5, 60
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, _mm256_mulhi_epu16, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 5, 26
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, UNKNOWN_METHOD::into, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 6, 50
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, UNKNOWN_METHOD::into, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 6, 60
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, _mm256_mullo_epi16, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 6, 26
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, UNKNOWN_METHOD::into, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 5, 50
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, UNKNOWN_METHOD::into, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 5, 60
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, _mm512_mulhi_epu16, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 5, 26
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, UNKNOWN_METHOD::into, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 6, 50
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, UNKNOWN_METHOD::into, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 6, 60
+rand, rand::distr::utils::simd_wmul::wmul_impl_16, _mm512_mullo_epi16, [UnsafeCall], data/packages/rand/src/distr, utils.rs, 6, 26
 syn, syn::buffer::TokenBuffer::begin, core::ptr::const_ptr::add, [UnsafeCall], data/packages/syn/src, buffer.rs, 83, 41
 syn, syn::buffer::TokenBuffer::begin, syn::buffer::Cursor::create, [UnsafeCall], data/packages/syn/src, buffer.rs, 83, 17
 syn, syn::buffer::Cursor::create, syn::buffer::Cursor::create::ptr, [PtrDeref], data/packages/syn/src, buffer.rs, 135, 46
@@ -7073,6 +7091,26 @@ libc, libc::windows::mod::socket, libc::windows::mod::socket, [FFI Declaration],
 libc, libc::windows::msvc::mod::stricmp, libc::windows::msvc::mod::stricmp, [FFI Declaration], data/packages/libc/src/windows/msvc, mod.rs, 11, 4
 libc, libc::windows::msvc::mod::strnicmp, libc::windows::msvc::mod::strnicmp, [FFI Declaration], data/packages/libc/src/windows/msvc, mod.rs, 13, 4
 libc, libc::windows::msvc::mod::memccpy, libc::windows::msvc::mod::memccpy, [FFI Declaration], data/packages/libc/src/windows/msvc, mod.rs, 15, 4
+libc, libc::unix::bsd::apple::mod::f, UNKNOWN_METHOD::is_null, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 6, 12
+libc, libc::unix::bsd::apple::mod::f, crate::CMSG_FIRSTHDR, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 7, 15
+libc, libc::unix::bsd::apple::mod::f, __DARWIN_ALIGN32, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 10, 31
+libc, libc::unix::bsd::apple::mod::f, mem::size_of, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 12, 31
+libc, libc::unix::bsd::apple::mod::f, __DARWIN_ALIGN32, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 12, 14
+libc, libc::unix::bsd::apple::mod::f, core::ptr::null_mut, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 13, 8
+libc, libc::unix::bsd::apple::mod::f, mem::size_of, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 20, 48
+libc, libc::unix::bsd::apple::mod::f, __DARWIN_ALIGN32, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 20, 31
+libc, libc::unix::bsd::apple::mod::f, UNKNOWN_METHOD::add, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 20, 27
+libc, libc::unix::bsd::apple::mod::f, mem::size_of, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 24, 22
+libc, libc::unix::bsd::apple::mod::f, __DARWIN_ALIGN32, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 24, 5
+libc, libc::unix::bsd::apple::mod::f, __DARWIN_ALIGN32, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 24, 51
+libc, libc::unix::bsd::apple::mod::f, mem::size_of, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 29, 22
+libc, libc::unix::bsd::apple::mod::f, __DARWIN_ALIGN32, [UnsafeCall], data/packages/libc/src/unix/bsd/apple, mod.rs, 29, 5
+libc, libc::unix::bsd::mod::f, mem::size_of, [UnsafeCall], data/packages/libc/src/unix/bsd, mod.rs, 3, 42
+libc, libc::unix::bsd::mod::f, core::ptr::null_mut, [UnsafeCall], data/packages/libc/src/unix/bsd, mod.rs, 6, 8
+libc, libc::unix::bsd::mod::f, mem::size_of_val, [UnsafeCall], data/packages/libc/src/unix/bsd, mod.rs, 11, 15
+libc, libc::unix::bsd::mod::f, mem::size_of_val, [UnsafeCall], data/packages/libc/src/unix/bsd, mod.rs, 18, 15
+libc, libc::unix::bsd::mod::f, mem::size_of_val, [UnsafeCall], data/packages/libc/src/unix/bsd, mod.rs, 24, 15
+libc, libc::unix::bsd::mod::f, UNKNOWN_METHOD::iter_mut, [UnsafeCall], data/packages/libc/src/unix/bsd, mod.rs, 31, 32
 quote, quote::__private::mk_ident, proc_macro2::Span::call_site, [FnPtrCreation], data/packages/quote/src, runtime.rs, 482, 35
 proc_macro2, proc_macro2::fallback::TokenStream::take_inner, core::ptr::read, [UnsafeCall], data/packages/proc-macro2/src, fallback.rs, 96, 17
 proc_macro2, proc_macro2::Literal::from_str_unchecked, proc_macro2::fallback::Literal::from_str_unchecked, [UnsafeCall], data/packages/proc-macro2/src, lib.rs, 1311, 31

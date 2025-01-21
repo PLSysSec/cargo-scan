@@ -10,7 +10,6 @@ use super::audit_file::{AuditFile, EffectTree};
 use super::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 use super::loc_tracker::LoCTracker;
 use super::scanner::ScanResults;
-
 use anyhow::Result;
 use log::{debug, warn};
 use std::collections::HashSet;
