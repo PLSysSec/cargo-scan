@@ -138,7 +138,7 @@ impl Serialize for CrateId {
 
 struct CrateIdVisitor;
 
-impl<'de> Visitor<'de> for CrateIdVisitor {
+impl Visitor<'_> for CrateIdVisitor {
     type Value = CrateId;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
