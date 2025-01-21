@@ -1343,6 +1343,12 @@ pub fn scan_file_quick(
     Ok(())
 }
 
+pub struct ScanConfig<'a> {
+    enabled_cfg: &'a HashMap<String, Vec<String>>,
+    expand_macro: bool,
+    quick_mode: bool,
+}
+
 /// Load the Rust file at the filepath and scan it
 pub fn scan_file(
     crate_name: &str,
@@ -1351,9 +1357,10 @@ pub fn scan_file(
     scan_results: &mut ScanResults,
     macro_scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
-    enabled_cfg: &HashMap<String, Vec<String>>,
-    expand_macro: bool,
+    scan_config: &ScanConfig,
 ) -> Result<()> {
+    let enabled_cfg = scan_config.enabled_cfg;
+    let expand_macro = scan_config.expand_macro;
     debug!("Scanning file: {:?}", filepath);
     // Load file contents
     let mut file = File::open(filepath)?;
@@ -1390,10 +1397,10 @@ pub fn try_scan_file(
     scan_results: &mut ScanResults,
     macro_scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
-    enabled_cfg: &HashMap<String, Vec<String>>,
-    quick_mode: bool,
-    expand_macro: bool,
+    scan_config: &ScanConfig,
 ) {
+    let enabled_cfg = scan_config.enabled_cfg;
+    let quick_mode = scan_config.quick_mode;
     if quick_mode {
         scan_file_quick(crate_name, filepath, scan_results, sinks, enabled_cfg)
             .unwrap_or_else(|err| {
@@ -1407,8 +1414,7 @@ pub fn try_scan_file(
             scan_results,
             macro_scan_results,
             sinks,
-            enabled_cfg,
-            expand_macro,
+            scan_config,
         )
         .unwrap_or_else(|err| {
             info!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
@@ -1456,7 +1462,7 @@ pub fn scan_crate_with_sinks(
         info!("crate has no src dir; scanning all .rs files instead");
         util::fs::walk_files_with_extension(crate_path, "rs")
     };
-
+    let scan_config = ScanConfig { enabled_cfg: &enabled_cfg, expand_macro, quick_mode };
     // scan every file
     for entry in file_iter {
         try_scan_file(
@@ -1466,9 +1472,7 @@ pub fn scan_crate_with_sinks(
             &mut scan_results,
             &mut macro_scan_results,
             sinks.clone(),
-            &enabled_cfg,
-            quick_mode,
-            expand_macro,
+            &scan_config,
         );
     }
     filter_fn_ptr_effects(&mut scan_results, crate_name.clone());
