@@ -246,8 +246,8 @@ fn main() {
     let mut all_stats = AllStats::new(crates.clone());
 
     let batch_size = args.num_threads * 5;
-    let num_batches = (num_crates + batch_size - 1) / batch_size;
-    let progress_inc = (num_crates + PROGRESS_INCS - 1) / PROGRESS_INCS;
+    let num_batches = num_crates.div_ceil(batch_size);
+    let progress_inc = num_crates.div_ceil(PROGRESS_INCS);
 
     for batch in 0..num_batches {
         let pool = ThreadPool::new(args.num_threads);

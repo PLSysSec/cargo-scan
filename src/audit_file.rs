@@ -401,11 +401,11 @@ impl AuditFile {
 
     pub fn has_unsafe_effect(&self) -> bool {
         fn tree_walk(tree: &EffectTree) -> bool {
-            return match tree {
+            match tree {
                 EffectTree::Leaf(_, SafetyAnnotation::Unsafe) => true,
                 EffectTree::Branch(_, ts) => ts.iter().any(tree_walk),
                 _ => false,
-            };
+            }
         }
         self.audit_trees.values().any(tree_walk)
     }

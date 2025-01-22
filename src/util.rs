@@ -90,7 +90,7 @@ pub mod fs {
     ) -> impl Iterator<Item = PathBuf> + 'a {
         walk_files(p)
             .filter(|entry| entry.is_file())
-            .filter(|entry| entry.extension().map_or(false, |x| x.to_str() == Some(ext)))
+            .filter(|entry| entry.extension().is_some_and(|x| x.to_str() == Some(ext)))
     }
 
     pub fn file_lines(p: &PathBuf) -> impl Iterator<Item = String> {
@@ -138,7 +138,7 @@ impl Serialize for CrateId {
 
 struct CrateIdVisitor;
 
-impl<'de> Visitor<'de> for CrateIdVisitor {
+impl Visitor<'_> for CrateIdVisitor {
     type Value = CrateId;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
