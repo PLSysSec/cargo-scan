@@ -1,11 +1,11 @@
 crate, effects, macros, macro LoC, conditional blocks, conditional LoC, skipped calls, skipped call LoC, skipped fn pointers, skipped pointers LoC, skipped other, skipped other LoC, unsafe traits, unsafe trait LoC, unsafe impls, unsafe impl LoC, public fns, public fns with effects, public total effects, audited fns, audited LoC, total LoC
-caller-checked, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 4, 9, 10, 58, 85
+caller-checked, 15, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 4, 31, 10, 58, 85
 cfg-ex, 3, 2, 2, 4, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 4, 11, 55
-dependency-ex, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 2, 18, 23
+dependency-ex, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 18, 23
 dependency-parent, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 11, 13
 dummy, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 103
 ffi-ex, 16, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 17, 16, 16, 16, 49, 118
-fns-closures, 8, 9, 9, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 7, 3, 6, 6, 20, 136
+fns-closures, 7, 9, 9, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 7, 3, 5, 6, 20, 136
 fnv_minimal, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 135
 inline-ex, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 13
 libc-ex, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 1, 12, 15
