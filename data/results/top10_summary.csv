@@ -1,8 +1,9 @@
 crate, effects
-libc, 5953
-autocfg, 40
-serde, 21
-rand, 16
-proc-macro2, 13
-rand_core, 5
+libc, 6818
+syn, 263
+autocfg, 45
+rand, 29
+serde, 16
+proc-macro2, 7
+rand_core, 2
 quote, 1

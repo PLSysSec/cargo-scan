@@ -430,7 +430,10 @@ dependencies = [
  "ra_ap_load-cargo",
  "ra_ap_paths",
  "ra_ap_project_model",
+ "ra_ap_stdx",
  "ra_ap_syntax",
+ "ra_ap_text_edit",
+ "ra_ap_toolchain",
  "ra_ap_vfs",
  "regex",
  "semver",
@@ -453,7 +456,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cccd15f96a29696e13e1d5fa10dd1dbed2e172f58b6e6124a9a4fa695363fdd"
 dependencies = [
  "anyhow",
- "core-foundation",
+ "core-foundation 0.10.0",
  "filetime",
  "hex",
  "ignore",

@@ -60,4 +60,10 @@ impl LoCTracker {
     // pub fn csv_header() -> &'static str {
     //     "Instances, LoC"
     // }
+
+    pub fn merge(&mut self, other: LoCTracker) {
+        self.instances += other.instances;
+        self.lines += other.lines;
+        self.zero_size_lines += other.zero_size_lines;
+    }
 }

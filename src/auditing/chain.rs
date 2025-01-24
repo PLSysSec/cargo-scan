@@ -206,6 +206,7 @@ impl CommandRunner for Audit {
                         &crate_path,
                         &orig_audit_file.scanned_effects,
                         false,
+                        false,
                     )?;
 
                     let mut audit_config = AuditConfig::default();

@@ -10,7 +10,6 @@ use super::audit_file::{AuditFile, EffectTree};
 use super::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 use super::loc_tracker::LoCTracker;
 use super::scanner::ScanResults;
-
 use anyhow::Result;
 use log::{debug, warn};
 use std::collections::HashSet;
@@ -77,25 +76,37 @@ impl CrateStats {
     }
 }
 
-pub fn get_crate_stats_default(crate_path: PathBuf, quick_mode: bool) -> CrateStats {
-    get_crate_stats(crate_path.clone(), DEFAULT_EFFECT_TYPES, quick_mode).unwrap_or_else(
-        |_| {
+pub fn get_crate_stats_default(
+    crate_path: PathBuf,
+    quick_mode: bool,
+    expand_macro: bool,
+) -> CrateStats {
+    get_crate_stats(crate_path.clone(), DEFAULT_EFFECT_TYPES, quick_mode, expand_macro)
+        .unwrap_or_else(|_| {
             warn!("Scan crashed, skipping crate: {}", crate_path.to_string_lossy());
             CrateStats { crate_path, ..Default::default() }
-        },
-    )
+        })
 }
 
 pub fn get_crate_stats(
     crate_path: PathBuf,
     effect_types: &[EffectType],
     quick_mode: bool,
+    expand_macro: bool,
 ) -> Result<CrateStats> {
-    let (audit, results) = AuditFile::new_caller_checked_default_with_results(
+    let (audit, results) = match AuditFile::new_caller_checked_default_with_results(
         &crate_path,
         effect_types,
         quick_mode,
-    )?;
+        expand_macro,
+    ) {
+        Ok(res) => res,
+        Err(e) => {
+            // Log the error details before propagating
+            eprintln!("Error creating AuditFile or getting results: {e}");
+            return Err(e);
+        }
+    };
 
     let pub_fns = results.pub_fns.len();
     let mut pub_fns_with_effects = 0;

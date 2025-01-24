@@ -23,8 +23,14 @@ test: checks test-results
 top10: install
 	$(SCAN_ALL) data/crate-lists/top10.csv top10
 
+top10-with-macro: install
+	$(SCAN_ALL) data/crate-lists/top10.csv top10 --expand-macro
+
 top100: install
 	$(SCAN_ALL) data/crate-lists/top100.csv top100 -n 64
+
+top100-with-macro: install
+	$(SCAN_ALL) data/crate-lists/top100.csv top100 -n 64 --expand-macro
 
 top1000: install
 	$(SCAN_ALL) data/crate-lists/top1000.csv top1000 -n 64

@@ -118,11 +118,11 @@ impl Resolver {
         Ok(Resolver { host, vfs })
     }
 
-    fn db(&self) -> &RootDatabase {
+    pub fn db(&self) -> &RootDatabase {
         self.host.raw_database()
     }
 
-    fn find_file_id(&self, filepath: &Path) -> Result<FileId> {
+    pub fn find_file_id(&self, filepath: &Path) -> Result<FileId> {
         let abs_path = canonicalize(filepath)?;
         let vfs_path = VfsPath::new_real_path(abs_path.display().to_string());
 
@@ -180,7 +180,7 @@ impl Resolver {
 #[derive(Debug)]
 pub struct ResolverImpl<'a> {
     db: &'a RootDatabase,
-    sems: Semantics<'a, RootDatabase>,
+    pub sems: Semantics<'a, RootDatabase>,
     resolver: &'a Resolver,
     /// The syntax tree of the file
     /// we are currently scanning

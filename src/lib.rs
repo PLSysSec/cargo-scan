@@ -15,3 +15,6 @@ pub mod resolution;
 
 // Attribute parser
 mod attr_parser;
+
+// Macro expander
+mod macro_expand;

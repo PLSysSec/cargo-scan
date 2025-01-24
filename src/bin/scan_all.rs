@@ -68,6 +68,10 @@ struct Args {
     // Don't collect raw list of effects
     #[clap(long, default_value_t = false)]
     skip_raw: bool,
+
+    /// Expand macros and scan expanded code
+    #[clap(short, long, default_value_t = false)]
+    expand_macro: bool,
 }
 
 /*
@@ -78,6 +82,7 @@ fn crate_stats(
     download_loc: PathBuf,
     test_run: bool,
     quick_mode: bool,
+    expand_macro: bool,
 ) -> CrateStats {
     info!("Getting stats for: {}", crt);
     let output_dir = download_loc.join(Path::new(crt));
@@ -97,7 +102,7 @@ fn crate_stats(
 
     debug!("Downloaded");
 
-    let stats = scan_stats::get_crate_stats_default(output_dir, quick_mode);
+    let stats = scan_stats::get_crate_stats_default(output_dir, quick_mode, expand_macro);
 
     // dbg!(&stats);
     info!("Done scanning: {}", crt);
@@ -261,7 +266,13 @@ fn main() {
             let crt = crt.clone();
             let download_loc = download_loc.to_owned();
             pool.execute(move || {
-                let res = crate_stats(&crt, download_loc, args.test_run, args.quick_mode);
+                let res = crate_stats(
+                    &crt,
+                    download_loc,
+                    args.test_run,
+                    args.quick_mode,
+                    args.expand_macro,
+                );
                 if let Err(e) = tx_inner.send((crt, res)) {
                     error!("Error sending result: {:?}", e);
                 }

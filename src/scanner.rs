@@ -5,6 +5,7 @@
 
 use crate::attr_parser::CfgPred;
 use crate::audit_file::EffectInfo;
+use crate::macro_expand::handle_macro_expansion;
 use crate::resolution::hacky_resolver::HackyResolver;
 use crate::resolution::name_resolution::Resolver;
 
@@ -48,6 +49,9 @@ pub struct ScanResults {
 
     pub call_graph: DiGraph<CanonicalPath, SrcLoc>,
     pub node_idxs: HashMap<CanonicalPath, NodeIndex>,
+    // To store call information for macro, Putting all call info in the could make some effect unrecognizable
+    pub macro_call_graph: DiGraph<CanonicalPath, SrcLoc>,
+    pub macro_node_idxs: HashMap<CanonicalPath, NodeIndex>,
 
     /* Tracking lines of code (LoC) and skipped/unsupported cases */
     pub total_loc: LoCTracker,
@@ -75,26 +79,48 @@ impl ScanResults {
     }
 
     pub fn get_callers(&self, callee: &CanonicalPath) -> Result<HashSet<EffectInfo>> {
-        let callee_node = self
-            .node_idxs
-            .get(callee)
-            .context("Missing callee for get_callers in results graph")?;
-        let effects = self
-            .call_graph
-            .edges_directed(*callee_node, Direction::Incoming)
-            .map(|e| {
-                let caller_node = e.source();
-                let caller = self.call_graph[caller_node].clone();
-                let src_loc = e.weight();
-                EffectInfo::new(caller, src_loc.clone())
-            })
-            .collect::<HashSet<_>>();
+        // First, attempt to find the callee node in `node_idxs`
+        let callee_node = if let Some(node) = self.node_idxs.get(callee) {
+            *node
+        } else {
+            // If not found in `node_idxs`, try `macro_node_idxs`
+            self.macro_node_idxs
+                .get(callee)
+                .context("Missing callee in both results graph and macro results graph")?
+                .to_owned()
+        };
+
+        // Try to collect edges from the primary `call_graph`
+        let effects = if let Some(_edges) =
+            self.call_graph.edges_directed(callee_node, Direction::Incoming).next()
+        {
+            self.call_graph
+                .edges_directed(callee_node, Direction::Incoming)
+                .map(|e| {
+                    let caller_node = e.source();
+                    let caller = self.call_graph[caller_node].clone();
+                    let src_loc = e.weight();
+                    EffectInfo::new(caller, src_loc.clone())
+                })
+                .collect::<HashSet<_>>()
+        } else {
+            // If no edges found in `call_graph`, try `macro_call_graph`
+            self.macro_call_graph
+                .edges_directed(callee_node, Direction::Incoming)
+                .map(|e| {
+                    let caller_node = e.source();
+                    let caller = self.macro_call_graph[caller_node].clone();
+                    let src_loc = e.weight();
+                    EffectInfo::new(caller, src_loc.clone())
+                })
+                .collect::<HashSet<_>>()
+        };
+
         Ok(effects)
     }
 
     pub fn add_fn_dec(&mut self, f: FnDec) {
         let fn_name = f.fn_name;
-
         // Update call graph
         self.update_call_graph(&fn_name);
 
@@ -120,6 +146,36 @@ impl ScanResults {
         let caller_idx = self.update_call_graph(caller);
         let callee_idx = self.update_call_graph(callee);
         self.call_graph.add_edge(caller_idx, callee_idx, loc);
+    }
+
+    pub fn combine_scan_results(&mut self, other: ScanResults) {
+        // Merge `Vec` fields
+        self.effects.extend(other.effects);
+        self.fn_ptr_effects.extend(other.fn_ptr_effects);
+
+        // Merge `HashSet` fields
+        self.pub_fns.extend(other.pub_fns);
+        self.trait_meths.extend(other.trait_meths);
+        self.fns_with_effects.extend(other.fns_with_effects);
+
+        // Merge `HashMap` fields
+        self.fn_locs.extend(other.fn_locs);
+        self.fn_loc_tracker.extend(other.fn_loc_tracker);
+
+        // Merge `DiGraph` fields
+        self.macro_call_graph = other.call_graph.clone();
+        self.macro_node_idxs = other.node_idxs.clone();
+        // Merge `LoCTracker` fields
+        self.total_loc.merge(other.total_loc);
+        self.skipped_macros.merge(other.skipped_macros);
+        self.skipped_conditional_code.merge(other.skipped_conditional_code);
+        self.skipped_fn_calls.merge(other.skipped_fn_calls);
+        self.skipped_fn_ptrs.merge(other.skipped_fn_ptrs);
+        self.skipped_other.merge(other.skipped_other);
+        self.unsafe_traits.merge(other.unsafe_traits);
+        self.unsafe_impls.merge(other.unsafe_impls);
+        self._effects_loc.merge(other._effects_loc);
+        self._skipped_build_rs.merge(other._skipped_build_rs);
     }
 }
 
@@ -160,6 +216,8 @@ where
 
     /// The set of enabled cfg options for this crate.
     enabled_cfg: &'a HashMap<String, Vec<String>>,
+
+    current_macro_context: Option<String>,
 }
 
 impl<'a, R> Scanner<'a, R>
@@ -187,6 +245,7 @@ where
             data,
             sinks: Sink::default_sinks(),
             enabled_cfg,
+            current_macro_context: None,
         }
     }
 
@@ -200,6 +259,10 @@ where
 
     pub fn add_sinks(&mut self, new_sinks: HashSet<IdentPath>) {
         self.sinks.extend(new_sinks);
+    }
+
+    pub fn set_current_macro_context(&mut self, macro_context: Option<String>) {
+        self.current_macro_context = macro_context;
     }
 
     /*
@@ -216,6 +279,7 @@ where
         for i in &f.items {
             self.scan_item(i);
         }
+        // self.process_macros();
     }
 
     pub fn scan_item(&mut self, i: &'a syn::Item) {
@@ -1123,11 +1187,15 @@ where
     where
         S: Debug + Spanned,
     {
-        let caller = if eff_type.is_ffi_decl() {
-            &callee
+        let caller: CanonicalPath = if let Some(ref macro_context) =
+            self.current_macro_context
+        {
+            CanonicalPath::new(&macro_context.clone())
+        } else if eff_type.is_ffi_decl() {
+            callee.clone()
         } else {
             let containing_fn = self.scope_fns.last().expect("not inside a function!");
-            &containing_fn.fn_name
+            containing_fn.fn_name.clone()
         };
 
         let eff = EffectInstance::new_effect(
@@ -1163,10 +1231,16 @@ where
     ) where
         S: Debug + Spanned,
     {
-        let containing_fn = self.scope_fns.last().expect("not inside a function!");
-        let caller = &containing_fn.fn_name;
+        let caller: CanonicalPath = if let Some(ref macro_context) =
+            self.current_macro_context
+        {
+            CanonicalPath::new(&macro_context.clone())
+        } else {
+            let containing_fn = self.scope_fns.last().expect("not inside a function!");
+            containing_fn.fn_name.clone()
+        };
         self.data.add_call(
-            caller,
+            &caller,
             &callee,
             SrcLoc::from_span(self.filepath, &callee_span.span()),
         );
@@ -1269,33 +1343,49 @@ pub fn scan_file_quick(
     Ok(())
 }
 
+pub struct ScanConfig<'a> {
+    enabled_cfg: &'a HashMap<String, Vec<String>>,
+    expand_macro: bool,
+    quick_mode: bool,
+}
+
 /// Load the Rust file at the filepath and scan it
 pub fn scan_file(
     crate_name: &str,
     filepath: &FilePath,
     resolver: &Resolver,
     scan_results: &mut ScanResults,
+    macro_scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
-    enabled_cfg: &HashMap<String, Vec<String>>,
+    scan_config: &ScanConfig,
 ) -> Result<()> {
+    let enabled_cfg = scan_config.enabled_cfg;
+    let expand_macro = scan_config.expand_macro;
     debug!("Scanning file: {:?}", filepath);
-
     // Load file contents
     let mut file = File::open(filepath)?;
     let mut src = String::new();
     file.read_to_string(&mut src)?;
     let syntax_tree = syn::parse_file(&src)?;
-
     // Initialize resolver
     let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
-
     // Initialize scanner
     let mut scanner = Scanner::new(filepath, file_resolver, scan_results, enabled_cfg);
-    scanner.add_sinks(sinks);
-
-    // Scan file contents
+    scanner.add_sinks(sinks.clone());
     scanner.scan_file(&syntax_tree);
-
+    if expand_macro {
+        handle_macro_expansion(
+            crate_name,
+            filepath,
+            resolver,
+            macro_scan_results,
+            sinks,
+            enabled_cfg,
+        )
+        .unwrap_or_else(|err| {
+            info!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
+        });
+    }
     Ok(())
 }
 
@@ -1305,20 +1395,30 @@ pub fn try_scan_file(
     filepath: &FilePath,
     resolver: &Resolver,
     scan_results: &mut ScanResults,
+    macro_scan_results: &mut ScanResults,
     sinks: HashSet<IdentPath>,
-    enabled_cfg: &HashMap<String, Vec<String>>,
-    quick_mode: bool,
+    scan_config: &ScanConfig,
 ) {
+    let enabled_cfg = scan_config.enabled_cfg;
+    let quick_mode = scan_config.quick_mode;
     if quick_mode {
         scan_file_quick(crate_name, filepath, scan_results, sinks, enabled_cfg)
             .unwrap_or_else(|err| {
                 info!("Failed to scan file {} ({})", filepath.to_string_lossy(), err);
             })
     } else {
-        scan_file(crate_name, filepath, resolver, scan_results, sinks, enabled_cfg)
-            .unwrap_or_else(|err| {
-                info!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
-            });
+        scan_file(
+            crate_name,
+            filepath,
+            resolver,
+            scan_results,
+            macro_scan_results,
+            sinks,
+            scan_config,
+        )
+        .unwrap_or_else(|err| {
+            info!("Failed to scan file: {} ({})", filepath.to_string_lossy(), err);
+        });
     }
 }
 
@@ -1328,6 +1428,7 @@ pub fn scan_crate_with_sinks(
     sinks: HashSet<IdentPath>,
     relevant_effects: &[EffectType],
     quick_mode: bool,
+    expand_macro: bool,
 ) -> Result<ScanResults> {
     info!("Scanning crate: {:?}", crate_path);
 
@@ -1335,7 +1436,6 @@ pub fn scan_crate_with_sinks(
     if !crate_path.is_dir() {
         return Err(anyhow!("Path is not a crate; not a directory: {:?}", crate_path));
     }
-
     let mut cargo_toml_path = crate_path.to_path_buf();
     cargo_toml_path.push("Cargo.toml");
     if !cargo_toml_path.try_exists()? || !cargo_toml_path.is_file() {
@@ -1346,8 +1446,8 @@ pub fn scan_crate_with_sinks(
 
     // TODO: this should *not* be created in the quick-mode case
     let resolver = Resolver::new(crate_path)?;
-
     let mut scan_results = ScanResults::new();
+    let mut macro_scan_results = ScanResults::new();
 
     let enabled_cfg = resolver.get_cfg_options_for_crate(&crate_name).unwrap_or_default();
 
@@ -1362,24 +1462,28 @@ pub fn scan_crate_with_sinks(
         info!("crate has no src dir; scanning all .rs files instead");
         util::fs::walk_files_with_extension(crate_path, "rs")
     };
-
+    let scan_config = ScanConfig { enabled_cfg: &enabled_cfg, expand_macro, quick_mode };
+    // scan every file
     for entry in file_iter {
         try_scan_file(
             &crate_name,
             entry.as_path(),
             &resolver,
             &mut scan_results,
+            &mut macro_scan_results,
             sinks.clone(),
-            &enabled_cfg,
-            quick_mode,
+            &scan_config,
         );
     }
-
-    filter_fn_ptr_effects(&mut scan_results, crate_name);
+    filter_fn_ptr_effects(&mut scan_results, crate_name.clone());
+    filter_fn_ptr_effects(&mut macro_scan_results, crate_name);
     scan_results
         .effects
         .retain(|e| EffectType::matches_effect(relevant_effects, e.eff_type()));
-
+    macro_scan_results
+        .effects
+        .retain(|e| EffectType::matches_effect(relevant_effects, e.eff_type()));
+    scan_results.combine_scan_results(macro_scan_results);
     Ok(scan_results)
 }
 
@@ -1388,8 +1492,15 @@ pub fn scan_crate(
     crate_path: &FilePath,
     relevant_effects: &[EffectType],
     quick_mode: bool,
+    expand_macro: bool,
 ) -> Result<ScanResults> {
-    scan_crate_with_sinks(crate_path, HashSet::new(), relevant_effects, quick_mode)
+    scan_crate_with_sinks(
+        crate_path,
+        HashSet::new(),
+        relevant_effects,
+        quick_mode,
+        expand_macro,
+    )
 }
 
 /// Keep only the `FnPtrCreation` effect instances for the pointers that
@@ -1412,14 +1523,25 @@ fn filter_fn_ptr_effects(scan_results: &mut ScanResults, crate_name: String) {
 // function the pointer points to might not have effects, but it might call other
 // functions with potentially dangerous behavior.
 fn check_fn_for_effects(scan_results: &ScanResults, fn_: &CanonicalPath) -> bool {
-    let Some(node) = scan_results.node_idxs.get(fn_) else {
+    let Some(node) =
+        scan_results.node_idxs.get(fn_).or_else(|| scan_results.macro_node_idxs.get(fn_))
+    else {
         return true;
     };
-    let graph = &scan_results.call_graph;
+
+    // Determine the appropriate graph based on where the node was found
+    let graph = if scan_results.node_idxs.contains_key(fn_) {
+        &scan_results.call_graph
+    } else {
+        &scan_results.macro_call_graph
+    };
+
     let mut bfs = Bfs::new(graph, *node);
 
+    // Traverse the graph using BFS
     while let Some(node) = bfs.next(graph) {
-        if scan_results.fns_with_effects.contains(&graph[node]) {
+        let path = &graph[node];
+        if scan_results.fns_with_effects.contains(path) {
             return true;
         }
     }
