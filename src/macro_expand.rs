@@ -1,5 +1,4 @@
 use super::ident::IdentPath;
-use crate::resolution::hacky_resolver::HackyResolver;
 use crate::resolution::name_resolution::Resolver;
 use crate::resolution::resolve::FileResolver;
 use crate::scanner::{ScanResults, Scanner};
@@ -13,10 +12,8 @@ use ra_ap_syntax::{AstNode, SyntaxKind, SyntaxNode};
 use ra_ap_vfs::FileId;
 use std::collections::{HashMap, HashSet};
 use std::path::Path as FilePath;
-use syn::Item;
 pub enum ParseResult {
     File(syn::File),
-    Item(syn::Item),
 }
 
 const IGNORED_MACROS: &[&str] = &[
@@ -56,19 +53,6 @@ const IGNORED_MACROS: &[&str] = &[
 
 pub fn try_parse_expansion(expansion: &str) -> Result<ParseResult> {
     let mut error: Vec<_> = Vec::new();
-
-    // Attempt parsing as a full file
-    if let Ok(parsed_file) = syn::parse_file(expansion) {
-        return Ok(ParseResult::File(parsed_file));
-    }
-    error.push(syn::parse_file(expansion).err());
-
-    // Attempt parsing as a single item
-    if let Ok(parsed_item) = syn::parse_str::<Item>(expansion) {
-        return Ok(ParseResult::Item(parsed_item));
-    }
-    error.push(syn::parse_str::<Item>(expansion).err());
-
     let wrapped_file = format!("fn dummy() {{\n{}\n}}", expansion);
     if let Ok(parsed_wrapped_file) = syn::parse_file(&wrapped_file) {
         return Ok(ParseResult::File(parsed_wrapped_file));
@@ -86,23 +70,23 @@ pub fn handle_macro_expansion(
     sinks: HashSet<IdentPath>,
     enabled_cfg: &HashMap<String, Vec<String>>,
 ) -> Result<()> {
-    let macro_hacky_resolver = HackyResolver::new(crate_name, filepath);
-    let mut macro_scanner = Scanner::new(
-        filepath,
-        macro_hacky_resolver.unwrap(),
-        macro_scan_results,
-        enabled_cfg,
-    );
-    macro_scanner.add_sinks(sinks.clone());
-
     let current_file_id =
         resolver.find_file_id(filepath).context("cannot find current file id")?;
     let syntax = resolver.db().parse_or_expand(current_file_id.into());
-    let file_resolver_expand = FileResolver::new(crate_name, resolver, filepath)?;
-    let mut expanded_files: Vec<(syn::File, String)> = Vec::new();
-    let mut expanded_items: Vec<(syn::Item, String)> = Vec::new();
-    let ignored_macros: HashSet<&str> = IGNORED_MACROS.iter().cloned().collect();
+    let file_resolver_expand = FileResolver::new(crate_name, resolver, filepath, None)?;
 
+    let use_statements: Vec<String> = syntax
+        .descendants()
+        .filter_map(|node| {
+            if node.kind() == SyntaxKind::USE {
+                Some(node.text().to_string())
+            } else {
+                None
+            }
+        })
+        .collect();
+    let use_statements_str = use_statements.join("\n");
+    let ignored_macros: HashSet<&str> = IGNORED_MACROS.iter().cloned().collect();
     for macro_call in find_macro_calls(&syntax) {
         let macro_name;
         if let Some(path) = macro_call.path() {
@@ -118,13 +102,22 @@ pub fn handle_macro_expansion(
         let canonical_path = match get_canonical_path_from_ast(
             filepath,
             macro_call.syntax(),
-            macro_name,
+            macro_name.clone(),
         ) {
             Some(path) => path,
             None => continue,
         };
-        if let Some(expanded_syntax_node) = file_resolver_expand.expand_macro(&macro_call)
+        if let Some((macro_file_id, expanded_syntax_node)) = file_resolver_expand.expand_macro(&macro_call)
         {
+            print!("Expanding macro: {}, macro_file_id: {:?}\n", macro_name.clone(),macro_file_id.clone());
+            let file_resolver = FileResolver::new(crate_name, resolver, filepath, Some(macro_file_id))?;
+            let mut macro_scanner = Scanner::new(
+                filepath,
+                file_resolver,
+                macro_scan_results,
+                enabled_cfg,
+            );
+            macro_scanner.add_sinks(sinks.clone());
             let expansion = format(
                 resolver.db(),
                 macro_call
@@ -136,29 +129,19 @@ pub fn handle_macro_expansion(
                 expanded_syntax_node,
             );
 
+            //let full_expansion = format!("{}\n{}", use_statements_str, expansion);
+
             match try_parse_expansion(&expansion) {
                 Ok(ParseResult::File(parsed_file)) => {
-                    expanded_files.push((parsed_file, canonical_path.clone()));
-                }
-                Ok(ParseResult::Item(parsed_item)) => {
-                    expanded_items.push((parsed_item, canonical_path.clone()));
+                    macro_scanner.set_current_macro_context(Some(canonical_path));
+                    macro_scanner.scan_file(&parsed_file);
+                    macro_scanner.set_current_macro_context(None);
                 }
                 Err(e) => {
                     debug!("Failed to parse expansion: {}", e);
                 }
             }
         }
-    }
-
-    for file in &expanded_files {
-        macro_scanner.set_current_macro_context(Some(file.1.clone()));
-        macro_scanner.scan_file(&file.0);
-        macro_scanner.set_current_macro_context(None);
-    }
-    for item in &expanded_items {
-        macro_scanner.set_current_macro_context(Some(item.1.clone()));
-        macro_scanner.scan_item(&item.0);
-        macro_scanner.set_current_macro_context(None);
     }
     Ok(())
 }

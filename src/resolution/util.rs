@@ -16,7 +16,7 @@ use ra_ap_ide_db::base_db::SourceDatabase;
 use ra_ap_ide_db::defs::Definition;
 
 use ra_ap_syntax::ast::HasName;
-use ra_ap_syntax::{AstNode, SourceFile, SyntaxNode, SyntaxToken, TokenAtOffset};
+use ra_ap_syntax::{AstNode, SyntaxNode, SyntaxToken, TokenAtOffset};
 
 // latest rust-analyzer has removed Display for Name, see
 // https://docs.rs/ra_ap_hir/latest/ra_ap_hir/struct.Name.html#
@@ -26,16 +26,15 @@ fn name_to_string(n: ra_ap_hir::Name) -> String {
 }
 
 pub(super) fn get_token(
-    src_file: &SourceFile,
+    src_file: &SyntaxNode,
     offset: TextSize,
     ident: Ident,
 ) -> Result<SyntaxToken> {
-    match src_file.syntax().token_at_offset(offset) {
+    println!("src_file.text_range: {:?}",src_file.text_range());
+    match src_file.token_at_offset(offset) {
         TokenAtOffset::Single(t) => Ok(t),
         TokenAtOffset::Between(t1, t2) => pick_best_token(t1, t2, ident),
-        TokenAtOffset::None => {
-            Err(anyhow!("Could not find any token at offset {:?}", offset))
-        }
+        TokenAtOffset::None => Err(anyhow!("Could not find any token at offset {:?}", offset)),
     }
 }
 
@@ -176,6 +175,8 @@ fn get_container_name(
                     .syntax()
                     .parent()
                     .and_then(|parent| {
+                        let syntax_node = bl_expr.syntax();
+                        sems.assert_contains_node(syntax_node);
                         ra_ap_syntax::ast::Fn::cast(parent).and_then(|function| {
                             let parent_def = sems.to_def(&function)?.into();
                             let mut name = get_container_name(sems, db, &parent_def);

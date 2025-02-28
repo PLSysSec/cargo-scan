@@ -11,6 +11,7 @@ use crate::ident::{CanonicalPath, CanonicalType, Ident};
 
 use anyhow::Result;
 use log::debug;
+use ra_ap_hir::HirFileId;
 use ra_ap_syntax::ast::MacroCall;
 use ra_ap_syntax::SyntaxNode;
 use std::fmt::Display;
@@ -79,6 +80,7 @@ pub struct FileResolver<'a> {
     filepath: &'a FilePath,
     resolver: ResolverImpl<'a>,
     backup: HackyResolver<'a>,
+    file_id: HirFileId,
 }
 
 impl<'a> FileResolver<'a> {
@@ -86,19 +88,44 @@ impl<'a> FileResolver<'a> {
         crate_name: &'a str,
         resolver: &'a Resolver,
         filepath: &'a FilePath,
+        file_id: Option<HirFileId>,
     ) -> Result<Self> {
         debug!("Creating FileResolver for file: {:?}", filepath);
         let backup = HackyResolver::new(crate_name, filepath)?;
-        let imp = ResolverImpl::new(resolver, filepath)?;
-        Ok(Self { filepath, resolver: imp, backup })
+        //let file_id = resolver.find_file_id(filepath)?;
+        let file_id = match file_id {
+            Some(id) => id,
+            None => {
+                let fid = resolver.find_file_id(filepath)?;
+                fid.into() //
+            }
+        };
+        let imp = ResolverImpl::new(resolver, file_id)?;
+        Ok(Self { filepath, resolver: imp, backup,file_id })
     }
 
-    pub fn expand_macro(&self, i: &MacroCall) -> Option<SyntaxNode> {
-        self.resolver.sems.expand(i)
-    }
+    pub fn expand_macro(&self, i: &MacroCall) -> Option<(HirFileId, SyntaxNode)> {
+        let (file_id, expanded_syntax) = self.resolver.sems.expand_and_return_id(i)?;
+        self.resolver.sems.assert_contains_node(&expanded_syntax);
+        if let Err(e) = self.resolver.update_macro_file_line_index(file_id,expanded_syntax.clone()) {
+            debug!("Failed to update macro file line index: {:?}", e);
+        }
+
+        Some((file_id, expanded_syntax))
+        
+    }    
 
     fn resolve_core(&self, i: &syn::Ident) -> Result<CanonicalPath> {
         let mut s = SrcLoc::from_span(self.filepath, i);
+        let span = i.span();
+        println!(
+            "Ident Span: start({}:{}) end({}:{})",
+            span.start().line,
+            span.start().column,
+            span.end().line,
+            span.end().column
+        );
+        println!("Resolving: {} ({})", i, s);
         debug!("Resolving: {} ({})", i, s);
         // Add 1 to column to avoid weird off-by-one errors
         s.add1();
@@ -107,7 +134,7 @@ impl<'a> FileResolver<'a> {
     }
 
     fn resolve_ffi_core(&self, i: &syn::Ident) -> Result<Option<CanonicalPath>> {
-        let mut s = SrcLoc::from_span(self.filepath, i);
+        let mut s = SrcLoc::from_span(self.filepath,i);
         debug!("Resolving FFI: {} ({})", i, s);
         // Add 1 to column to avoid weird off-by-one errors
         s.add1();

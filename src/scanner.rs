@@ -1368,7 +1368,7 @@ pub fn scan_file(
     file.read_to_string(&mut src)?;
     let syntax_tree = syn::parse_file(&src)?;
     // Initialize resolver
-    let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
+    let file_resolver = FileResolver::new(crate_name, resolver, filepath, None)?;
     // Initialize scanner
     let mut scanner = Scanner::new(filepath, file_resolver, scan_results, enabled_cfg);
     scanner.add_sinks(sinks.clone());
