@@ -4,11 +4,12 @@ Cargo Scan is a tool for auditing Rust crates.
 
 **⚠️ Cargo Scan is under active development. Some interfaces may be subject to change.**
 
-## Installation
+## Quick-start
 
 1. Clone this repository.
 2. Run `rustup update` to ensure you have the latest version of Rust (or install it via the [official website]((https://www.rust-lang.org/tools/install))).
 3. Run `cargo build`.
+4. Follow the instructions to install the VSCode extension below; or, if you prefer to use Cargo Scan as a basic CLI tool to incorporate in other projects, see "using the CLI tool" below.
 
 Known working builds:
 
@@ -16,22 +17,34 @@ Known working builds:
 
 - August 22, 2024 on Linux (Arch Linux) using Rust 1.80.1.
 
-## Quick-start
+## Using the VSCode Extension
 
-To use Cargo Scan you first need a Rust crate somewhere on your system (any Rust code with a `Cargo.toml` file).
-There are three ways to run Cargo Scan:
+For the most intuitive and interactive experience, we recommend using Cargo Scan through the VSCode extension.
 
-1. Using the basic command-line interface (easiest: `cargo run --bin scan <path to crate>`);
+### Installing the extension in VSCode
 
-2. Using interactive auditing mode (`cargo run --bin audit <path to crate> -i`); or
+1. Build the extension by running `make` in the `editor-plugin` directory. This will produce a `.vsix` file in that location.
+2. Launch VSCode and install the extension from the `.vsix` file:
+    - Press `Ctrl + Shift + P` (Windows/Linux) or `Cmd + Shift + P` (macOS) to open the Command Palette.
+    - Type "Extensions: Install from VSIX..." and select it.
+    - Navigate to the folder where the .vsix file is located and open it.
 
-3. Using the VSCode extension.
+The extension is automatically activated when a Rust package is detected in the workspace.
 
-Instructions for these are included below.
+### Performing an audit in VSCode
 
-## Method 1: Using the basic command-line interface
+Ensure that you have opened a directory containing a Rust crate in VSCode.
+Theen, there are two types of audits you can perform with Cargo Scan in VSCode:
+1. **Single Crate Audit** that scans only the currently open package for effects.
+- To run a single crate audit type `cargo-scan: Audit Crate` in the Command Palette.
+2. **Chain Audit** that performs a full audit and also scans the transitive dependencies of the open package.
+- To run a chain audit, create the chain by typing `cargo-scan: Create Chain` in the Command Palette and then perform the actual audit by running the command `cargo-scan: Audit Chain`.
 
-To scan a crate, you run the binary (from this repository), and provide it a path to the crate:
+The set of effects that Cargo Scan identifies are shown in the Effects view of the Explorer side bar.
+
+## Using the CLI tool
+
+You can also use Cargo Scan as a plain CLI tool, which can be useful for accessing the raw data for incorporating in other projects. To scan a crate, simply run the binary (from this repository), providing it with a path to the crate:
 ```
 cargo run --bin scan <path to crate>
 ```
@@ -72,73 +85,7 @@ You can run one of our provided example crates in `data/test-packages`:
 cargo run --bin scan data/test-packages/permissions-ex
 ```
 
-## Method 2: Interactive mode
-
-Interactive mode is a variant of the command-line interface that allows you to mark
-audits as safe or unsafe as you go through them.
-Interactive mode works by maintaining an *audit file* of the effects you have marked so far,
-which are maintained dynamically as you progress through an audit.
-```
-cargo run --bin audit <path to crate> -i
-```
-
-At each effect, the audit will ask you whether you want to mark it safe or unsafe,
-skip it or provide more context, or mark it caller-checked, which means that the caller
-of the function is responsible for ensuring safety.
-The interactive mode looks like this:
-```
-help[Audit location]:
-   ┌─ data/packages/rand/src/distributions/other.rs:94:1
-   │
-79 │   ╭       fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> char {
-80 │   │           // A valid `char` is either in the interval `[0, 0xD800)` or
-   │   ╰──'
-   ·   │
-90 │     ╭         let mut n = range.sample(rng);
-91 │     │         if n <= 0xDFFF {
-92 │     │             n -= GAP_SIZE;
-93 │     │         }
-94 │ ╭   │         unsafe { char::from_u32_unchecked(n) }
-95 │ │   │     }
-   │ ╰───│^ unsafe call: core::char::from_u32_unchecked
-96 │     │ }
-   │     ╰'
-
-? Select how to mark this effect:
-  (s)afe, (u)nsafe, (c)aller checked, (e)xpand context, ask me (l)ater, e(x)it tool
-```
-
-If the command is run a second time, it continues the existing audit.
-To review the audit, use `-r`.
-
-For additional usage options, run `help`:
-```
-cargo run --bin scan -- --help
-```
-
-## Method 3: Using the VSCode extension
-
-### Installing the extension in VSCode
-
-1. Build the extension by running `make` in the `editor-plugin` directory. This will produce a `.vsix` file in that location.
-2. Launch VSCode and install the extension from the `.vsix` file:
-    - Press `Ctrl + Shift + P` (Windows/Linux) or `Cmd + Shift + P` (macOS) to open the Command Palette.
-    - Type "Extensions: Install from VSIX..." and select it.
-    - Navigate to the folder where the .vsix file is located and open it.
-
-The extension is automatically activated when a Rust package is detected in the workspace.
-
-### Performing an audit in VSCode
-
-There are two types of audits you can perform with Cargo Scan in VSCode
-1. **Single Crate Audit** that scans only the currently open package for effects.
-- To run a single crate audit type `cargo-scan: Audit Crate` in the Command Palette. 
-2. **Chain Audit** that performs a full audit and also scans the transitive dependencies of the open package.
-- To run a chain audit, create the chain by typing `cargo-scan: Create Chain` in the Command Palette and then perform the actual audit by running the command `cargo-scan: Audit Chain`.
-
-The set of effects that Cargo Scan identifies are shown in the Effects view of the Explorer side bar.
-
-## Other usage
+## Additional usage options
 
 ### Running the unit tests
 
@@ -154,6 +101,12 @@ You can also run `./scripts/scan.py -h` to see options for running an experiment
 
 Cargo Scan can also be used in tandem with other Rust supply chain auditing tools, such as [cargo vet](https://mozilla.github.io/cargo-vet/).
 We are interested in exploring other use cases for integration; if you think Cargo Scan would be useful for your project, let us know!
+
+### Running the CLI in interactive mode (Deprecated)
+
+The CLI extension also supports an interactive mode, but this is deprecated;
+if you want to use Cargo Scan interactively, we recommend using it in VSCode.
+If you want to try out the old interactive mode, you may run it with `cargo run --bin audit <path to crate> -i`.
 
 ## Additional information
 
