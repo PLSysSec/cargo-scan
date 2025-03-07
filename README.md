@@ -35,16 +35,20 @@ The extension is automatically activated when a Rust package is detected in the 
 
 Ensure that you have opened a directory containing a Rust crate in VSCode.
 Theen, there are two types of audits you can perform with Cargo Scan in VSCode:
-1. **Single Crate Audit** that scans only the currently open package for effects.
+1. **Single Crate Audit:** This scans the currently open package for side effects (see below).
 - To run a single crate audit type `cargo-scan: Audit Crate` in the Command Palette.
-2. **Chain Audit** that performs a full audit and also scans the transitive dependencies of the open package.
+2. **Chain Audit:** This performs a full audit and also scans the transitive dependencies of the open package.
 - To run a chain audit, create the chain by typing `cargo-scan: Create Chain` in the Command Palette and then perform the actual audit by running the command `cargo-scan: Audit Chain`.
 
-The set of effects that Cargo Scan identifies are shown in the Effects view of the Explorer side bar.
+The set of side effects that Cargo Scan identifies are shown in the Effects view of the Explorer side bar.
+
+### What's a side effect?
+
+See [Wikipedia](https://en.wikipedia.org/wiki/Side_effect_(computer_science)). Basically, it represents some behavior of a function that might or might not be dangerous (e.g., operating system calls, memory unsafety, or filesystem/network access). These are behaviors that you may want to look into further when auditing a crate.
 
 ## Using the CLI tool
 
-You can also use Cargo Scan as a plain CLI tool, which can be useful for accessing the raw data for incorporating in other projects. To scan a crate, simply run the binary (from this repository), providing it with a path to the crate:
+You can also use Cargo Scan as a CLI tool, which can be useful for accessing the raw data for incorporating in other projects. To scan a crate, simply run the binary (from this repository), providing it with a path to the crate:
 ```
 cargo run --bin scan <path to crate>
 ```
@@ -73,10 +77,6 @@ For additional usage options, run `help`:
 ```
 cargo run --bin scan -- --help
 ```
-
-### What's a side effect?
-
-See [Wikipedia](https://en.wikipedia.org/wiki/Side_effect_(computer_science)). Basically, it represents some behavior of a function that might or might not be dangerous (e.g., operating system calls, memory unsafety, or filesystem/network access). These are behaviors that you may want to look into further when auditing a crate.
 
 ### If you don't have a crate on your system
 
