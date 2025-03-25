@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 use crate::effect::SrcLoc;
 use crate::ident::{CanonicalPath, CanonicalType, Ident};
+use crate::offset_maping::MacroExpansionContext;
 
 use ra_ap_hir::{AssocItem, CfgAtom, Crate, HirFileId, Impl, Semantics};
 use ra_ap_hir_def::db::DefDatabase;
@@ -32,7 +33,8 @@ use super::util::{canonical_path, get_canonical_type, get_token, syntax_node_fro
 pub struct Resolver {
     host: AnalysisHost,
     vfs: Vfs,
-    macro_file_line_index: RefCell<FxHashMap<HirFileId, Arc<LineIndex>>>,
+    pub macro_file_line_index: RefCell<FxHashMap<HirFileId, Arc<LineIndex>>>,
+    macro_expansion_ctx: RefCell<Option<MacroExpansionContext>>,
 }
 
 impl Resolver {
@@ -118,7 +120,7 @@ impl Resolver {
 
         debug!("...created");
 
-        Ok(Resolver { host, vfs, macro_file_line_index: RefCell::new(FxHashMap::default()),})
+        Ok(Resolver { host, vfs, macro_file_line_index: RefCell::new(FxHashMap::default()),macro_expansion_ctx: RefCell::new(None),})
     }
 
     pub fn db(&self) -> &RootDatabase {
@@ -150,28 +152,21 @@ impl Resolver {
         let line: u32 = src_loc.start_line() as u32 - 1;
         let col: u32 = src_loc.start_col() as u32 - 1;
         let line_col = LineCol { line, col };
-        if file_id.is_macro() {
-
+        if let Some(ctx) = self.current_macro_expansion_ctx() {
+            let offset = ctx.line_index.offset(line_col)
+                .ok_or_else(|| anyhow!("LineIndex out of bounds"))?;
+            ctx.offset_mapping.to_raw_offset(offset.into())
+                .ok_or_else(|| anyhow!("OffsetMapping failed to map formatted offset"))    
+        } else if file_id.is_macro() {
             let map_ref = self.macro_file_line_index.borrow();
             let line_index = map_ref.get(&file_id).ok_or_else(|| {
                 anyhow!("LineIndex not found for macro-file: {:?}", file_id)
             })?;
-
-            match line_index.offset(line_col) {
-                Some(offset) => Ok(offset),
-                None => Err(anyhow!("Could not find offset in macro-file for {:?}", src_loc)),
-            }
-        }
-        else {
+            line_index.offset(line_col).ok_or_else(|| anyhow!("Could not find offset for macro"))
+        } else {
             let original_file_id = file_id.file_id().unwrap();
             let line_index = self.host.analysis().file_line_index(original_file_id)?;
-            match line_index.offset(line_col) {
-                Some(offset) => Ok(offset),
-                None => Err(anyhow!(
-                    "Could not find offset in file for source location {:?}",
-                    src_loc
-                )),
-            }
+            line_index.offset(line_col).ok_or_else(|| anyhow!("Could not find offset in normal file"))
         }
     }
 
@@ -198,6 +193,18 @@ impl Resolver {
         }
 
         Ok(crate_opts)
+    }
+
+    pub fn set_macro_expansion_ctx(&self, ctx: MacroExpansionContext) {
+        self.macro_expansion_ctx.replace(Some(ctx));
+    }
+
+    pub fn clear_macro_expansion_ctx(&self) {
+        self.macro_expansion_ctx.replace(None);
+    }
+
+    pub fn current_macro_expansion_ctx(&self) -> Option<MacroExpansionContext> {
+        self.macro_expansion_ctx.borrow().clone()
     }
 }
 
@@ -244,6 +251,7 @@ impl<'a> ResolverImpl<'a> {
             return Ok(());
         }
         let text = expanded_syntax.text().to_string();
+        println!("--- Macro-expanded code for file_id {:?} ---\n{}", file_id, text);
         let line_index = Arc::new(LineIndex::new(&text));
         self.resolver.macro_file_line_index.borrow_mut().insert(file_id, line_index);
         Ok(())
@@ -288,8 +296,18 @@ impl<'a> ResolverImpl<'a> {
     }
 
     fn token(&self, i: Ident, s: SrcLoc) -> Result<SyntaxToken> {
-        let offset = self.resolver.find_offset(self.file_id, s)?;
-        get_token(&self.src_file, offset, i)
+        let offset = match self.resolver.find_offset(self.file_id, s) {
+            Ok(o) => o,
+            Err(e) => {
+                eprintln!("find_offset error for `{}`: {}", i.clone(), e);
+                return Err(e);
+            }
+        };
+        println!("Offset: {:?}", offset);
+    
+        let tok = get_token(&self.src_file, offset, i)?;
+        println!("Token: {:?}", tok);
+        Ok(tok)
     }
 
     fn get_token_diagnostics(&self, token: &SyntaxToken) -> Vec<String> {

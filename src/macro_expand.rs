@@ -1,4 +1,5 @@
 use super::ident::IdentPath;
+use crate::offset_maping::{MacroExpansionContext, OffsetMapping};
 use crate::resolution::name_resolution::Resolver;
 use crate::resolution::resolve::FileResolver;
 use crate::scanner::{ScanResults, Scanner};
@@ -12,6 +13,8 @@ use ra_ap_syntax::{AstNode, SyntaxKind, SyntaxNode};
 use ra_ap_vfs::FileId;
 use std::collections::{HashMap, HashSet};
 use std::path::Path as FilePath;
+use std::sync::Arc;
+use ra_ap_ide::LineIndex;
 pub enum ParseResult {
     File(syn::File),
 }
@@ -53,8 +56,7 @@ const IGNORED_MACROS: &[&str] = &[
 
 pub fn try_parse_expansion(expansion: &str) -> Result<ParseResult> {
     let mut error: Vec<_> = Vec::new();
-    let wrapped_file = format!("fn dummy() {{\n{}\n}}", expansion);
-    if let Ok(parsed_wrapped_file) = syn::parse_file(&wrapped_file) {
+    if let Ok(parsed_wrapped_file) = syn::parse_file(&expansion) {
         return Ok(ParseResult::File(parsed_wrapped_file));
     }
     error.push(syn::parse_file(expansion).err());
@@ -109,6 +111,7 @@ pub fn handle_macro_expansion(
         };
         if let Some((macro_file_id, expanded_syntax_node)) = file_resolver_expand.expand_macro(&macro_call)
         {
+            let raw_text = expanded_syntax_node.text().to_string();
             print!("Expanding macro: {}, macro_file_id: {:?}\n", macro_name.clone(),macro_file_id.clone());
             let file_resolver = FileResolver::new(crate_name, resolver, filepath, Some(macro_file_id))?;
             let mut macro_scanner = Scanner::new(
@@ -128,10 +131,16 @@ pub fn handle_macro_expansion(
                 current_file_id,
                 expanded_syntax_node,
             );
-
-            //let full_expansion = format!("{}\n{}", use_statements_str, expansion);
-
-            match try_parse_expansion(&expansion) {
+            let full_expansion = format!("fn dummy() {{\n{}\n}}", expansion);
+            // let full_expansion = format!("{}\n{}", use_statements_str, wrapped_file);
+            println!("full_expansion: {}", full_expansion);
+            let mapping = OffsetMapping::build(&full_expansion, &raw_text);
+            let ctx = MacroExpansionContext {
+                line_index: Arc::new(LineIndex::new(&full_expansion)),
+                offset_mapping: mapping,
+            };
+            resolver.set_macro_expansion_ctx(ctx);
+            match try_parse_expansion(&full_expansion) {
                 Ok(ParseResult::File(parsed_file)) => {
                     macro_scanner.set_current_macro_context(Some(canonical_path));
                     macro_scanner.scan_file(&parsed_file);
@@ -141,6 +150,7 @@ pub fn handle_macro_expansion(
                     debug!("Failed to parse expansion: {}", e);
                 }
             }
+            resolver.clear_macro_expansion_ctx();
         }
     }
     Ok(())
