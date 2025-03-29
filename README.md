@@ -2,20 +2,23 @@
 
 Cargo Scan is a tool for auditing Rust crates.
 
-**⚠️ Cargo Scan is under active development. Some interfaces may be subject to change.**
+![Cargo Scan usage in VSCode](vscode_usage.png)
+
+![Build status](https://github.com/PLSysSec/cargo-scan/actions/workflows/build.yml/badge.svg)
+![Checks status](https://github.com/PLSysSec/cargo-scan/actions/workflows/checks.yml/badge.svg)
+
+**⚠️ Please note that Cargo Scan is under active development. Some interfaces may be subject to change.**
 
 ## Quick-start
 
 1. Clone this repository.
 2. Run `rustup update` to ensure you have the latest version of Rust (or install it via the [official website]((https://www.rust-lang.org/tools/install))).
 3. Run `cargo build`.
-4. Follow the instructions to install the VSCode extension below; or, if you prefer to use Cargo Scan as a basic CLI tool to incorporate in other projects, see "using the CLI tool" below.
 
-Known working builds:
+Once built, either:
 
-- August 22, 2024 on Mac OS (Sonoma) using Rust 1.80.1.
-
-- August 22, 2024 on Linux (Arch Linux) using Rust 1.80.1.
+4. Follow the instructions to install the VSCode extension below; or
+5. If you prefer to use Cargo Scan as a basic CLI tool or want to incorporate it in other projects, see "using the CLI tool" below.
 
 ## Using the VSCode Extension
 
@@ -42,9 +45,9 @@ Theen, there are two types of audits you can perform with Cargo Scan in VSCode:
 
 The set of side effects that Cargo Scan identifies are shown in the Effects view of the Explorer side bar.
 
-### What's a side effect?
+### I'm seeing something about "effects" - what's a side effect?
 
-See [Wikipedia](https://en.wikipedia.org/wiki/Side_effect_(computer_science)). Basically, it represents some behavior of a function that might or might not be dangerous (e.g., operating system calls, memory unsafety, or filesystem/network access). These are behaviors that you may want to look into further when auditing a crate.
+Basically, it represents some behavior of a function that is not visible in its function signature - and that might or might not be dangerous (e.g., operating system calls, memory unsafety, or filesystem/network access). See [Wikipedia](https://en.wikipedia.org/wiki/Side_effect_(computer_science)) for a more general discussion. These are behaviors that you may want to look into further when auditing a crate.
 
 ## Using the CLI tool
 
@@ -53,7 +56,7 @@ You can also use Cargo Scan as a CLI tool, which can be useful for accessing the
 cargo run --bin scan <path to crate>
 ```
 
-This is the simplest available output, which is returned in CSV format as a list of *side effects,* one per line.
+This provides the simplest available output, which is returned in CSV format as a list of side effects, one per line.
 The beginning of the line gives the crate name, the function body and callee that contains the effect, and the effect type or pattern that it matches.
 The last four items on each line give the directory, file, line, and column where the effect occurs.
 Example output is as follows:
@@ -89,24 +92,19 @@ cargo run --bin scan data/test-packages/permissions-ex
 
 ### Running the unit tests
 
-- Run `cargo test` to run Rust unit tests
+- Run `cargo test` to run Rust unit tests.
 
 - Run `make test` to re-run the tool on all our test packages, whose results are in `data/results` and placed under version control to check for any regressions.
 
-### Running an experiment
-
-You can also run `./scripts/scan.py -h` to see options for running an experiment; this is useful for running a scan on a large list of crates, e.g. the top 100 crates on crates.io or your own provided list. Alternatively, see `Makefile` for some pre-defined experiments to run, such as `make top10`.
+- See the `Makefile` for other targets and options!
 
 ### Running in tandem with other tools
 
 Cargo Scan can also be used in tandem with other Rust supply chain auditing tools, such as [cargo vet](https://mozilla.github.io/cargo-vet/).
+
+### Your use case here!
+
 We are interested in exploring other use cases for integration; if you think Cargo Scan would be useful for your project, let us know!
-
-### Running the CLI in interactive mode (Deprecated)
-
-The CLI extension also supports an interactive mode, but this is deprecated;
-if you want to use Cargo Scan interactively, we recommend using it in VSCode.
-If you want to try out the old interactive mode, you may run it with `cargo run --bin audit <path to crate> -i`.
 
 ## Additional information
 
