@@ -251,7 +251,6 @@ impl<'a> ResolverImpl<'a> {
             return Ok(());
         }
         let text = expanded_syntax.text().to_string();
-        println!("--- Macro-expanded code for file_id {:?} ---\n{}", file_id, text);
         let line_index = Arc::new(LineIndex::new(&text));
         self.resolver.macro_file_line_index.borrow_mut().insert(file_id, line_index);
         Ok(())
@@ -260,22 +259,16 @@ impl<'a> ResolverImpl<'a> {
     fn parse_source_file(&self, def: &Definition) -> Option<()> {
         let db = self.db;
         let node = syntax_node_from_def(def, db)?;
-
         // If it does not have a `FileId`, then it was produced
         // by a macro call and we want to skip those cases.
-        if let Some(file_id) = node.file_id.file_id() {
-            self.sems.parse(file_id);
-        } else {
-            log::debug!("Definition is macro-only, no file_id");
-            // self.sems.parse_or_expand(file_id)
-        }
+        self.sems.parse_or_expand(node.file_id);
 
         Some(())
     }
 
     fn find_def(&self, token: &SyntaxToken) -> Result<Definition> {
         // For ra_ap_syntax::TextSize, using default, idk if this is correct
-        let text_size = Default::default();
+        let text_size = Default::default();  
         self.sems
             .descend_into_macros(token.clone(), text_size)
             .iter()
@@ -299,14 +292,10 @@ impl<'a> ResolverImpl<'a> {
         let offset = match self.resolver.find_offset(self.file_id, s) {
             Ok(o) => o,
             Err(e) => {
-                eprintln!("find_offset error for `{}`: {}", i.clone(), e);
                 return Err(e);
             }
         };
-        println!("Offset: {:?}", offset);
-    
         let tok = get_token(&self.src_file, offset, i)?;
-        println!("Token: {:?}", tok);
         Ok(tok)
     }
 

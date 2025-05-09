@@ -13,7 +13,7 @@ use anyhow::Result;
 use log::debug;
 use ra_ap_hir::HirFileId;
 use ra_ap_syntax::ast::MacroCall;
-use ra_ap_syntax::SyntaxNode;
+use ra_ap_syntax::{AstNode, SyntaxNode};
 use std::fmt::Display;
 use std::path::Path as FilePath;
 use syn::{self, spanned::Spanned};
@@ -113,20 +113,17 @@ impl<'a> FileResolver<'a> {
 
         Some((file_id, expanded_syntax))
         
-    }    
+    }
+
+    pub fn resolve_macro_def_path(&self, macro_call: &MacroCall) -> Option<CanonicalPath> {
+        let path = macro_call.path()?;
+        let last_segment = path.segment()?.name_ref()?.text().to_string();
+        let fake_ident = syn::Ident::new(&last_segment, proc_macro2::Span::call_site());
+        Some(self.resolve_def(&fake_ident))
+    }
 
     fn resolve_core(&self, i: &syn::Ident) -> Result<CanonicalPath> {
         let mut s = SrcLoc::from_span(self.filepath, i);
-        let span = i.span();
-        println!(
-            "Ident Span: start({}:{}) end({}:{})",
-            span.start().line,
-            span.start().column,
-            span.end().line,
-            span.end().column
-        );
-        println!("Resolving: {} ({})", i, s);
-        debug!("Resolving: {} ({})", i, s);
         // Add 1 to column to avoid weird off-by-one errors
         s.add1();
         let i = ident_from_syn(i);

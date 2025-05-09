@@ -1,4 +1,5 @@
 use super::ident::IdentPath;
+use crate::effect::SrcLoc;
 use crate::offset_maping::{MacroExpansionContext, OffsetMapping};
 use crate::resolution::name_resolution::Resolver;
 use crate::resolution::resolve::FileResolver;
@@ -7,6 +8,7 @@ use anyhow::{anyhow, Context, Result};
 use log::debug;
 use ra_ap_hir::db::ExpandDatabase;
 use ra_ap_ide::RootDatabase;
+use ra_ap_ide_db::base_db::SourceDatabaseExt;
 use ra_ap_ide_db::syntax_helpers::insert_whitespace_into_node::insert_ws_into;
 use ra_ap_syntax::ast::{HasName, MacroCall};
 use ra_ap_syntax::{AstNode, SyntaxKind, SyntaxNode};
@@ -76,18 +78,6 @@ pub fn handle_macro_expansion(
         resolver.find_file_id(filepath).context("cannot find current file id")?;
     let syntax = resolver.db().parse_or_expand(current_file_id.into());
     let file_resolver_expand = FileResolver::new(crate_name, resolver, filepath, None)?;
-
-    let use_statements: Vec<String> = syntax
-        .descendants()
-        .filter_map(|node| {
-            if node.kind() == SyntaxKind::USE {
-                Some(node.text().to_string())
-            } else {
-                None
-            }
-        })
-        .collect();
-    let use_statements_str = use_statements.join("\n");
     let ignored_macros: HashSet<&str> = IGNORED_MACROS.iter().cloned().collect();
     for macro_call in find_macro_calls(&syntax) {
         let macro_name;
@@ -101,18 +91,25 @@ pub fn handle_macro_expansion(
             debug!("Failed to resolve macro path.");
             continue;
         }
-        let canonical_path = match get_canonical_path_from_ast(
-            filepath,
-            macro_call.syntax(),
-            macro_name.clone(),
-        ) {
-            Some(path) => path,
+        let canonical_path = match file_resolver_expand.resolve_macro_def_path(&macro_call) {
+            Some(cp) => cp,
             None => continue,
         };
+        let text_range = macro_call.syntax().text_range();
+        let line_index = LineIndex::new(&resolver.db().file_text(current_file_id).to_string());
+        let start = line_index.line_col(text_range.start());
+        let end = line_index.line_col(text_range.end());
+
+        let macro_call_loc = SrcLoc::new(
+            filepath,
+            (start.line+1) as usize,
+            start.col as usize,
+        (end.line+1) as usize,
+            end.col as usize,
+        );
         if let Some((macro_file_id, expanded_syntax_node)) = file_resolver_expand.expand_macro(&macro_call)
         {
             let raw_text = expanded_syntax_node.text().to_string();
-            print!("Expanding macro: {}, macro_file_id: {:?}\n", macro_name.clone(),macro_file_id.clone());
             let file_resolver = FileResolver::new(crate_name, resolver, filepath, Some(macro_file_id))?;
             let mut macro_scanner = Scanner::new(
                 filepath,
@@ -131,9 +128,7 @@ pub fn handle_macro_expansion(
                 current_file_id,
                 expanded_syntax_node,
             );
-            let full_expansion = format!("fn dummy() {{\n{}\n}}", expansion);
-            // let full_expansion = format!("{}\n{}", use_statements_str, wrapped_file);
-            println!("full_expansion: {}", full_expansion);
+            let full_expansion = format!("fn {}() {{\n{}\n}}", macro_name , expansion);
             let mapping = OffsetMapping::build(&full_expansion, &raw_text);
             let ctx = MacroExpansionContext {
                 line_index: Arc::new(LineIndex::new(&full_expansion)),
@@ -142,9 +137,11 @@ pub fn handle_macro_expansion(
             resolver.set_macro_expansion_ctx(ctx);
             match try_parse_expansion(&full_expansion) {
                 Ok(ParseResult::File(parsed_file)) => {
-                    macro_scanner.set_current_macro_context(Some(canonical_path));
+                    macro_scanner.set_current_macro_context(Some(canonical_path.to_string()));
+                    macro_scanner.set_current_macro_call_loc(Some(macro_call_loc));
                     macro_scanner.scan_file(&parsed_file);
                     macro_scanner.set_current_macro_context(None);
+                    macro_scanner.set_current_macro_call_loc(None);
                 }
                 Err(e) => {
                     debug!("Failed to parse expansion: {}", e);

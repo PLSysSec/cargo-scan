@@ -37,15 +37,6 @@ impl OffsetMapping {
             }
         }
 
-        let matched_count = offset_map.iter().filter(|x| x.is_some()).count();
-        let total = offset_map.len();
-        eprintln!(
-            "[OffsetMapping(Brute-Search)] Matched {} of {} positions ({:.2}%)",
-            matched_count,
-            total,
-            (matched_count as f64) / (total as f64) * 100.0
-        );
-
         Self { offset_map }
     }
 

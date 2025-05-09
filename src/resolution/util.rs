@@ -30,7 +30,6 @@ pub(super) fn get_token(
     offset: TextSize,
     ident: Ident,
 ) -> Result<SyntaxToken> {
-    println!("src_file.text_range: {:?}",src_file.text_range());
     match src_file.token_at_offset(offset) {
         TokenAtOffset::Single(t) => Ok(t),
         TokenAtOffset::Between(t1, t2) => pick_best_token(t1, t2, ident),
@@ -77,7 +76,7 @@ pub(super) fn canonical_path(
         return Some(CanonicalPath::new(name_to_string(b.name()).as_str()));
     }
 
-    let container = get_container_name(sems, db, def);
+    // let container = get_container_name(sems, db, def);
     let def_name = def.name(db).map(name_to_string);
     let module = def.module(db)?;
 
@@ -93,7 +92,7 @@ pub(super) fn canonical_path(
     let cp = crate_name
         .into_iter()
         .chain(module_path)
-        .chain(container)
+        // .chain(container)
         .chain(def_name)
         .join("::");
 
@@ -170,7 +169,7 @@ fn get_container_name(
             // get the name of the containing function
             else if let ModuleSource::BlockExpr(bl_expr) =
                 f.module(db).definition_source(db).value
-            {
+            {   
                 let str = bl_expr
                     .syntax()
                     .parent()

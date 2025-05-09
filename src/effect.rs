@@ -300,12 +300,13 @@ impl EffectInstance {
         is_unsafe: bool,
         ffi: Option<CanonicalPath>,
         sinks: &HashSet<IdentPath>,
+        macro_loc: Option<SrcLoc>,
     ) -> Option<Self>
     where
         S: Spanned,
     {
         // Code to classify an effect based on call site information
-        let call_loc = SrcLoc::from_span(filepath, callsite);
+        let call_loc = macro_loc.unwrap_or_else(|| SrcLoc::from_span(filepath, callsite));
         let eff_type = if let Some(ffi) = ffi {
             if !is_unsafe {
                 // This case can occur in certain contexts, e.g. with
@@ -344,11 +345,12 @@ impl EffectInstance {
         callee: CanonicalPath,
         eff_site: &S,
         eff_type: Effect,
+        macro_loc: Option<SrcLoc>,
     ) -> Self
     where
         S: Spanned,
     {
-        let call_loc = SrcLoc::from_span(filepath, eff_site);
+        let call_loc = macro_loc.unwrap_or_else(|| SrcLoc::from_span(filepath, eff_site));
         Self { caller, call_loc, callee, eff_type }
     }
 
