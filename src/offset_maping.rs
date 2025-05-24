@@ -1,5 +1,4 @@
 use std::sync::Arc;
-
 use ra_ap_syntax::{SourceFile, SyntaxKind, SyntaxToken};
 
 #[derive(Debug, Clone)]
@@ -7,6 +6,7 @@ pub struct OffsetMapping {
     offset_map: Vec<Option<ra_ap_ide::TextSize>>,
 }
 
+// This struct is used to map offsets from the formatted code to the raw code.
 impl OffsetMapping {
     pub fn build(formatted: &str, raw: &str) -> Self {
         let mut offset_map = vec![None; formatted.len() + 1];
@@ -60,10 +60,6 @@ fn parse_tokens(code: &str) -> Vec<SyntaxToken> {
         })
         .collect()
 }
-
-
-
-// ----------------------------------------------------------------------
 
 use ra_ap_ide::{LineIndex, TextSize};
 

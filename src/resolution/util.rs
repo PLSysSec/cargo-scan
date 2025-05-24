@@ -1,22 +1,18 @@
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
-use ra_ap_hir::db::DefDatabase;
 use ra_ap_hir_expand::InFile;
 
 use crate::ident::{CanonicalPath, CanonicalType, Ident, TypeKind};
 
 use ra_ap_hir::{
-    Adt, AsAssocItem, AssocItemContainer, DefWithBody, GenericParam, HasSource,
-    HirDisplay, Module, ModuleSource, Semantics, VariantDef,
+    GenericParam, HasSource,Module, Semantics, VariantDef,
 };
 
-use ra_ap_hir_expand::name::AsName;
 use ra_ap_ide::{RootDatabase, TextSize};
 use ra_ap_ide_db::base_db::SourceDatabase;
 use ra_ap_ide_db::defs::Definition;
 
-use ra_ap_syntax::ast::HasName;
-use ra_ap_syntax::{AstNode, SyntaxNode, SyntaxToken, TokenAtOffset};
+use ra_ap_syntax::{SyntaxNode, SyntaxToken, TokenAtOffset};
 
 // latest rust-analyzer has removed Display for Name, see
 // https://docs.rs/ra_ap_hir/latest/ra_ap_hir/struct.Name.html#
@@ -68,7 +64,7 @@ fn build_path_to_root(module: Module, db: &RootDatabase) -> Vec<Module> {
 }
 
 pub(super) fn canonical_path(
-    sems: &Semantics<RootDatabase>,
+    _sems: &Semantics<RootDatabase>,
     db: &RootDatabase,
     def: &Definition,
 ) -> Option<CanonicalPath> {
@@ -97,128 +93,6 @@ pub(super) fn canonical_path(
         .join("::");
 
     Some(CanonicalPath::new(cp.as_str()))
-}
-
-/// Helper function to construct the canonical path
-fn get_container_name(
-    sems: &Semantics<RootDatabase>,
-    db: &RootDatabase,
-    def: &Definition,
-) -> Vec<String> {
-    let mut container_names = vec![];
-
-    match def {
-        Definition::Field(f) => {
-            let parent = f.parent_def(db);
-            container_names.append(&mut match parent {
-                VariantDef::Variant(v) => get_container_name(sems, db, &v.into()),
-                VariantDef::Struct(s) => {
-                    get_container_name(sems, db, &Adt::from(s).into())
-                }
-                VariantDef::Union(u) => {
-                    get_container_name(sems, db, &Adt::from(u).into())
-                }
-            });
-            container_names.push(name_to_string(parent.name(db)))
-        }
-        Definition::Local(l) => {
-            let parent = l.parent(db);
-            let parent_name = parent.name(db);
-            let parent_def = match parent {
-                DefWithBody::Function(f) => f.into(),
-                DefWithBody::Static(s) => s.into(),
-                DefWithBody::Const(c) => c.into(),
-                DefWithBody::Variant(v) => v.into(),
-                DefWithBody::InTypeConst(_) => unimplemented!("TODO"),
-            };
-            container_names.append(&mut get_container_name(sems, db, &parent_def));
-            container_names.push(parent_name.map(name_to_string).unwrap_or_default())
-        }
-        Definition::Function(f) => {
-            if let Some(item) = f.as_assoc_item(db) {
-                match item.container(db) {
-                    AssocItemContainer::Trait(t) => {
-                        let mut parent_name = get_container_name(sems, db, &t.into());
-                        container_names.append(&mut parent_name);
-                        container_names.push(name_to_string(t.name(db)))
-                    }
-                    AssocItemContainer::Impl(i) => {
-                        let id = ra_ap_hir_def::ImplId::from(i);
-                        let impl_data = db.impl_data(id);
-
-                        let name = if let Some(trait_ref) =
-                            impl_data.target_trait.as_ref()
-                        {
-                            format!(
-                                "<{} as {}>",
-                                i.self_ty(db).display(db),
-                                trait_ref.path.display(db)
-                            )
-                        } else {
-                            let adt = i.self_ty(db).as_adt();
-                            adt.map(|it| name_to_string(it.name(db))).unwrap_or_default()
-                        };
-
-                        let mut parent_names = get_container_name(sems, db, &i.into());
-                        container_names.append(&mut parent_names);
-                        container_names.push(name)
-                    }
-                }
-            }
-            // If the function is defined inside another function body,
-            // get the name of the containing function
-            else if let ModuleSource::BlockExpr(bl_expr) =
-                f.module(db).definition_source(db).value
-            {   
-                let str = bl_expr
-                    .syntax()
-                    .parent()
-                    .and_then(|parent| {
-                        let syntax_node = bl_expr.syntax();
-                        sems.assert_contains_node(syntax_node);
-                        ra_ap_syntax::ast::Fn::cast(parent).and_then(|function| {
-                            let parent_def = sems.to_def(&function)?.into();
-                            let mut name = get_container_name(sems, db, &parent_def);
-                            container_names.append(&mut name);
-                            Some(function.name()?.as_name())
-                        })
-                    })
-                    .map(name_to_string)
-                    .unwrap_or_default();
-                container_names.push(str);
-            }
-        }
-        Definition::Variant(e) => {
-            container_names.push(name_to_string(e.parent_enum(db).name(db)))
-        }
-        _ => {
-            // If the definition exists inside a function body,
-            // get the name of the containing function
-            if def.module(db).is_none() {
-                container_names.push(String::new());
-            } else if let ModuleSource::BlockExpr(bl_expr) =
-                def.module(db).unwrap().definition_source(db).value
-            {
-                let str = bl_expr
-                    .syntax()
-                    .parent()
-                    .and_then(|parent| {
-                        ra_ap_syntax::ast::Fn::cast(parent).and_then(|function| {
-                            let parent_def = sems.to_def(&function)?.into();
-                            let mut name = get_container_name(sems, db, &parent_def);
-                            container_names.append(&mut name);
-                            Some(function.name()?.as_name())
-                        })
-                    })
-                    .map(name_to_string)
-                    .unwrap_or_default();
-                container_names.push(str)
-            }
-        }
-    }
-    container_names.retain(|s| !s.is_empty());
-
-    container_names
 }
 
 /// Type resolution

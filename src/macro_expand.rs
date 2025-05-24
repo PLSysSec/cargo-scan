@@ -10,7 +10,7 @@ use ra_ap_hir::db::ExpandDatabase;
 use ra_ap_ide::RootDatabase;
 use ra_ap_ide_db::base_db::SourceDatabaseExt;
 use ra_ap_ide_db::syntax_helpers::insert_whitespace_into_node::insert_ws_into;
-use ra_ap_syntax::ast::{HasName, MacroCall};
+use ra_ap_syntax::ast::MacroCall;
 use ra_ap_syntax::{AstNode, SyntaxKind, SyntaxNode};
 use ra_ap_vfs::FileId;
 use std::collections::{HashMap, HashSet};
@@ -151,67 +151,6 @@ pub fn handle_macro_expansion(
         }
     }
     Ok(())
-}
-
-/// Get the canonical path of a function, method, or module containing the macro call.
-pub fn get_canonical_path_from_ast(
-    filepath: &FilePath,
-    macro_call: &SyntaxNode,
-    macro_name: String,
-) -> Option<String> {
-    let mut current_node = macro_call.clone();
-    let mut path_components = Vec::new();
-    let mut file_components = Vec::new();
-
-    while let Some(parent) = current_node.parent() {
-        current_node = parent;
-
-        // Case 1: Macro inside a function
-        if let Some(func) = ra_ap_syntax::ast::Fn::cast(current_node.clone()) {
-            if let Some(name) = func.name() {
-                path_components.push(name.text().to_string());
-                break; // Stop at the function level
-            }
-        }
-
-        // Case 2: Macro inside an `impl` block (method)
-        if let Some(impl_block) = ra_ap_syntax::ast::Impl::cast(current_node.clone()) {
-            if let Some(ty) = impl_block.self_ty() {
-                path_components.push(ty.syntax().text().to_string());
-            }
-        }
-
-        // Case 3: Macro at module level
-        if let Some(module) = ra_ap_syntax::ast::Module::cast(current_node.clone()) {
-            if let Some(name) = module.name() {
-                path_components.push(name.text().to_string());
-            }
-        }
-    }
-
-    let filepath = filepath.to_str();
-    if let Some(path) = filepath {
-        let components: Vec<&str> = path.split('/').collect();
-        if let Some(src_index) = components.iter().position(|&c| c == "src") {
-            if src_index > 0 {
-                // Insert the component before "src" at the head
-                file_components.insert(0, components[src_index - 1].to_string());
-                // Push all components after src to the tail
-                for after_src in &components[src_index + 1..] {
-                    if let Some(stripped) = after_src.strip_suffix(".rs") {
-                        let without_extension = stripped;
-                        file_components.push(without_extension.to_string());
-                    } else {
-                        file_components.push(after_src.to_string());
-                    }
-                }
-            }
-        }
-    }
-    path_components.reverse();
-    file_components.append(&mut path_components);
-    file_components.push(macro_name);
-    Some(file_components.join("::"))
 }
 
 fn format(

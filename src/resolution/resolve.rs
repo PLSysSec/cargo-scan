@@ -13,7 +13,7 @@ use anyhow::Result;
 use log::debug;
 use ra_ap_hir::HirFileId;
 use ra_ap_syntax::ast::MacroCall;
-use ra_ap_syntax::{AstNode, SyntaxNode};
+use ra_ap_syntax::SyntaxNode;
 use std::fmt::Display;
 use std::path::Path as FilePath;
 use syn::{self, spanned::Spanned};
@@ -80,7 +80,6 @@ pub struct FileResolver<'a> {
     filepath: &'a FilePath,
     resolver: ResolverImpl<'a>,
     backup: HackyResolver<'a>,
-    file_id: HirFileId,
 }
 
 impl<'a> FileResolver<'a> {
@@ -101,18 +100,19 @@ impl<'a> FileResolver<'a> {
             }
         };
         let imp = ResolverImpl::new(resolver, file_id)?;
-        Ok(Self { filepath, resolver: imp, backup,file_id })
+        Ok(Self { filepath, resolver: imp, backup })
     }
 
     pub fn expand_macro(&self, i: &MacroCall) -> Option<(HirFileId, SyntaxNode)> {
-        let (file_id, expanded_syntax) = self.resolver.sems.expand_and_return_id(i)?;
+        let expanded_syntax = self.resolver.sems.expand(i)?;
+        let file_id = self.resolver.sems.hir_file_for(&expanded_syntax);
+
         self.resolver.sems.assert_contains_node(&expanded_syntax);
-        if let Err(e) = self.resolver.update_macro_file_line_index(file_id,expanded_syntax.clone()) {
+        if let Err(e) = self.resolver.update_macro_file_line_index(file_id, expanded_syntax.clone()) {
             debug!("Failed to update macro file line index: {:?}", e);
         }
 
         Some((file_id, expanded_syntax))
-        
     }
 
     pub fn resolve_macro_def_path(&self, macro_call: &MacroCall) -> Option<CanonicalPath> {
