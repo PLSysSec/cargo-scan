@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use ra_ap_syntax::{SourceFile, SyntaxKind, SyntaxToken};
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct OffsetMapping {
@@ -29,11 +29,12 @@ impl OffsetMapping {
                     for i in 0..length {
                         let f_off = prefix_bytes + f_start + i;
                         if f_off < offset_map.len() {
-                            offset_map[f_off] = Some(TextSize::from((raw_offset + i) as u32));
+                            offset_map[f_off] =
+                                Some(TextSize::from((raw_offset + i) as u32));
                         }
                     }
                     raw_pos = raw_offset + length;
-                } 
+                }
             }
         }
 
@@ -73,9 +74,6 @@ impl MacroExpansionContext {
     pub fn new(formatted: &str, raw: &str) -> Self {
         let line_index = Arc::new(LineIndex::new(formatted));
         let offset_mapping = OffsetMapping::build(formatted, raw);
-        Self {
-            line_index,
-            offset_mapping,
-        }
+        Self { line_index, offset_mapping }
     }
 }

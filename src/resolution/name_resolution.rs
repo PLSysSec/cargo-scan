@@ -15,7 +15,9 @@ use crate::offset_maping::MacroExpansionContext;
 use ra_ap_hir::{AssocItem, CfgAtom, Crate, HirFileId, Impl, Semantics};
 use ra_ap_hir_def::db::DefDatabase;
 use ra_ap_hir_def::{FunctionId, Lookup};
-use ra_ap_ide::{AnalysisHost, Diagnostic, FileId, LineCol, LineIndex, RootDatabase, TextSize};
+use ra_ap_ide::{
+    AnalysisHost, Diagnostic, FileId, LineCol, LineIndex, RootDatabase, TextSize,
+};
 use ra_ap_ide_db::base_db::Upcast;
 use ra_ap_ide_db::defs::{Definition, IdentClass};
 use ra_ap_ide_db::FxHashMap;
@@ -120,7 +122,12 @@ impl Resolver {
 
         debug!("...created");
 
-        Ok(Resolver { host, vfs, macro_file_line_index: RefCell::new(FxHashMap::default()),macro_expansion_ctx: RefCell::new(None),})
+        Ok(Resolver {
+            host,
+            vfs,
+            macro_file_line_index: RefCell::new(FxHashMap::default()),
+            macro_expansion_ctx: RefCell::new(None),
+        })
     }
 
     pub fn db(&self) -> &RootDatabase {
@@ -130,12 +137,12 @@ impl Resolver {
     pub fn add_file(&mut self, path: &Path, content: String) -> Result<FileId> {
         let abs_path = canonicalize(path)?;
         let vfs_path = VfsPath::new_real_path(abs_path.display().to_string());
-        
+
         self.vfs.set_file_contents(vfs_path.clone(), Some(content.into()));
-        self.vfs.file_id(&vfs_path)
+        self.vfs
+            .file_id(&vfs_path)
             .ok_or_else(|| anyhow!("FileId not found after insertion"))
     }
-
 
     pub fn find_file_id(&self, filepath: &Path) -> Result<FileId> {
         let abs_path = canonicalize(filepath)?;
@@ -153,20 +160,27 @@ impl Resolver {
         let col: u32 = src_loc.start_col() as u32 - 1;
         let line_col = LineCol { line, col };
         if let Some(ctx) = self.current_macro_expansion_ctx() {
-            let offset = ctx.line_index.offset(line_col)
+            let offset = ctx
+                .line_index
+                .offset(line_col)
                 .ok_or_else(|| anyhow!("LineIndex out of bounds"))?;
-            ctx.offset_mapping.to_raw_offset(offset.into())
-                .ok_or_else(|| anyhow!("OffsetMapping failed to map formatted offset"))    
+            ctx.offset_mapping
+                .to_raw_offset(offset.into())
+                .ok_or_else(|| anyhow!("OffsetMapping failed to map formatted offset"))
         } else if file_id.is_macro() {
             let map_ref = self.macro_file_line_index.borrow();
             let line_index = map_ref.get(&file_id).ok_or_else(|| {
                 anyhow!("LineIndex not found for macro-file: {:?}", file_id)
             })?;
-            line_index.offset(line_col).ok_or_else(|| anyhow!("Could not find offset for macro"))
+            line_index
+                .offset(line_col)
+                .ok_or_else(|| anyhow!("Could not find offset for macro"))
         } else {
             let original_file_id = file_id.file_id().unwrap();
             let line_index = self.host.analysis().file_line_index(original_file_id)?;
-            line_index.offset(line_col).ok_or_else(|| anyhow!("Could not find offset in normal file"))
+            line_index
+                .offset(line_col)
+                .ok_or_else(|| anyhow!("Could not find offset in normal file"))
         }
     }
 
@@ -243,7 +257,11 @@ impl<'a> ResolverImpl<'a> {
         Ok(ResolverImpl { db, sems, resolver, src_file, file_id, file_diags })
     }
 
-    pub fn update_macro_file_line_index(&self, file_id: HirFileId,expanded_syntax:SyntaxNode) -> anyhow::Result<()> {
+    pub fn update_macro_file_line_index(
+        &self,
+        file_id: HirFileId,
+        expanded_syntax: SyntaxNode,
+    ) -> anyhow::Result<()> {
         if !file_id.is_macro() {
             return Ok(());
         }
@@ -268,7 +286,7 @@ impl<'a> ResolverImpl<'a> {
 
     fn find_def(&self, token: &SyntaxToken) -> Result<Definition> {
         // For ra_ap_syntax::TextSize, using default, idk if this is correct
-        let text_size = Default::default();  
+        let text_size = Default::default();
         self.sems
             .descend_into_macros(token.clone(), text_size)
             .iter()

@@ -108,14 +108,19 @@ impl<'a> FileResolver<'a> {
         let file_id = self.resolver.sems.hir_file_for(&expanded_syntax);
 
         self.resolver.sems.assert_contains_node(&expanded_syntax);
-        if let Err(e) = self.resolver.update_macro_file_line_index(file_id, expanded_syntax.clone()) {
+        if let Err(e) =
+            self.resolver.update_macro_file_line_index(file_id, expanded_syntax.clone())
+        {
             debug!("Failed to update macro file line index: {:?}", e);
         }
 
         Some((file_id, expanded_syntax))
     }
 
-    pub fn resolve_macro_def_path(&self, macro_call: &MacroCall) -> Option<CanonicalPath> {
+    pub fn resolve_macro_def_path(
+        &self,
+        macro_call: &MacroCall,
+    ) -> Option<CanonicalPath> {
         let path = macro_call.path()?;
         let last_segment = path.segment()?.name_ref()?.text().to_string();
         let fake_ident = syn::Ident::new(&last_segment, proc_macro2::Span::call_site());
@@ -131,7 +136,7 @@ impl<'a> FileResolver<'a> {
     }
 
     fn resolve_ffi_core(&self, i: &syn::Ident) -> Result<Option<CanonicalPath>> {
-        let mut s = SrcLoc::from_span(self.filepath,i);
+        let mut s = SrcLoc::from_span(self.filepath, i);
         debug!("Resolving FFI: {} ({})", i, s);
         // Add 1 to column to avoid weird off-by-one errors
         s.add1();
