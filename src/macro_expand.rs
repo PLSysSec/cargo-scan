@@ -58,7 +58,7 @@ const IGNORED_MACROS: &[&str] = &[
 
 pub fn try_parse_expansion(expansion: &str) -> Result<ParseResult> {
     let mut error: Vec<_> = Vec::new();
-    if let Ok(parsed_wrapped_file) = syn::parse_file(&expansion) {
+    if let Ok(parsed_wrapped_file) = syn::parse_file(expansion) {
         return Ok(ParseResult::File(parsed_wrapped_file));
     }
     error.push(syn::parse_file(expansion).err());
@@ -98,7 +98,7 @@ pub fn handle_macro_expansion(
             };
         let text_range = macro_call.syntax().text_range();
         let line_index =
-            LineIndex::new(&resolver.db().file_text(current_file_id).to_string());
+            LineIndex::new(resolver.db().file_text(current_file_id).as_ref());
         let start = line_index.line_col(text_range.start());
         let end = line_index.line_col(text_range.end());
 

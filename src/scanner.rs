@@ -1255,22 +1255,33 @@ where
             let containing_fn = self.scope_fns.last().expect("not inside a function!");
             containing_fn.fn_name.clone()
         };
-        let src_loc = self
-            .current_macro_call_loc
-            .clone()
-            .unwrap_or_else(|| SrcLoc::from_span(self.filepath, &callee_span));
-        self.data.add_call(&caller, &callee, src_loc.clone());
 
-        let Some(eff) = EffectInstance::new_call(
-            self.filepath,
-            caller.clone(),
-            callee,
-            &callee_span,
-            is_unsafe,
-            ffi,
-            &self.sinks,
-            Some(src_loc.clone()),
-        ) else {
+        let eff_opt = if let Some(macro_loc) = self.current_macro_call_loc.clone() {
+            self.data.add_call(&caller, &callee, macro_loc.clone());
+
+            EffectInstance::new_call_macro(
+                caller.clone(),
+                callee,
+                macro_loc,
+                is_unsafe,
+                ffi,
+                &self.sinks,
+            )
+        } else {
+            let src_loc = SrcLoc::from_span(self.filepath, &callee_span);
+            self.data.add_call(&caller, &callee, src_loc.clone());
+
+            EffectInstance::new_call_normal(
+                self.filepath,
+                caller.clone(),
+                callee,
+                &callee_span,
+                is_unsafe,
+                ffi,
+                &self.sinks,
+            )
+        };
+        let Some(eff) = eff_opt else {
             return;
         };
 

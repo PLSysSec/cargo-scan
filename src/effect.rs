@@ -292,7 +292,24 @@ impl EffectInstance {
     /// Returns a new EffectInstance if the call matches a Sink, is an ffi call,
     /// or is an unsafe call. Regular calls are handled by the explicit call
     /// graph structure.
-    pub fn new_call<S>(
+
+    /*
+        In macro case, call_loc is recorded before entering scaning to macro calls
+        We need to use that instead of using filepath and callsite to correctly
+        Identify new calls
+    */
+    pub fn new_call_macro(
+        caller: CanonicalPath,
+        callee: CanonicalPath,
+        macro_loc: SrcLoc,
+        is_unsafe: bool,
+        ffi: Option<CanonicalPath>,
+        sinks: &HashSet<IdentPath>,
+    ) -> Option<Self> {
+        Self::new_call(caller, callee, macro_loc, is_unsafe, ffi, sinks)
+    }
+
+    pub fn new_call_normal<S>(
         filepath: &FilePath,
         caller: CanonicalPath,
         callee: CanonicalPath,
@@ -300,13 +317,22 @@ impl EffectInstance {
         is_unsafe: bool,
         ffi: Option<CanonicalPath>,
         sinks: &HashSet<IdentPath>,
-        macro_loc: Option<SrcLoc>,
     ) -> Option<Self>
     where
         S: Spanned,
     {
-        // Code to classify an effect based on call site information
-        let call_loc = macro_loc.unwrap_or_else(|| SrcLoc::from_span(filepath, callsite));
+        let loc = SrcLoc::from_span(filepath, callsite);
+        Self::new_call(caller, callee, loc, is_unsafe, ffi, sinks)
+    }
+
+    fn new_call(
+        caller: CanonicalPath,
+        callee: CanonicalPath,
+        call_loc: SrcLoc,
+        is_unsafe: bool,
+        ffi: Option<CanonicalPath>,
+        sinks: &HashSet<IdentPath>,
+    ) -> Option<Self> {
         let eff_type = if let Some(ffi) = ffi {
             if !is_unsafe {
                 // This case can occur in certain contexts, e.g. with
