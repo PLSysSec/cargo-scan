@@ -7,6 +7,7 @@ use crate::scanner::{ScanResults, Scanner};
 use anyhow::{anyhow, Context, Result};
 use log::debug;
 use ra_ap_hir::db::ExpandDatabase;
+use ra_ap_ide::LineIndex;
 use ra_ap_ide::RootDatabase;
 use ra_ap_ide_db::base_db::SourceDatabaseExt;
 use ra_ap_ide_db::syntax_helpers::insert_whitespace_into_node::insert_ws_into;
@@ -16,7 +17,6 @@ use ra_ap_vfs::FileId;
 use std::collections::{HashMap, HashSet};
 use std::path::Path as FilePath;
 use std::sync::Arc;
-use ra_ap_ide::LineIndex;
 pub enum ParseResult {
     File(syn::File),
 }
@@ -91,32 +91,32 @@ pub fn handle_macro_expansion(
             debug!("Failed to resolve macro path.");
             continue;
         }
-        let canonical_path = match file_resolver_expand.resolve_macro_def_path(&macro_call) {
-            Some(cp) => cp,
-            None => continue,
-        };
+        let canonical_path =
+            match file_resolver_expand.resolve_macro_def_path(&macro_call) {
+                Some(cp) => cp,
+                None => continue,
+            };
         let text_range = macro_call.syntax().text_range();
-        let line_index = LineIndex::new(&resolver.db().file_text(current_file_id).to_string());
+        let line_index =
+            LineIndex::new(&resolver.db().file_text(current_file_id).to_string());
         let start = line_index.line_col(text_range.start());
         let end = line_index.line_col(text_range.end());
 
         let macro_call_loc = SrcLoc::new(
             filepath,
-            (start.line+1) as usize,
+            (start.line + 1) as usize,
             start.col as usize,
-        (end.line+1) as usize,
+            (end.line + 1) as usize,
             end.col as usize,
         );
-        if let Some((macro_file_id, expanded_syntax_node)) = file_resolver_expand.expand_macro(&macro_call)
+        if let Some((macro_file_id, expanded_syntax_node)) =
+            file_resolver_expand.expand_macro(&macro_call)
         {
             let raw_text = expanded_syntax_node.text().to_string();
-            let file_resolver = FileResolver::new(crate_name, resolver, filepath, Some(macro_file_id))?;
-            let mut macro_scanner = Scanner::new(
-                filepath,
-                file_resolver,
-                macro_scan_results,
-                enabled_cfg,
-            );
+            let file_resolver =
+                FileResolver::new(crate_name, resolver, filepath, Some(macro_file_id))?;
+            let mut macro_scanner =
+                Scanner::new(filepath, file_resolver, macro_scan_results, enabled_cfg);
             macro_scanner.add_sinks(sinks.clone());
             let expansion = format(
                 resolver.db(),
@@ -128,7 +128,7 @@ pub fn handle_macro_expansion(
                 current_file_id,
                 expanded_syntax_node,
             );
-            let full_expansion = format!("fn {}() {{\n{}\n}}", macro_name , expansion);
+            let full_expansion = format!("fn {}() {{\n{}\n}}", macro_name, expansion);
             let mapping = OffsetMapping::build(&full_expansion, &raw_text);
             let ctx = MacroExpansionContext {
                 line_index: Arc::new(LineIndex::new(&full_expansion)),
@@ -137,7 +137,8 @@ pub fn handle_macro_expansion(
             resolver.set_macro_expansion_ctx(ctx);
             match try_parse_expansion(&full_expansion) {
                 Ok(ParseResult::File(parsed_file)) => {
-                    macro_scanner.set_current_macro_context(Some(canonical_path.to_string()));
+                    macro_scanner
+                        .set_current_macro_context(Some(canonical_path.to_string()));
                     macro_scanner.set_current_macro_call_loc(Some(macro_call_loc));
                     macro_scanner.scan_file(&parsed_file);
                     macro_scanner.set_current_macro_context(None);

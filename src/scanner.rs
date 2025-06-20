@@ -1259,11 +1259,7 @@ where
             .current_macro_call_loc
             .clone()
             .unwrap_or_else(|| SrcLoc::from_span(self.filepath, &callee_span));
-        self.data.add_call(
-            &caller,
-            &callee,
-            src_loc.clone(),
-        );
+        self.data.add_call(&caller, &callee, src_loc.clone());
 
         let Some(eff) = EffectInstance::new_call(
             self.filepath,

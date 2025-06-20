@@ -4,9 +4,7 @@ use ra_ap_hir_expand::InFile;
 
 use crate::ident::{CanonicalPath, CanonicalType, Ident, TypeKind};
 
-use ra_ap_hir::{
-    GenericParam, HasSource,Module, Semantics, VariantDef,
-};
+use ra_ap_hir::{GenericParam, HasSource, Module, Semantics, VariantDef};
 
 use ra_ap_ide::{RootDatabase, TextSize};
 use ra_ap_ide_db::base_db::SourceDatabase;
@@ -29,7 +27,9 @@ pub(super) fn get_token(
     match src_file.token_at_offset(offset) {
         TokenAtOffset::Single(t) => Ok(t),
         TokenAtOffset::Between(t1, t2) => pick_best_token(t1, t2, ident),
-        TokenAtOffset::None => Err(anyhow!("Could not find any token at offset {:?}", offset)),
+        TokenAtOffset::None => {
+            Err(anyhow!("Could not find any token at offset {:?}", offset))
+        }
     }
 }
 

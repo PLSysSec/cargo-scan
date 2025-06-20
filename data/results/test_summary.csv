@@ -1,10 +1,10 @@
 crate, effects
 ffi-ex, 16
-caller-checked, 15
 toy-crates, 15
 unsafe-test, 14
 fns-closures, 7
 permissions-ex, 6
+caller-checked, 5
 recursion-ex, 4
 cfg-ex, 3
 dependency-ex, 2
