@@ -12,13 +12,12 @@ Cargo Scan is a tool for auditing Rust crates.
 ## Quick-start
 
 1. Clone this repository.
-2. Run `rustup update` to ensure you have the latest version of Rust (or install it via the [official website]((https://www.rust-lang.org/tools/install))).
-3. Run `cargo build`.
+2. Run `cargo build`.
 
 Once built, either:
 
-4. Follow the instructions to install the VSCode extension below; or
-5. If you prefer to use Cargo Scan as a basic CLI tool or want to incorporate it in other projects, see "using the CLI tool" below.
+3. Follow the instructions to install the VSCode extension below; or
+4. If you prefer to use Cargo Scan as a basic CLI tool or want to incorporate it in other projects, see "using the CLI tool" below.
 
 ## Using the VSCode Extension
 
