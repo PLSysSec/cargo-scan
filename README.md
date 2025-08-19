@@ -11,6 +11,8 @@ Cargo Scan is a tool for auditing Rust crates.
 
 ## Quick-start
 
+Make sure you have [Rust](https://www.rust-lang.org/tools/install) installed first, then:
+
 1. Clone this repository.
 2. Run `cargo build`.
 
