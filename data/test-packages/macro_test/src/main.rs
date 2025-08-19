@@ -150,8 +150,40 @@ macro_rules! simulate_ffi {
         // Execute the function
         call_fn()
     };
+}
 
-}fn main() {
+unsafe fn add_one(x: i32) -> i32 {
+    x + 1
+}
+
+macro_rules! fn_ptr_creation {
+    () => {
+        fn test_ptr() {
+            let f: unsafe fn(i32) -> i32 = add_one;
+            unsafe {
+                let _ = f(10);
+            }
+        }
+
+        test_ptr();
+    };
+}
+
+macro_rules! closure_creation {
+    () => {
+        fn test_closure() {
+            let x = 100;
+            let c = |y: i32| x + y;
+            let _ = c(23);
+        }
+
+        test_closure();
+    };
+}
+
+
+
+fn main() {
     my_unsafe_fn!();
     unsafe_block_ex!();
     my_unsafe_ffi!();
@@ -160,4 +192,6 @@ macro_rules! simulate_ffi {
     test_logging!();
     file_operations!();
     simulate_ffi!();
+    fn_ptr_direct();
+    closure_direct();
 }

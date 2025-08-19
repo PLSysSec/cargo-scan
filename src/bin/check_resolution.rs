@@ -43,7 +43,8 @@ pub fn main() -> Result<()> {
     filepath.push(&args.file);
 
     let resolver = Resolver::new(&args.crate_path)?;
-    let file_resolver = ResolverImpl::new(&resolver, &filepath)?;
+    let file_id = resolver.find_file_id(&filepath)?;
+    let file_resolver = ResolverImpl::new(&resolver, file_id.into())?;
 
     let s = SrcLoc::new(filepath.as_path(), args.line, args.col, args.line, args.col);
     let i = Ident::new(&args.name);

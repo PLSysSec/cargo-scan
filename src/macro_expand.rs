@@ -1,22 +1,24 @@
 use super::ident::IdentPath;
-use crate::resolution::hacky_resolver::HackyResolver;
+use crate::effect::SrcLoc;
+use crate::offset_maping::{MacroExpansionContext, OffsetMapping};
 use crate::resolution::name_resolution::Resolver;
 use crate::resolution::resolve::FileResolver;
 use crate::scanner::{ScanResults, Scanner};
 use anyhow::{anyhow, Context, Result};
 use log::debug;
 use ra_ap_hir::db::ExpandDatabase;
+use ra_ap_ide::LineIndex;
 use ra_ap_ide::RootDatabase;
+use ra_ap_ide_db::base_db::SourceDatabaseExt;
 use ra_ap_ide_db::syntax_helpers::insert_whitespace_into_node::insert_ws_into;
-use ra_ap_syntax::ast::{HasName, MacroCall};
+use ra_ap_syntax::ast::MacroCall;
 use ra_ap_syntax::{AstNode, SyntaxKind, SyntaxNode};
 use ra_ap_vfs::FileId;
 use std::collections::{HashMap, HashSet};
 use std::path::Path as FilePath;
-use syn::Item;
+use std::sync::Arc;
 pub enum ParseResult {
     File(syn::File),
-    Item(syn::Item),
 }
 
 const IGNORED_MACROS: &[&str] = &[
@@ -56,21 +58,7 @@ const IGNORED_MACROS: &[&str] = &[
 
 pub fn try_parse_expansion(expansion: &str) -> Result<ParseResult> {
     let mut error: Vec<_> = Vec::new();
-
-    // Attempt parsing as a full file
-    if let Ok(parsed_file) = syn::parse_file(expansion) {
-        return Ok(ParseResult::File(parsed_file));
-    }
-    error.push(syn::parse_file(expansion).err());
-
-    // Attempt parsing as a single item
-    if let Ok(parsed_item) = syn::parse_str::<Item>(expansion) {
-        return Ok(ParseResult::Item(parsed_item));
-    }
-    error.push(syn::parse_str::<Item>(expansion).err());
-
-    let wrapped_file = format!("fn dummy() {{\n{}\n}}", expansion);
-    if let Ok(parsed_wrapped_file) = syn::parse_file(&wrapped_file) {
+    if let Ok(parsed_wrapped_file) = syn::parse_file(expansion) {
         return Ok(ParseResult::File(parsed_wrapped_file));
     }
     error.push(syn::parse_file(expansion).err());
@@ -86,23 +74,11 @@ pub fn handle_macro_expansion(
     sinks: HashSet<IdentPath>,
     enabled_cfg: &HashMap<String, Vec<String>>,
 ) -> Result<()> {
-    let macro_hacky_resolver = HackyResolver::new(crate_name, filepath);
-    let mut macro_scanner = Scanner::new(
-        filepath,
-        macro_hacky_resolver.unwrap(),
-        macro_scan_results,
-        enabled_cfg,
-    );
-    macro_scanner.add_sinks(sinks.clone());
-
     let current_file_id =
         resolver.find_file_id(filepath).context("cannot find current file id")?;
     let syntax = resolver.db().parse_or_expand(current_file_id.into());
-    let file_resolver_expand = FileResolver::new(crate_name, resolver, filepath)?;
-    let mut expanded_files: Vec<(syn::File, String)> = Vec::new();
-    let mut expanded_items: Vec<(syn::Item, String)> = Vec::new();
+    let file_resolver_expand = FileResolver::new(crate_name, resolver, filepath, None)?;
     let ignored_macros: HashSet<&str> = IGNORED_MACROS.iter().cloned().collect();
-
     for macro_call in find_macro_calls(&syntax) {
         let macro_name;
         if let Some(path) = macro_call.path() {
@@ -115,16 +91,33 @@ pub fn handle_macro_expansion(
             debug!("Failed to resolve macro path.");
             continue;
         }
-        let canonical_path = match get_canonical_path_from_ast(
+        let canonical_path =
+            match file_resolver_expand.resolve_macro_def_path(&macro_call) {
+                Some(cp) => cp,
+                None => continue,
+            };
+        let text_range = macro_call.syntax().text_range();
+        let line_index =
+            LineIndex::new(resolver.db().file_text(current_file_id).as_ref());
+        let start = line_index.line_col(text_range.start());
+        let end = line_index.line_col(text_range.end());
+
+        let macro_call_loc = SrcLoc::new(
             filepath,
-            macro_call.syntax(),
-            macro_name,
-        ) {
-            Some(path) => path,
-            None => continue,
-        };
-        if let Some(expanded_syntax_node) = file_resolver_expand.expand_macro(&macro_call)
+            (start.line + 1) as usize,
+            start.col as usize,
+            (end.line + 1) as usize,
+            end.col as usize,
+        );
+        if let Some((macro_file_id, expanded_syntax_node)) =
+            file_resolver_expand.expand_macro(&macro_call)
         {
+            let raw_text = expanded_syntax_node.text().to_string();
+            let file_resolver =
+                FileResolver::new(crate_name, resolver, filepath, Some(macro_file_id))?;
+            let mut macro_scanner =
+                Scanner::new(filepath, file_resolver, macro_scan_results, enabled_cfg);
+            macro_scanner.add_sinks(sinks.clone());
             let expansion = format(
                 resolver.db(),
                 macro_call
@@ -135,93 +128,30 @@ pub fn handle_macro_expansion(
                 current_file_id,
                 expanded_syntax_node,
             );
-
-            match try_parse_expansion(&expansion) {
+            let full_expansion = format!("fn {}() {{\n{}\n}}", macro_name, expansion);
+            let mapping = OffsetMapping::build(&full_expansion, &raw_text);
+            let ctx = MacroExpansionContext {
+                line_index: Arc::new(LineIndex::new(&full_expansion)),
+                offset_mapping: mapping,
+            };
+            resolver.set_macro_expansion_ctx(ctx);
+            match try_parse_expansion(&full_expansion) {
                 Ok(ParseResult::File(parsed_file)) => {
-                    expanded_files.push((parsed_file, canonical_path.clone()));
-                }
-                Ok(ParseResult::Item(parsed_item)) => {
-                    expanded_items.push((parsed_item, canonical_path.clone()));
+                    macro_scanner
+                        .set_current_macro_context(Some(canonical_path.to_string()));
+                    macro_scanner.set_current_macro_call_loc(Some(macro_call_loc));
+                    macro_scanner.scan_file(&parsed_file);
+                    macro_scanner.set_current_macro_context(None);
+                    macro_scanner.set_current_macro_call_loc(None);
                 }
                 Err(e) => {
                     debug!("Failed to parse expansion: {}", e);
                 }
             }
+            resolver.clear_macro_expansion_ctx();
         }
-    }
-
-    for file in &expanded_files {
-        macro_scanner.set_current_macro_context(Some(file.1.clone()));
-        macro_scanner.scan_file(&file.0);
-        macro_scanner.set_current_macro_context(None);
-    }
-    for item in &expanded_items {
-        macro_scanner.set_current_macro_context(Some(item.1.clone()));
-        macro_scanner.scan_item(&item.0);
-        macro_scanner.set_current_macro_context(None);
     }
     Ok(())
-}
-
-/// Get the canonical path of a function, method, or module containing the macro call.
-pub fn get_canonical_path_from_ast(
-    filepath: &FilePath,
-    macro_call: &SyntaxNode,
-    macro_name: String,
-) -> Option<String> {
-    let mut current_node = macro_call.clone();
-    let mut path_components = Vec::new();
-    let mut file_components = Vec::new();
-
-    while let Some(parent) = current_node.parent() {
-        current_node = parent;
-
-        // Case 1: Macro inside a function
-        if let Some(func) = ra_ap_syntax::ast::Fn::cast(current_node.clone()) {
-            if let Some(name) = func.name() {
-                path_components.push(name.text().to_string());
-                break; // Stop at the function level
-            }
-        }
-
-        // Case 2: Macro inside an `impl` block (method)
-        if let Some(impl_block) = ra_ap_syntax::ast::Impl::cast(current_node.clone()) {
-            if let Some(ty) = impl_block.self_ty() {
-                path_components.push(ty.syntax().text().to_string());
-            }
-        }
-
-        // Case 3: Macro at module level
-        if let Some(module) = ra_ap_syntax::ast::Module::cast(current_node.clone()) {
-            if let Some(name) = module.name() {
-                path_components.push(name.text().to_string());
-            }
-        }
-    }
-
-    let filepath = filepath.to_str();
-    if let Some(path) = filepath {
-        let components: Vec<&str> = path.split('/').collect();
-        if let Some(src_index) = components.iter().position(|&c| c == "src") {
-            if src_index > 0 {
-                // Insert the component before "src" at the head
-                file_components.insert(0, components[src_index - 1].to_string());
-                // Push all components after src to the tail
-                for after_src in &components[src_index + 1..] {
-                    if let Some(stripped) = after_src.strip_suffix(".rs") {
-                        let without_extension = stripped;
-                        file_components.push(without_extension.to_string());
-                    } else {
-                        file_components.push(after_src.to_string());
-                    }
-                }
-            }
-        }
-    }
-    path_components.reverse();
-    file_components.append(&mut path_components);
-    file_components.push(macro_name);
-    Some(file_components.join("::"))
 }
 
 fn format(

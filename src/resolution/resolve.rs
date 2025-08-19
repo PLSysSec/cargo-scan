@@ -11,6 +11,7 @@ use crate::ident::{CanonicalPath, CanonicalType, Ident};
 
 use anyhow::Result;
 use log::debug;
+use ra_ap_hir::HirFileId;
 use ra_ap_syntax::ast::MacroCall;
 use ra_ap_syntax::SyntaxNode;
 use std::fmt::Display;
@@ -86,20 +87,48 @@ impl<'a> FileResolver<'a> {
         crate_name: &'a str,
         resolver: &'a Resolver,
         filepath: &'a FilePath,
+        file_id: Option<HirFileId>,
     ) -> Result<Self> {
         debug!("Creating FileResolver for file: {:?}", filepath);
         let backup = HackyResolver::new(crate_name, filepath)?;
-        let imp = ResolverImpl::new(resolver, filepath)?;
+        //let file_id = resolver.find_file_id(filepath)?;
+        let file_id = match file_id {
+            Some(id) => id,
+            None => {
+                let fid = resolver.find_file_id(filepath)?;
+                fid.into() //
+            }
+        };
+        let imp = ResolverImpl::new(resolver, file_id)?;
         Ok(Self { filepath, resolver: imp, backup })
     }
 
-    pub fn expand_macro(&self, i: &MacroCall) -> Option<SyntaxNode> {
-        self.resolver.sems.expand(i)
+    pub fn expand_macro(&self, i: &MacroCall) -> Option<(HirFileId, SyntaxNode)> {
+        let expanded_syntax = self.resolver.sems.expand(i)?;
+        let file_id = self.resolver.sems.hir_file_for(&expanded_syntax);
+
+        self.resolver.sems.assert_contains_node(&expanded_syntax);
+        if let Err(e) =
+            self.resolver.update_macro_file_line_index(file_id, expanded_syntax.clone())
+        {
+            debug!("Failed to update macro file line index: {:?}", e);
+        }
+
+        Some((file_id, expanded_syntax))
+    }
+
+    pub fn resolve_macro_def_path(
+        &self,
+        macro_call: &MacroCall,
+    ) -> Option<CanonicalPath> {
+        let path = macro_call.path()?;
+        let last_segment = path.segment()?.name_ref()?.text().to_string();
+        let fake_ident = syn::Ident::new(&last_segment, proc_macro2::Span::call_site());
+        Some(self.resolve_def(&fake_ident))
     }
 
     fn resolve_core(&self, i: &syn::Ident) -> Result<CanonicalPath> {
         let mut s = SrcLoc::from_span(self.filepath, i);
-        debug!("Resolving: {} ({})", i, s);
         // Add 1 to column to avoid weird off-by-one errors
         s.add1();
         let i = ident_from_syn(i);

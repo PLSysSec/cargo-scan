@@ -2,17 +2,22 @@ use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use log::debug;
 use ra_ap_cfg::CfgDiff;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::canonicalize;
 use std::path::Path;
+use std::sync::Arc;
 
 use crate::effect::SrcLoc;
 use crate::ident::{CanonicalPath, CanonicalType, Ident};
+use crate::offset_maping::MacroExpansionContext;
 
-use ra_ap_hir::{AssocItem, CfgAtom, Crate, Impl, Semantics};
+use ra_ap_hir::{AssocItem, CfgAtom, Crate, HirFileId, Impl, Semantics};
 use ra_ap_hir_def::db::DefDatabase;
 use ra_ap_hir_def::{FunctionId, Lookup};
-use ra_ap_ide::{AnalysisHost, Diagnostic, FileId, LineCol, RootDatabase, TextSize};
+use ra_ap_ide::{
+    AnalysisHost, Diagnostic, FileId, LineCol, LineIndex, RootDatabase, TextSize,
+};
 use ra_ap_ide_db::base_db::Upcast;
 use ra_ap_ide_db::defs::{Definition, IdentClass};
 use ra_ap_ide_db::FxHashMap;
@@ -21,7 +26,7 @@ use ra_ap_project_model::{
     CargoConfig, CargoFeatures, CfgOverrides, InvocationLocation, InvocationStrategy,
     RustLibSource,
 };
-use ra_ap_syntax::{SourceFile, SyntaxToken};
+use ra_ap_syntax::{SyntaxNode, SyntaxToken};
 use ra_ap_vfs::{Vfs, VfsPath};
 
 use super::util::{canonical_path, get_canonical_type, get_token, syntax_node_from_def};
@@ -30,6 +35,8 @@ use super::util::{canonical_path, get_canonical_type, get_token, syntax_node_fro
 pub struct Resolver {
     host: AnalysisHost,
     vfs: Vfs,
+    pub macro_file_line_index: RefCell<FxHashMap<HirFileId, Arc<LineIndex>>>,
+    macro_expansion_ctx: RefCell<Option<MacroExpansionContext>>,
 }
 
 impl Resolver {
@@ -115,11 +122,26 @@ impl Resolver {
 
         debug!("...created");
 
-        Ok(Resolver { host, vfs })
+        Ok(Resolver {
+            host,
+            vfs,
+            macro_file_line_index: RefCell::new(FxHashMap::default()),
+            macro_expansion_ctx: RefCell::new(None),
+        })
     }
 
     pub fn db(&self) -> &RootDatabase {
         self.host.raw_database()
+    }
+
+    pub fn add_file(&mut self, path: &Path, content: String) -> Result<FileId> {
+        let abs_path = canonicalize(path)?;
+        let vfs_path = VfsPath::new_real_path(abs_path.display().to_string());
+
+        self.vfs.set_file_contents(vfs_path.clone(), Some(content.into()));
+        self.vfs
+            .file_id(&vfs_path)
+            .ok_or_else(|| anyhow!("FileId not found after insertion"))
     }
 
     pub fn find_file_id(&self, filepath: &Path) -> Result<FileId> {
@@ -132,19 +154,33 @@ impl Resolver {
         }
     }
 
-    fn find_offset(&self, file_id: FileId, src_loc: SrcLoc) -> Result<TextSize> {
+    fn find_offset(&self, file_id: HirFileId, src_loc: SrcLoc) -> Result<TextSize> {
         // LineCol is zero-based
         let line: u32 = src_loc.start_line() as u32 - 1;
         let col: u32 = src_loc.start_col() as u32 - 1;
         let line_col = LineCol { line, col };
-
-        let line_index = self.host.analysis().file_line_index(file_id)?;
-        match line_index.offset(line_col) {
-            Some(offset) => Ok(offset),
-            None => Err(anyhow!(
-                "Could not find offset in file for source location {:?}",
-                src_loc
-            )),
+        if let Some(ctx) = self.current_macro_expansion_ctx() {
+            let offset = ctx
+                .line_index
+                .offset(line_col)
+                .ok_or_else(|| anyhow!("LineIndex out of bounds"))?;
+            ctx.offset_mapping
+                .to_raw_offset(offset.into())
+                .ok_or_else(|| anyhow!("OffsetMapping failed to map formatted offset"))
+        } else if file_id.is_macro() {
+            let map_ref = self.macro_file_line_index.borrow();
+            let line_index = map_ref.get(&file_id).ok_or_else(|| {
+                anyhow!("LineIndex not found for macro-file: {:?}", file_id)
+            })?;
+            line_index
+                .offset(line_col)
+                .ok_or_else(|| anyhow!("Could not find offset for macro"))
+        } else {
+            let original_file_id = file_id.file_id().unwrap();
+            let line_index = self.host.analysis().file_line_index(original_file_id)?;
+            line_index
+                .offset(line_col)
+                .ok_or_else(|| anyhow!("Could not find offset in normal file"))
         }
     }
 
@@ -172,6 +208,18 @@ impl Resolver {
 
         Ok(crate_opts)
     }
+
+    pub fn set_macro_expansion_ctx(&self, ctx: MacroExpansionContext) {
+        self.macro_expansion_ctx.replace(Some(ctx));
+    }
+
+    pub fn clear_macro_expansion_ctx(&self) {
+        self.macro_expansion_ctx.replace(None);
+    }
+
+    pub fn current_macro_expansion_ctx(&self) -> Option<MacroExpansionContext> {
+        self.macro_expansion_ctx.borrow().clone()
+    }
 }
 
 /// Core API for the name resolution of Rust identifiers.
@@ -184,18 +232,17 @@ pub struct ResolverImpl<'a> {
     resolver: &'a Resolver,
     /// The syntax tree of the file
     /// we are currently scanning
-    src_file: SourceFile,
-    file_id: FileId,
+    src_file: SyntaxNode,
+    file_id: HirFileId,
     /// Set of diagnostics for the given file
     file_diags: Vec<Diagnostic>,
 }
 
 impl<'a> ResolverImpl<'a> {
-    pub fn new(resolver: &'a Resolver, filepath: &Path) -> Result<Self> {
+    pub fn new(resolver: &'a Resolver, file_id: HirFileId) -> Result<Self> {
         let db = resolver.db();
         let sems = Semantics::new(db);
-        let file_id = resolver.find_file_id(filepath)?;
-        let src_file = sems.parse(file_id);
+        let src_file = sems.parse_or_expand(file_id);
 
         // TBD: This causes a stack overflow on some crates
         // Disabling until a fix is found, can re-enable if needed for
@@ -210,14 +257,29 @@ impl<'a> ResolverImpl<'a> {
         Ok(ResolverImpl { db, sems, resolver, src_file, file_id, file_diags })
     }
 
+    pub fn update_macro_file_line_index(
+        &self,
+        file_id: HirFileId,
+        expanded_syntax: SyntaxNode,
+    ) -> anyhow::Result<()> {
+        if !file_id.is_macro() {
+            return Ok(());
+        }
+        if self.resolver.macro_file_line_index.borrow().contains_key(&file_id) {
+            return Ok(());
+        }
+        let text = expanded_syntax.text().to_string();
+        let line_index = Arc::new(LineIndex::new(&text));
+        self.resolver.macro_file_line_index.borrow_mut().insert(file_id, line_index);
+        Ok(())
+    }
+
     fn parse_source_file(&self, def: &Definition) -> Option<()> {
         let db = self.db;
         let node = syntax_node_from_def(def, db)?;
-
         // If it does not have a `FileId`, then it was produced
         // by a macro call and we want to skip those cases.
-        let file_id = node.file_id.file_id()?;
-        self.sems.parse(file_id);
+        self.sems.parse_or_expand(node.file_id);
 
         Some(())
     }
@@ -245,8 +307,14 @@ impl<'a> ResolverImpl<'a> {
     }
 
     fn token(&self, i: Ident, s: SrcLoc) -> Result<SyntaxToken> {
-        let offset = self.resolver.find_offset(self.file_id, s)?;
-        get_token(&self.src_file, offset, i)
+        let offset = match self.resolver.find_offset(self.file_id, s) {
+            Ok(o) => o,
+            Err(e) => {
+                return Err(e);
+            }
+        };
+        let tok = get_token(&self.src_file, offset, i)?;
+        Ok(tok)
     }
 
     fn get_token_diagnostics(&self, token: &SyntaxToken) -> Vec<String> {
@@ -261,6 +329,9 @@ impl<'a> ResolverImpl<'a> {
     }
 
     pub fn resolve_ident(&self, s: SrcLoc, i: Ident) -> Result<CanonicalPath> {
+        if i.to_string() == "dummy" {
+            return Err(anyhow!("Skipped resolving 'dummy'"));
+        }
         let token = self.token(i, s)?;
         let def = self.find_def(&token)?;
         self.parse_source_file(&def);
@@ -270,6 +341,9 @@ impl<'a> ResolverImpl<'a> {
     }
 
     pub fn resolve_type(&self, s: SrcLoc, i: Ident) -> Result<CanonicalType> {
+        if i.to_string() == "dummy" {
+            return Err(anyhow!("Skipped resolving 'dummy'"));
+        }
         let token = self.token(i, s)?;
         let def = self.find_def(&token)?;
 
@@ -277,6 +351,9 @@ impl<'a> ResolverImpl<'a> {
     }
 
     pub fn is_ffi(&self, s: SrcLoc, i: Ident) -> Result<bool> {
+        if i.to_string() == "dummy" {
+            return Err(anyhow!("Skipped resolving 'dummy'"));
+        }
         let token = self.token(i, s)?;
         let def = self.find_def(&token)?;
 
@@ -303,6 +380,9 @@ impl<'a> ResolverImpl<'a> {
     }
 
     pub fn is_unsafe_call(&self, s: SrcLoc, i: Ident) -> Result<bool> {
+        if i.to_string() == "dummy" {
+            return Err(anyhow!("Skipped resolving 'dummy'"));
+        }
         let token = self.token(i, s)?;
         let def = self.find_def(&token)?;
 
@@ -320,6 +400,9 @@ impl<'a> ResolverImpl<'a> {
         s: SrcLoc,
         i: Ident,
     ) -> Result<bool> {
+        if i.to_string() == "dummy" {
+            return Err(anyhow!("Skipped resolving 'dummy'"));
+        }
         let token = self.token(i, s)?;
         let def = self.find_def(&token)?;
 
@@ -340,6 +423,9 @@ impl<'a> ResolverImpl<'a> {
         s: SrcLoc,
         i: Ident,
     ) -> Result<Vec<CanonicalPath>> {
+        if i.to_string() == "dummy" {
+            return Err(anyhow!("Skipped resolving 'dummy'"));
+        }
         let token = self.token(i.clone(), s.clone())?;
         let def = self.find_def(&token)?;
 
