@@ -291,21 +291,12 @@ impl EffectInstance {
     /// or is an unsafe call. Regular calls are handled by the explicit call
     /// graph structure.
 
-    pub fn new_regular_call(
-        caller: CanonicalPath,
-        callee: CanonicalPath,
-        src_loc: SrcLoc,
-        is_unsafe: bool,
-        ffi: Option<CanonicalPath>,
-        sinks: &HashSet<IdentPath>,
-    ) -> Option<Self> {
-        Self::new_call(caller, callee, src_loc, is_unsafe, ffi, sinks)
-    }
-
-    ///Macro calls are handled differently in terms of their source location,
-    /// so we have a separate function for them, otherwise they from_span
-    /// can only retrive loc from source file, not expanded code
-    pub fn new_macro_call(
+    /*
+        In macro case, call_loc is recorded before entering scaning to macro calls
+        We need to use that instead of using filepath and callsite to correctly
+        Identify new calls
+    */
+    pub fn new_call_macro(
         caller: CanonicalPath,
         callee: CanonicalPath,
         macro_loc: SrcLoc,
@@ -314,6 +305,22 @@ impl EffectInstance {
         sinks: &HashSet<IdentPath>,
     ) -> Option<Self> {
         Self::new_call(caller, callee, macro_loc, is_unsafe, ffi, sinks)
+    }
+
+    pub fn new_call_normal<S>(
+        filepath: &FilePath,
+        caller: CanonicalPath,
+        callee: CanonicalPath,
+        call_loc: SrcLoc,
+        is_unsafe: bool,
+        ffi: Option<CanonicalPath>,
+        sinks: &HashSet<IdentPath>,
+    ) -> Option<Self>
+    where
+        S: Spanned,
+    {
+        let loc = SrcLoc::from_span(filepath, callsite);
+        Self::new_call(caller, callee, loc, is_unsafe, ffi, sinks)
     }
 
     fn new_call(
