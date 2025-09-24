@@ -1256,10 +1256,10 @@ where
             containing_fn.fn_name.clone()
         };
 
-        let eff_opt = if let Some(macro_loc) = self.current_macro_call_loc.clone() {
+        let eff = if let Some(macro_loc) = self.current_macro_call_loc.clone() {
+            // Macro call retrieves src_loc from macro definition location
             self.data.add_call(&caller, &callee, macro_loc.clone());
-
-            EffectInstance::new_call_macro(
+            EffectInstance::new_macro_call(
                 caller.clone(),
                 callee,
                 macro_loc,
@@ -1268,20 +1268,20 @@ where
                 &self.sinks,
             )
         } else {
+            // Regular function call retrieves src_loc from file path and calleee span
             let src_loc = SrcLoc::from_span(self.filepath, &callee_span);
             self.data.add_call(&caller, &callee, src_loc.clone());
-
-            EffectInstance::new_call_normal(
-                self.filepath,
+            EffectInstance::new_regular_call(
                 caller.clone(),
                 callee,
-                &callee_span,
+                src_loc,
                 is_unsafe,
                 ffi,
                 &self.sinks,
             )
         };
-        let Some(eff) = eff_opt else {
+
+        let Some(eff) = eff else {
             return;
         };
         if self.scope_unsafe > 0 && eff.is_rust_unsafe() {
