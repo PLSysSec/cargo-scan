@@ -9,8 +9,6 @@
 use super::ident::{CanonicalPath, IdentPath};
 use super::sink::Sink;
 use super::util::csv;
-
-use log::debug;
 use parse_display::{Display, FromStr};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -292,44 +290,43 @@ impl EffectInstance {
     /// Returns a new EffectInstance if the call matches a Sink, is an ffi call,
     /// or is an unsafe call. Regular calls are handled by the explicit call
     /// graph structure.
-    pub fn new_call<S>(
-        filepath: &FilePath,
+
+    pub fn new_regular_call(
         caller: CanonicalPath,
         callee: CanonicalPath,
-        callsite: &S,
+        src_loc: SrcLoc,
         is_unsafe: bool,
         ffi: Option<CanonicalPath>,
         sinks: &HashSet<IdentPath>,
-        macro_loc: Option<SrcLoc>,
-    ) -> Option<Self>
-    where
-        S: Spanned,
-    {
-        // Code to classify an effect based on call site information
-        let call_loc = macro_loc.unwrap_or_else(|| SrcLoc::from_span(filepath, callsite));
+    ) -> Option<Self> {
+        Self::new_call(caller, callee, src_loc, is_unsafe, ffi, sinks)
+    }
+
+    ///Macro calls are handled differently in terms of their source location,
+    /// so we have a separate function for them, otherwise they from_span
+    /// can only retrive loc from source file, not expanded code
+    pub fn new_macro_call(
+        caller: CanonicalPath,
+        callee: CanonicalPath,
+        macro_loc: SrcLoc,
+        is_unsafe: bool,
+        ffi: Option<CanonicalPath>,
+        sinks: &HashSet<IdentPath>,
+    ) -> Option<Self> {
+        Self::new_call(caller, callee, macro_loc, is_unsafe, ffi, sinks)
+    }
+
+    fn new_call(
+        caller: CanonicalPath,
+        callee: CanonicalPath,
+        call_loc: SrcLoc,
+        is_unsafe: bool,
+        ffi: Option<CanonicalPath>,
+        sinks: &HashSet<IdentPath>,
+    ) -> Option<Self> {
         let eff_type = if let Some(ffi) = ffi {
-            if !is_unsafe {
-                // This case can occur in certain contexts, e.g. with
-                // the wasm_bindgen attribute
-                debug!(
-                    "Found FFI callsite that wasn't marked unsafe; \
-                    classifying as FFICall: \
-                    {} ({}) (FFI {:?})",
-                    callee, call_loc, ffi
-                );
-            }
-            if Sink::new_match(&callee, sinks).is_some() {
-                // This case occurs for many libc calls
-                debug!(
-                    "Found FFI callsite also matching a sink pattern; \
-                    classifying as FFICall: \
-                    {} ({}) (FFI {:?})",
-                    callee, call_loc, ffi
-                );
-            }
             Some(Effect::FFICall(ffi))
         } else if let Some(pat) = Sink::new_match(&callee, sinks) {
-            // callee.remove_src_loc();
             Some(Effect::SinkCall(pat))
         } else if is_unsafe {
             Some(Effect::UnsafeCall(callee.clone()))
