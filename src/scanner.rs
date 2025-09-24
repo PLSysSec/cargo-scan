@@ -86,7 +86,11 @@ impl ScanResults {
             // If not found in `node_idxs`, try `macro_node_idxs`
             self.macro_node_idxs
                 .get(callee)
-                .context("Missing callee in both results graph and macro results graph")?
+                .context(format!(
+                    "Missing callee in both results graph and macro results graph: {:?}, {:?}",
+                    callee,
+                    self.macro_node_idxs
+                ))?
                 .to_owned()
         };
 
@@ -218,6 +222,8 @@ where
     enabled_cfg: &'a HashMap<String, Vec<String>>,
 
     current_macro_context: Option<String>,
+
+    current_macro_call_loc: Option<SrcLoc>,
 }
 
 impl<'a, R> Scanner<'a, R>
@@ -246,6 +252,7 @@ where
             sinks: Sink::default_sinks(),
             enabled_cfg,
             current_macro_context: None,
+            current_macro_call_loc: None,
         }
     }
 
@@ -263,6 +270,10 @@ where
 
     pub fn set_current_macro_context(&mut self, macro_context: Option<String>) {
         self.current_macro_context = macro_context;
+    }
+
+    pub fn set_current_macro_call_loc(&mut self, macro_loc: Option<SrcLoc>) {
+        self.current_macro_call_loc = macro_loc;
     }
 
     /*
@@ -294,6 +305,10 @@ where
             syn::Item::ForeignMod(fm) => self.scan_foreign_mod(fm),
             syn::Item::Macro(m) => {
                 self.data.skipped_macros.add(m);
+                if let Some(ident) = m.ident.as_ref() {
+                    let cp = self.resolver.resolve_def(ident);
+                    self.data.update_call_graph(&cp);
+                }
             }
             _ => (),
             // For all syntax elements see
@@ -1204,6 +1219,7 @@ where
             callee.clone(),
             &eff_span,
             eff_type.clone(),
+            self.current_macro_call_loc.clone(),
         );
 
         if self.scope_unsafe > 0 && eff.is_rust_unsafe() {
@@ -1239,24 +1255,35 @@ where
             let containing_fn = self.scope_fns.last().expect("not inside a function!");
             containing_fn.fn_name.clone()
         };
-        self.data.add_call(
-            &caller,
-            &callee,
-            SrcLoc::from_span(self.filepath, &callee_span.span()),
-        );
 
-        let Some(eff) = EffectInstance::new_call(
-            self.filepath,
-            caller.clone(),
-            callee,
-            &callee_span,
-            is_unsafe,
-            ffi,
-            &self.sinks,
-        ) else {
-            return;
+        let eff = if let Some(macro_loc) = self.current_macro_call_loc.clone() {
+            // Macro call retrieves src_loc from macro definition location
+            self.data.add_call(&caller, &callee, macro_loc.clone());
+            EffectInstance::new_macro_call(
+                caller.clone(),
+                callee,
+                macro_loc,
+                is_unsafe,
+                ffi,
+                &self.sinks,
+            )
+        } else {
+            // Regular function call retrieves src_loc from file path and calleee span
+            let src_loc = SrcLoc::from_span(self.filepath, &callee_span);
+            self.data.add_call(&caller, &callee, src_loc.clone());
+            EffectInstance::new_regular_call(
+                caller.clone(),
+                callee,
+                src_loc,
+                is_unsafe,
+                ffi,
+                &self.sinks,
+            )
         };
 
+        let Some(eff) = eff else {
+            return;
+        };
         if self.scope_unsafe > 0 && eff.is_rust_unsafe() {
             self.scope_unsafe_effects += 1;
         }
@@ -1368,7 +1395,7 @@ pub fn scan_file(
     file.read_to_string(&mut src)?;
     let syntax_tree = syn::parse_file(&src)?;
     // Initialize resolver
-    let file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
+    let file_resolver = FileResolver::new(crate_name, resolver, filepath, None)?;
     // Initialize scanner
     let mut scanner = Scanner::new(filepath, file_resolver, scan_results, enabled_cfg);
     scanner.add_sinks(sinks.clone());
