@@ -55,6 +55,12 @@ struct Args {
         EffectType::ClosureCreation,
     ])]
     effect_types: Vec<EffectType>,
+
+    #[clap(long, default_value_t = false)]
+    pub quick_mode: bool,
+
+    #[clap(long, default_value_t = true)]
+    pub expand_macro: bool,
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
@@ -128,7 +134,12 @@ fn main() -> Result<()> {
         args.effect_types,
     );
 
-    let mut chain = create_new_audit_chain(create, &args.audit_file_path, false)?;
+    let mut chain = create_new_audit_chain(
+        create,
+        &args.audit_file_path,
+        args.quick_mode,
+        args.expand_macro,
+    )?;
     let root_crate = chain.root_crate()?;
     let root_audit_file = chain
         .read_audit_file(&root_crate)?

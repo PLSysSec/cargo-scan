@@ -34,6 +34,10 @@ struct Args {
     /// Run in quick mode (turns off RustAnalyzer)
     #[clap(long, default_value_t = false)]
     quick_mode: bool,
+
+    /// Whether to analyze macro expansions for effects
+    #[clap(long, default_value_t = true)]
+    expand_macro: bool,
 }
 
 // TODO: Combine this with DefaultAuditType once we implement every version
@@ -56,12 +60,14 @@ fn runner(args: Args) -> Result<()> {
             &args.crate_path,
             &EffectType::unsafe_effects(),
             args.quick_mode,
+            args.expand_macro,
         )?,
         AuditType::Safe => AuditFile::new_safe_default_with_sinks(
             &args.crate_path,
             HashSet::new(),
             &EffectType::unsafe_effects(),
             args.quick_mode,
+            args.expand_macro,
         )?,
     };
 

@@ -455,6 +455,7 @@ fn make_new_audit_file(
     audit_type: DefaultAuditType,
     relevant_effects: &[EffectType],
     quick_mode: bool,
+    expand_macro: bool,
 ) -> Result<()> {
     let audit_file_path = PathBuf::from(format!(
         "{}/{}-{}.audit",
@@ -503,6 +504,7 @@ fn make_new_audit_file(
         audit_type,
         relevant_effects,
         quick_mode,
+        expand_macro,
     )?;
     audit_file.save_to_file(audit_file_path.clone())?;
 
@@ -515,6 +517,7 @@ pub fn create_new_audit_chain(
     args: Create,
     crate_download_path: &str,
     quick_mode: bool,
+    expand_macro: bool,
 ) -> Result<AuditChain> {
     info!("Creating audit chain");
     let mut chain = AuditChain::new(
@@ -572,6 +575,7 @@ pub fn create_new_audit_chain(
             audit_type,
             &args.effect_types,
             quick_mode,
+            expand_macro,
         )?;
     }
 

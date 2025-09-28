@@ -102,6 +102,10 @@ struct Args {
     /// TESTING ONLY: Use the quick-mode scan option
     #[clap(long, default_value_t = false)]
     quick_mode: bool,
+
+    /// Whether to analyze macro expanded code for effects
+    #[clap(long, default_value_t = true)]
+    expand_macros: bool,
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
@@ -250,7 +254,7 @@ fn audit_crate(args: Args, audit_file: Option<AuditFile>) -> Result<()> {
             sinks,
             relevant_effects,
             args.quick_mode,
-            false,
+            args.expand_macros,
         )?
     };
     let scan_effects = scan_res.effects_set();
@@ -334,8 +338,12 @@ fn runner(args: Args) -> Result<()> {
         println!("Previewing crate effects.");
         println!("Scanning crate...");
 
-        let res =
-            scan_crate(&args.crate_path, &args.effect_types, args.quick_mode, false)?;
+        let res = scan_crate(
+            &args.crate_path,
+            &args.effect_types,
+            args.quick_mode,
+            args.expand_macros,
+        )?;
         for effect in res.effects {
             println!("{}", effect.to_csv());
         }

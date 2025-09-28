@@ -468,6 +468,7 @@ pub fn audit_pub_fn(
     sink_ident: &Sink,
     config: &Config,
     quick_mode: bool,
+    expand_macro: bool,
 ) -> Result<HashSet<CanonicalPath>> {
     let sink_crate = sink_ident
         .first_ident()
@@ -484,7 +485,7 @@ pub fn audit_pub_fn(
         &new_audit_file.base_dir,
         &prev_audit_file.scanned_effects,
         quick_mode,
-        false,
+        expand_macro,
     )?;
     let sink_fn = CanonicalPath::new(sink_ident.as_str());
     loop {
@@ -515,7 +516,7 @@ pub fn audit_pub_fn(
                         ))
                     }
                 };
-                audit_pub_fn(chain, child_sink, config, quick_mode)?;
+                audit_pub_fn(chain, child_sink, config, quick_mode, expand_macro)?;
                 // We have to reload the new audit file because auditing child
                 // effects may have removed some base effects from the current
                 // crate

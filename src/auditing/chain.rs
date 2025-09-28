@@ -21,11 +21,18 @@ pub struct OuterArgs {
 
     #[clap(long, default_value_t = false)]
     pub quick_mode: bool,
+
+    #[clap(long, default_value_t = true)]
+    pub expand_macro: bool,
 }
 
 impl Default for OuterArgs {
     fn default() -> Self {
-        Self { crate_download_path: ".audit_crates".to_string(), quick_mode: false }
+        Self {
+            crate_download_path: ".audit_crates".to_string(),
+            quick_mode: false,
+            expand_macro: true,
+        }
     }
 }
 
@@ -89,7 +96,12 @@ impl CommandRunner for Create {
             std::fs::rename(&tmp_path, &self.crate_path)?;
         }
 
-        let chain = create_new_audit_chain(self, &args.crate_download_path, false)?;
+        let chain = create_new_audit_chain(
+            self,
+            &args.crate_download_path,
+            args.quick_mode,
+            args.expand_macro,
+        )?;
         chain.save_to_file()?;
         Ok(())
     }
@@ -205,8 +217,8 @@ impl CommandRunner for Audit {
                     let scan_res = scanner::scan_crate(
                         &crate_path,
                         &orig_audit_file.scanned_effects,
-                        false,
-                        false,
+                        args.quick_mode,
+                        args.expand_macro,
                     )?;
 
                     let mut audit_config = AuditConfig::default();
@@ -229,6 +241,7 @@ impl CommandRunner for Audit {
                                 sink_ident,
                                 &audit_config,
                                 args.quick_mode,
+                                args.expand_macro,
                             )?,
                             _ => {
                                 return Err(anyhow!(
