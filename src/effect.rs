@@ -290,7 +290,6 @@ impl EffectInstance {
     /// Returns a new EffectInstance if the call matches a Sink, is an ffi call,
     /// or is an unsafe call. Regular calls are handled by the explicit call
     /// graph structure.
-
     pub fn new_regular_call(
         caller: CanonicalPath,
         callee: CanonicalPath,
