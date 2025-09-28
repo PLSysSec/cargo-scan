@@ -91,11 +91,10 @@ pub fn handle_macro_expansion(
             debug!("Failed to resolve macro path.");
             continue;
         }
-        let canonical_path =
-            match file_resolver_expand.resolve_macro_def_path(&macro_call) {
-                Some(cp) => cp,
-                None => continue,
-            };
+        let canonical_path = match file_resolver_expand.resolve_macro_def(&macro_call) {
+            Some(cp) => cp,
+            None => continue,
+        };
         let text_range = macro_call.syntax().text_range();
         let line_index =
             LineIndex::new(resolver.db().file_text(current_file_id).as_ref());

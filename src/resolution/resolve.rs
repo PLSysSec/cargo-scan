@@ -4,6 +4,7 @@
 //! with the needed functionality.
 
 use crate::resolution::name_resolution::{Resolver, ResolverImpl};
+use crate::resolution::util::canonical_path;
 
 use super::hacky_resolver::HackyResolver;
 use crate::effect::SrcLoc;
@@ -13,7 +14,7 @@ use anyhow::Result;
 use log::debug;
 use ra_ap_hir::HirFileId;
 use ra_ap_syntax::ast::MacroCall;
-use ra_ap_syntax::SyntaxNode;
+use ra_ap_syntax::{AstNode, SyntaxNode};
 use std::fmt::Display;
 use std::path::Path as FilePath;
 use syn::{self, spanned::Spanned};
@@ -117,14 +118,11 @@ impl<'a> FileResolver<'a> {
         Some((file_id, expanded_syntax))
     }
 
-    pub fn resolve_macro_def_path(
-        &self,
-        macro_call: &MacroCall,
-    ) -> Option<CanonicalPath> {
-        let path = macro_call.path()?;
-        let last_segment = path.segment()?.name_ref()?.text().to_string();
-        let fake_ident = syn::Ident::new(&last_segment, proc_macro2::Span::call_site());
-        Some(self.resolve_def(&fake_ident))
+    pub fn resolve_macro_def(&self, macro_call: &MacroCall) -> Option<CanonicalPath> {
+        let containing_fn =
+            &macro_call.syntax().ancestors().find_map(ra_ap_syntax::ast::Fn::cast)?;
+        let def = self.resolver.sems.to_def(containing_fn)?;
+        canonical_path(&self.resolver.sems, self.resolver.sems.db, &def.into())
     }
 
     fn resolve_core(&self, i: &syn::Ident) -> Result<CanonicalPath> {
