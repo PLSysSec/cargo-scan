@@ -1170,7 +1170,9 @@ where
         // the function the pointer points to has potential
         // effects itself at the end of the scan
         if matches!(eff_type, Effect::FnPtrCreation) {
-            self.data.fn_ptr_effects.push(eff);
+            if self.sinks.is_empty() || self.sinks.contains(callee.as_path()) {
+                self.data.fn_ptr_effects.push(eff);
+            }
         } else {
             self.data.effects.push(eff);
             self.data.fns_with_effects.insert(caller.clone());
@@ -1435,7 +1437,7 @@ pub fn scan_crate_with_sinks(
     scan_results
         .effects
         .retain(|e| EffectType::matches_effect(relevant_effects, e.eff_type()));
-    
+
     Ok(scan_results)
 }
 
