@@ -192,6 +192,6 @@ fn main() {
     test_logging!();
     file_operations!();
     simulate_ffi!();
-    fn_ptr_direct();
-    closure_direct();
+    fn_ptr_creation!();
+    closure_creation!();
 }
