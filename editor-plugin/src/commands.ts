@@ -72,8 +72,18 @@ export function registerCommands(context: vscode.ExtensionContext) {
     
     context.subscriptions.push(
         vscode.commands.registerCommand('cargo-scan.get_callers', async (effect: EffectResponseData) => {
-            const response = await client.sendRequest<EffectsResponse>('cargo-scan.get_callers', 
-                { ...effect, location: { uri: effect.location.uri.toString(), range: effect.location.range }});
+            const chain_audit_mode = context.globalState.get('chainAudit');
+            const eff = {
+                ...effect,
+                location: {
+                    uri: effect.location.uri.toString(),
+                    range: effect.location.range
+                }
+            };
+            const response = await client.sendRequest<EffectsResponse>(
+                'cargo-scan.get_callers', 
+                { effect: eff, chain_audit_mode } 
+            );
             
             const callers = response.effects.map(effect => ({
                 ...effect,

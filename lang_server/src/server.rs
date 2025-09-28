@@ -1,9 +1,9 @@
 use std::{collections::HashMap, error::Error, path::PathBuf, str::FromStr};
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use cargo_scan::{
     audit_chain::Create,
-    audit_file::{AuditFile, EffectInfo},
+    audit_file::AuditFile,
     auditing::chain::{Command, CommandRunner, OuterArgs},
     effect::{self},
     ident::CanonicalPath,
@@ -20,16 +20,11 @@ use lsp_types::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    location::to_src_loc,
     notification::{AuditNotification, AuditNotificationParams},
     request::{
-        audit_req, scan_req, AuditCommandResponse, CallerCheckedResponse,
-        EffectsResponse, ScanCommandResponse,
+        audit_req, scan_req, AuditCommandResponse, EffectsResponse, ScanCommandResponse,
     },
-    util::{
-        add_callers_to_tree, find_effect_instance, get_all_chain_effects,
-        get_new_audit_locs,
-    },
+    util::{get_all_chain_effects, get_callers},
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -40,6 +35,7 @@ struct ScanCommandParams {
 #[derive(Serialize, Deserialize, Debug)]
 struct CallerCheckedCommandParams {
     effect: EffectsResponse,
+    chain_audit_mode: bool,
 }
 
 struct ScanCommand;
@@ -153,29 +149,41 @@ fn runner(
                         }))?;
                     }
                     CallerCheckedCommand::METHOD => {
-                        let effect = EffectsResponse::from_json_value(req.params)?;
-                        let caller_path = CanonicalPath::new_owned(effect.get_caller());
-                        let callee_loc = to_src_loc(&effect.location)?;
+                        let params: CallerCheckedCommandParams =
+                            serde_json::from_value(req.params)?;
+                        let effect = params.effect;
 
-                        let new_audit_locs = get_new_audit_locs(&scan_res, &caller_path)?;
-                        let callers =
-                            CallerCheckedResponse::new(&effect, &new_audit_locs)?;
+                        let callers = if params.chain_audit_mode {
+                            let crate_name =
+                                CanonicalPath::new_owned(effect.get_caller())
+                                    .crate_name()
+                                    .to_string();
 
-                        if let Some(af) = audit_file.as_mut() {
-                            for tree in find_effect_instance(af, effect)? {
-                                let curr_effect = EffectInfo {
-                                    caller_path: caller_path.clone(),
-                                    callee_loc: callee_loc.clone(),
-                                };
-                                add_callers_to_tree(
-                                    new_audit_locs.clone(),
-                                    tree,
-                                    curr_effect,
-                                );
-                            }
-                            af.recalc_pub_caller_checked(&scan_res.pub_fns);
+                            let mut chain =
+                                cargo_scan::audit_chain::AuditChain::read_audit_chain(
+                                    chain_manifest.to_path_buf(),
+                                )?
+                                .expect("No audit chain found");
+                            let crate_id =
+                                chain.resolve_crate_id(&crate_name).context(format!(
+                                    "Couldn't resolve crate_name for {}",
+                                    &crate_name
+                                ))?;
+
+                            let mut af = chain
+                                .read_audit_file(&crate_id)?
+                                .expect("No audit file for crate");
+                            let callers = get_callers(&mut af, effect, &scan_res)?;
+                            chain.save_audit_file(&crate_id, &af)?;
+                            
+                            callers
+                        } else {
+                            let af = audit_file.as_mut().expect("No audit file found");
+                            let callers = get_callers(af, effect, &scan_res)?;
                             af.save_to_file(audit_file_path.clone())?;
-                        }
+                            
+                            callers
+                        };
 
                         // send the new audit locations to the client
                         let res = callers.to_json_value()?;

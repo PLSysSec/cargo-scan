@@ -9,7 +9,10 @@ use cargo_scan::{
     scanner::ScanResults,
 };
 
-use crate::{location::to_src_loc, request::EffectsResponse};
+use crate::{
+    location::to_src_loc,
+    request::{CallerCheckedResponse, EffectsResponse},
+};
 
 pub fn find_effect_instance(
     audit_file: &mut AuditFile,
@@ -68,4 +71,27 @@ pub fn get_all_chain_effects(
     let removed_sinks = chain.collect_all_safe_sinks()?;
     chain.remove_cross_crate_effects(removed_sinks, &chain.root_crate()?)?;
     collect_propagated_sinks(&mut chain)
+}
+
+pub fn get_callers(
+    af: &mut AuditFile,
+    effect: EffectsResponse,
+    scan_res: &ScanResults,
+) -> Result<CallerCheckedResponse, Error> {
+    let caller_path = CanonicalPath::new_owned(effect.get_caller());
+    let callee_loc = to_src_loc(&effect.location)?;
+
+    let new_audit_locs = get_new_audit_locs(scan_res, &caller_path)?;
+    let callers = CallerCheckedResponse::new(&effect, &new_audit_locs)?;
+
+    for tree in find_effect_instance(af, effect)? {
+        let curr_effect = EffectInfo {
+            caller_path: caller_path.clone(),
+            callee_loc: callee_loc.clone(),
+        };
+        add_callers_to_tree(new_audit_locs.clone(), tree, curr_effect);
+    }
+    af.recalc_pub_caller_checked(&scan_res.pub_fns);
+
+    Ok(callers)
 }
