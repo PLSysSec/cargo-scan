@@ -3,12 +3,11 @@ ffi-ex, 16
 caller-checked, 15
 toy-crates, 15
 unsafe-test, 14
-fns-closures, 7
+fns-closures, 6
 permissions-ex, 6
 recursion-ex, 4
 cfg-ex, 3
 dependency-ex, 2
 libc-ex, 2
 num_cpus_minimal, 2
-resolution-ex, 2
 dependency-parent, 1
