@@ -32,6 +32,8 @@ const SINK_PATTERNS: &[&str] = &[
     "winapi",
 ];
 
+const EXCLUDE_SINK_PATTERNS: &[&str] = &["std::io::error"];
+
 // Removed sink patterns on 2023-11-16
 // "mio::net",
 // "mio::unix",
@@ -58,6 +60,13 @@ impl Sink {
     /// Get the sink pattern matching a callee.
     pub fn new_match(callee: &CanonicalPath, sinks: &HashSet<IdentPath>) -> Option<Self> {
         let mut result = None;
+        for excluded in EXCLUDE_SINK_PATTERNS {
+            let pat = Pattern::new(excluded);
+            if callee.matches(&pat) {
+                return None;
+            }
+        }
+
         for pat_raw in sinks {
             let pat = Pattern::new(pat_raw.as_str());
             if callee.matches(&pat) {
