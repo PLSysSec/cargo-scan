@@ -4,7 +4,10 @@ use ra_ap_hir_expand::InFile;
 
 use crate::ident::{CanonicalPath, CanonicalType, Ident, TypeKind};
 
-use ra_ap_hir::{GenericParam, HasSource, Module, Semantics, VariantDef};
+use ra_ap_hir::{
+    db::DefDatabase, Adt, DefWithBody, GenericParam, HasContainer, HasSource, HirDisplay,
+    Module, Semantics, VariantDef,
+};
 
 use ra_ap_ide::{RootDatabase, TextSize};
 use ra_ap_ide_db::base_db::SourceDatabase;
@@ -72,7 +75,7 @@ pub(super) fn canonical_path(
         return Some(CanonicalPath::new(name_to_string(b.name()).as_str()));
     }
 
-    // let container = get_container_name(sems, db, def);
+    let container = get_container_name(db, def);
     let def_name = def.name(db).map(name_to_string);
     let module = def.module(db)?;
 
@@ -88,11 +91,76 @@ pub(super) fn canonical_path(
     let cp = crate_name
         .into_iter()
         .chain(module_path)
-        // .chain(container)
+        .chain(container)
         .chain(def_name)
         .join("::");
 
     Some(CanonicalPath::new(cp.as_str()))
+}
+
+/// Helper function to construct the canonical path
+fn get_container_name(db: &RootDatabase, def: &Definition) -> Vec<String> {
+    let mut container_names = vec![];
+    match def {
+        Definition::Field(f) => {
+            let parent = f.parent_def(db);
+            container_names.append(&mut match parent {
+                VariantDef::Variant(v) => get_container_name(db, &v.into()),
+                VariantDef::Struct(s) => get_container_name(db, &Adt::from(s).into()),
+                VariantDef::Union(u) => get_container_name(db, &Adt::from(u).into()),
+            });
+            container_names.push(name_to_string(parent.name(db)))
+        }
+        Definition::Local(l) => {
+            let parent = l.parent(db);
+            let parent_name = parent.name(db);
+            let parent_def = match parent {
+                DefWithBody::Function(f) => f.into(),
+                DefWithBody::Static(s) => s.into(),
+                DefWithBody::Const(c) => c.into(),
+                DefWithBody::Variant(v) => v.into(),
+                DefWithBody::InTypeConst(_) => unimplemented!("TODO"),
+            };
+            container_names.append(&mut get_container_name(db, &parent_def));
+            container_names.push(parent_name.map(name_to_string).unwrap_or_default())
+        }
+        Definition::Function(f) => match f.container(db) {
+            ra_ap_hir::ItemContainer::Trait(t) => {
+                container_names.append(&mut get_container_name(db, &t.into()));
+                container_names.push(name_to_string(t.name(db)))
+            }
+            ra_ap_hir::ItemContainer::Impl(i) => {
+                let id = ra_ap_hir_def::ImplId::from(i);
+                let impl_data = db.impl_data(id);
+
+                let name = if let Some(trait_ref) = impl_data.target_trait.as_ref() {
+                    format!(
+                        "<{} as {}>",
+                        i.self_ty(db).display(db),
+                        trait_ref.path.display(db)
+                    )
+                } else {
+                    let adt = i.self_ty(db).as_adt();
+                    adt.map(|it| name_to_string(it.name(db))).unwrap_or_default()
+                };
+
+                container_names.append(&mut get_container_name(db, &i.into()));
+                container_names.push(name);
+            }
+            _ => {}
+        },
+        Definition::Variant(e) => {
+            container_names.push(name_to_string(e.parent_enum(db).name(db)))
+        }
+        Definition::Macro(m) => {
+            container_names.append(&mut get_container_name(db, &m.module(db).into()));
+            container_names.push(m.name(db).display(db).to_string());
+        }
+        _ => {}
+    }
+    container_names.retain(|s| !s.is_empty());
+
+    container_names
 }
 
 /// Type resolution
