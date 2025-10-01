@@ -175,13 +175,13 @@ fn runner(
                                 .expect("No audit file for crate");
                             let callers = get_callers(&mut af, effect, &scan_res)?;
                             chain.save_audit_file(&crate_id, &af)?;
-                            
+
                             callers
                         } else {
                             let af = audit_file.as_mut().expect("No audit file found");
                             let callers = get_callers(af, effect, &scan_res)?;
                             af.save_to_file(audit_file_path.clone())?;
-                            
+
                             callers
                         };
 
