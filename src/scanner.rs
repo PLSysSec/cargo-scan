@@ -1170,9 +1170,7 @@ where
         // the function the pointer points to has potential
         // effects itself at the end of the scan
         if matches!(eff_type, Effect::FnPtrCreation) {
-            if self.sinks.is_empty() || self.sinks.contains(callee.as_path()) {
-                self.data.fn_ptr_effects.push(eff);
-            }
+            self.data.fn_ptr_effects.push(eff);
         } else {
             self.data.effects.push(eff);
             self.data.fns_with_effects.insert(caller.clone());
@@ -1433,7 +1431,7 @@ pub fn scan_crate_with_sinks(
             &scan_config,
         );
     }
-    filter_fn_ptr_effects(&mut scan_results, crate_name.clone());
+    filter_fn_ptr_effects(&mut scan_results, crate_name.clone(), &sinks);
     scan_results
         .effects
         .retain(|e| EffectType::matches_effect(relevant_effects, e.eff_type()));
@@ -1459,12 +1457,17 @@ pub fn scan_crate(
 
 /// Keep only the `FnPtrCreation` effect instances for the pointers that
 /// point to functions with effects or functions defined in dependencies
-fn filter_fn_ptr_effects(scan_results: &mut ScanResults, crate_name: String) {
+fn filter_fn_ptr_effects(
+    scan_results: &mut ScanResults,
+    crate_name: String,
+    sinks: &HashSet<IdentPath>,
+) {
     let mut crate_name = crate_name;
     crate::ident::replace_hyphens(&mut crate_name);
 
     for p in scan_results.fn_ptr_effects.iter() {
         if !p.callee().crate_name().to_string().eq(&crate_name)
+            || sinks.contains(p.callee().as_path())
             || check_fn_for_effects(scan_results, p.callee())
         {
             scan_results.effects.push(p.clone());
