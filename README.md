@@ -127,10 +127,9 @@ We welcome bug reports, suggestions, and pull requests! Please raise an issue or
 
 ## Citing this repository
 
-If you want to cite this repository, please consider citing our technical report.
-The current draft (in submission) is available below:
+If you want to cite this repository, please consider citing our paper at ESOP 2026:
 
-- *Auditing Rust Crates Effectively.* Lydia Zoghbi, David Thien, Ranjit Jhala, Deian Stefan, and Caleb Stanford. Preprint (2024). [Draft Link](https://web.cs.ucdavis.edu/~cdstanford/doc/2024/CargoScan-draft.pdf)
+- *Auditing Rust Crates Effectively.* Lydia Zoghbi, David Thien, Ranjit Jhala, Deian Stefan, and Caleb Stanford. Experience report at European Symposium on Programming (ESOP), part of the International Joint Conferences On Theory and Practice of Software (ETAPS), April 2026. [PDF](https://web.cs.ucdavis.edu/~cdstanford/doc/2026/ESOP26.pdf)
 
 You may also cite the repository directly:
 
