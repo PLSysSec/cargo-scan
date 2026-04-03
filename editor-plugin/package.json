@@ -4,7 +4,7 @@
   "description": "",
   "publisher": "PLSysSec",
   "version": "0.0.1",
-  "license":"MIT",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -104,7 +104,14 @@
         "cargo-scan.log.level": {
           "type": "string",
           "default": "info",
-          "enum": ["off", "error", "warn", "info", "debug", "trace"]
+          "enum": [
+            "off",
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace"
+          ]
         }
       }
     }
@@ -126,10 +133,9 @@
     "@types/vscode": "^1.90.0",
     "@typescript-eslint/eslint-plugin": "^7.11.0",
     "@typescript-eslint/parser": "^7.11.0",
-    "@vscode/test-cli": "^0.0.9",
     "@vscode/test-electron": "^2.4.0",
     "@vscode/vsce": "^2.31.0",
-    "esbuild": "^0.23.0",
+    "esbuild": "^0.27.4",
     "eslint": "^8.57.0",
     "typescript": "^5.4.5"
   }

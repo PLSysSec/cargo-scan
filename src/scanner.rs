@@ -124,7 +124,7 @@ impl ScanResults {
 }
 
 #[derive(Debug)]
-pub struct Scanner<'a, R>
+pub struct Scanner<'a, 'r, R>
 where
     R: Resolve<'a>,
 {
@@ -132,7 +132,7 @@ where
     filepath: &'a FilePath,
 
     /// Name resolution resolver
-    resolver: R,
+    resolver: &'r mut R,
 
     /// Number of unsafe keywords the current scope is nested inside
     /// (always 0 at top level)
@@ -153,7 +153,7 @@ where
     scope_fns: Vec<FnDec>,
 
     /// Target to accumulate scan results
-    data: &'a mut ScanResults,
+    data: &'r mut ScanResults,
 
     /// The list of sinks to look for
     sinks: HashSet<IdentPath>,
@@ -166,7 +166,7 @@ where
     current_macro_call_loc: Option<SrcLoc>,
 }
 
-impl<'a, R> Scanner<'a, R>
+impl<'a, 'r, R> Scanner<'a, 'r, R>
 where
     R: Resolve<'a>,
 {
@@ -177,8 +177,8 @@ where
     /// Create a new scanner tied to a crate and file
     pub fn new(
         filepath: &'a FilePath,
-        resolver: R,
-        data: &'a mut ScanResults,
+        resolver: &'r mut R,
+        data: &'r mut ScanResults,
         enabled_cfg: &'a HashMap<String, Vec<String>>,
     ) -> Self {
         Self {
@@ -1299,10 +1299,10 @@ pub fn scan_file_quick(
     file.read_to_string(&mut src)?;
     let syntax_tree = syn::parse_file(&src)?;
 
-    let hacky_resolver = HackyResolver::new(crate_name, filepath);
+    let mut hacky_resolver = HackyResolver::new(crate_name, filepath)?;
 
     let mut scanner =
-        Scanner::new(filepath, hacky_resolver.unwrap(), scan_results, enabled_cfg);
+        Scanner::new(filepath, &mut hacky_resolver, scan_results, enabled_cfg);
     scanner.add_sinks(sinks);
 
     scanner.scan_file(&syntax_tree);
@@ -1328,23 +1328,27 @@ pub fn scan_file(
     let enabled_cfg = scan_config.enabled_cfg;
     let expand_macro = scan_config.expand_macro;
     debug!("Scanning file: {:?}", filepath);
+
     // Load file contents
     let mut file = File::open(filepath)?;
     let mut src = String::new();
     file.read_to_string(&mut src)?;
     let syntax_tree = syn::parse_file(&src)?;
+
     // Initialize resolver
-    let file_resolver = FileResolver::new(crate_name, resolver, filepath, None)?;
+    let mut file_resolver = FileResolver::new(crate_name, resolver, filepath)?;
     // Initialize scanner
-    let mut scanner: Scanner<'_, FileResolver<'_>> =
-        Scanner::new(filepath, file_resolver, scan_results, enabled_cfg);
+    let mut scanner: Scanner<'_, '_, FileResolver<'_>> =
+        Scanner::new(filepath, &mut file_resolver, scan_results, enabled_cfg);
     scanner.add_sinks(sinks.clone());
     scanner.scan_file(&syntax_tree);
+
     if expand_macro {
         handle_macro_expansion(
             crate_name,
             filepath,
             resolver,
+            &mut file_resolver,
             scan_results,
             sinks,
             enabled_cfg,
@@ -1406,31 +1410,36 @@ pub fn scan_crate_with_sinks(
     let resolver = Resolver::new(crate_path)?;
     let mut scan_results = ScanResults::new();
 
-    let enabled_cfg = resolver.get_cfg_options_for_crate(&crate_name).unwrap_or_default();
+    resolver.with_db(|resolver| {
+        let enabled_cfg =
+            resolver.get_cfg_options_for_crate(&crate_name).unwrap_or_default();
 
-    // TODO: For now, only walking through the src dir, but might want to
-    //       include others (e.g. might codegen in other dirs)
-    // If there is no src_dir, we walk through all .rs files in the crate.
+        // TODO: For now, only walking through the src dir, but might want to
+        //       include others (e.g. might codegen in other dirs)
+        // If there is no src_dir, we walk through all .rs files in the crate.
 
-    let src_dir = crate_path.join(FilePath::new("src"));
-    let file_iter = if src_dir.is_dir() {
-        util::fs::walk_files_with_extension(&src_dir, "rs")
-    } else {
-        info!("crate has no src dir; scanning all .rs files instead");
-        util::fs::walk_files_with_extension(crate_path, "rs")
-    };
-    let scan_config = ScanConfig { enabled_cfg: &enabled_cfg, expand_macro, quick_mode };
-    // scan every file
-    for entry in file_iter {
-        try_scan_file(
-            &crate_name,
-            entry.as_path(),
-            &resolver,
-            &mut scan_results,
-            sinks.clone(),
-            &scan_config,
-        );
-    }
+        let src_dir = crate_path.join(FilePath::new("src"));
+        let file_iter = if src_dir.is_dir() {
+            util::fs::walk_files_with_extension(&src_dir, "rs")
+        } else {
+            info!("crate has no src dir; scanning all .rs files instead");
+            util::fs::walk_files_with_extension(crate_path, "rs")
+        };
+        let scan_config =
+            ScanConfig { enabled_cfg: &enabled_cfg, expand_macro, quick_mode };
+        // scan every file
+        for entry in file_iter {
+            try_scan_file(
+                &crate_name,
+                entry.as_path(),
+                resolver,
+                &mut scan_results,
+                sinks.clone(),
+                &scan_config,
+            );
+        }
+    });
+
     filter_fn_ptr_effects(&mut scan_results, crate_name.clone(), &sinks);
     scan_results
         .effects

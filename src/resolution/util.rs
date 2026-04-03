@@ -1,17 +1,15 @@
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
-use ra_ap_hir_expand::InFile;
 
 use crate::ident::{CanonicalPath, CanonicalType, Ident, TypeKind};
 
 use ra_ap_hir::{
-    db::DefDatabase, Adt, DefWithBody, GenericParam, HasContainer, HasSource, HirDisplay,
+    Adt, DefWithBody, DisplayTarget, GenericParam, HasContainer, HasCrate, HirDisplay,
     Module, Semantics, VariantDef,
 };
 
-use ra_ap_ide::{RootDatabase, TextSize};
-use ra_ap_ide_db::base_db::SourceDatabase;
-use ra_ap_ide_db::defs::Definition;
+use ra_ap_ide::TextSize;
+use ra_ap_ide_db::{base_db::RootQueryDb, defs::Definition, RootDatabase};
 
 use ra_ap_syntax::{SyntaxNode, SyntaxToken, TokenAtOffset};
 
@@ -19,7 +17,7 @@ use ra_ap_syntax::{SyntaxNode, SyntaxToken, TokenAtOffset};
 // https://docs.rs/ra_ap_hir/latest/ra_ap_hir/struct.Name.html#
 // This is a wrapper function to recover the .to_string() implementation
 fn name_to_string(n: ra_ap_hir::Name) -> String {
-    n.to_smol_str().to_string()
+    n.as_str().to_string()
 }
 
 pub(super) fn get_token(
@@ -72,17 +70,20 @@ pub(super) fn canonical_path(
     def: &Definition,
 ) -> Option<CanonicalPath> {
     if let Definition::BuiltinType(b) = def {
-        return Some(CanonicalPath::new(name_to_string(b.name()).as_str()));
+        return Some(CanonicalPath::new(&name_to_string(b.name())));
     }
 
     let container = get_container_name(db, def);
     let def_name = def.name(db).map(name_to_string);
     let module = def.module(db)?;
 
-    let crate_name = db.crate_graph()[module.krate().into()]
-        .display_name
-        .as_ref()
-        .map(|it| it.to_string());
+    let crates = db.all_crates();
+    let crate_name = crates
+        .iter()
+        .filter(|cr| **cr == module.krate(db).base())
+        .filter_map(|cr| cr.extra_data(db).display_name.as_ref())
+        .map(|n| n.to_string());
+
     let module_path = build_path_to_root(module, db)
         .into_iter()
         .rev()
@@ -119,7 +120,6 @@ fn get_container_name(db: &RootDatabase, def: &Definition) -> Vec<String> {
                 DefWithBody::Static(s) => s.into(),
                 DefWithBody::Const(c) => c.into(),
                 DefWithBody::Variant(v) => v.into(),
-                DefWithBody::InTypeConst(_) => unimplemented!("TODO"),
             };
             container_names.append(&mut get_container_name(db, &parent_def));
             container_names.push(parent_name.map(name_to_string).unwrap_or_default())
@@ -130,14 +130,14 @@ fn get_container_name(db: &RootDatabase, def: &Definition) -> Vec<String> {
                 container_names.push(name_to_string(t.name(db)))
             }
             ra_ap_hir::ItemContainer::Impl(i) => {
-                let id = ra_ap_hir_def::ImplId::from(i);
-                let impl_data = db.impl_data(id);
-
-                let name = if let Some(trait_ref) = impl_data.target_trait.as_ref() {
+                let krate = i.module(db).krate(db);
+                let edition = krate.edition(db);
+                let name = if let Some(trait_) = i.trait_(db) {
                     format!(
                         "<{} as {}>",
-                        i.self_ty(db).display(db),
-                        trait_ref.path.display(db)
+                        i.self_ty(db)
+                            .display(db, DisplayTarget::from_crate(db, krate.into())),
+                        trait_.name(db).display(db, edition)
                     )
                 } else {
                     let adt = i.self_ty(db).as_adt();
@@ -154,7 +154,8 @@ fn get_container_name(db: &RootDatabase, def: &Definition) -> Vec<String> {
         }
         Definition::Macro(m) => {
             container_names.append(&mut get_container_name(db, &m.module(db).into()));
-            container_names.push(m.name(db).display(db).to_string());
+            container_names
+                .push(m.name(db).display(db, m.krate(db).edition(db)).to_string());
         }
         _ => {}
     }
@@ -191,7 +192,7 @@ pub(super) fn get_canonical_type(
             if let VariantDef::Union(_) = &it.parent_def(db) {
                 ty_kind = TypeKind::UnionFld;
             }
-            Some(it.ty(db))
+            Some(it.ty(db).to_type(db))
         }
         Definition::GenericParam(GenericParam::TypeParam(it)) => Some(it.ty(db)),
         Definition::GenericParam(GenericParam::ConstParam(it)) => Some(it.ty(db)),
@@ -205,29 +206,4 @@ pub(super) fn get_canonical_type(
     }
 
     Ok(CanonicalType::new(ty_kind))
-}
-
-/// Get source node from the original source  
-/// file for the given definition.
-pub(super) fn syntax_node_from_def(
-    def: &Definition,
-    db: &RootDatabase,
-) -> Option<InFile<SyntaxNode>> {
-    match def {
-        Definition::Function(x) => x.source(db)?.syntax().original_syntax_node(db),
-        Definition::Adt(x) => x.source(db)?.syntax().original_syntax_node(db),
-        Definition::Variant(x) => x.source(db)?.syntax().original_syntax_node(db),
-        Definition::Const(x) => x.source(db)?.syntax().original_syntax_node(db),
-        Definition::Static(x) => x.source(db)?.syntax().original_syntax_node(db),
-        Definition::Trait(x) => x.source(db)?.syntax().original_syntax_node(db),
-        Definition::TraitAlias(x) => x.source(db)?.syntax().original_syntax_node(db),
-        Definition::TypeAlias(x) => x.source(db)?.syntax().original_syntax_node(db),
-        Definition::SelfType(x) => x.source(db)?.syntax().original_syntax_node(db),
-        Definition::Local(x) => {
-            x.primary_source(db).source(db)?.syntax().original_syntax_node(db)
-        }
-        Definition::Label(x) => x.source(db).syntax().original_syntax_node(db),
-        Definition::ExternCrateDecl(x) => x.source(db)?.syntax().original_syntax_node(db),
-        _ => None,
-    }
 }

@@ -43,34 +43,39 @@ pub fn main() -> Result<()> {
     filepath.push(&args.file);
 
     let resolver = Resolver::new(&args.crate_path)?;
-    let file_id = resolver.find_file_id(&filepath)?;
-    let file_resolver = ResolverImpl::new(&resolver, file_id.into())?;
+    resolver.with_db(|resolver| {
+        let sems = ra_ap_hir::Semantics::new(resolver.db());
+        let file_id = resolver.find_file_id(&filepath)?;
+        let editioned = sems.attach_first_edition(file_id);
+        let editioned_file_id = ra_ap_hir::HirFileId::from(editioned);
+        let file_resolver = ResolverImpl::new(resolver, editioned_file_id)?;
 
-    let s = SrcLoc::new(filepath.as_path(), args.line, args.col, args.line, args.col);
-    let i = Ident::new(&args.name);
+        let s = SrcLoc::new(filepath.as_path(), args.line, args.col, args.line, args.col);
+        let i = Ident::new(&args.name);
 
-    let mut out = match args.resolve_type {
-        true => String::from("Canonical type for '"),
-        _ => String::from("Canonical path for '"),
-    };
-    out.push_str(&args.name);
-    out.push_str("' on {ln ");
-    out.push_str(&args.line.to_string());
-    out.push_str(",col ");
-    out.push_str(&args.col.to_string());
-    out.push('}');
+        let mut out = match args.resolve_type {
+            true => String::from("Canonical type for '"),
+            _ => String::from("Canonical path for '"),
+        };
+        out.push_str(&args.name);
+        out.push_str("' on {ln ");
+        out.push_str(&args.line.to_string());
+        out.push_str(",col ");
+        out.push_str(&args.col.to_string());
+        out.push('}');
 
-    if !args.resolve_type {
-        match file_resolver.resolve_ident(s, i) {
-            Ok(r) => println!("{:?} ===> {:?}", out, r.to_path().to_string()),
-            Err(r) => println!("{:?}", r),
+        if !args.resolve_type {
+            match file_resolver.resolve_ident(s, i) {
+                Ok(r) => println!("{:?} ===> {:?}", out, r.to_path().to_string()),
+                Err(r) => println!("{:?}", r),
+            }
+        } else {
+            match file_resolver.resolve_type(s, i) {
+                Ok(r) => println!("{:?} ===> {:?}", out, r.to_string()),
+                Err(r) => println!("{:?}", r),
+            }
         }
-    } else {
-        match file_resolver.resolve_type(s, i) {
-            Ok(r) => println!("{:?} ===> {:?}", out, r.to_string()),
-            Err(r) => println!("{:?}", r),
-        }
-    }
 
-    Ok(())
+        Ok(())
+    })
 }

@@ -88,24 +88,33 @@ impl<'a> FileResolver<'a> {
         crate_name: &'a str,
         resolver: &'a Resolver,
         filepath: &'a FilePath,
-        file_id: Option<HirFileId>,
     ) -> Result<Self> {
-        debug!("Creating FileResolver for file: {:?}", filepath);
+        debug!("Creating FileResolver for source file: {:?}", filepath);
         let backup = HackyResolver::new(crate_name, filepath)?;
-        //let file_id = resolver.find_file_id(filepath)?;
-        let file_id = match file_id {
-            Some(id) => id,
-            None => {
-                let fid = resolver.find_file_id(filepath)?;
-                fid.into() //
-            }
-        };
-        let imp = ResolverImpl::new(resolver, file_id)?;
+        let imp = ResolverImpl::from_path(resolver, filepath)?;
+
         Ok(Self { filepath, resolver: imp, backup })
     }
 
+    pub fn for_macro(
+        crate_name: &'a str,
+        resolver: &'a Resolver,
+        filepath: &'a FilePath,
+        macro_file_id: HirFileId,
+    ) -> Result<Self> {
+        debug!("Creating FileResolver for macro expansion: {:?}", macro_file_id);
+        let backup = HackyResolver::new(crate_name, filepath)?;
+        let imp = ResolverImpl::new(resolver, macro_file_id)?;
+
+        Ok(Self { filepath, resolver: imp, backup })
+    }
+
+    pub fn sems(&self) -> &ra_ap_hir::Semantics<'a, ra_ap_ide::RootDatabase> {
+        &self.resolver.sems
+    }
+
     pub fn expand_macro(&self, i: &MacroCall) -> Option<(HirFileId, SyntaxNode)> {
-        let expanded_syntax = self.resolver.sems.expand(i)?;
+        let expanded_syntax = self.resolver.sems.expand_macro_call(i)?.value;
         let file_id = self.resolver.sems.hir_file_for(&expanded_syntax);
 
         self.resolver.sems.assert_contains_node(&expanded_syntax);

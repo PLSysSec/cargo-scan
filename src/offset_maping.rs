@@ -8,7 +8,7 @@ pub struct OffsetMapping {
 
 // This struct is used to map offsets from the formatted code to the raw code.
 impl OffsetMapping {
-    pub fn build(formatted: &str, raw: &str) -> Self {
+    pub fn build(formatted: &str, raw: &str, edition: Edition) -> Self {
         let mut offset_map = vec![None; formatted.len() + 1];
         let lines: Vec<&str> = formatted.split_terminator('\n').collect();
         if lines.len() < 2 {
@@ -17,7 +17,7 @@ impl OffsetMapping {
         let body_lines = &lines[1..lines.len() - 1];
         let body_text = body_lines.join("\n");
         let prefix_bytes = lines[0].len() + 1;
-        let tokens = parse_tokens(&body_text);
+        let tokens = parse_tokens(&body_text, edition);
         let mut raw_pos = 0;
         for t in tokens.iter() {
             if t.kind() == SyntaxKind::IDENT {
@@ -50,8 +50,8 @@ impl OffsetMapping {
     }
 }
 
-fn parse_tokens(code: &str) -> Vec<SyntaxToken> {
-    let parse = SourceFile::parse(code);
+fn parse_tokens(code: &str, edition: Edition) -> Vec<SyntaxToken> {
+    let parse = SourceFile::parse(code, edition);
     let node = parse.syntax_node();
     node.descendants_with_tokens()
         .filter_map(|e| e.into_token())
@@ -62,7 +62,7 @@ fn parse_tokens(code: &str) -> Vec<SyntaxToken> {
         .collect()
 }
 
-use ra_ap_ide::{LineIndex, TextSize};
+use ra_ap_ide::{Edition, LineIndex, TextSize};
 
 #[derive(Debug, Clone)]
 pub struct MacroExpansionContext {
@@ -71,9 +71,9 @@ pub struct MacroExpansionContext {
 }
 
 impl MacroExpansionContext {
-    pub fn new(formatted: &str, raw: &str) -> Self {
+    pub fn new(formatted: &str, raw: &str, edition: Edition) -> Self {
         let line_index = Arc::new(LineIndex::new(formatted));
-        let offset_mapping = OffsetMapping::build(formatted, raw);
+        let offset_mapping = OffsetMapping::build(formatted, raw, edition);
         Self { line_index, offset_mapping }
     }
 }
