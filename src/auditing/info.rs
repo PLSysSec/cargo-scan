@@ -173,7 +173,7 @@ pub fn print_effect_src(
     };
 
     // Print the information to the user
-    term::emit(&mut writer.lock(), &codespan_config, &files, &diag)?;
+    term::emit_to_write_style(&mut writer.lock(), &codespan_config, &files, &diag)?;
 
     Ok(())
 }

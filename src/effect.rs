@@ -4,7 +4,7 @@
 //! - Effect, which represents an abstract effect
 //! - EffectInstance, which represents an instance of an effect in source code
 //! - EffectBlock, which represents a block of source code which may contain
-//!     zero or more effects (such as an unsafe block).
+//!   zero or more effects (such as an unsafe block).
 
 use super::ident::{CanonicalPath, IdentPath};
 use super::sink::Sink;
