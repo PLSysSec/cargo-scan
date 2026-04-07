@@ -1,27 +1,25 @@
 use anyhow::{anyhow, Context, Result};
-use cargo::core::Workspace;
-use cargo::ops::{fetch, generate_lockfile, FetchOptions};
+use cargo::core::compiler::{CompileKind, RustcTargetData};
+use cargo::core::dependency::DepKind;
+use cargo::core::resolver::{CliFeatures, ForceAllTargets, HasDevUnits};
+use cargo::core::{PackageId, PackageIdSpec, Workspace};
+use cargo::ops::WorkspaceResolve;
 use cargo::util::context::GlobalContext;
-use cargo_lock::{Dependency, Lockfile, Package};
 use cargo_toml::Manifest;
 use clap::Args as ClapArgs;
 use log::info;
-use petgraph::graph::{DiGraph, NodeIndex};
-use petgraph::visit::{Dfs, DfsPostOrder};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs::{create_dir_all, remove_file, File};
 use std::io::Write;
-use std::iter::IntoIterator;
 use std::mem;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 use toml;
 
 use crate::audit_file::{AuditFile, AuditVersion, DefaultAuditType, EffectInfo};
 use crate::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
-use crate::ident::{replace_hyphens, CanonicalPath, IdentPath};
-use crate::util::{load_cargo_toml, CrateId};
+use crate::ident::{replace_hyphens, CanonicalPath};
+use crate::util::CrateId;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AuditChain {
@@ -81,7 +79,7 @@ impl AuditChain {
 
     pub fn add_crate_audit_file(
         &mut self,
-        package: &Package,
+        package: &cargo::core::Package,
         audit_file_loc: PathBuf,
         version: AuditVersion,
     ) {
@@ -182,28 +180,6 @@ impl AuditChain {
         audit_file.save_to_file(audit_file_path.clone())
     }
 
-    /// Loads the lockfile for the given crate path. Will generate a new one
-    /// with the default configuration if none exists.
-    pub fn load_lockfile(&self) -> Result<Lockfile> {
-        let mut crate_path = self.crate_path.clone();
-        crate_path = crate_path.canonicalize()?;
-        crate_path.push("Cargo.lock");
-        if let Ok(l) = Lockfile::load(&crate_path) {
-            Ok(l)
-        } else {
-            info!("Lockfile missing: generating new lockfile");
-            let config = GlobalContext::default()?;
-            crate_path.pop();
-            crate_path.push("Cargo.toml");
-            let workspace = Workspace::new(&crate_path, &config)?;
-            generate_lockfile(&workspace)?;
-            crate_path.pop();
-            crate_path.push("Cargo.lock");
-            let l = Lockfile::load(&crate_path)?;
-            Ok(l)
-        }
-    }
-
     // TODO: Write a test for this to make sure it's properly recalculating
     //       dependency policies when they are invalid. It's going to be almost
     //       impossible to tell if something has gone wrong here.
@@ -216,24 +192,34 @@ impl AuditChain {
         mut removed_fns: HashSet<CanonicalPath>,
         updated_crate: &CrateId,
     ) -> Result<HashSet<CanonicalPath>> {
-        let lockfile = self.load_lockfile()?;
-        let dep_tree = lockfile.dependency_tree()?;
-        let dep_nodes = dep_tree.nodes();
-        let dep_graph = dep_tree.graph();
+        let mut crate_path_buf = Path::new(&self.crate_path).canonicalize()?;
+        crate_path_buf.push("Cargo.toml");
+        
+        // Resolve Cargo workspace
+        let config = GlobalContext::default()?;
+        let workspace = resolve_workspace(&crate_path_buf, &config)?.ws_resolve;
+        let pkg_set = workspace.pkg_set;
+        let sorted = workspace.targeted_resolve.sort();
+        
+        let idx = sorted
+            .iter()
+            .position(|p| {
+                *p.name() == updated_crate.crate_name
+                    && *p.version() == updated_crate.version
+            })
+            .ok_or_else(|| anyhow!("No package {} in dependency graph", updated_crate))?;
 
-        let start_package = lookup_package_from_name(updated_crate, lockfile.packages)?;
-
-        let start_node = dep_nodes.get(&Dependency::from(&start_package)).context(
-            format!("Missing package {:?} in the dependency graph", start_package),
-        )?;
+        let all_crates = self.all_crates().into_iter().cloned().collect::<Vec<_>>();
         // Visit nodes in dfs post-order so we don't have to recursively add
         // packages whose public caller-checked functions have been updated.
-        let mut visit = DfsPostOrder::new(dep_graph, *start_node);
-        while let Some(n) = visit.next(dep_graph) {
+        for p in &sorted[idx..] {
             // TODO: Only update packages whose dependencies have changed public
             //       caller-checked lists.
-            let package = &dep_graph[n];
-            let crate_id = CrateId::from(package);
+            let pkg = pkg_set.get_one(*p)?;
+            let crate_id = CrateId::from(pkg);
+            if !all_crates.contains(&crate_id) {
+                continue;
+            }
             let mut crate_audit_file = self
                 .read_audit_file(&crate_id)?
                 .context(format!("Couldn't find audit for {}", crate_id))?;
@@ -394,42 +380,9 @@ fn create_audit_chain_dirs(args: &Create, crate_download_path: &str) -> Result<(
     Ok(())
 }
 
-fn make_dependency_graph(
-    packages: &Vec<Package>,
-    root_name: &str,
-) -> (DiGraph<String, ()>, HashMap<NodeIndex, Package>, NodeIndex) {
-    let mut graph = DiGraph::new();
-    let mut node_map = HashMap::new();
-    let mut package_map = HashMap::new();
-
-    for p in packages {
-        let p_string = format!("{}-{}", p.name.as_str(), p.version);
-        if !node_map.contains_key(&p_string) {
-            let next_node = graph.add_node(p_string.clone());
-            node_map.insert(p_string.clone(), next_node);
-        }
-        // Clone to avoid multiple mutable borrow
-        let p_idx = *node_map.get(&p_string).unwrap();
-        package_map.insert(p_idx, p.clone());
-
-        for dep in &p.dependencies {
-            let dep_string = format!("{}-{}", dep.name.as_str(), dep.version);
-            if !node_map.contains_key(&dep_string) {
-                let next_node = graph.add_node(dep_string.clone());
-                node_map.insert(dep_string.clone(), next_node);
-            }
-            let dep_idx = *node_map.get(&dep_string).unwrap();
-            graph.add_edge(p_idx, dep_idx, ());
-        }
-    }
-
-    let root_idx = *node_map.get(root_name).unwrap();
-    (graph, package_map, root_idx)
-}
-
 fn collect_dependency_sinks(
     chain: &mut AuditChain,
-    deps: &Vec<Dependency>,
+    deps: &Vec<PackageId>,
 ) -> Result<HashSet<CanonicalPath>> {
     let mut sinks = HashSet::new();
     for dep in deps {
@@ -437,7 +390,7 @@ fn collect_dependency_sinks(
         let audit_file = chain.read_audit_file(&dep_id)?.context(
             "couldnt read dependency audit file (maybe created it out of order)",
         )?;
-        sinks.extend(audit_file.pub_caller_checked.keys().cloned());
+        sinks.extend(audit_file.pub_caller_checked());
     }
 
     Ok(sinks)
@@ -448,11 +401,11 @@ fn collect_dependency_sinks(
 #[allow(clippy::too_many_arguments)]
 fn make_new_audit_file(
     chain: &mut AuditChain,
-    package: &Package,
-    root_name: &str,
+    package: &cargo::core::Package,
     args: &Create,
     crate_path: &Path,
     audit_type: DefaultAuditType,
+    dependencies: Vec<PackageId>,
     relevant_effects: &[EffectType],
     quick_mode: bool,
     expand_macro: bool,
@@ -460,17 +413,11 @@ fn make_new_audit_file(
     let audit_file_path = PathBuf::from(format!(
         "{}/{}-{}.audit",
         args.audit_path,
-        package.name.as_str(),
-        package.version
+        package.name().as_str(),
+        package.version()
     ));
     // download the new audit
-    let full_name = format!("{}-{}", package.name, package.version);
-    let package_path = if full_name == root_name {
-        // We are creating a audit for the root crate
-        PathBuf::from(args.crate_path.clone()).canonicalize()?
-    } else {
-        PathBuf::from(crate_path).canonicalize()?
-    };
+    let package_path = PathBuf::from(crate_path).canonicalize()?;
 
     // Try to create a new default audit
     if audit_file_path.is_dir() {
@@ -481,23 +428,41 @@ fn make_new_audit_file(
             remove_file(audit_file_path.clone())?;
         } else {
             info!(
-                "Using existing audit for {} v{} ({})",
-                package.name,
-                package.version,
+                "Using existing audit for {} v{} ({}) -- expanding macros: {expand_macro}",
+                package.name(),
+                package.version(),
                 audit_file_path.display()
             );
-            let audit_file = AuditFile::read_audit_file(audit_file_path.clone())?
+            let mut audit_file = AuditFile::read_audit_file(audit_file_path.clone())?
                 .ok_or_else(|| {
                     anyhow!("Couldn't read audit: {}", audit_file_path.display())
                 })?;
+
+            let sinks = collect_dependency_sinks(chain, &dependencies)?;
+            audit_file = audit_file.update_audit_file(
+                crate_path,
+                sinks,
+                audit_type,
+                relevant_effects,
+                quick_mode,
+                expand_macro,
+            )?;
+
+            audit_file.save_to_file(audit_file_path.clone())?;
             chain.add_crate_audit_file(package, audit_file_path, audit_file.version);
 
             return Ok(());
         }
     }
 
-    info!("Making default audit for {} v{}", package.name, package.version);
-    let sinks = collect_dependency_sinks(chain, &package.dependencies)?;
+    info!(
+        "Making new {:?} default audit for {} v{}",
+        audit_type,
+        package.name(),
+        package.version()
+    );
+
+    let sinks = collect_dependency_sinks(chain, &dependencies)?;
     let audit_file = AuditFile::new_default_with_sinks(
         &package_path,
         sinks,
@@ -513,11 +478,119 @@ fn make_new_audit_file(
     Ok(())
 }
 
+fn dfs_traverse(
+    workspace_resolve: &WorkspaceResolve,
+    pkg: &PackageId,
+    visited: &mut HashSet<PackageId>,
+    target_data: &RustcTargetData,
+    indent: usize,
+    chain: &mut AuditChain,
+    args: &Create,
+) -> Result<()> {
+    if !visited.insert(*pkg) {
+        return Ok(());
+    }
+
+    let mut pkg_dependencies = vec![];
+    let resolve = &workspace_resolve.targeted_resolve;
+    for (dep_pkg_id, dep_set) in resolve.deps(*pkg) {
+        if active_normal_edge(workspace_resolve, pkg, &dep_pkg_id, dep_set, target_data) {
+            pkg_dependencies.push(dep_pkg_id);
+            dfs_traverse(
+                workspace_resolve,
+                &dep_pkg_id,
+                visited,
+                target_data,
+                indent + 1,
+                chain,
+                args,
+            )?;
+        }
+    }
+
+    let pkg = workspace_resolve.pkg_set.get_one(*pkg)?;
+    let pkg_path = pkg.manifest_path().parent().unwrap();
+    let audit_type = if indent > 0 {
+        DefaultAuditType::CallerChecked
+    } else {
+        DefaultAuditType::Empty
+    };
+
+    make_new_audit_file(
+        chain,
+        pkg,
+        args,
+        pkg_path,
+        audit_type,
+        pkg_dependencies,
+        &args.effect_types,
+        false,
+        true,
+    )?;
+
+    Ok(())
+}
+
+fn active_normal_edge(
+    workspace_resolve: &WorkspaceResolve,
+    parent: &PackageId,
+    dep_pkg: &PackageId,
+    dep_set: &HashSet<cargo::core::Dependency>,
+    target_data: &RustcTargetData,
+) -> bool {
+    let enabled = |dep: &cargo::core::Dependency| -> bool {
+        if !dep.is_optional() {
+            return true;
+        }
+        workspace_resolve.targeted_resolve.deps(*parent).any(|(id, _)| id == *dep_pkg)
+    };
+
+    let target = |dep: &cargo::core::Dependency| -> bool {
+        target_data.dep_platform_activated(dep, CompileKind::Host)
+    };
+
+    dep_set.iter().any(|d: &cargo::core::Dependency| {
+        d.kind() == DepKind::Normal && enabled(d) && target(d)
+    })
+}
+
+pub struct WorkspaceResolution<'ws> {
+    pub ws_resolve: WorkspaceResolve<'ws>,
+    pub target_data: RustcTargetData<'ws>,
+}
+
+pub fn resolve_workspace<'ws>(
+    crate_path_buf: &Path,
+    config: &'ws GlobalContext,
+) -> Result<WorkspaceResolution<'ws>> {
+    let workspace = Workspace::new(Path::new(&crate_path_buf), config)?;
+    let specs = workspace
+        .members()
+        .map(|p| p.package_id().to_spec())
+        .collect::<Vec<PackageIdSpec>>();
+    let cli_features = CliFeatures::from_command_line(&[], true, true)?;
+    let mut target_data = RustcTargetData::new(&workspace, &[CompileKind::Host])?;
+    let requested_targets = vec![CompileKind::Host];
+
+    let ws_resolve = cargo::ops::resolve_ws_with_opts(
+        &workspace,
+        &mut target_data,
+        &requested_targets,
+        &cli_features,
+        &specs,
+        HasDevUnits::No,
+        ForceAllTargets::No,
+        false,
+    )?;
+
+    Ok(WorkspaceResolution { ws_resolve, target_data })
+}
+
 pub fn create_new_audit_chain(
     args: Create,
     crate_download_path: &str,
-    quick_mode: bool,
-    expand_macro: bool,
+    _quick_mode: bool,
+    _expand_macro: bool,
 ) -> Result<AuditChain> {
     info!("Creating audit chain");
     let mut chain = AuditChain::new(
@@ -528,56 +601,35 @@ pub fn create_new_audit_chain(
 
     create_audit_chain_dirs(&args, crate_download_path)?;
 
-    info!("Loading audit package lockfile");
-    // If the lockfile doesn't exist, generate it
-    let lockfile = chain.load_lockfile()?;
-
     let mut crate_path_buf = Path::new(&args.crate_path).canonicalize()?;
-    let crate_data = load_cargo_toml(&crate_path_buf)?;
-
-    let root_name = format!("{}-{}", crate_data.crate_name, crate_data.version);
-
-    let config = GlobalContext::default()?;
     crate_path_buf.push("Cargo.toml");
-    let workspace = Workspace::new(Path::new(&crate_path_buf), &config)?;
-    let fetch_options = FetchOptions { gctx: &config, targets: Vec::new() };
-    let (_resolve, package_set) = fetch(&workspace, &fetch_options)?;
+    let config = GlobalContext::default()?;
+    let WorkspaceResolution { ws_resolve, target_data } =
+        resolve_workspace(&crate_path_buf, &config)?;
 
-    let crate_paths: HashMap<CrateId, PathBuf> =
-        HashMap::from_iter(package_set.packages().map(|p| {
-            let crate_id = CrateId::new(p.name().to_string(), p.version().clone());
-            (crate_id, p.root().to_path_buf())
-        }));
+    let root_manifest = Manifest::from_path(&crate_path_buf)?;
+    let root_package = root_manifest
+        .package
+        .ok_or_else(|| anyhow!("No [package] section in root Cargo.toml"))?;
+    let root_crate_id = CrateId::from_toml_package(&root_package)?;
+    let root_pkg = ws_resolve
+        .targeted_resolve
+        .iter()
+        .find(|p| {
+            p.name().as_str() == root_crate_id.crate_name
+                && *p.version() == root_crate_id.version
+        })
+        .ok_or_else(|| anyhow!("Root package not found in resolved graph"))?;
 
-    info!("Creating dependency graph");
-    let (graph, package_map, root_node) =
-        make_dependency_graph(&lockfile.packages, &root_name);
-    let mut traverse = DfsPostOrder::new(&graph, root_node);
-    while let Some(node) = traverse.next(&graph) {
-        let package = package_map.get(&node).unwrap();
-
-        let audit_type = if node == root_node {
-            DefaultAuditType::Empty
-        } else {
-            DefaultAuditType::CallerChecked
-        };
-
-        let crate_download_path = crate_paths
-            .get(&CrateId::from(package))
-            .context("Unresolved path for a crate")?;
-
-        make_new_audit_file(
-            &mut chain,
-            package,
-            &root_name,
-            &args,
-            crate_download_path,
-            audit_type,
-            &args.effect_types,
-            quick_mode,
-            expand_macro,
-        )?;
-    }
+    dfs_traverse(
+        &ws_resolve,
+        &root_pkg,
+        &mut HashSet::new(),
+        &target_data,
+        0,
+        &mut chain,
+        &args,
+    )?;
 
     info!("Finished creating audit chain");
     Ok(chain)
@@ -588,46 +640,36 @@ pub fn create_new_audit_chain(
 pub fn collect_propagated_sinks(
     chain: &mut AuditChain,
 ) -> Result<HashMap<EffectInstance, Vec<(EffectInfo, String)>>> {
-    let mut current_path: Vec<NodeIndex> = Vec::new();
     let mut effects = HashMap::new();
-
     let root_name = chain.root_crate()?;
-    let lockfile = chain.load_lockfile()?;
 
-    let (graph, package_map, root_node) =
-        make_dependency_graph(&lockfile.packages, &root_name.to_string());
-    let mut traverse = Dfs::new(&graph, root_node);
-    while let Some(node) = traverse.next(&graph) {
-        let package = package_map.get(&node).unwrap();
-        let id = CrateId::new(package.name.to_string(), package.version.clone());
+    let mut crate_path_buf = Path::new(&chain.crate_path).canonicalize()?;
+    crate_path_buf.push("Cargo.toml");
+    let config = GlobalContext::default()?;
+    let workspace = resolve_workspace(&crate_path_buf, &config)?.ws_resolve;
+    let mut pkgs = workspace.targeted_resolve.sort();
+    pkgs.reverse();
+    let pkg_set = workspace.pkg_set;
+    let all_crates = chain.all_crates().into_iter().cloned().collect::<Vec<_>>();
+
+    for p in pkgs {
+        let pkg = pkg_set.get_one(p)?;
+        let id = CrateId::from(pkg);
+        if !all_crates.contains(&id) {
+            continue;
+        }
         let af = chain
             .read_audit_file(&id)?
             .context("Couldn't read audit file while collecting dependency sinks")?;
 
-        if node == root_node {
+        if id == root_name {
             for (effect_instance, audit_tree) in &af.audit_trees {
                 effects.insert(effect_instance.clone(), audit_tree.get_all_annotations());
             }
             continue;
         }
 
-        current_path.push(node);
         check_sink_calls(af, &mut effects)?;
-
-        // If we have already visited a current package's
-        // dependency, revisit it now to check if any of
-        // its public caller-checked functions are called
-        // in the current package.
-        for neighbor in graph.neighbors(node) {
-            if current_path.contains(&neighbor) {
-                let package = package_map.get(&neighbor).unwrap();
-                let id = CrateId::new(package.name.to_string(), package.version.clone());
-                let af = chain.read_audit_file(&id)?.context(
-                    "Couldn't read audit file while collecting dependency sinks",
-                )?;
-                check_sink_calls(af, &mut effects)?;
-            }
-        }
     }
 
     Ok(effects)
@@ -642,39 +684,17 @@ fn check_sink_calls(
             *i.callee() == pub_cc_fn && i.caller().crate_name() != pub_cc_fn.crate_name()
         }) {
             for inst in base_effs {
-                let tree = af
-                    .audit_trees
-                    .get(&inst)
-                    .ok_or_else(|| anyhow!("couldn't find tree for effect instance"))?;
+                let tree = af.audit_trees.get(&inst).ok_or_else(|| {
+                    anyhow!("couldn't find tree for effect instance: {:?}", inst)
+                })?;
 
                 effects.insert(inst.clone(), tree.get_all_annotations());
+                // if let Some(ann) = tree.get_annotations_to_leaf(&pub_cc_fn) {
+                //     effects.insert(inst.clone(), ann);
+                // }
             }
         }
     }
 
     Ok(())
-}
-
-// Mirror of the above that returns HashSet of sinks
-pub fn create_dependency_sinks(
-    _args: Create,
-    _crate_download_path: &str,
-) -> Result<HashSet<IdentPath>> {
-    todo!()
-}
-
-/// Gets the package that matches the name and version if one exists in the project.
-fn lookup_package_from_name<I>(crate_id: &CrateId, project_packages: I) -> Result<Package>
-where
-    I: IntoIterator<Item = Package>,
-{
-    let name = cargo_lock::Name::from_str(&crate_id.crate_name)?;
-    let version = cargo_lock::Version::parse(&format!("{}", crate_id.version))?;
-    for p in project_packages {
-        if p.name == name && p.version == version {
-            return Ok(p);
-        }
-    }
-
-    Err(anyhow!("Couldn't find package in workspace"))
 }

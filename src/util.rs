@@ -111,7 +111,7 @@ pub mod fs {
 
 /// Parse Cargo TOML
 use anyhow::{Context, Result};
-use cargo_lock::{Dependency, Package};
+use cargo_lock::Package;
 use log::debug;
 use semver::Version;
 use serde::de::{self, Unexpected, Visitor};
@@ -178,9 +178,21 @@ impl From<&Package> for CrateId {
     }
 }
 
-impl From<&Dependency> for CrateId {
-    fn from(dep: &Dependency) -> Self {
-        CrateId { crate_name: dep.name.to_string(), version: dep.version.clone() }
+impl From<&cargo::core::Package> for CrateId {
+    fn from(package: &cargo::core::Package) -> Self {
+        let pkg_version = package.version();
+        let version =
+            Version::new(pkg_version.major, pkg_version.minor, pkg_version.patch);
+        CrateId { crate_name: package.name().to_string(), version }
+    }
+}
+
+impl From<&cargo::core::PackageId> for CrateId {
+    fn from(pkg_id: &cargo::core::PackageId) -> Self {
+        let pkg_version = pkg_id.version();
+        let version =
+            Version::new(pkg_version.major, pkg_version.minor, pkg_version.patch);
+        CrateId { crate_name: pkg_id.name().to_string(), version }
     }
 }
 
