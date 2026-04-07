@@ -85,6 +85,39 @@ impl EffectTree {
         }
     }
 
+    pub fn get_annotations_to_leaf(
+        &self,
+        target: &CanonicalPath,
+    ) -> Option<Vec<(EffectInfo, String)>> {
+        match self {
+            EffectTree::Leaf(i, a) => {
+                if i.caller_path == *target {
+                    Some(vec![(i.clone(), a.to_string())])
+                } else {
+                    None
+                }
+            }
+            EffectTree::Branch(i, next) => {
+                // Traverse children to find the target leaf
+                for child in next {
+                    // if i.caller_path == *target {
+                    //     return Some(vec![(i.clone(), SafetyAnnotation::CallerChecked.to_string())]);
+                    // }
+                    if let Some(mut annotations) = child.get_annotations_to_leaf(target) {
+                        // If the target is found in the subtree, add the current branch annotation
+                        annotations.push((
+                            i.clone(),
+                            SafetyAnnotation::CallerChecked.to_string(),
+                        ));
+                        return Some(annotations);
+                    }
+                }
+                // If target not found in any children, return None
+                None
+            }
+        }
+    }
+
     /// Sets the annotation for a leaf node and returns Some previous annotation,
     /// or None if it was a branch node
     pub fn set_annotation(
@@ -172,22 +205,47 @@ impl AuditFile {
         })
     }
 
+    // pub fn set_base_audit_trees<'a, I>(&mut self, effect_blocks: I)
+    // where
+    //     I: IntoIterator<Item = &'a EffectInstance>,
+    // {
+    //     self.audit_trees = effect_blocks
+    //         .into_iter()
+    //         .map(|x| {
+    //             (
+    //                 x.clone(),
+    //                 EffectTree::Leaf(
+    //                     EffectInfo::from_instance(x),
+    //                     SafetyAnnotation::Skipped,
+    //                 ),
+    //             )
+    //         })
+    //         .collect::<HashMap<_, _>>();
+    // }
+
     pub fn set_base_audit_trees<'a, I>(&mut self, effect_blocks: I)
     where
         I: IntoIterator<Item = &'a EffectInstance>,
     {
-        self.audit_trees = effect_blocks
-            .into_iter()
-            .map(|x| {
-                (
-                    x.clone(),
-                    EffectTree::Leaf(
-                        EffectInfo::from_instance(x),
-                        SafetyAnnotation::Skipped,
-                    ),
-                )
-            })
-            .collect::<HashMap<_, _>>();
+        let iter = effect_blocks.into_iter().map(|x| {
+            (
+                x.clone(),
+                EffectTree::Leaf(EffectInfo::from_instance(x), SafetyAnnotation::Skipped),
+            )
+        });
+        self.audit_trees.extend(iter);
+    }
+
+    pub fn get_base_effects(&self) -> HashSet<EffectInstance> {
+        self.audit_trees.keys().cloned().collect()
+    }
+
+    pub fn pub_caller_checked(&self) -> HashSet<CanonicalPath> {
+        self.pub_caller_checked
+            .iter()
+            .filter(|(_, v)| !v.is_empty())
+            .map(|(k, _)| k.clone())
+            .collect()
     }
 
     pub fn save_to_file(&self, p: PathBuf) -> Result<()> {
@@ -460,7 +518,7 @@ impl AuditFile {
         }
         if unaudited_total == 0 {
             println!("  - package fully audited");
-            let num_pub_cc = self.pub_caller_checked.len();
+            let num_pub_cc = self.pub_caller_checked().len();
             if num_pub_cc == 0 && !self.has_unsafe_effect() {
                 println!("  - package marked safe");
             } else {
@@ -473,7 +531,7 @@ impl AuditFile {
             println!("  - unaudited locations remaining: {}", unaudited_total);
             println!(
                 "  - public functions marked caller-checked: {}",
-                self.pub_caller_checked.len()
+                self.pub_caller_checked().len()
             );
         }
     }
@@ -663,6 +721,91 @@ impl AuditFile {
         }
 
         Ok(audit_file)
+    }
+
+    pub fn update_audit_file(
+        &mut self,
+        crate_path: &FilePath,
+        sinks: HashSet<CanonicalPath>,
+        audit_type: DefaultAuditType,
+        relevant_effects: &[EffectType],
+        quick: bool,
+        expand_macro: bool,
+    ) -> Result<AuditFile> {
+        let ident_sinks =
+            sinks.iter().map(|x| x.clone().to_path()).collect::<HashSet<_>>();
+        let scan_res = scanner::scan_crate_with_sinks(
+            crate_path,
+            ident_sinks,
+            relevant_effects,
+            quick,
+            expand_macro,
+        )?;
+
+        let existing_effects = self.get_base_effects();
+        let mut scanned_effects = scan_res.effects_set();
+        log::debug!(
+            "updating... existing: {} - new: {}",
+            existing_effects.len(),
+            scanned_effects.len()
+        );
+        if scanned_effects.len() == existing_effects.len() {
+            Ok(self.clone())
+        } else if scanned_effects.len() > existing_effects.len() {
+            scanned_effects.retain(|x| !existing_effects.contains(x));
+            log::debug!("adding {} new effects: {:?}", scanned_effects.len(), scanned_effects);
+            self.set_base_audit_trees(scanned_effects);
+            self.update_audit_annotations(audit_type, &scan_res)?;
+            self.version += 1;
+            self.recalc_pub_caller_checked(&scan_res.pub_fns);
+            
+            Ok(self.clone())
+        } else {
+            self.audit_trees.retain(|k, _| scanned_effects.contains(k));
+            log::debug!("removing effects -- final {}", self.audit_trees.len());
+            self.version += 1;
+            self.recalc_pub_caller_checked(&scan_res.pub_fns);
+           
+            Ok(self.clone())
+        }
+    }
+
+    fn update_audit_annotations(
+        &mut self,
+        audit_type: DefaultAuditType,
+        scan_res: &ScanResults,
+    ) -> Result<()> {
+        if let DefaultAuditType::Empty = audit_type {
+            return Ok(());
+        }
+
+        let mut pub_caller_checked = HashMap::new();
+        let unaudited_trees = self.audit_trees.iter_mut().filter(|(_, tree)| {
+            matches!(tree, EffectTree::Leaf(_, SafetyAnnotation::Skipped))
+        });
+
+        for (base_effect, mut tree) in unaudited_trees {
+            match audit_type {
+                DefaultAuditType::Safe => {
+                    if let EffectTree::Leaf(_, a) = &mut tree {
+                        *a = SafetyAnnotation::Safe;
+                    }
+                }
+                DefaultAuditType::CallerChecked => {
+                    let mut tree_size = 0;
+                    Self::mark_caller_checked(
+                        base_effect,
+                        tree,
+                        &mut pub_caller_checked,
+                        scan_res,
+                        &mut tree_size,
+                    )?
+                }
+                _ => {}
+            };
+        }
+
+        Ok(())
     }
 
     pub fn new_default_with_sinks(
