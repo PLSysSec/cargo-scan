@@ -132,6 +132,7 @@ fn main() -> Result<()> {
         None,
         None,
         args.effect_types,
+        cargo_scan::audit_file::DefaultAuditType::Empty,
     );
 
     let mut chain = create_new_audit_chain(
