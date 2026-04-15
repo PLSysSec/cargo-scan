@@ -165,7 +165,7 @@ impl EffectTree {
     }
 }
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, Serialize, Deserialize, clap::ValueEnum)]
 pub enum DefaultAuditType {
     Empty,
     Safe,
@@ -753,19 +753,18 @@ impl AuditFile {
             Ok(self.clone())
         } else if scanned_effects.len() > existing_effects.len() {
             scanned_effects.retain(|x| !existing_effects.contains(x));
-            log::debug!("adding {} new effects: {:?}", scanned_effects.len(), scanned_effects);
             self.set_base_audit_trees(scanned_effects);
             self.update_audit_annotations(audit_type, &scan_res)?;
             self.version += 1;
             self.recalc_pub_caller_checked(&scan_res.pub_fns);
-            
+
             Ok(self.clone())
         } else {
             self.audit_trees.retain(|k, _| scanned_effects.contains(k));
             log::debug!("removing effects -- final {}", self.audit_trees.len());
             self.version += 1;
             self.recalc_pub_caller_checked(&scan_res.pub_fns);
-           
+
             Ok(self.clone())
         }
     }

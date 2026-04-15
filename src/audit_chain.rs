@@ -194,13 +194,13 @@ impl AuditChain {
     ) -> Result<HashSet<CanonicalPath>> {
         let mut crate_path_buf = Path::new(&self.crate_path).canonicalize()?;
         crate_path_buf.push("Cargo.toml");
-        
+
         // Resolve Cargo workspace
         let config = GlobalContext::default()?;
         let workspace = resolve_workspace(&crate_path_buf, &config)?.ws_resolve;
         let pkg_set = workspace.pkg_set;
         let sorted = workspace.targeted_resolve.sort();
-        
+
         let idx = sorted
             .iter()
             .position(|p| {
@@ -305,6 +305,10 @@ pub struct Create {
     #[clap(short = 'v', long)]
     pub download_version: Option<String>,
 
+    /// The type of audit file that will be created for the top-level crate.
+    #[clap(short = 't', long, default_value = "empty")]
+    pub root_audit_type: DefaultAuditType,
+
     /// The types of Effects the audit should track. Defaults to all unsafe
     /// behavior.
     #[clap(long, value_parser, num_args = 1.., default_values_t = [
@@ -330,6 +334,7 @@ impl Create {
         download_root_crate: Option<String>,
         download_version: Option<String>,
         effect_types: Vec<EffectType>,
+        root_audit_type: DefaultAuditType,
     ) -> Self {
         Self {
             crate_path,
@@ -339,6 +344,7 @@ impl Create {
             download_root_crate,
             download_version,
             effect_types,
+            root_audit_type,
         }
     }
 }
@@ -362,6 +368,7 @@ impl Default for Create {
             download_root_crate: None,
             download_version: None,
             effect_types: DEFAULT_EFFECT_TYPES.to_vec(),
+            root_audit_type: DefaultAuditType::Empty,
         }
     }
 }
@@ -510,11 +517,8 @@ fn dfs_traverse(
 
     let pkg = workspace_resolve.pkg_set.get_one(*pkg)?;
     let pkg_path = pkg.manifest_path().parent().unwrap();
-    let audit_type = if indent > 0 {
-        DefaultAuditType::CallerChecked
-    } else {
-        DefaultAuditType::Empty
-    };
+    let audit_type =
+        if indent > 0 { DefaultAuditType::CallerChecked } else { args.root_audit_type };
 
     make_new_audit_file(
         chain,
