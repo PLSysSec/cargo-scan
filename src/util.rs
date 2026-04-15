@@ -110,7 +110,7 @@ pub mod fs {
 }
 
 /// Parse Cargo TOML
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use cargo_lock::Package;
 use log::debug;
 use semver::Version;
@@ -233,39 +233,47 @@ pub fn load_cargo_toml(crate_path: &Path) -> Result<CrateId> {
         .context("name field in package is not a string")?
         .to_string();
 
-    // TODO: The reality of finding the version is more messy than this because
-    //       you have to track things like the current workspace and virtual
-    //       workspaces. For now, we will just assume things are nice.
-    let version = match root_toml_table
-        .get("version")
-        .context("No version for the root package in Cargo.toml")?
-        .as_str()
-    {
-        Some(v) => v.to_string(),
-        None => {
-            // Look up the version from the workspace.package section
-            let workspace_table = cargo_toml
-                .get("workspace")
-                .context("Missing version in package section and no workspace section")?
-                .as_table()
-                .context("workpace is not a table")?
-                .get("package")
-                .context("Missing version in package section and no workspace.package")?
-                .as_table()
-                .context("workspace.package is not a table")?;
-
-            workspace_table
-                .get("version")
-                .context(
-                    "No version entry in package section or workspace.package section",
-                )?
-                .as_str()
-                .context("version entry in workspace.package is not a string")?
-                .to_string()
+    let version = match root_toml_table.get("version") {
+        Some(v) if v.is_str() => v.as_str().unwrap().to_string(),
+        _ => {
+            // Version is either missing or inherited from workspace (e.g.
+            // version.workspace = true). Walk up to find the workspace root.
+            find_workspace_version(crate_path)
+                .context("Could not resolve version from workspace")?
         }
     };
 
     let result = CrateId { crate_name: name, version: Version::parse(&version)? };
     debug!("Loaded: {:?}", result);
     Ok(result)
+}
+
+/// Walk up from `crate_path` to find a workspace root Cargo.toml that defines
+/// `[workspace.package] version = "..."`.
+fn find_workspace_version(crate_path: &Path) -> Result<String> {
+    let crate_path = crate_path.canonicalize()?;
+    let mut dir = crate_path.parent();
+    while let Some(ancestor) = dir {
+        let candidate = ancestor.join("Cargo.toml");
+        if candidate.is_file() {
+            let content = read_to_string(&candidate)?;
+            if let Ok(table) = toml::from_str::<Table>(&content) {
+                if let Some(version) = table
+                    .get("workspace")
+                    .and_then(|w| w.as_table())
+                    .and_then(|w| w.get("package"))
+                    .and_then(|p| p.as_table())
+                    .and_then(|p| p.get("version"))
+                    .and_then(|v| v.as_str())
+                {
+                    return Ok(version.to_string());
+                }
+            }
+        }
+        dir = ancestor.parent();
+    }
+    Err(anyhow!(
+        "No workspace root with [workspace.package] version found above {:?}",
+        crate_path
+    ))
 }
