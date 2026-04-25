@@ -105,7 +105,7 @@ fn runner(
         .and_then(|folders| folders.first().map(|folder| folder.uri.clone()))
         .ok_or_else(|| anyhow!("Couldn't get root path from workspace folders"))?;
 
-    let root_crate_path = std::path::PathBuf::from_str(root_uri.path())?;
+    let root_crate_path = root_uri.to_file_path().map_err(|_| anyhow!("Could not convert root URI to file path"))?;
     info!("Crate path received in cargo-scan LSP server: {}", root_crate_path.display());
 
     let scan_res =
