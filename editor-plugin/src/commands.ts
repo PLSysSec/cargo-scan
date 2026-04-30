@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { EffectResponseData, EffectsResponse, LocationItem } from './file_tree_view';
-import { annotations, client, locationsProvider } from './extension';
+import { annotations, client, locationsProvider, warnIfCodeLensDisabled } from './extension';
 import { AuditResponse } from './audit_annotations';
 import { convertLocation } from './util';
 import { highlightEffectLocations } from './decorations';
@@ -25,6 +25,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('cargo-scan.audit', async () => {
+            warnIfCodeLensDisabled();
             vscode.window.withProgress(
                 {
                     location: vscode.ProgressLocation.Notification,
@@ -126,6 +127,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('cargo-scan.audit_chain', async () => {
+            warnIfCodeLensDisabled();
             const response = await client.sendRequest<AuditResponse>('cargo-scan.audit_chain');
             context.globalState.update('annotateEffects', true);
             context.globalState.update('chainAudit', true);
