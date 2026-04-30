@@ -91,7 +91,7 @@ impl AuditChain {
         let (audit_file_path, expected_version) = self
             .crate_policies
             .get(crate_id)
-            .context("Can't find an associated audit for the crate")?
+            .with_context(|| "Can't find an associated audit for the crate")?
             .clone();
         match AuditFile::read_audit_file(audit_file_path.clone())? {
             Some(audit_file) => {
@@ -99,7 +99,7 @@ impl AuditChain {
                     // Update version in chain manifest, so we don't loop infinitely
                     self.crate_policies
                         .get_mut(crate_id)
-                        .context("Couldn't find the crate in the chain manifest")?
+                        .with_context(|| "Couldn't find the crate in the chain manifest")?
                         .1 = audit_file.version;
 
                     // The audit file has been updated in a different audit, so we need to
@@ -122,9 +122,10 @@ impl AuditChain {
     pub fn collect_all_safe_sinks(&mut self) -> Result<HashSet<CanonicalPath>> {
         let mut safe_sinks = HashSet::new();
         for (crate_id, (af_path, _)) in &self.crate_policies {
-            let audit_file = AuditFile::read_audit_file(af_path.clone())?.context(
-                format!("Can't find an associated audit for crate `{}`", crate_id),
-            )?;
+            let audit_file =
+                AuditFile::read_audit_file(af_path.clone())?.with_context(|| {
+                    format!("Can't find an associated audit for crate `{}`", crate_id)
+                })?;
             safe_sinks.extend(audit_file.safe_pub_fns());
         }
 
@@ -222,7 +223,7 @@ impl AuditChain {
             }
             let mut crate_audit_file = self
                 .read_audit_file(&crate_id)?
-                .context(format!("Couldn't find audit for {}", crate_id))?;
+                .with_context(|| format!("Couldn't find audit for {}", crate_id))?;
             let starting_pub_caller_checked = crate_audit_file
                 .pub_caller_checked
                 .keys()
@@ -252,14 +253,14 @@ impl AuditChain {
             crate_audit_file.save_to_file(
                 self.crate_policies
                     .get(&crate_id)
-                    .context(format!("Missing crate {} from chain", &crate_id))?
+                    .with_context(|| format!("Missing crate {} from chain", &crate_id))?
                     .0
                     .clone(),
             )?;
 
             self.crate_policies
                 .get_mut(&crate_id)
-                .context("Couldn't find the crate in the chain manifest")?
+                .with_context(|| "Couldn't find the crate in the chain manifest")?
                 .1 = crate_audit_file.version;
         }
 
@@ -389,14 +390,14 @@ fn create_audit_chain_dirs(args: &Create, crate_download_path: &str) -> Result<(
 
 fn collect_dependency_sinks(
     chain: &mut AuditChain,
-    deps: &Vec<PackageId>,
+    deps: &[PackageId],
 ) -> Result<HashSet<CanonicalPath>> {
     let mut sinks = HashSet::new();
     for dep in deps {
         let dep_id = CrateId::from(dep);
-        let audit_file = chain.read_audit_file(&dep_id)?.context(
-            "couldnt read dependency audit file (maybe created it out of order)",
-        )?;
+        let audit_file = chain.read_audit_file(&dep_id)?.with_context(|| {
+            "couldnt read dependency audit file (maybe created it out of order)"
+        })?;
         sinks.extend(audit_file.pub_caller_checked());
     }
 
@@ -516,7 +517,12 @@ fn dfs_traverse(
     }
 
     let pkg = workspace_resolve.pkg_set.get_one(*pkg)?;
-    let pkg_path = pkg.manifest_path().parent().unwrap();
+    let pkg_path = pkg.manifest_path().parent().ok_or_else(|| {
+        anyhow!(
+            "Package manifest has no parent directory: {}",
+            pkg.manifest_path().display()
+        )
+    })?;
     let audit_type =
         if indent > 0 { DefaultAuditType::CallerChecked } else { args.root_audit_type };
 
@@ -662,9 +668,9 @@ pub fn collect_propagated_sinks(
         if !all_crates.contains(&id) {
             continue;
         }
-        let af = chain
-            .read_audit_file(&id)?
-            .context("Couldn't read audit file while collecting dependency sinks")?;
+        let af = chain.read_audit_file(&id)?.with_context(|| {
+            "Couldn't read audit file while collecting dependency sinks"
+        })?;
 
         if id == root_name {
             for (effect_instance, audit_tree) in &af.audit_trees {
