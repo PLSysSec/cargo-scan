@@ -61,12 +61,25 @@ export function activate(context: vscode.ExtensionContext) {
 
     client.start();
     outputChannel.appendLine('Cargo Scan extension is now active!');
-    
-    
+
     // Register everything
     registerCommands(context);
     annotations.register(context);
     locationsProvider.register(context);    
+}
+
+export function warnIfCodeLensDisabled() {
+    const editorConfig = vscode.workspace.getConfiguration('editor');
+    if (editorConfig.get<boolean>('codeLens') === false) {
+        vscode.window.showWarningMessage(
+            'Cargo Scan uses CodeLens to display review buttons. Please enable it to use the extension.',
+            'Enable CodeLens'
+        ).then((selection) => {
+            if (selection === 'Enable CodeLens') {
+                editorConfig.update('codeLens', true, vscode.ConfigurationTarget.Global);
+            }
+        });
+    }
 }
 
 export function deactivate() { 
