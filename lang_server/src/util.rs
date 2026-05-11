@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::Path};
 
 use anyhow::{anyhow, Error};
 use cargo_scan::{
-    audit_chain::{AuditChain, collect_propagated_sinks},
+    audit_chain::{collect_propagated_sinks, AuditChain},
     audit_file::{AuditFile, EffectInfo, EffectTree, SafetyAnnotation},
     effect::EffectInstance,
     ident::CanonicalPath,

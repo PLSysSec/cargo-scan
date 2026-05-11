@@ -133,7 +133,8 @@ fn runner(
                     }
                     AuditCommand::METHOD => {
                         let (af, fp) = audit_req(&root_crate_path)?;
-                        let res = AuditCommandResponse::new(&af.audit_trees)?.to_json_value()?;
+                        let res = AuditCommandResponse::new(&af.audit_trees)?
+                            .to_json_value()?;
                         audit_file = Some(af);
                         audit_file_path = fp;
                         conn.sender.send(Message::Response(lsp_server::Response {

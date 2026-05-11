@@ -16,7 +16,7 @@ use std::mem;
 use std::path::{Path, PathBuf};
 use toml;
 
-use crate::audit_file::{AuditFile, AuditVersion, DefaultAuditType, EffectInfo, EffectTree};
+use crate::audit_file::{AuditFile, AuditVersion, DefaultAuditType, EffectTree};
 use crate::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 use crate::ident::{replace_hyphens, CanonicalPath};
 use crate::util::CrateId;
@@ -327,6 +327,7 @@ pub struct Create {
 }
 
 impl Create {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         crate_path: String,
         manifest_path: String,
