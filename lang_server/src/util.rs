@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::Path};
 
 use anyhow::{anyhow, Error};
 use cargo_scan::{
-    audit_chain::{collect_propagated_sinks, AuditChain},
+    audit_chain::{AuditChain, collect_propagated_sinks},
     audit_file::{AuditFile, EffectInfo, EffectTree, SafetyAnnotation},
     effect::EffectInstance,
     ident::CanonicalPath,
@@ -60,7 +60,7 @@ pub fn add_callers_to_tree(
 
 pub fn get_all_chain_effects(
     chain_manifest: &Path,
-) -> Result<HashMap<EffectInstance, Vec<(EffectInfo, String)>>, Error> {
+) -> Result<HashMap<EffectInstance, EffectTree>, Error> {
     let mut chain = AuditChain::read_audit_chain(chain_manifest.to_path_buf())?
         .ok_or_else(|| {
             anyhow!("Couldn't find audit chain manifest at {}", chain_manifest.display())

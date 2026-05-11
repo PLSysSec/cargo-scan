@@ -14,6 +14,40 @@ export interface EffectsResponse {
     effects: EffectResponseData[];
 }
 
+export interface EffectTreeResponse {
+    info: EffectResponseData;
+    annotation: string;
+    children: EffectTreeResponse[];
+}
+
+// { funcName -> EffectTreeResponse[] } — multiple trees can share the same root function
+type AuditFuncMap = { [funcName: string]: EffectTreeResponse[] };
+type AuditFileMap = { [file: string]: AuditFuncMap };
+
+// Collect every root-to-leaf path in the tree (preserves node references).
+function collectPaths(tree: EffectTreeResponse): EffectTreeResponse[][] {
+    if (tree.children.length === 0) return [[tree]];
+    return tree.children.flatMap(child =>
+        collectPaths(child).map(path => [tree, ...path])
+    );
+}
+
+// Build a EffectTreeResponse chain from a path where path[0] is the new root
+function pathToInvertedTree(path: EffectTreeResponse[]): EffectTreeResponse {
+    return path.reduceRight<EffectTreeResponse | null>((child, node) => ({
+        info: node.info,
+        annotation: node.annotation,
+        children: child ? [child] : []
+    }), null)!;
+}
+
+// Invert an EffectTree so the outermost CallerChecked caller becomes the root.
+// A non-propagated Leaf is returned unchanged (it is already its own root).
+// A branching tree produces one inverted tree per leaf path.
+function invertEffectTree(tree: EffectTreeResponse): EffectTreeResponse[] {
+    return collectPaths(tree).map(path => pathToInvertedTree([...path].reverse()));
+}
+
 // Class to present the locations of the effects as a TreeView in VSCode's sidebar
 export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined> =
@@ -26,18 +60,68 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
     private callStack?: Map<string, EffectResponseData[]>;
     private groupedEffects:  { [file: string]: EffectResponseData[] } = {};
     private filteredEffects: { [file: string]: EffectResponseData[] } = {};
+    // Audit-mode tree structures (keyed by file path, then root function name)
+    private auditTreesByFunc: AuditFileMap = {};
+    private filteredAuditTreesByFunc: AuditFileMap = {};
+    private isAuditMode: boolean = false;
 
     setLocations(
         effects: EffectResponseData[],
         callStack?: Map<string, EffectResponseData[]>
     ) {
+        this.isAuditMode = false;
         if (callStack !== undefined) {
             this.callStack = callStack;
         }
         this.groupByFile(effects);
         this.sortGroupedEffects();
         this.filterEffectsByType(this.currentFilters);
-        this.refresh();    
+        this.refresh();
+    }
+
+    setAuditLocations(
+        entries: [EffectResponseData, EffectTreeResponse][],
+        callStackMap: Map<string, EffectResponseData[]>
+    ) {
+        this.isAuditMode = true;
+        this.callStack = callStackMap;
+
+        for (const [, tree] of entries) {
+            // Flatten effect trees
+            // (needed for counts, safety annotations, getGroupedEffects())
+            this.addToGroupedEffects(tree.info);
+            this.collectFlatChildren(tree);
+
+            // Store inverted trees so the outermost caller is the root
+            for (const inverted of invertEffectTree(tree)) {
+                const file = inverted.info.location.uri.fsPath;
+                const funcName = inverted.info.caller;
+                if (!this.auditTreesByFunc[file]) this.auditTreesByFunc[file] = {};
+                if (!this.auditTreesByFunc[file][funcName]) this.auditTreesByFunc[file][funcName] = [];
+                this.auditTreesByFunc[file][funcName].push(inverted);
+            }
+        }
+
+        this.sortGroupedEffects();
+        this.filterEffectsByType(this.currentFilters);
+        this.refresh();
+    }
+
+    private addToGroupedEffects(effect: EffectResponseData) {
+        const file = effect.location.uri.fsPath;
+        if (!this.groupedEffects[file]) this.groupedEffects[file] = [];
+        if (!this.groupedEffects[file].some(e =>
+            e.location.range.isEqual(effect.location.range) && e.callee === effect.callee
+        )) {
+            this.groupedEffects[file].push(effect);
+        }
+    }
+
+    private collectFlatChildren(tree: EffectTreeResponse) {
+        for (const child of tree.children) {
+            this.addToGroupedEffects(child.info);
+            this.collectFlatChildren(child);
+        }
     }
 
     updateEffectCallStack(baseEffect: EffectResponseData, callers: EffectResponseData[]) {
@@ -66,7 +150,7 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         this.refresh();
     }
 
-    getTreeItem(element: LocationItem): vscode.TreeItem {
+    getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
         return element;
     }
 
@@ -90,6 +174,8 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
             return Promise.resolve(element.getChildren());
         } else if (element instanceof FileItem) {
             return Promise.resolve(element.getChildren());
+        } else if (element instanceof FunctionItem) {
+            return Promise.resolve(element.getChildren());
         }
         return Promise.resolve([]);
     }
@@ -97,14 +183,14 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
     // Group effects by their containing file
     private groupByFile(effects: EffectResponseData[]) {
         for (const effect of effects) {
-            const uri =  effect.location.uri;
+            const uri = effect.location.uri;
             const file = uri.fsPath;
 
             if (!this.groupedEffects[file]) {
                 this.groupedEffects[file] = [];
             }
-            
-            if (!this.groupedEffects[file].some(e => e.location.range.isEqual(effect.location.range) 
+
+            if (!this.groupedEffects[file].some(e => e.location.range.isEqual(effect.location.range)
                 && e.callee == effect.callee)) {
                 this.groupedEffects[file].push(effect);
             }
@@ -113,16 +199,22 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
 
     private getCrateItems(): vscode.TreeItem[] {
         const crates: vscode.TreeItem[] = [];
-    
-        // Loop through the effects and build directory hierarchy
-        for (const file in this.filteredEffects) {
-            const effects = this.filteredEffects[file];
-            if (effects.length === 0) {
-                continue;
-            }
-            const crateName = effects[0].crate_name; 
+
+        const files = this.isAuditMode
+            ? Object.keys(this.filteredAuditTreesByFunc)
+            : Object.keys(this.filteredEffects);
+
+        for (const file of files) {
+            const effects = this.filteredEffects[file] ?? [];
+            if (!this.isAuditMode && effects.length === 0) continue;
+
+            const firstEffect = effects[0] ?? this.getFirstFromAuditTrees(file);
+            if (!firstEffect) continue;
+
+            const crateName = firstEffect.crate_name;
             const relativePath = this.getRelativeFilePath(file, crateName);
-            this.buildDirectories(relativePath, effects, crates);
+            const auditFuncMap = this.isAuditMode ? this.filteredAuditTreesByFunc[file] : undefined;
+            this.buildDirectories(relativePath, effects, crates, auditFuncMap);
         }
 
         crates.forEach(item => {
@@ -139,45 +231,58 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         });
     }
 
-    // Get the file path relative to the crate root
+    private getFirstFromAuditTrees(file: string): EffectResponseData | undefined {
+        const funcMap = this.filteredAuditTreesByFunc[file];
+        if (!funcMap) return undefined;
+        for (const trees of Object.values(funcMap)) {
+            if (trees.length > 0) return trees[0].info;
+        }
+        return undefined;
+    }
+
     private getRelativeFilePath(filePath: string, crateName: string): string {
-        const segments = filePath.split(path.sep);    
+        const segments = filePath.split(path.sep);
         const name = crateName.replace(/_/g, '-');
         const idx = segments.findIndex((segment) => {
             return segment.replace(/_/g, '-').startsWith(name);
         });
-    
+
         return idx !== -1 ? path.join(...segments.slice(idx)) : filePath;
     }
-    
 
     private buildDirectories(
         filePath: string,
         effects: EffectResponseData[],
-        parentItems: vscode.TreeItem[]
-    ) {          
+        parentItems: vscode.TreeItem[],
+        auditFuncMap?: AuditFuncMap
+    ) {
         const segments = filePath.split(path.sep);
         segments.forEach((segment, index) => {
             if (index === segments.length - 1) {
-                // The last segment is the filename
-                const fileItem = new FileItem(vscode.Uri.file(filePath), effects, this.audited, this.callStack);
+                const fileItem = new FileItem(
+                    vscode.Uri.file(filePath),
+                    effects,
+                    this.audited,
+                    this.callStack,
+                    auditFuncMap
+                );
                 parentItems.push(fileItem);
             } else {
                 let dirItem = parentItems.find(
                     (item) => item instanceof DirectoryItem && item.label === segment
                 ) as DirectoryItem;
-    
+
                 if (!dirItem) {
                     const dirPath = path.join(...segments.slice(0, index+1));
                     dirItem = new DirectoryItem(vscode.Uri.file(dirPath), segment);
                     parentItems.push(dirItem);
                 }
-    
+
                 parentItems = dirItem.getChildren();
             }
         });
     }
-    
+
     getGroupedEffects(): { [file: string]: EffectResponseData[] } {
         return this.groupedEffects;
     }
@@ -186,16 +291,12 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         vscode.window.registerFileDecorationProvider(DecorationProvider);
         const tree = vscode.window.createTreeView('effectsView', { treeDataProvider: this, showCollapseAll: true });
         tree.onDidChangeCheckboxState(async (event) => {
-            // Get the first item that triggered the event,
-            // which is an audited effect that the user wants
-            // to reset its safety annotation.
             const item = event.items[0];
             const effect = (item[0] as LocationItem).data;
 
             if (item[1] === vscode.TreeItemCheckboxState.Unchecked) {
-                // Confirm that the user wants to proceed with the resetting
                 const result = await vscode.window.showWarningMessage(
-                    'Are you sure you want to reset this annotation?', 
+                    'Are you sure you want to reset this annotation?',
                     { modal: true },
                     'Yes',
                     'No'
@@ -218,8 +319,11 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         this.audited.clear();
         this.groupedEffects = {};
         this.filteredEffects = {};
+        this.auditTreesByFunc = {};
+        this.filteredAuditTreesByFunc = {};
         this.callStack = undefined;
         this.currentFilters = ["[All]"];
+        this.isAuditMode = false;
         this.refresh();
     }
 
@@ -229,37 +333,56 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
 
     restore() {
         this.filteredEffects = {};
+        this.filteredAuditTreesByFunc = {};
         this.currentFilters = ["[All]"];
+        // Re-enable audit mode if we have audit trees stored
+        this.isAuditMode = Object.keys(this.auditTreesByFunc).length > 0;
         this.filterEffectsByType(this.currentFilters);
         this.refresh();
     }
 
     private sortGroupedEffects() {
         for (const file in this.groupedEffects) {
-            this.groupedEffects[file].sort((a, b) => 
+            this.groupedEffects[file].sort((a, b) =>
                 a.location.range.start.compareTo(b.location.range.start));
         }
     }
 
-    // Filter effects that match a given type
     filterEffectsByType(filters: string[]) {
-        if(!filters)
-            return;
-    
-        this.currentFilters = [ ...filters ];
-        if( filters.includes("[All]") ) {
+        if (!filters) return;
+
+        this.currentFilters = [...filters];
+
+        const matchesFilter = (e: EffectResponseData) => {
+            const ty = e.effect_type.startsWith('[') ? e.effect_type : "[Sink Call]";
+            return filters.includes(ty);
+        };
+
+        if (filters.includes("[All]")) {
             this.filteredEffects = { ...this.groupedEffects };
+            if (this.isAuditMode) {
+                this.filteredAuditTreesByFunc = { ...this.auditTreesByFunc };
+            }
             this.refresh();
             return;
         }
 
         for (const [file, effects] of Object.entries(this.groupedEffects)) {
-            this.filteredEffects[file] = [
-                ...effects.filter(e => {
-                    const ty = e.effect_type.startsWith('[') ? e.effect_type : "[Sink Call]";
-                    return filters.includes(ty)
-                })
-            ];
+            this.filteredEffects[file] = effects.filter(matchesFilter);
+        }
+
+        if (this.isAuditMode) {
+            this.filteredAuditTreesByFunc = {};
+            for (const [file, funcMap] of Object.entries(this.auditTreesByFunc)) {
+                for (const [funcName, trees] of Object.entries(funcMap)) {
+                    // Filter by the root effect type (all nodes in a tree share the same type)
+                    const filtered = trees.filter(t => matchesFilter(t.info));
+                    if (filtered.length > 0) {
+                        if (!this.filteredAuditTreesByFunc[file]) this.filteredAuditTreesByFunc[file] = {};
+                        this.filteredAuditTreesByFunc[file][funcName] = filtered;
+                    }
+                }
+            }
         }
 
         this.refresh();
@@ -269,8 +392,9 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         if (item.contextValue == 'isCC') {
             const callers = this.callStack?.get(JSON.stringify(item.data));
             if (callers && callers.length > 1) {
+                this.isAuditMode = false;
                 this.filteredEffects = {};
-                
+
                 for (const caller of callers) {
                     const file = caller.location.uri.fsPath;
                     if (!this.filteredEffects[file]) {
@@ -280,7 +404,7 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
                 }
             }
             this.refresh();
-        }  
+        }
     }
 }
 
@@ -323,9 +447,9 @@ class DirectoryItem extends vscode.TreeItem {
         }
 
         this.description = this.total > 0
-            ? `[ ${this.total - this.unaudited} / ${this.total} ]` 
+            ? `[ ${this.total - this.unaudited} / ${this.total} ]`
             : undefined;
-        
+
         DecorationProvider.updateDecorations(this.resourceUri, this.unaudited);
     }
 
@@ -347,20 +471,21 @@ class FileItem extends vscode.TreeItem {
         public readonly resourceUri: vscode.Uri,
         public readonly effects: EffectResponseData[],
         private readonly audited: Set<EffectResponseData>,
-        private readonly callStack?: Map<string, EffectResponseData[]>
+        private readonly callStack?: Map<string, EffectResponseData[]>,
+        private readonly auditFuncMap?: AuditFuncMap
     ) {
         const label = `${path.basename(resourceUri.fsPath)}`;
         super(label, vscode.TreeItemCollapsibleState.Collapsed);
         this.updateDecorations();
     }
 
-    private updateDecorations() {  
+    private updateDecorations() {
         this.total = this.effects.length;
         this.unaudited = this.effects.reduce((count, item) => {
             return !this.audited.has(item) ? count += 1 : count;
         }, 0);
 
-        this.description = `[ ${this.total - this.unaudited} / ${this.total} ]`;        
+        this.description = `[ ${this.total - this.unaudited} / ${this.total} ]`;
         DecorationProvider.updateDecorations(this.resourceUri, this.unaudited);
     }
 
@@ -373,20 +498,82 @@ class FileItem extends vscode.TreeItem {
     }
 
     getChildren(): vscode.TreeItem[] {
-        // Return the effects' locations within the file
+        if (this.auditFuncMap) {
+            // Audit mode: make tree view changes only for audit binaries for now
+            return Object.entries(this.auditFuncMap)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([funcName, trees]) =>
+                    new FunctionItem(funcName, trees, this.audited, this.callStack)
+                );
+        }
+        // Scan / get_callers mode: flattened list of effects as defore
+        // TODO: make this similar to auditing
         return this.effects.map((effect) => {
-            const state = this.audited.has(effect) 
+            const state = this.audited.has(effect)
                 ? vscode.TreeItemCheckboxState.Checked : undefined;
-            
             const isCCBaseEffect = (this.callStack?.get(JSON.stringify(effect))?.length ?? 0) > 1;
             return new LocationItem(effect, state, isCCBaseEffect);
         });
     }
 }
 
+// Represents one function in the (inverted) effect call chain.
+class FunctionItem extends vscode.TreeItem {
+    constructor(
+        public readonly funcName: string,
+        private readonly trees: EffectTreeResponse[],
+        private readonly audited: Set<EffectResponseData>,
+        private readonly callStack?: Map<string, EffectResponseData[]>,
+    ) {
+        const shortName = funcName.split('::').pop() ?? funcName;
+        super(shortName, vscode.TreeItemCollapsibleState.Expanded);
+        this.tooltip = funcName;
+        this.description = `(${trees.length})`;
+        this.iconPath = new vscode.ThemeIcon('symbol-function');
+    }
+
+    getChildren(): vscode.TreeItem[] {
+        const children: vscode.TreeItem[] = [];
+        // Track info object identity to deduplicate: branching produces multiple inverted
+        // trees that share the same intermediate node (same EffectResponseData reference)
+        const seen = new Set<EffectResponseData>();
+
+        // Emit a LocationItem only for the actual base effects,
+        // not the propagated callers
+        for (const tree of this.trees) {
+            if (tree.children.length === 0 && !seen.has(tree.info)) {
+                seen.add(tree.info);
+                const state = this.audited.has(tree.info)
+                    ? vscode.TreeItemCheckboxState.Checked : undefined;
+                const isCCBaseEffect = (this.callStack?.get(JSON.stringify(tree.info))?.length ?? 0) > 1;
+                children.push(new LocationItem(tree.info, state, isCCBaseEffect));
+            }
+        }
+
+        // Descend into callees (going deeper in the inverted tree toward the base effect),
+        // deduplicating by info identity for the same effect tree branches
+        const childrenByFunc = new Map<string, EffectTreeResponse[]>();
+        for (const tree of this.trees) {
+            for (const child of tree.children) {
+                if (seen.has(child.info)) continue;
+                seen.add(child.info);
+                const fn = child.info.caller;
+                if (!childrenByFunc.has(fn)) childrenByFunc.set(fn, []);
+                childrenByFunc.get(fn)!.push(child);
+            }
+        }
+
+        for (const [fn, subTrees] of [...childrenByFunc.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+            children.push(new FunctionItem(fn, subTrees, this.audited, this.callStack));
+        }
+
+        return children;
+    }
+}
+
 export class LocationItem extends vscode.TreeItem {
     constructor(
-        public readonly data: EffectResponseData, 
+        public readonly data: EffectResponseData,
         public readonly state: vscode.TreeItemCheckboxState | undefined,
         private readonly isCCBaseEffect: boolean
     ) {

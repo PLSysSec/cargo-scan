@@ -16,7 +16,7 @@ use std::mem;
 use std::path::{Path, PathBuf};
 use toml;
 
-use crate::audit_file::{AuditFile, AuditVersion, DefaultAuditType, EffectInfo};
+use crate::audit_file::{AuditFile, AuditVersion, DefaultAuditType, EffectInfo, EffectTree};
 use crate::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 use crate::ident::{replace_hyphens, CanonicalPath};
 use crate::util::CrateId;
@@ -649,7 +649,7 @@ pub fn create_new_audit_chain(
 /// from the dependencies to the top-level package.
 pub fn collect_propagated_sinks(
     chain: &mut AuditChain,
-) -> Result<HashMap<EffectInstance, Vec<(EffectInfo, String)>>> {
+) -> Result<HashMap<EffectInstance, EffectTree>> {
     let mut effects = HashMap::new();
     let root_name = chain.root_crate()?;
 
@@ -674,7 +674,7 @@ pub fn collect_propagated_sinks(
 
         if id == root_name {
             for (effect_instance, audit_tree) in &af.audit_trees {
-                effects.insert(effect_instance.clone(), audit_tree.get_all_annotations());
+                effects.insert(effect_instance.clone(), audit_tree.clone());
             }
             continue;
         }
@@ -687,7 +687,7 @@ pub fn collect_propagated_sinks(
 
 fn check_sink_calls(
     af: AuditFile,
-    effects: &mut HashMap<EffectInstance, Vec<(EffectInfo, String)>>,
+    effects: &mut HashMap<EffectInstance, EffectTree>,
 ) -> Result<()> {
     for (pub_cc_fn, base_effs) in af.pub_caller_checked {
         if effects.keys().any(|i| {
@@ -697,11 +697,7 @@ fn check_sink_calls(
                 let tree = af.audit_trees.get(&inst).ok_or_else(|| {
                     anyhow!("couldn't find tree for effect instance: {:?}", inst)
                 })?;
-
-                effects.insert(inst.clone(), tree.get_all_annotations());
-                // if let Some(ann) = tree.get_annotations_to_leaf(&pub_cc_fn) {
-                //     effects.insert(inst.clone(), ann);
-                // }
+                effects.insert(inst.clone(), tree.clone());
             }
         }
     }
