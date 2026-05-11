@@ -103,7 +103,11 @@ impl EffectTreeResponse {
                     callee.to_string(),
                     effect_type.to_string(),
                 )?;
-                Ok(EffectTreeResponse { info: resp, annotation: annotation.to_string(), children: vec![] })
+                Ok(EffectTreeResponse {
+                    info: resp,
+                    annotation: annotation.to_string(),
+                    children: vec![],
+                })
             }
             EffectTree::Branch(info, children) => {
                 let resp = EffectsResponse::from_effect_info(
