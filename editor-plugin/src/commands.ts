@@ -1,9 +1,37 @@
 import * as vscode from 'vscode';
-import { EffectResponseData, EffectsResponse, LocationItem } from './file_tree_view';
+import { EffectResponseData, EffectsResponse, EffectTreeResponse, LocationItem } from './file_tree_view';
 import { annotations, client, locationsProvider } from './extension';
 import { AuditResponse } from './audit_annotations';
 import { convertLocation } from './util';
 import { highlightEffectLocations } from './decorations';
+
+function processAuditResponse(response: AuditResponse): {
+    effectsMap: Map<EffectResponseData, string>;
+    callStackMap: Map<string, EffectResponseData[]>;
+    entries: [EffectResponseData, EffectTreeResponse][];
+} {
+    const effectsMap   = new Map<EffectResponseData, string>();
+    const callStackMap = new Map<string, EffectResponseData[]>();
+    const entries: [EffectResponseData, EffectTreeResponse][] = [];
+
+    for (const [baseEffect, tree] of response.effects) {
+        baseEffect.location = convertLocation(baseEffect.location);
+
+        const allNodes: EffectResponseData[] = [];
+        const walkTree = (node: EffectTreeResponse) => {
+            node.info.location = convertLocation(node.info.location);
+            effectsMap.set(node.info, node.annotation);
+            allNodes.push(node.info);
+            for (const child of node.children) walkTree(child);
+        };
+        walkTree(tree);
+
+        callStackMap.set(JSON.stringify(baseEffect), allNodes);
+        entries.push([baseEffect, tree]);
+    }
+
+    return { effectsMap, callStackMap, entries };
+}
 
 export function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(
@@ -34,37 +62,24 @@ export function registerCommands(context: vscode.ExtensionContext) {
                         progress.report({ message: "Cargo Scan: Scanning crate..." });
                     }, 2000);
                     const response = await client.sendRequest<AuditResponse>('cargo-scan.audit');
-                    
+
                     context.globalState.update('annotateEffects', true);
                     context.globalState.update('chainAudit', false);
-    
-                    let effectsMap = new Map<EffectResponseData, string>();
-                    let callStackMap = new Map<string, EffectResponseData[]>();
-    
-                    for (let [baseEffect, callers] of response.effects) {
-                        baseEffect.location = convertLocation(baseEffect.location);
-                        callers.forEach((e: [EffectResponseData, string]) => {
-                            e[0].location = convertLocation(e[0].location);
-                            effectsMap.set(e[0], e[1]);
-                        });
-    
-                        const callStack = callers.map((e: [EffectResponseData, string]) => e[0]);
-                        callStackMap.set(JSON.stringify(baseEffect), callStack);
-                    }
-    
+
+                    const { effectsMap, callStackMap, entries } = processAuditResponse(response);
                     const auditedEffects = Array.from(effectsMap)
                         .filter(([_, value]) => value !== 'Skipped')
                         .map(([key, _]) => key);
-    
+
                     locationsProvider.clear();
                     locationsProvider.addAuditedEffects(auditedEffects);
-                    locationsProvider.setLocations([...effectsMap.keys()], callStackMap);
+                    locationsProvider.setAuditLocations(entries, callStackMap);
                     annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);
-    
+
                     const editor = vscode.window.activeTextEditor;
                     if (editor) {
                         highlightEffectLocations(editor, locationsProvider.getGroupedEffects());
-                    }                    
+                    }
                 }
             );
         })
@@ -129,31 +144,19 @@ export function registerCommands(context: vscode.ExtensionContext) {
             const response = await client.sendRequest<AuditResponse>('cargo-scan.audit_chain');
             context.globalState.update('annotateEffects', true);
             context.globalState.update('chainAudit', true);
-            let effectsMap = new Map<EffectResponseData, string>();    
-            let callStackMap = new Map<string, EffectResponseData[]>();  
-            
-            for (let [baseEffect, callers] of response.effects) {
-                baseEffect.location = convertLocation(baseEffect.location);
-                callers.forEach((e: [EffectResponseData, string]) => {
-                    e[0].location = convertLocation(e[0].location);
-                    effectsMap.set(e[0], e[1]);
-                });
 
-                const callStack = callers.map((e: [EffectResponseData, string]) => e[0]);
-                callStackMap.set(JSON.stringify(baseEffect), callStack);
-            }
-
+            const { effectsMap, callStackMap, entries } = processAuditResponse(response);
             const auditedEffects = Array.from(effectsMap)
                 .filter(([_, value]) => value !== 'Skipped')
                 .map(([key, _]) => key);
-            
+
             locationsProvider.clear();
             locationsProvider.addAuditedEffects(auditedEffects);
-            locationsProvider.setLocations([...effectsMap.keys()], callStackMap);
+            locationsProvider.setAuditLocations(entries, callStackMap);
             annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);
 
             const editor = vscode.window.activeTextEditor;
-            if(editor) {
+            if (editor) {
                 highlightEffectLocations(editor, locationsProvider.getGroupedEffects());
             }
         })

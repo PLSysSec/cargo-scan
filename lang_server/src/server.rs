@@ -133,15 +133,9 @@ fn runner(
                     }
                     AuditCommand::METHOD => {
                         let (af, fp) = audit_req(&root_crate_path)?;
-                        let mut effects = HashMap::new();
-
-                        af.clone().audit_trees.iter().for_each(|(eff, tree)| {
-                            effects.insert(eff.clone(), tree.get_all_annotations());
-                        });
-
+                        let res = AuditCommandResponse::new(&af.audit_trees)?.to_json_value()?;
                         audit_file = Some(af);
                         audit_file_path = fp;
-                        let res = AuditCommandResponse::new(&effects)?.to_json_value()?;
                         conn.sender.send(Message::Response(lsp_server::Response {
                             id: req.id,
                             result: Some(res),

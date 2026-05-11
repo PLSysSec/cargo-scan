@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use cargo_scan::{
-    audit_file::{AuditFile, EffectInfo, EffectTree},
+    audit_file::{AuditFile, EffectInfo, EffectTree, SafetyAnnotation},
     effect::{self, EffectInstance},
     scan_stats::{get_crate_stats_default, CrateStats},
     util::load_cargo_toml,
@@ -83,29 +83,65 @@ pub struct ScanCommandResponse {
     effects: Vec<EffectsResponse>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EffectTreeResponse {
+    pub info: EffectsResponse,
+    pub annotation: String,
+    pub children: Vec<EffectTreeResponse>,
+}
+
+impl EffectTreeResponse {
+    pub fn from_tree(
+        tree: &EffectTree,
+        callee: &str,
+        effect_type: &str,
+    ) -> Result<Self, Error> {
+        match tree {
+            EffectTree::Leaf(info, annotation) => {
+                let resp = EffectsResponse::from_effect_info(
+                    info,
+                    callee.to_string(),
+                    effect_type.to_string(),
+                )?;
+                Ok(EffectTreeResponse { info: resp, annotation: annotation.to_string(), children: vec![] })
+            }
+            EffectTree::Branch(info, children) => {
+                let resp = EffectsResponse::from_effect_info(
+                    info,
+                    callee.to_string(),
+                    effect_type.to_string(),
+                )?;
+                let child_responses = children
+                    .iter()
+                    .map(|c| EffectTreeResponse::from_tree(c, callee, effect_type))
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(EffectTreeResponse {
+                    info: resp,
+                    annotation: SafetyAnnotation::CallerChecked.to_string(),
+                    children: child_responses,
+                })
+            }
+        }
+    }
+}
+
 #[serde_as]
-#[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AuditCommandResponse {
     #[serde_as(as = "Vec<(_, _)>")]
-    effects: HashMap<EffectsResponse, Vec<(EffectsResponse, String)>>,
+    effects: HashMap<EffectsResponse, EffectTreeResponse>,
 }
 
 impl AuditCommandResponse {
-    pub fn new(
-        effs: &HashMap<EffectInstance, Vec<(EffectInfo, String)>>,
-    ) -> Result<Self, Error> {
+    pub fn new(effs: &HashMap<EffectInstance, EffectTree>) -> Result<Self, Error> {
         let mut effects = HashMap::new();
 
-        for (inst, anns) in effs.iter() {
-            let mut callers = vec![];
-            for (i, a) in anns {
-                let callee = inst.callee().to_string();
-                let eff_type = inst.eff_type().to_csv();
-                let resp = EffectsResponse::from_effect_info(i, callee, eff_type)?;
-                callers.push((resp, a.to_owned()));
-            }
+        for (inst, tree) in effs.iter() {
+            let callee = inst.callee().to_string();
+            let eff_type = inst.eff_type().to_csv();
             let base_effect = EffectsResponse::new(inst)?;
-            effects.insert(base_effect, callers);
+            let tree_response = EffectTreeResponse::from_tree(tree, &callee, &eff_type)?;
+            effects.insert(base_effect, tree_response);
         }
 
         Ok(Self { effects })
