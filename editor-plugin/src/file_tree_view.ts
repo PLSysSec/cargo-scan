@@ -20,6 +20,13 @@ export interface EffectTreeResponse {
     children: EffectTreeResponse[];
 }
 
+export interface DepRankInfo {
+    crate_name:   string;
+    topo_index:   number;
+    base_effects: number;
+    propagated_effects: number;
+}
+
 // { funcName -> EffectTreeResponse[] } — multiple trees can share the same root function
 type AuditFuncMap = { [funcName: string]: EffectTreeResponse[] };
 type AuditFileMap = { [file: string]: AuditFuncMap };
@@ -64,6 +71,10 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
     private auditTreesByFunc: AuditFileMap = {};
     private filteredAuditTreesByFunc: AuditFileMap = {};
     private isAuditMode: boolean = false;
+    // Dependency ranking based on concentration of propagated effects
+    private depRankings: Map<string, DepRankInfo> = new Map();
+    // Maps the first path segment of a relative file path to its crate_name
+    private dirToCrateName: Map<string, string> = new Map();
 
     setLocations(
         effects: EffectResponseData[],
@@ -140,6 +151,13 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         this.refresh();
     }
 
+    setDepRankings(rankings: DepRankInfo[]) {
+        this.depRankings.clear();
+        for (const r of rankings) {
+            this.depRankings.set(r.crate_name, r);
+        }
+    }
+
     addAuditedEffects(effects: EffectResponseData[]) {
         effects.forEach(e => this.audited.add(e));
         this.refresh();
@@ -158,13 +176,45 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         if (!element) {
             const crates = this.getCrateItems();
             if (crates.length <= 1) {
+                crates.forEach(c => { if (c instanceof DirectoryItem) c.updateDescription(); });
                 return Promise.resolve(crates);
             }
 
             const root = new DirectoryItem(vscode.Uri.file("root"), "Root Crate");
             const deps = new DirectoryItem(vscode.Uri.file("dependencies"), "Dependencies");
             const wsName = vscode.workspace.workspaceFolders?.map((folder) => folder.name)[0];
-            crates.forEach(crate => crate.label === wsName ? root.addChild(crate) : deps.addChild(crate));
+
+            const depCrates: vscode.TreeItem[] = [];
+            crates.forEach(crate => crate.label === wsName ? root.addChild(crate) : depCrates.push(crate));
+
+            // Sort deps by concentration of effects
+            depCrates.sort((a, b) => {
+                const aLabel = typeof a.label === 'string' ? a.label : a.label?.label ?? '';
+                const bLabel = typeof b.label === 'string' ? b.label : b.label?.label ?? '';
+                const aRank = this.depRankings.get(this.dirToCrateName.get(aLabel) ?? '');
+                const bRank = this.depRankings.get(this.dirToCrateName.get(bLabel) ?? '');
+                
+                if (!aRank && !bRank) return aLabel.localeCompare(bLabel);
+                if (!aRank) return 1;
+                if (!bRank) return -1;
+                
+                const aTotal = aRank.base_effects + aRank.propagated_effects;
+                const bTotal = bRank.base_effects + bRank.propagated_effects;
+                
+                if (bTotal !== aTotal) return bTotal - aTotal;
+                return aRank.topo_index - bRank.topo_index;
+            });
+
+            depCrates.forEach(crate => {
+                const label = typeof crate.label === 'string' ? crate.label : crate.label?.label ?? '';
+                const rank = this.depRankings.get(this.dirToCrateName.get(label) ?? '');
+                if (rank && crate instanceof DirectoryItem) {
+                    crate.setRankInfo(`↑${rank.base_effects + rank.propagated_effects}`);
+                }
+                deps.addChild(crate);
+            });
+
+            crates.forEach(c => { if (c instanceof DirectoryItem) c.updateDescription(); });
 
             root.updateDecorations(false);
             deps.updateDecorations(true);
@@ -213,15 +263,13 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
 
             const crateName = firstEffect.crate_name;
             const relativePath = this.getRelativeFilePath(file, crateName);
+            const dirLabel = relativePath.split(path.sep)[0];
+            if (!this.dirToCrateName.has(dirLabel)) {
+                this.dirToCrateName.set(dirLabel, crateName);
+            }
             const auditFuncMap = this.isAuditMode ? this.filteredAuditTreesByFunc[file] : undefined;
             this.buildDirectories(relativePath, effects, crates, auditFuncMap);
         }
-
-        crates.forEach(item => {
-            if (item instanceof DirectoryItem) {
-                item.updateDescription();
-            }
-        });
 
         // Sort alphabetically by crate name
         return crates.sort((a, b) => {
@@ -324,6 +372,8 @@ export class LocationsProvider implements vscode.TreeDataProvider<vscode.TreeIte
         this.callStack = undefined;
         this.currentFilters = ["[All]"];
         this.isAuditMode = false;
+        this.depRankings.clear();
+        this.dirToCrateName.clear();
         this.refresh();
     }
 
@@ -412,6 +462,8 @@ class DirectoryItem extends vscode.TreeItem {
     private children: vscode.TreeItem[] = [];
     private total: number;
     private unaudited: number;
+    private rankInfo: string = '';
+
     constructor(
         public readonly resourceUri: vscode.Uri,
         public readonly label: string
@@ -446,21 +498,25 @@ class DirectoryItem extends vscode.TreeItem {
             }
         }
 
-        this.description = this.total > 0
-            ? `[ ${this.total - this.unaudited} / ${this.total} ]`
-            : undefined;
+        const counts = this.total > 0 ? `[ ${this.total - this.unaudited} / ${this.total} ]` : '';
+        const parts = [counts, this.rankInfo].filter(s => s.length > 0);
+        this.description = parts.length > 0 ? parts.join('  ') : undefined;
 
         DecorationProvider.updateDecorations(this.resourceUri, this.unaudited);
     }
 
     updateDecorations(deps: boolean) {
-        const symbol = deps ? 'type-hierarchy' : 'symbol-folder';
+        const symbol = deps ? 'library' : 'package';
         this.iconPath = new vscode.ThemeIcon(symbol);
         DecorationProvider.decorateChainRoots(this.resourceUri);
     }
 
     addChild(item: vscode.TreeItem) {
         this.children.push(item);
+    }
+
+    setRankInfo(info: string) {
+        this.rankInfo = info;
     }
 }
 
@@ -476,6 +532,7 @@ class FileItem extends vscode.TreeItem {
     ) {
         const label = `${path.basename(resourceUri.fsPath)}`;
         super(label, vscode.TreeItemCollapsibleState.Collapsed);
+        this.iconPath = vscode.ThemeIcon.File;
         this.updateDecorations();
     }
 

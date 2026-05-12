@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error, path::PathBuf, str::FromStr};
+use std::{error::Error, path::PathBuf, str::FromStr};
 
 use anyhow::{anyhow, Context};
 use cargo_scan::{
@@ -24,7 +24,7 @@ use crate::{
     request::{
         audit_req, scan_req, AuditCommandResponse, EffectsResponse, ScanCommandResponse,
     },
-    util::{get_all_chain_effects, get_callers},
+    util::{get_all_chain_effects_ranked, get_callers},
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -237,8 +237,11 @@ fn runner(
                             "Auditing chain with manifest path: {}",
                             chain_manifest.display()
                         );
-                        let effects = get_all_chain_effects(&chain_manifest)?;
-                        let res = AuditCommandResponse::new(&effects)?.to_json_value()?;
+                        let (effects, rankings) =
+                            get_all_chain_effects_ranked(&chain_manifest)?;
+                        let res = AuditCommandResponse::new(&effects)?
+                            .with_dep_rankings(rankings)
+                            .to_json_value()?;
 
                         conn.sender.send(Message::Response(lsp_server::Response {
                             id: req.id,

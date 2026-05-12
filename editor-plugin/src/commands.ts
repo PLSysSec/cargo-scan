@@ -151,6 +151,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
                 .map(([key, _]) => key);
 
             locationsProvider.clear();
+            locationsProvider.setDepRankings(response.dep_rankings ?? []);
             locationsProvider.addAuditedEffects(auditedEffects);
             locationsProvider.setAuditLocations(entries, callStackMap);
             annotations.setPreviousAnnotations(locationsProvider.getGroupedEffects(), effectsMap);
