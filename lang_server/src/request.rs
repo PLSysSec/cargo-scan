@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use cargo_scan::{
+    audit_chain::DepRank,
     audit_file::{AuditFile, EffectInfo, EffectTree, SafetyAnnotation},
     effect::{self, EffectInstance},
     scan_stats::{get_crate_stats_default, CrateStats},
@@ -134,6 +135,8 @@ impl EffectTreeResponse {
 pub struct AuditCommandResponse {
     #[serde_as(as = "Vec<(_, _)>")]
     effects: HashMap<EffectsResponse, EffectTreeResponse>,
+    #[serde(default)]
+    dep_rankings: Vec<DepRank>,
 }
 
 impl AuditCommandResponse {
@@ -148,7 +151,12 @@ impl AuditCommandResponse {
             effects.insert(base_effect, tree_response);
         }
 
-        Ok(Self { effects })
+        Ok(Self { effects, dep_rankings: vec![] })
+    }
+
+    pub fn with_dep_rankings(mut self, rankings: Vec<DepRank>) -> Self {
+        self.dep_rankings = rankings;
+        self
     }
 
     pub fn to_json_value(&self) -> Result<Value, Error> {

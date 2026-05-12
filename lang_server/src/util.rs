@@ -2,7 +2,9 @@ use std::{collections::HashMap, path::Path};
 
 use anyhow::{anyhow, Error};
 use cargo_scan::{
-    audit_chain::{collect_propagated_sinks, AuditChain},
+    audit_chain::{
+        collect_propagated_sinks, collect_propagated_sinks_ranked, AuditChain, DepRank,
+    },
     audit_file::{AuditFile, EffectInfo, EffectTree, SafetyAnnotation},
     effect::EffectInstance,
     ident::CanonicalPath,
@@ -71,6 +73,19 @@ pub fn get_all_chain_effects(
     let removed_sinks = chain.collect_all_safe_sinks()?;
     chain.remove_cross_crate_effects(removed_sinks, &chain.root_crate()?)?;
     collect_propagated_sinks(&mut chain)
+}
+
+pub fn get_all_chain_effects_ranked(
+    chain_manifest: &Path,
+) -> Result<(HashMap<EffectInstance, EffectTree>, Vec<DepRank>), Error> {
+    let mut chain = AuditChain::read_audit_chain(chain_manifest.to_path_buf())?
+        .ok_or_else(|| {
+            anyhow!("Couldn't find audit chain manifest at {}", chain_manifest.display())
+        })?;
+
+    let removed_sinks = chain.collect_all_safe_sinks()?;
+    chain.remove_cross_crate_effects(removed_sinks, &chain.root_crate()?)?;
+    collect_propagated_sinks_ranked(&mut chain)
 }
 
 pub fn get_callers(

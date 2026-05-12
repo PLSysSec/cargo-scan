@@ -35,23 +35,39 @@ export function highlightEffectLocations(
 export class TreeDecorationProvider implements vscode.FileDecorationProvider {
     private decorations: { [uri: string]: number } = {};
     private chainDirs: string[] = [];
+    private rankDecorations: Map<string, { own: number, incoming: number }> = new Map();
 
-    _onDidChangeFileDecorations: vscode.EventEmitter<vscode.Uri | vscode.Uri[]> = 
+    _onDidChangeFileDecorations: vscode.EventEmitter<vscode.Uri | vscode.Uri[]> =
         new vscode.EventEmitter<vscode.Uri | vscode.Uri[]>();
-	onDidChangeFileDecorations: vscode.Event<vscode.Uri | vscode.Uri[]> = 
+	onDidChangeFileDecorations: vscode.Event<vscode.Uri | vscode.Uri[]> =
         this._onDidChangeFileDecorations.event;
 
     provideFileDecoration(
-        uri: vscode.Uri, 
+        uri: vscode.Uri,
         _token: vscode.CancellationToken
     ): vscode.FileDecoration | undefined {
-        if (this.chainDirs.includes(uri.toString())) {
+        const uriStr = uri.toString();
+
+        if (this.chainDirs.includes(uriStr)) {
             return {
                 color: new vscode.ThemeColor('list.focusHighlightForeground'),
-            }; 
+            };
         }
 
-        const remaining = this.decorations[uri.toString()];
+        const rank = this.rankDecorations.get(uriStr);
+        if (rank !== undefined) {
+            const total = rank.own + rank.incoming;
+            const hasUnaudited = (this.decorations[uriStr] ?? 0) > 0;
+            return {
+                badge:   String(total),
+                tooltip: `↑${rank.own} own  ←${rank.incoming} incoming`,
+                color:   new vscode.ThemeColor(
+                    hasUnaudited ? 'list.warningForeground' : 'list.deemphasizedForeground'
+                ),
+            };
+        }
+
+        const remaining = this.decorations[uriStr];
         if (remaining === undefined) {
             return undefined;
         }
@@ -64,12 +80,23 @@ export class TreeDecorationProvider implements vscode.FileDecorationProvider {
             badge:   remaining > 0 ? 'E' : undefined,
             tooltip: remaining > 0 ? "Contains unaudited effects" : undefined,
             color:   color
-        };  
+        };
     }
 
     public updateDecorations(uri: vscode.Uri, unaudited: number) {
         this.decorations[uri.toString()] = unaudited;
         this._onDidChangeFileDecorations.fire(uri);
+    }
+
+    public updateRankDecoration(uri: vscode.Uri, own: number, incoming: number) {
+        this.rankDecorations.set(uri.toString(), { own, incoming });
+        this._onDidChangeFileDecorations.fire(uri);
+    }
+
+    public clearRankDecorations() {
+        const uris = [...this.rankDecorations.keys()].map(s => vscode.Uri.parse(s));
+        this.rankDecorations.clear();
+        this._onDidChangeFileDecorations.fire(uris);
     }
 
     public decorateChainRoots(uri: vscode.Uri) {

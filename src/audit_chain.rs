@@ -646,6 +646,22 @@ pub fn create_new_audit_chain(
     Ok(chain)
 }
 
+/// Ranking info for a dependency crate:
+/// 1. how many effects transitively propagate to the root
+/// 2. its depth in the dependency graph
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct DepRank {
+    pub crate_name: String,
+    pub depth: usize,
+    /// The crate's own base effects
+    /// that propagate to the root.
+    pub base_effects: usize,
+    /// Cross-crate calls from parent crates into
+    /// the crate's public caller-checked functions.
+    /// Auditing this crate first removes them from parent audits.
+    pub propagated_effects: usize,
+}
+
 /// Collect all the sink calls that are propagated
 /// from the dependencies to the top-level package.
 pub fn collect_propagated_sinks(
@@ -684,6 +700,90 @@ pub fn collect_propagated_sinks(
     }
 
     Ok(effects)
+}
+
+/// Same as `collect_propagated_sinks` but also computes per-dependency rankings
+pub fn collect_propagated_sinks_ranked(
+    chain: &mut AuditChain,
+) -> Result<(HashMap<EffectInstance, EffectTree>, Vec<DepRank>)> {
+    let mut effects = HashMap::new();
+    let root_name = chain.root_crate()?;
+
+    let mut crate_path_buf = Path::new(&chain.crate_path).canonicalize()?;
+    crate_path_buf.push("Cargo.toml");
+    let config = GlobalContext::default()?;
+    let workspace = resolve_workspace(&crate_path_buf, &config)?.ws_resolve;
+    let pkgs = workspace.targeted_resolve.sort();
+
+    log::info!("pkgs: {:?}\n\n", pkgs);
+
+    let mut topo_index: HashMap<String, usize> = HashMap::new();
+    for (idx, p) in pkgs.iter().enumerate() {
+        let mut name = p.name().to_string();
+        replace_hyphens(&mut name);
+        topo_index.insert(name, idx);
+    }
+
+    let pkg_set = workspace.pkg_set;
+    let all_crates = chain.all_crates().into_iter().cloned().collect::<Vec<_>>();
+
+    let mut pkgs_rev = pkgs;
+    pkgs_rev.reverse();
+
+    for p in pkgs_rev {
+        let pkg = pkg_set.get_one(p)?;
+        let id = CrateId::from(pkg);
+        if !all_crates.contains(&id) {
+            continue;
+        }
+        let af = chain.read_audit_file(&id)?.with_context(|| {
+            "Couldn't read audit file while collecting dependency sinks"
+        })?;
+
+        if id == root_name {
+            for (effect_instance, audit_tree) in &af.audit_trees {
+                effects.insert(effect_instance.clone(), audit_tree.clone());
+            }
+            continue;
+        }
+
+        check_sink_calls(af, &mut effects)?;
+    }
+
+    let rankings = compute_dep_rankings(&effects, &topo_index);
+    Ok((effects, rankings))
+}
+
+fn compute_dep_rankings(
+    effects: &HashMap<EffectInstance, EffectTree>,
+    topo_index: &HashMap<String, usize>,
+) -> Vec<DepRank> {
+    let dep_crates: HashSet<String> =
+        effects.keys().map(|i| i.caller().crate_name().to_string()).collect();
+
+    dep_crates
+        .into_iter()
+        .map(|dep| {
+            let own = effects
+                .keys()
+                .filter(|i| i.caller().crate_name().to_string() == dep)
+                .count();
+            let incoming = effects
+                .keys()
+                .filter(|i| {
+                    i.callee().crate_name().to_string() == dep
+                        && i.caller().crate_name().to_string() != dep
+                })
+                .count();
+            let topo_idx = topo_index.get(&dep).copied().unwrap_or(usize::MAX);
+            DepRank {
+                crate_name: dep,
+                depth: topo_idx,
+                base_effects: own,
+                propagated_effects: incoming,
+            }
+        })
+        .collect()
 }
 
 fn check_sink_calls(

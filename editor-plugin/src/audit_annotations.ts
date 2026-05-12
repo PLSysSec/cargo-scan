@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
-import { EffectResponseData, EffectTreeResponse } from './file_tree_view';
+import { DepRankInfo, EffectResponseData, EffectTreeResponse } from './file_tree_view';
 import { rangeToString } from './util';
 
 export interface AuditResponse {
     effects: [EffectResponseData, EffectTreeResponse][];
+    dep_rankings?: DepRankInfo[];
 }
 
 export interface AuditNotification {
