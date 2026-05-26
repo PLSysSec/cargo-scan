@@ -14,10 +14,9 @@ use crate::ident::{CanonicalPath, CanonicalType, Ident};
 use crate::offset_maping::MacroExpansionContext;
 
 use ra_ap_hir::{AssocItem, CfgAtom, Crate, HirFileId, Impl, Semantics, Symbol};
-use ra_ap_hir_def::Lookup;
 use ra_ap_ide::{Diagnostic, FileId, LineCol, LineIndex, TextSize};
 use ra_ap_ide_db::defs::Definition;
-use ra_ap_ide_db::{FxHashMap, LineIndexDatabase, RootDatabase};
+use ra_ap_ide_db::{FxHashMap, RootDatabase};
 use ra_ap_load_cargo::{LoadCargoConfig, ProcMacroServerChoice};
 use ra_ap_project_model::{CargoConfig, CargoFeatures, CfgOverrides, RustLibSource};
 use ra_ap_syntax::{SyntaxNode, SyntaxToken};
@@ -142,8 +141,8 @@ impl Resolver {
                 .file_id()
                 .ok_or_else(|| anyhow!("Could not get Vfs FileId"))?
                 .file_id(self.db());
-            let line_index = self.db().line_index(original_file_id);
-            line_index
+
+            ra_ap_ide_db::line_index(self.db(), original_file_id)
                 .offset(line_col)
                 .ok_or_else(|| anyhow!("Could not find offset in normal file"))
         }
@@ -330,21 +329,8 @@ impl<'a> ResolverImpl<'a> {
         })?;
 
         match def {
-            Definition::Function(function) => {
-                if function.extern_block(self.db).is_some() {
-                    return Ok(true);
-                }
-
-                Ok(false)
-            }
-            Definition::Static(st) => {
-                let static_id = ra_ap_hir_def::StaticId::from(st);
-                match static_id.lookup(self.db).container {
-                    // Static variable is in an 'extern' block
-                    ra_ap_hir_def::ItemContainerId::ExternBlockId(_) => Ok(true),
-                    _ => Ok(false),
-                }
-            }
+            Definition::Function(f) => Ok(f.extern_block(self.db).is_some()),
+            Definition::Static(st) => Ok(st.extern_block(self.db).is_some()),
             _ => Ok(false),
         }
     }
@@ -363,11 +349,7 @@ impl<'a> ResolverImpl<'a> {
         })?;
 
         if let Definition::Function(f) = def {
-            use ra_ap_hir::HasSource;
-
-            Ok(f.source(self.db)
-                .map(|src| src.value.unsafe_token().is_some())
-                .unwrap_or(false))
+            Ok(f.is_unsafe(self.db))
         } else {
             Ok(false)
         }

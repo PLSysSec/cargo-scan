@@ -10,7 +10,7 @@ use ra_ap_hir::db::ExpandDatabase;
 use ra_ap_hir::prettify_macro_expansion;
 use ra_ap_ide::RootDatabase;
 use ra_ap_ide::{Crate, LineIndex};
-use ra_ap_ide_db::base_db::{RootQueryDb, SourceDatabase};
+use ra_ap_ide_db::base_db::{relevant_crates, SourceDatabase};
 use ra_ap_span::SpanMap;
 use ra_ap_syntax::ast::MacroCall;
 use ra_ap_syntax::{AstNode, SyntaxKind, SyntaxNode};
@@ -168,7 +168,7 @@ pub fn handle_macro_expansion(
                         .unwrap_or(SyntaxKind::MACRO_ITEMS),
                     file_id,
                     expanded_syntax_node,
-                    &expansion_span_map,
+                    expansion_span_map,
                     krate,
                 );
 
@@ -233,7 +233,7 @@ fn _format(
     };
     let expansion = format!("{prefix}{expansion}{suffix}");
 
-    let &crate_id = db.relevant_crates(file_id).iter().next()?;
+    let &crate_id = relevant_crates(db, file_id).iter().next()?;
     let edition = crate_id.data(db).edition;
 
     let mut cmd = std::process::Command::new(ra_ap_toolchain::Tool::Rustfmt.path());

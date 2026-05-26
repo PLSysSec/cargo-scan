@@ -4,12 +4,12 @@ use itertools::Itertools;
 use crate::ident::{CanonicalPath, CanonicalType, Ident, TypeKind};
 
 use ra_ap_hir::{
-    Adt, DefWithBody, DisplayTarget, GenericParam, HasContainer, HasCrate, HirDisplay,
-    Module, Semantics, VariantDef,
+    Adt, DefWithBody, DisplayTarget, ExpressionStoreOwner, GenericParam, HasContainer,
+    HasCrate, HirDisplay, Module, Semantics, Variant,
 };
 
 use ra_ap_ide::TextSize;
-use ra_ap_ide_db::{base_db::RootQueryDb, defs::Definition, RootDatabase};
+use ra_ap_ide_db::{base_db::all_crates, defs::Definition, RootDatabase};
 
 use ra_ap_syntax::{SyntaxNode, SyntaxToken, TokenAtOffset};
 
@@ -77,7 +77,7 @@ pub(super) fn canonical_path(
     let def_name = def.name(db).map(name_to_string);
     let module = def.module(db)?;
 
-    let crates = db.all_crates();
+    let crates = all_crates(db);
     let crate_name = crates
         .iter()
         .filter(|cr| **cr == module.krate(db).base())
@@ -106,20 +106,30 @@ fn get_container_name(db: &RootDatabase, def: &Definition) -> Vec<String> {
         Definition::Field(f) => {
             let parent = f.parent_def(db);
             container_names.append(&mut match parent {
-                VariantDef::Variant(v) => get_container_name(db, &v.into()),
-                VariantDef::Struct(s) => get_container_name(db, &Adt::from(s).into()),
-                VariantDef::Union(u) => get_container_name(db, &Adt::from(u).into()),
+                Variant::EnumVariant(v) => get_container_name(db, &v.into()),
+                Variant::Struct(s) => get_container_name(db, &Adt::from(s).into()),
+                Variant::Union(u) => get_container_name(db, &Adt::from(u).into()),
             });
             container_names.push(name_to_string(parent.name(db)))
         }
         Definition::Local(l) => {
-            let parent = l.parent(db);
-            let parent_name = parent.name(db);
-            let parent_def = match parent {
-                DefWithBody::Function(f) => f.into(),
-                DefWithBody::Static(s) => s.into(),
-                DefWithBody::Const(c) => c.into(),
-                DefWithBody::Variant(v) => v.into(),
+            let (parent_def, parent_name) = match l.parent(db) {
+                ExpressionStoreOwner::Body(DefWithBody::Function(f)) => {
+                    (f.into(), Some(f.name(db)))
+                }
+                ExpressionStoreOwner::Body(DefWithBody::Static(s)) => {
+                    (s.into(), Some(s.name(db)))
+                }
+                ExpressionStoreOwner::Body(DefWithBody::Const(c)) => {
+                    (c.into(), c.name(db))
+                }
+                ExpressionStoreOwner::Body(DefWithBody::EnumVariant(v)) => {
+                    (v.into(), Some(v.name(db)))
+                }
+                _ => {
+                    container_names.retain(|s| !s.is_empty());
+                    return container_names;
+                }
             };
             container_names.append(&mut get_container_name(db, &parent_def));
             container_names.push(parent_name.map(name_to_string).unwrap_or_default())
@@ -149,7 +159,7 @@ fn get_container_name(db: &RootDatabase, def: &Definition) -> Vec<String> {
             }
             _ => {}
         },
-        Definition::Variant(e) => {
+        Definition::EnumVariant(e) => {
             container_names.push(name_to_string(e.parent_enum(db).name(db)))
         }
         Definition::Macro(m) => {
@@ -189,14 +199,14 @@ pub(super) fn get_canonical_type(
             Some(it.ty(db))
         }
         Definition::Field(it) => {
-            if let VariantDef::Union(_) = &it.parent_def(db) {
+            if let Variant::Union(_) = &it.parent_def(db) {
                 ty_kind = TypeKind::UnionFld;
             }
-            Some(it.ty(db).to_type(db))
+            Some(it.ty(db))
         }
         Definition::GenericParam(GenericParam::TypeParam(it)) => Some(it.ty(db)),
         Definition::GenericParam(GenericParam::ConstParam(it)) => Some(it.ty(db)),
-        Definition::Variant(_) => return Ok(CanonicalType::new(ty_kind)),
+        Definition::EnumVariant(_) => return Ok(CanonicalType::new(ty_kind)),
         _ => None,
     }
     .ok_or_else(|| anyhow!("Could not resolve type for definition {:?}", def.name(db)))?;

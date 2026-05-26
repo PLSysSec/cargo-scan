@@ -259,7 +259,7 @@ impl<'a> Resolve<'a> for FileResolver<'a> {
         )
     }
 
-    fn resolve_ffi(&self, p: &syn::Path) -> Option<CanonicalPath> {
+    fn resolve_ffi(&self, p: &'a syn::Path) -> Option<CanonicalPath> {
         let i = &p.segments.last().unwrap().ident;
         self.resolve_ffi_ident(i)
     }
