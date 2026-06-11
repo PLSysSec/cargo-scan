@@ -112,6 +112,74 @@
             "debug",
             "trace"
           ]
+        },
+        "cargo-scan.expandMacro": {
+          "type": "boolean",
+          "default": true,
+          "description": "Expand and analyze macros during scanning. Disabling this speeds up scans but may miss effects hidden inside macros."
+        },
+        "cargo-scan.effectTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "SinkCall",
+              "FFICall",
+              "UnsafeCall",
+              "RawPointer",
+              "UnionField",
+              "StaticMut",
+              "StaticExt",
+              "FnPtrCreation",
+              "ClosureCreation",
+              "FFIDecl"
+            ]
+          },
+          "default": [
+            "SinkCall",
+            "FFICall",
+            "UnsafeCall",
+            "RawPointer",
+            "UnionField",
+            "StaticMut",
+            "StaticExt",
+            "FnPtrCreation",
+            "ClosureCreation",
+            "FFIDecl"
+          ],
+          "description": "Which effect categories to track during scans and audits."
+        },
+        "cargo-scan.chain.allFeatures": {
+          "type": "boolean",
+          "default": true,
+          "description": "Activate all Cargo features when resolving the dependency graph (cargo --all-features). Maximises analysis coverage. Disable to resolve only default features."
+        },
+        "cargo-scan.chain.features": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Specific Cargo features to activate when resolving the dependency graph (cargo --features). Ignored when cargo-scan.chain.allFeatures is true."
+        },
+        "cargo-scan.chain.includeDevDeps": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include dev-dependencies when resolving the dependency graph."
+        },
+        "cargo-scan.chain.rootAuditType": {
+          "type": "string",
+          "enum": ["Empty", "Safe", "CallerChecked"],
+          "enumDescriptions": [
+            "Effects in the root crate start unaudited.",
+            "All effects in the root crate are pre-marked safe.",
+            "All effects in the root crate are pre-marked caller-checked."
+          ],
+          "default": "Empty",
+          "description": "Initial safety annotation applied to effects in the root crate when creating a new chain audit."
+        },
+        "cargo-scan.chain.forceOverwrite": {
+          "type": "boolean",
+          "default": false,
+          "description": "Overwrite existing audit files when creating a chain audit, instead of reusing them."
         }
       }
     }
