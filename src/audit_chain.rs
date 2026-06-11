@@ -195,7 +195,8 @@ impl AuditChain {
     ) -> Result<HashSet<CanonicalPath>> {
         let cargo_toml = self.cargo_toml_path()?;
         let config = GlobalContext::default()?;
-        let resolution = resolve_workspace(&cargo_toml, &config)?;
+        let resolution =
+            resolve_workspace(&cargo_toml, &config, &ResolveOptions::default())?;
         self.remove_cross_crate_effects_with_resolve(
             removed_fns,
             updated_crate,
@@ -296,6 +297,31 @@ impl AuditChain {
     }
 }
 
+/// Options that control how Cargo resolves the dependency graph.
+#[derive(ClapArgs, Debug, Clone, Serialize, Deserialize)]
+pub struct ResolveOptions {
+    /// Activate every optional Cargo feature in every package during dependency
+    /// resolution (cargo --all-features). Maximises analysis coverage.
+    /// Defaults to `true`.
+    #[clap(long, default_value_t = true)]
+    pub all_features: bool,
+
+    /// Specific feature flags to activate (`cargo --features foo,bar/baz`).
+    /// Ignored when `all_features` is `true`.
+    #[clap(long, value_parser, num_args = 0..)]
+    pub features: Vec<String>,
+
+    /// Include `[dev-dependencies]` in the resolved dependency graph.
+    #[clap(long, default_value_t = false)]
+    pub include_dev_deps: bool,
+}
+
+impl Default for ResolveOptions {
+    fn default() -> Self {
+        Self { all_features: true, features: vec![], include_dev_deps: false }
+    }
+}
+
 #[derive(Clone, ClapArgs, Debug, Serialize, Deserialize)]
 pub struct Create {
     /// Path to crate
@@ -340,6 +366,11 @@ pub struct Create {
         EffectType::ClosureCreation,
     ])]
     pub effect_types: Vec<EffectType>,
+
+    /// Config options for Cargo's workspace resolution.
+    #[clap(flatten)]
+    #[serde(flatten)]
+    pub resolve: ResolveOptions,
 }
 
 impl Create {
@@ -353,6 +384,7 @@ impl Create {
         download_version: Option<String>,
         effect_types: Vec<EffectType>,
         root_audit_type: DefaultAuditType,
+        resolve_opts: ResolveOptions,
     ) -> Self {
         Self {
             crate_path,
@@ -363,6 +395,7 @@ impl Create {
             download_version,
             effect_types,
             root_audit_type,
+            resolve: resolve_opts,
         }
     }
 }
@@ -387,6 +420,7 @@ impl Default for Create {
             download_version: None,
             effect_types: DEFAULT_EFFECT_TYPES.to_vec(),
             root_audit_type: DefaultAuditType::Empty,
+            resolve: ResolveOptions::default(),
         }
     }
 }
@@ -580,15 +614,21 @@ pub struct WorkspaceResolution<'ws> {
 pub fn resolve_workspace<'ws>(
     crate_path_buf: &Path,
     config: &'ws GlobalContext,
+    opts: &ResolveOptions,
 ) -> Result<WorkspaceResolution<'ws>> {
     let workspace = Workspace::new(crate_path_buf, config)?;
     let specs = workspace
         .members()
         .map(|p| p.package_id().to_spec())
         .collect::<Vec<PackageIdSpec>>();
-    let cli_features = CliFeatures::from_command_line(&[], true, true)?;
+
+    let cli_features =
+        CliFeatures::from_command_line(&opts.features, opts.all_features, true)?;
     let mut target_data = RustcTargetData::new(&workspace, &[CompileKind::Host])?;
     let requested_targets = vec![CompileKind::Host];
+
+    let has_dev_units =
+        if opts.include_dev_deps { HasDevUnits::Yes } else { HasDevUnits::No };
 
     let ws_resolve = cargo::ops::resolve_ws_with_opts(
         &workspace,
@@ -596,9 +636,9 @@ pub fn resolve_workspace<'ws>(
         &requested_targets,
         &cli_features,
         &specs,
-        HasDevUnits::No,
+        has_dev_units,
         ForceAllTargets::No,
-        false,
+        true,
     )?;
 
     Ok(WorkspaceResolution { ws_resolve, target_data })
@@ -622,7 +662,7 @@ pub fn create_new_audit_chain(
     let mut crate_path_buf = Path::new(&args.crate_path).canonicalize()?;
     crate_path_buf.push("Cargo.toml");
     let cargo_ctx = GlobalContext::default()?;
-    let resolution = resolve_workspace(&crate_path_buf, &cargo_ctx)?;
+    let resolution = resolve_workspace(&crate_path_buf, &cargo_ctx, &args.resolve)?;
 
     let root_manifest = Manifest::from_path(&crate_path_buf)?;
     let root_package = root_manifest
@@ -675,7 +715,7 @@ pub fn collect_propagated_sinks(
 ) -> Result<HashMap<EffectInstance, EffectTree>> {
     let cargo_toml = chain.cargo_toml_path()?;
     let config = GlobalContext::default()?;
-    let resolution = resolve_workspace(&cargo_toml, &config)?;
+    let resolution = resolve_workspace(&cargo_toml, &config, &ResolveOptions::default())?;
     collect_propagated_sinks_with_resolve(chain, &resolution.ws_resolve)
 }
 
@@ -720,7 +760,7 @@ pub fn collect_propagated_sinks_ranked(
 ) -> Result<(HashMap<EffectInstance, EffectTree>, Vec<DepRank>)> {
     let cargo_toml = chain.cargo_toml_path()?;
     let config = GlobalContext::default()?;
-    let resolution = resolve_workspace(&cargo_toml, &config)?;
+    let resolution = resolve_workspace(&cargo_toml, &config, &ResolveOptions::default())?;
     collect_propagated_sinks_ranked_with_resolve(chain, &resolution.ws_resolve)
 }
 

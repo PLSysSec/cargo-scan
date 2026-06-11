@@ -14,8 +14,8 @@ use serde_json::Value;
 use cargo_scan::{
     audit_chain::DepRank,
     audit_file::{AuditFile, EffectInfo, EffectTree, SafetyAnnotation},
-    effect::{self, EffectInstance},
-    scan_stats::{get_crate_stats_default, CrateStats},
+    effect::{EffectInstance, EffectType},
+    scan_stats::{get_crate_stats, CrateStats},
     util::load_cargo_toml,
 };
 use serde_with::serde_as;
@@ -179,22 +179,35 @@ impl ScanCommandResponse {
     }
 }
 
-/// Scan crate in root path and get crate stats
-fn get_simple_scan_results(path: &Path) -> CrateStats {
-    let res = get_crate_stats_default(path.to_path_buf(), false, true);
-    info!("Finished scanning. Found {} effects.", res.effects.len());
-
-    res
+fn get_simple_scan_results(
+    path: &Path,
+    effect_types: &[EffectType],
+    expand_macro: bool,
+) -> CrateStats {
+    get_crate_stats(path.to_path_buf(), effect_types, false, expand_macro).unwrap_or_else(
+        |_| CrateStats { crate_path: path.to_path_buf(), ..Default::default() },
+    )
 }
-pub fn scan_req(crate_path: &Path) -> Result<Value, Error> {
-    let stats = get_simple_scan_results(crate_path);
+
+pub fn scan_req(
+    crate_path: &Path,
+    effect_types: &[EffectType],
+    expand_macro: bool,
+) -> Result<Value, Error> {
+    let stats = get_simple_scan_results(crate_path, effect_types, expand_macro);
+    info!("Finished scanning. Found {} effects.", stats.effects.len());
     ScanCommandResponse::new(&stats.effects)?.to_json_value()
 }
 
-pub fn audit_req(path: &Path) -> Result<(AuditFile, PathBuf), Error> {
+pub fn audit_req(
+    path: &Path,
+    effect_types: &[EffectType],
+    expand_macro: bool,
+) -> Result<(AuditFile, PathBuf), Error> {
     // The audit file path defaults to "~/.cargo_audits"
-    let mut audit_file_path = home_dir().ok_or_else(||
-        anyhow!("Error: couldn't find the home directory (required for default audit file path)"))?;
+    let mut audit_file_path = home_dir().ok_or_else(|| {
+        anyhow!("Error: couldn't find the home directory (required for default audit file path)")
+    })?;
 
     audit_file_path.push(".cargo_audits");
     let crate_id = load_cargo_toml(path)?;
@@ -212,13 +225,11 @@ pub fn audit_req(path: &Path) -> Result<(AuditFile, PathBuf), Error> {
             }
             File::create(audit_file_path.clone())?;
 
-            let mut pf = AuditFile::empty(
-                path.to_path_buf(),
-                effect::DEFAULT_EFFECT_TYPES.to_vec(),
-            )?;
+            let mut pf = AuditFile::empty(path.to_path_buf(), effect_types.to_vec())?;
 
             // Scan crate and set base effects to the audit file
-            let effects = get_simple_scan_results(path).effects;
+            let effects =
+                get_simple_scan_results(path, effect_types, expand_macro).effects;
             pf.set_base_audit_trees(effects.iter());
             pf.save_to_file(audit_file_path.clone())?;
             info!("Created new audit file `{}`", audit_file_path.display());
