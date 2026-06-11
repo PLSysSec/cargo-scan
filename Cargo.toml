@@ -25,7 +25,7 @@ codegen-units = 16
 [dependencies]
 anyhow.workspace = true
 assert_cmd = "2.0.12"
-cargo = "0.95.0"
+cargo = "0.97.1"
 cargo_toml = "0.22.3"
 cargo-lock = { version = "11.0.1", features = ["dependency-tree"] }
 clap = { version = "4.4.8", features = ["derive"] }
@@ -40,22 +40,22 @@ log.workspace = true
 petgraph = "0.8.3"
 proc-macro2 = { version = "1.0.69", features = ["span-locations"] }
 quote = "1.0.33"
-ra_ap_hir = "0.0.334"
-ra_ap_hir_def = "0.0.334"
-ra_ap_hir_expand = "0.0.334"
-ra_ap_hir_ty = "0.0.334"
-ra_ap_ide = "0.0.334"
-ra_ap_ide_db = "0.0.334"
-ra_ap_load-cargo = "0.0.334"
-ra_ap_paths = "0.0.334"
-ra_ap_project_model = "0.0.334"
-ra_ap_syntax = "0.0.334"
-ra_ap_vfs = "0.0.334"
-ra_ap_cfg = "0.0.334"
-ra_ap_stdx = "0.0.334"
-ra_ap_toolchain = "0.0.334"
-ra_ap_span = "0.0.334"
-ra_ap_edition = "0.0.334"
+ra_ap_hir = "0.0.336"
+ra_ap_hir_def = "0.0.336"
+ra_ap_hir_expand = "0.0.336"
+ra_ap_hir_ty = "0.0.336"
+ra_ap_ide = "0.0.336"
+ra_ap_ide_db = "0.0.336"
+ra_ap_load-cargo = "0.0.336"
+ra_ap_paths = "0.0.336"
+ra_ap_project_model = "0.0.336"
+ra_ap_syntax = "0.0.336"
+ra_ap_vfs = "0.0.336"
+ra_ap_cfg = "0.0.336"
+ra_ap_stdx = "0.0.336"
+ra_ap_toolchain = "0.0.336"
+ra_ap_span = "0.0.336"
+ra_ap_edition = "0.0.336"
 regex = "1.10.6"
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
@@ -63,7 +63,7 @@ serde_with.workspace = true
 semver = "1.0.20"
 sha2 = "0.10.8"
 syn = { version = "2.0", features = ["full", "extra-traits"] }
-tar = "0.4.40"
+tar = "0.4.46"
 toml = "0.8.8"
 walkdir = "2.4.0"
 parse-display = "0.8.2"
