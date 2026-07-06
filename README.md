@@ -4,10 +4,16 @@ Cargo Scan is a tool for auditing Rust crates.
 
 ![Cargo Scan usage in VSCode](vscode_usage.png)
 
+<div align="center">
+
+[Auditing Rust Crates Effectively - ESOP26](https://web.cs.ucdavis.edu/~cdstanford/doc/2026/ESOP26.pdf)
+
 ![Build status](https://github.com/PLSysSec/cargo-scan/actions/workflows/build.yml/badge.svg)
 ![Checks status](https://github.com/PLSysSec/cargo-scan/actions/workflows/checks.yml/badge.svg)
 
-**⚠️ Please note that Cargo Scan is under active development. Some interfaces may be subject to change.**
+⚠️ Cargo Scan is under active development. Some interfaces may be subject to change.
+
+</div>
 
 ## Quick-start
 
