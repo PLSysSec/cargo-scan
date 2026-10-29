@@ -143,7 +143,7 @@ impl CommandRunner for Review {
                 Ok(Some(chain)) => Ok(chain),
                 Ok(None) => Err(anyhow!(
                     "Couldn't find audit chain manifest at {}",
-                    &self.manifest_path
+                    self.manifest_path
                 )),
                 Err(e) => Err(e),
             }?;
@@ -202,7 +202,7 @@ impl CommandRunner for Audit {
             Ok(Some(mut chain)) => {
                 let crate_id = match self.crate_name {
                     Some(crate_name) => chain.resolve_crate_id(&crate_name).context(
-                        format!("Couldn't resolve crate_name for {}", &crate_name),
+                        format!("Couldn't resolve crate_name for {}", crate_name),
                     )?,
                     None => chain.root_crate()?,
                 };
@@ -266,7 +266,7 @@ impl CommandRunner for Audit {
             }
             Ok(None) => Err(anyhow!(
                 "Couldn't find audit chain manifest at {}",
-                &self.manifest_path
+                self.manifest_path
             )),
             Err(e) => Err(e),
         }

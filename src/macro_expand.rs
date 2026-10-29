@@ -6,7 +6,6 @@ use crate::resolution::resolve::FileResolver;
 use crate::scanner::{ScanResults, Scanner};
 use anyhow::{anyhow, Result};
 use log::debug;
-use ra_ap_hir::db::ExpandDatabase;
 use ra_ap_hir::prettify_macro_expansion;
 use ra_ap_ide::RootDatabase;
 use ra_ap_ide::{Crate, LineIndex};
@@ -148,7 +147,7 @@ pub fn handle_macro_expansion(
                     .macro_file()
                     .ok_or_else(|| anyhow!("Error getting MacroCallId"))?;
                 let expansion_span_map =
-                    resolver.db().expansion_span_map(expansion_file_id);
+                    expansion_file_id.expansion_span_map(resolver.db());
                 let file_id = current_file_id
                     .file_id()
                     .ok_or_else(|| anyhow!("Could not get EditionedFileId"))?

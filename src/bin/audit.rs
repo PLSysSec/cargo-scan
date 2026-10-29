@@ -167,7 +167,7 @@ where
             .ok_or_else(|| anyhow!("Couldn't convert OS Path to str"))?
             .to_string();
         audit_string.push_str(".new");
-        println!("New audit file name: {}", &audit_string);
+        println!("New audit file name: {}", audit_string);
         *audit_file_path = PathBuf::from(audit_string);
 
         Ok(ContinueStatus::Continue)
@@ -209,7 +209,7 @@ where
                     .ok_or_else(|| anyhow!("Couldn't convert OS Path to str"))?
                     .to_string();
                 audit_file_string.push_str(".new");
-                println!("New audit file name: {}", &audit_file_string);
+                println!("New audit file name: {}", audit_file_string);
                 *audit_file_path = PathBuf::from(audit_file_string);
 
                 Ok(ContinueStatus::Continue)

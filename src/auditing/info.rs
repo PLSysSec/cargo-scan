@@ -146,7 +146,7 @@ pub fn print_effect_src(
             Effect::StaticMut(var) => format!("static mut access: {}", var),
             Effect::StaticExt(var) => format!("static ffi variable access: {}", var),
             Effect::FnPtrCreation =>
-                format!("function pointer creation: {} - (verify the function is always safe to call)", &effect_origin.callee()),
+                format!("function pointer creation: {} - (verify the function is always safe to call)", effect_origin.callee()),
             Effect::ClosureCreation => {
                 "closure creation (verify the closure is always safe to call)".to_string()
             }

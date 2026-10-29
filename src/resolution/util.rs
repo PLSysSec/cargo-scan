@@ -5,7 +5,7 @@ use crate::ident::{CanonicalPath, CanonicalType, Ident, TypeKind};
 
 use ra_ap_hir::{
     Adt, DefWithBody, DisplayTarget, ExpressionStoreOwner, GenericParam, HasContainer,
-    HasCrate, HirDisplay, Module, Semantics, Variant,
+    HasCrate, HirDisplay, Semantics, Variant,
 };
 
 use ra_ap_ide::TextSize;
@@ -48,21 +48,21 @@ fn pick_best_token(
     Err(anyhow!("Could not find any '{:?}' token", ident.as_str()))
 }
 
-fn build_path_to_root(module: Module, db: &RootDatabase) -> Vec<Module> {
-    let mut path = vec![module];
-    let mut curr = module;
-    while let Some(next) = curr.parent(db) {
-        path.push(next);
-        curr = next
-    }
+// fn build_path_to_root(module: Module, db: &RootDatabase) -> Vec<Module> {
+//     let mut path = vec![module];
+//     let mut curr = module;
+//     while let Some(next) = curr.parent(db) {
+//         path.push(next);
+//         curr = next
+//     }
 
-    if let Some(module_id) = ra_ap_hir_def::ModuleId::from(curr).containing_module(db) {
-        let mut parent_path = build_path_to_root(module_id.into(), db);
-        path.append(&mut parent_path);
-    }
+//     if let Some(module_id) = ra_ap_hir_def::ModuleId::from(curr).containing_module(db) {
+//         let mut parent_path = build_path_to_root(module_id.into(), db);
+//         path.append(&mut parent_path);
+//     }
 
-    path
-}
+//     path
+// }
 
 pub(super) fn canonical_path(
     _sems: &Semantics<RootDatabase>,
@@ -84,7 +84,8 @@ pub(super) fn canonical_path(
         .filter_map(|cr| cr.extra_data(db).display_name.as_ref())
         .map(|n| n.to_string());
 
-    let module_path = build_path_to_root(module, db)
+    let module_path = module
+        .path_to_root(db)
         .into_iter()
         .rev()
         .flat_map(|it| it.name(db).map(name_to_string));

@@ -432,7 +432,7 @@ impl AuditFile {
     pub fn unaudited_effects(&self) -> (usize, usize) {
         let mut unaudited_base = 0;
         let mut unaudited_total = 0;
-        for (_, t) in self.audit_trees.iter() {
+        for t in self.audit_trees.values() {
             let total = Self::total_unaudited_effects(t);
             if total > 0 {
                 unaudited_base += 1;
@@ -656,7 +656,7 @@ impl AuditFile {
             quick,
             expand_macro,
         )?;
-        for (_, mut t) in audit_file.audit_trees.iter_mut() {
+        for mut t in audit_file.audit_trees.values_mut() {
             if let EffectTree::Leaf(_, a) = &mut t {
                 *a = SafetyAnnotation::Safe;
             }

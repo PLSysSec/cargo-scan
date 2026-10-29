@@ -126,7 +126,7 @@ fn main() -> Result<()> {
 
     let create = Create::new(
         args.crate_path.clone(),
-        format!("{}/crate.manifest", &args.audit_file_path),
+        format!("{}/crate.manifest", args.audit_file_path),
         args.audit_file_path.clone(),
         false,
         None,

@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
-use cargo::core::Workspace;
 use cargo::ops::{fetch, generate_lockfile, FetchOptions};
-use cargo::util::context::GlobalContext;
+use cargo::util::GlobalContext;
+use cargo::workspace::Workspace;
 use cargo_lock::{Dependency, Lockfile, Package};
 use cargo_toml::Manifest;
 use clap::Args as ClapArgs;
@@ -145,7 +145,7 @@ impl AuditChain {
     /// Returns all matching full package names with the version
     pub fn resolve_all_crates(&self, search_name: &str) -> Vec<CrateId> {
         let mut res = Vec::new();
-        for (crate_id, _) in self.crate_policies.iter() {
+        for crate_id in self.crate_policies.keys() {
             let mut crate_name = crate_id.crate_name.clone();
             replace_hyphens(&mut crate_name);
             if crate_name == search_name || crate_id.crate_name == search_name {
@@ -266,7 +266,7 @@ impl AuditChain {
             crate_audit_file.save_to_file(
                 self.crate_policies
                     .get(&crate_id)
-                    .context(format!("Missing crate {} from chain", &crate_id))?
+                    .context(format!("Missing crate {} from chain", crate_id))?
                     .0
                     .clone(),
             )?;

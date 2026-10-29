@@ -563,7 +563,7 @@ fn audit_pub_fn_effect(
     mut config: Config,
 ) -> Result<(AuditStatus, Option<EffectInstance>)> {
     for base_effect in audit_file.pub_caller_checked.get(sink_fn).ok_or_else(|| {
-        anyhow!("Couldn't find public function from sink: {:?}", &sink_fn)
+        anyhow!("Couldn't find public function from sink: {:?}", sink_fn)
     })? {
         let effect_tree =
             audit_file.audit_trees.get_mut(base_effect).ok_or_else(|| {
