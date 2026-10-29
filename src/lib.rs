@@ -1,6 +1,7 @@
 pub mod audit_chain;
 pub mod audit_file;
 pub mod auditing;
+pub mod cargo_workspace;
 pub mod download_crate;
 pub mod effect;
 pub mod ident;

@@ -5,7 +5,6 @@ use cargo::resolver::{CliFeatures, ForceAllTargets, HasDevUnits};
 use cargo::util::GlobalContext;
 use cargo::workspace::dependency::DepKind;
 use cargo::workspace::{PackageId, PackageIdSpec, Workspace};
-use cargo_toml::Manifest;
 use clap::Args as ClapArgs;
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -17,6 +16,7 @@ use std::path::{Path, PathBuf};
 use toml;
 
 use crate::audit_file::{AuditFile, AuditVersion, DefaultAuditType, EffectTree};
+use crate::cargo_workspace;
 use crate::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 use crate::ident::{replace_hyphens, CanonicalPath};
 use crate::util::CrateId;
@@ -280,14 +280,7 @@ impl AuditChain {
 
     /// Gets the root crate id
     pub fn root_crate(&self) -> Result<CrateId> {
-        let root_package = Manifest::from_path(format!(
-            "{}/Cargo.toml",
-            self.crate_path.to_string_lossy()
-        ))?
-        .package
-        .ok_or_else(|| anyhow!("Can't load root package for the root crate path"))?;
-
-        CrateId::from_toml_package(&root_package)
+        Ok(cargo_workspace::load_package(&self.crate_path)?.id)
     }
 
     fn cargo_toml_path(&self) -> Result<PathBuf> {
@@ -609,6 +602,9 @@ fn active_normal_edge<S>(
 pub struct WorkspaceResolution<'ws> {
     pub ws_resolve: WorkspaceResolve<'ws>,
     pub target_data: RustcTargetData<'ws>,
+    /// The package the workspace was loaded from, or `None` for a virtual
+    /// workspace
+    pub root: Option<PackageId>,
 }
 
 pub fn resolve_workspace<'ws>(
@@ -617,6 +613,7 @@ pub fn resolve_workspace<'ws>(
     opts: &ResolveOptions,
 ) -> Result<WorkspaceResolution<'ws>> {
     let workspace = Workspace::new(crate_path_buf, config)?;
+    let root = workspace.current_opt().map(|p| p.package_id());
     let specs = workspace
         .members()
         .map(|p| p.package_id().to_spec())
@@ -641,7 +638,7 @@ pub fn resolve_workspace<'ws>(
         true,
     )?;
 
-    Ok(WorkspaceResolution { ws_resolve, target_data })
+    Ok(WorkspaceResolution { ws_resolve, target_data, root })
 }
 
 pub fn create_new_audit_chain(
@@ -664,20 +661,12 @@ pub fn create_new_audit_chain(
     let cargo_ctx = GlobalContext::default()?;
     let resolution = resolve_workspace(&crate_path_buf, &cargo_ctx, &args.resolve)?;
 
-    let root_manifest = Manifest::from_path(&crate_path_buf)?;
-    let root_package = root_manifest
-        .package
-        .ok_or_else(|| anyhow!("No [package] section in root Cargo.toml"))?;
-    let root_crate_id = CrateId::from_toml_package(&root_package)?;
-    let root_pkg = resolution
-        .ws_resolve
-        .targeted_resolve
-        .iter()
-        .find(|p| {
-            p.name().as_str() == root_crate_id.crate_name
-                && *p.version() == root_crate_id.version
-        })
-        .ok_or_else(|| anyhow!("Root package not found in resolved graph"))?;
+    let root_pkg = resolution.root.ok_or_else(|| {
+        anyhow!(
+            "{} is a virtual workspace; a chain needs a root package",
+            args.crate_path
+        )
+    })?;
 
     dfs_traverse(
         &resolution,

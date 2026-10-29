@@ -9,6 +9,7 @@ use crate::macro_expand::handle_macro_expansion;
 use crate::resolution::hacky_resolver::HackyResolver;
 use crate::resolution::name_resolution::Resolver;
 
+use super::cargo_workspace;
 use super::effect::{Effect, EffectInstance, EffectType, FnDec, SrcLoc, Visibility};
 use super::ident::{CanonicalPath, IdentPath};
 use super::loc_tracker::LoCTracker;
@@ -16,7 +17,7 @@ use super::sink::Sink;
 use super::util;
 use crate::resolution::resolve::{FileResolver, Resolve};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use log::{debug, info, warn};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::{Bfs, EdgeRef};
@@ -1394,17 +1395,8 @@ pub fn scan_crate_with_sinks(
 ) -> Result<ScanResults> {
     info!("Scanning crate: {:?}", crate_path);
 
-    // Make sure the path is a crate
-    if !crate_path.is_dir() {
-        return Err(anyhow!("Path is not a crate; not a directory: {:?}", crate_path));
-    }
-    let mut cargo_toml_path = crate_path.to_path_buf();
-    cargo_toml_path.push("Cargo.toml");
-    if !cargo_toml_path.try_exists()? || !cargo_toml_path.is_file() {
-        return Err(anyhow!("Path is not a crate; missing Cargo.toml: {:?}", crate_path));
-    }
-
-    let crate_name = util::load_cargo_toml(crate_path)?.crate_name;
+    // Also checks that the path is a package (not a virtual workspace)
+    let crate_name = cargo_workspace::load_package(crate_path)?.id.crate_name;
 
     // TODO: this should *not* be created in the quick-mode case
     let resolver = Resolver::new(crate_path)?;
