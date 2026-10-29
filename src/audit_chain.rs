@@ -1,10 +1,10 @@
 use anyhow::{anyhow, Context, Result};
 use cargo::compiler::{CompileKind, RustcTargetData};
-use cargo::workspace::dependency::DepKind;
-use cargo::resolver::{CliFeatures, ForceAllTargets, HasDevUnits};
-use cargo::workspace::{PackageId, PackageIdSpec, Workspace};
 use cargo::ops::WorkspaceResolve;
+use cargo::resolver::{CliFeatures, ForceAllTargets, HasDevUnits};
 use cargo::util::GlobalContext;
+use cargo::workspace::dependency::DepKind;
+use cargo::workspace::{PackageId, PackageIdSpec, Workspace};
 use cargo_toml::Manifest;
 use clap::Args as ClapArgs;
 use log::info;
