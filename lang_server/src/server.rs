@@ -1,11 +1,11 @@
-use std::{collections::HashMap, error::Error, path::PathBuf};
+use std::{error::Error, path::PathBuf};
 
 use anyhow::{anyhow, Context};
 use cargo_scan::{
-    audit_chain::Create,
-    audit_file::AuditFile,
+    audit_chain::{Create, ResolveOptions},
+    audit_file::{AuditFile, DefaultAuditType},
     auditing::chain::{Command, CommandRunner, OuterArgs},
-    effect::{self},
+    effect::{self, EffectType},
     ident::CanonicalPath,
     scanner::{self},
     util::load_cargo_toml,
@@ -24,8 +24,80 @@ use crate::{
     request::{
         audit_req, scan_req, AuditCommandResponse, EffectsResponse, ScanCommandResponse,
     },
-    util::{get_all_chain_effects, get_callers},
+    util::{get_all_chain_effects_ranked, get_callers},
 };
+
+/// Settings for chain audits
+#[derive(Serialize, Deserialize, Debug)]
+struct ChainOptions {
+    #[serde(default = "default_root_audit_type")]
+    root_audit_type: DefaultAuditType,
+
+    #[serde(default)]
+    force_overwrite: bool,
+
+    #[serde(default = "default_all_features")]
+    all_features: bool,
+
+    #[serde(default)]
+    features: Vec<String>,
+
+    #[serde(default)]
+    include_dev_deps: bool,
+}
+
+fn default_root_audit_type() -> DefaultAuditType {
+    DefaultAuditType::Empty
+}
+
+fn default_all_features() -> bool {
+    true
+}
+
+impl Default for ChainOptions {
+    fn default() -> Self {
+        let ResolveOptions { all_features, features, include_dev_deps } =
+            ResolveOptions::default();
+        Self {
+            root_audit_type: default_root_audit_type(),
+            force_overwrite: false,
+            all_features,
+            features,
+            include_dev_deps,
+        }
+    }
+}
+
+/// Settings configuration from the VS Code extension
+#[derive(Serialize, Deserialize, Debug)]
+struct ConfigOptions {
+    #[serde(default = "default_expand_macro")]
+    expand_macro: bool,
+
+    #[serde(default = "default_effect_types")]
+    effect_types: Vec<EffectType>,
+
+    #[serde(default)]
+    chain: ChainOptions,
+}
+
+fn default_expand_macro() -> bool {
+    true
+}
+
+fn default_effect_types() -> Vec<EffectType> {
+    effect::DEFAULT_EFFECT_TYPES.to_vec()
+}
+
+impl Default for ConfigOptions {
+    fn default() -> Self {
+        Self {
+            expand_macro: true,
+            effect_types: default_effect_types(),
+            chain: ChainOptions::default(),
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ScanCommandParams {
@@ -86,7 +158,13 @@ pub fn run_server() -> anyhow::Result<(), Box<dyn Error + Sync + Send>> {
     let initialize_params: InitializeParams = serde_json::from_value(initialize_params)?;
     info!("Initialized server connection");
 
-    runner(&connection, initialize_params)?;
+    let cfg_opts: ConfigOptions = initialize_params
+        .initialization_options
+        .as_ref()
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default();
+
+    runner(&connection, initialize_params, cfg_opts)?;
     io_threads.join()?;
 
     Ok(())
@@ -95,6 +173,7 @@ pub fn run_server() -> anyhow::Result<(), Box<dyn Error + Sync + Send>> {
 fn runner(
     conn: &lsp_server::Connection,
     init_params: lsp_types::InitializeParams,
+    cfg_opts: ConfigOptions,
 ) -> anyhow::Result<()> {
     // Extract workspace folders from initialize params
     // and find root path of Cargo Scan's input package
@@ -110,8 +189,12 @@ fn runner(
         .map_err(|_| anyhow!("Could not convert root URI to file path"))?;
     info!("Crate path received in cargo-scan LSP server: {}", root_crate_path.display());
 
-    let scan_res =
-        scanner::scan_crate(&root_crate_path, effect::DEFAULT_EFFECT_TYPES, false, true)?;
+    let scan_res = scanner::scan_crate(
+        &root_crate_path,
+        &cfg_opts.effect_types,
+        false,
+        cfg_opts.expand_macro,
+    )?;
 
     info!("Starting main server loop\n");
     let mut audit_file: Option<AuditFile> = None;
@@ -126,7 +209,11 @@ fn runner(
 
                 match req.method.as_str() {
                     ScanCommand::METHOD => {
-                        let res = scan_req(&root_crate_path)?;
+                        let res = scan_req(
+                            &root_crate_path,
+                            &cfg_opts.effect_types,
+                            cfg_opts.expand_macro,
+                        )?;
                         conn.sender.send(Message::Response(lsp_server::Response {
                             id: req.id,
                             result: Some(res),
@@ -134,16 +221,15 @@ fn runner(
                         }))?;
                     }
                     AuditCommand::METHOD => {
-                        let (af, fp) = audit_req(&root_crate_path)?;
-                        let mut effects = HashMap::new();
-
-                        af.clone().audit_trees.iter().for_each(|(eff, tree)| {
-                            effects.insert(eff.clone(), tree.get_all_annotations());
-                        });
-
+                        let (af, fp) = audit_req(
+                            &root_crate_path,
+                            &cfg_opts.effect_types,
+                            cfg_opts.expand_macro,
+                        )?;
+                        let res = AuditCommandResponse::new(&af.audit_trees)?
+                            .to_json_value()?;
                         audit_file = Some(af);
                         audit_file_path = fp;
-                        let res = AuditCommandResponse::new(&effects)?.to_json_value()?;
                         conn.sender.send(Message::Response(lsp_server::Response {
                             id: req.id,
                             result: Some(res),
@@ -196,7 +282,10 @@ fn runner(
                         }))?;
                     }
                     "cargo-scan.create_chain" => {
-                        let outer_args = OuterArgs::default();
+                        let outer_args = OuterArgs {
+                            expand_macro: cfg_opts.expand_macro,
+                            ..Default::default()
+                        };
                         let root_crate_id = load_cargo_toml(&root_crate_path)?;
 
                         if let Some(mut dir) = home_dir() {
@@ -210,6 +299,14 @@ fn runner(
                         let create_args = Create {
                             crate_path: root_crate_path.to_string_lossy().to_string(),
                             manifest_path: chain_manifest.to_string_lossy().to_string(),
+                            effect_types: cfg_opts.effect_types.clone(),
+                            root_audit_type: cfg_opts.chain.root_audit_type,
+                            force_overwrite: cfg_opts.chain.force_overwrite,
+                            resolve: ResolveOptions {
+                                all_features: cfg_opts.chain.all_features,
+                                features: cfg_opts.chain.features.clone(),
+                                include_dev_deps: cfg_opts.chain.include_dev_deps,
+                            },
                             ..Default::default()
                         };
 
@@ -244,8 +341,11 @@ fn runner(
                             "Auditing chain with manifest path: {}",
                             chain_manifest.display()
                         );
-                        let effects = get_all_chain_effects(&chain_manifest)?;
-                        let res = AuditCommandResponse::new(&effects)?.to_json_value()?;
+                        let (effects, rankings) =
+                            get_all_chain_effects_ranked(&chain_manifest)?;
+                        let res = AuditCommandResponse::new(&effects)?
+                            .with_dep_rankings(rankings)
+                            .to_json_value()?;
 
                         conn.sender.send(Message::Response(lsp_server::Response {
                             id: req.id,

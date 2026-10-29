@@ -49,6 +49,18 @@ export function activate(context: vscode.ExtensionContext) {
         documentSelector: [{ scheme: 'file', language: 'rust' }],
         initializationOptions: {
             workspace_folders: workspace_folders,
+            expand_macro: config.get<boolean>('expandMacro', true),
+            effect_types: config.get<string[]>('effectTypes', [
+                'SinkCall', 'FFICall', 'UnsafeCall', 'RawPointer', 'UnionField',
+                'StaticMut', 'StaticExt', 'FnPtrCreation', 'ClosureCreation', 'FFIDecl',
+            ]),
+            chain: {
+                root_audit_type: config.get<string>('chain.rootAuditType', 'Empty'),
+                force_overwrite: config.get<boolean>('chain.forceOverwrite', false),
+                all_features: config.get<boolean>('chain.allFeatures', true),
+                features: config.get<string[]>('chain.features', []),
+                include_dev_deps: config.get<boolean>('chain.includeDevDeps', false),
+            },
         },
     };
 

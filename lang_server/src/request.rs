@@ -12,9 +12,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use cargo_scan::{
-    audit_file::{AuditFile, EffectInfo, EffectTree},
-    effect::{self, EffectInstance},
-    scan_stats::{get_crate_stats_default, CrateStats},
+    audit_chain::DepRank,
+    audit_file::{AuditFile, EffectInfo, EffectTree, SafetyAnnotation},
+    effect::{EffectInstance, EffectType},
+    scan_stats::{get_crate_stats, CrateStats},
     util::load_cargo_toml,
 };
 use serde_with::serde_as;
@@ -83,32 +84,79 @@ pub struct ScanCommandResponse {
     effects: Vec<EffectsResponse>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EffectTreeResponse {
+    pub info: EffectsResponse,
+    pub annotation: String,
+    pub children: Vec<EffectTreeResponse>,
+}
+
+impl EffectTreeResponse {
+    pub fn from_tree(
+        tree: &EffectTree,
+        callee: &str,
+        effect_type: &str,
+    ) -> Result<Self, Error> {
+        match tree {
+            EffectTree::Leaf(info, annotation) => {
+                let resp = EffectsResponse::from_effect_info(
+                    info,
+                    callee.to_string(),
+                    effect_type.to_string(),
+                )?;
+                Ok(EffectTreeResponse {
+                    info: resp,
+                    annotation: annotation.to_string(),
+                    children: vec![],
+                })
+            }
+            EffectTree::Branch(info, children) => {
+                let resp = EffectsResponse::from_effect_info(
+                    info,
+                    callee.to_string(),
+                    effect_type.to_string(),
+                )?;
+                let child_responses = children
+                    .iter()
+                    .map(|c| EffectTreeResponse::from_tree(c, callee, effect_type))
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(EffectTreeResponse {
+                    info: resp,
+                    annotation: SafetyAnnotation::CallerChecked.to_string(),
+                    children: child_responses,
+                })
+            }
+        }
+    }
+}
+
 #[serde_as]
-#[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AuditCommandResponse {
     #[serde_as(as = "Vec<(_, _)>")]
-    effects: HashMap<EffectsResponse, Vec<(EffectsResponse, String)>>,
+    effects: HashMap<EffectsResponse, EffectTreeResponse>,
+    #[serde(default)]
+    dep_rankings: Vec<DepRank>,
 }
 
 impl AuditCommandResponse {
-    pub fn new(
-        effs: &HashMap<EffectInstance, Vec<(EffectInfo, String)>>,
-    ) -> Result<Self, Error> {
+    pub fn new(effs: &HashMap<EffectInstance, EffectTree>) -> Result<Self, Error> {
         let mut effects = HashMap::new();
 
-        for (inst, anns) in effs.iter() {
-            let mut callers = vec![];
-            for (i, a) in anns {
-                let callee = inst.callee().to_string();
-                let eff_type = inst.eff_type().to_csv();
-                let resp = EffectsResponse::from_effect_info(i, callee, eff_type)?;
-                callers.push((resp, a.to_owned()));
-            }
+        for (inst, tree) in effs.iter() {
+            let callee = inst.callee().to_string();
+            let eff_type = inst.eff_type().to_csv();
             let base_effect = EffectsResponse::new(inst)?;
-            effects.insert(base_effect, callers);
+            let tree_response = EffectTreeResponse::from_tree(tree, &callee, &eff_type)?;
+            effects.insert(base_effect, tree_response);
         }
 
-        Ok(Self { effects })
+        Ok(Self { effects, dep_rankings: vec![] })
+    }
+
+    pub fn with_dep_rankings(mut self, rankings: Vec<DepRank>) -> Self {
+        self.dep_rankings = rankings;
+        self
     }
 
     pub fn to_json_value(&self) -> Result<Value, Error> {
@@ -131,22 +179,35 @@ impl ScanCommandResponse {
     }
 }
 
-/// Scan crate in root path and get crate stats
-fn get_simple_scan_results(path: &Path) -> CrateStats {
-    let res = get_crate_stats_default(path.to_path_buf(), false, true);
-    info!("Finished scanning. Found {} effects.", res.effects.len());
-
-    res
+fn get_simple_scan_results(
+    path: &Path,
+    effect_types: &[EffectType],
+    expand_macro: bool,
+) -> CrateStats {
+    get_crate_stats(path.to_path_buf(), effect_types, false, expand_macro).unwrap_or_else(
+        |_| CrateStats { crate_path: path.to_path_buf(), ..Default::default() },
+    )
 }
-pub fn scan_req(crate_path: &Path) -> Result<Value, Error> {
-    let stats = get_simple_scan_results(crate_path);
+
+pub fn scan_req(
+    crate_path: &Path,
+    effect_types: &[EffectType],
+    expand_macro: bool,
+) -> Result<Value, Error> {
+    let stats = get_simple_scan_results(crate_path, effect_types, expand_macro);
+    info!("Finished scanning. Found {} effects.", stats.effects.len());
     ScanCommandResponse::new(&stats.effects)?.to_json_value()
 }
 
-pub fn audit_req(path: &Path) -> Result<(AuditFile, PathBuf), Error> {
+pub fn audit_req(
+    path: &Path,
+    effect_types: &[EffectType],
+    expand_macro: bool,
+) -> Result<(AuditFile, PathBuf), Error> {
     // The audit file path defaults to "~/.cargo_audits"
-    let mut audit_file_path = home_dir().ok_or_else(||
-        anyhow!("Error: couldn't find the home directory (required for default audit file path)"))?;
+    let mut audit_file_path = home_dir().ok_or_else(|| {
+        anyhow!("Error: couldn't find the home directory (required for default audit file path)")
+    })?;
 
     audit_file_path.push(".cargo_audits");
     let crate_id = load_cargo_toml(path)?;
@@ -164,13 +225,11 @@ pub fn audit_req(path: &Path) -> Result<(AuditFile, PathBuf), Error> {
             }
             File::create(audit_file_path.clone())?;
 
-            let mut pf = AuditFile::empty(
-                path.to_path_buf(),
-                effect::DEFAULT_EFFECT_TYPES.to_vec(),
-            )?;
+            let mut pf = AuditFile::empty(path.to_path_buf(), effect_types.to_vec())?;
 
             // Scan crate and set base effects to the audit file
-            let effects = get_simple_scan_results(path).effects;
+            let effects =
+                get_simple_scan_results(path, effect_types, expand_macro).effects;
             pf.set_base_audit_trees(effects.iter());
             pf.save_to_file(audit_file_path.clone())?;
             info!("Created new audit file `{}`", audit_file_path.display());
