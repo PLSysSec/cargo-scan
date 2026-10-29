@@ -4,13 +4,14 @@ exclude = ["data/packages/", "data/test-packages/"]
 
 [package]
 name = "cargo-scan"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2021"
 license = "MIT"
 description = "Scan and analyze Cargo dependencies"
 repository = "https://github.com/PLSysSec/cargo-scan"
 readme = "README.md"
 default-run = "audit"
+include = ["/src/**/*", "/Cargo.toml", "/Cargo.lock", "/README.md", "/LICENSE"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
