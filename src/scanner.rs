@@ -1320,6 +1320,13 @@ pub fn scan_file_quick(
     Ok(())
 }
 
+/// Per-crate information needed to scan the crate's files
+struct CrateScanInfo {
+    /// Name of the crate in canonical paths
+    name: String,
+    enabled_cfg: HashMap<String, Vec<String>>,
+}
+
 pub struct ScanConfig<'a> {
     enabled_cfg: &'a HashMap<String, Vec<String>>,
     expand_macro: bool,
@@ -1405,7 +1412,11 @@ pub fn scan_crate_with_sinks(
     info!("Scanning crate: {:?}", crate_path);
 
     // Also checks that the path is a package (not a virtual workspace)
-    let crate_name = cargo_workspace::load_package(crate_path)?.id.crate_name;
+    let package = cargo_workspace::load_package(crate_path)?;
+    // Crate names of all the package's targets (lib, bins, ...). These can
+    // differ from the package name, e.g. `[lib] name = "my_lib"` in package `my-lib`.
+    let local_crates: HashSet<String> =
+        package.targets.iter().map(|t| t.crate_name.clone()).collect();
 
     // TODO: this should *not* be created in the quick-mode case
     let resolver = Resolver::new(crate_path)?;
@@ -1423,8 +1434,9 @@ pub fn scan_crate_with_sinks(
             info!("crate has no src dir; scanning all .rs files instead");
             util::fs::walk_files_with_extension(crate_path, "rs")
         };
-        // cfg options only depend on the crate, so compute them once per crate
-        let mut cfg_cache: HashMap<Crate, HashMap<String, Vec<String>>> = HashMap::new();
+        // Crate name and cfg options only depend on the crate, so compute them
+        // once per crate
+        let mut crate_cache: HashMap<Crate, CrateScanInfo> = HashMap::new();
         // scan every file
         for entry in file_iter {
             // Scanning with the wrong cfg options would silently scan inactive
@@ -1436,12 +1448,19 @@ pub fn scan_crate_with_sinks(
                     continue;
                 }
             };
-            let enabled_cfg =
-                cfg_cache.entry(krate).or_insert_with(|| resolver.cfg_options(krate));
-            let scan_config = ScanConfig { enabled_cfg, expand_macro, quick_mode };
+            let info = crate_cache.entry(krate).or_insert_with(|| CrateScanInfo {
+                // Same name rust-analyzer uses for the crate's canonical paths
+                name: krate
+                    .display_name(resolver.db())
+                    .map(|name| name.to_string())
+                    .unwrap_or_else(|| package.id.crate_name.clone()),
+                enabled_cfg: resolver.cfg_options(krate),
+            });
+            let scan_config =
+                ScanConfig { enabled_cfg: &info.enabled_cfg, expand_macro, quick_mode };
 
             try_scan_file(
-                &crate_name,
+                &info.name,
                 entry.as_path(),
                 resolver,
                 &mut scan_results,
@@ -1451,7 +1470,7 @@ pub fn scan_crate_with_sinks(
         }
     });
 
-    filter_fn_ptr_effects(&mut scan_results, crate_name.clone(), &sinks);
+    filter_fn_ptr_effects(&mut scan_results, &local_crates, &sinks);
     scan_results
         .effects
         .retain(|e| EffectType::matches_effect(relevant_effects, e.eff_type()));
@@ -1476,17 +1495,16 @@ pub fn scan_crate(
 }
 
 /// Keep only the `FnPtrCreation` effect instances for the pointers that
-/// point to functions with effects or functions defined in dependencies
+/// point to functions with effects or functions defined in dependencies.
+///
+/// `local_crates` are the crate names of the scanned package's targets.
 fn filter_fn_ptr_effects(
     scan_results: &mut ScanResults,
-    crate_name: String,
+    local_crates: &HashSet<String>,
     sinks: &HashSet<IdentPath>,
 ) {
-    let mut crate_name = crate_name;
-    crate::ident::replace_hyphens(&mut crate_name);
-
     for p in scan_results.fn_ptr_effects.iter() {
-        if !p.callee().crate_name().to_string().eq(&crate_name)
+        if !local_crates.contains(p.callee().crate_name().as_str())
             || sinks.contains(p.callee().as_path())
             || check_fn_for_effects(scan_results, p.callee())
         {
