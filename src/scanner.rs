@@ -3,7 +3,7 @@
 //! Parse a Rust crate or source file and collect effect blocks, function calls, and
 //! various other information.
 
-use crate::attr_parser::CfgPred;
+use crate::attr_parser::{CfgOpt, CfgPred};
 use crate::audit_file::EffectInfo;
 use crate::macro_expand::handle_macro_expansion;
 use crate::resolution::hacky_resolver::HackyResolver;
@@ -279,6 +279,14 @@ where
             } else {
                 debug!("Scanning cfg attribute: {}", args);
                 return false;
+            }
+        }
+        // skip `#[test]` items too if `cfg(test)` is disabled
+        if path.is_ident("test") {
+            let test_cfg = CfgPred::from(CfgOpt::Name("test".to_string()));
+            if !test_cfg.is_enabled(self.enabled_cfg) {
+                debug!("Skipping #[test] item: cfg(test) is not enabled");
+                return true;
             }
         }
         false
