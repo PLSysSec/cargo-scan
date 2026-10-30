@@ -15,6 +15,7 @@ use crate::offset_maping::MacroExpansionContext;
 
 use ra_ap_hir::{AssocItem, CfgAtom, Crate, HirFileId, Impl, Semantics, Symbol};
 use ra_ap_ide::{Diagnostic, FileId, LineCol, LineIndex, TextSize};
+use ra_ap_ide_db::base_db::relevant_crates;
 use ra_ap_ide_db::defs::Definition;
 use ra_ap_ide_db::{FxHashMap, RootDatabase};
 use ra_ap_load_cargo::{LoadCargoConfig, ProcMacroServerChoice};
@@ -151,30 +152,34 @@ impl Resolver {
         }
     }
 
-    pub fn get_cfg_options_for_crate(
-        &self,
-        name: &String,
-    ) -> Result<HashMap<String, Vec<String>>> {
+    /// Get the crate that `filepath` belongs to.
+    ///
+    /// The crate is looked up from the file itself rather than by name, so the
+    /// result does not depend on name normalization (`my-crate` vs `my_crate`)
+    /// and is unambiguous when several versions of a crate are in the graph.
+    pub fn crate_for_file(&self, filepath: &Path) -> Result<Crate> {
         let db = self.db();
-        let mut crate_opts: HashMap<String, Vec<String>> = HashMap::default();
+        let file_id = self.find_file_id(filepath)?;
+        Semantics::new(db)
+            .file_to_module_def(file_id)
+            .map(|module| module.krate(db))
+            .or_else(|| relevant_crates(db, file_id).first().map(|&k| Crate::from(k)))
+            .ok_or_else(|| anyhow!("No crate found for file {:?}", filepath))
+    }
 
-        let crate_ = Crate::all(db).into_iter().find(|x| match x.display_name(db) {
-            Some(crate_name) => name.eq(&crate_name.to_string()),
-            None => false,
-        });
-
-        if let Some(crate_) = crate_ {
-            let enabled_opts = crate_.cfg(db);
-            for key in enabled_opts.get_cfg_keys() {
-                let cfg_values =
-                    enabled_opts.get_cfg_values(key.as_str()).map(|x| x.to_string());
-                crate_opts.insert(key.to_string(), Vec::from_iter(cfg_values));
-            }
-        } else {
-            return Err(anyhow!("Could not get cfg options for crate: {:?}", name));
-        }
-
-        Ok(crate_opts)
+    /// Get the enabled cfg options of `krate`.
+    pub fn cfg_options(&self, krate: Crate) -> HashMap<String, Vec<String>> {
+        let enabled_opts = krate.cfg(self.db());
+        enabled_opts
+            .get_cfg_keys()
+            .map(|key| {
+                let values = enabled_opts
+                    .get_cfg_values(key.as_str())
+                    .map(|x| x.to_string())
+                    .collect();
+                (key.to_string(), values)
+            })
+            .collect()
     }
 
     pub fn set_macro_expansion_ctx(&self, ctx: MacroExpansionContext) {

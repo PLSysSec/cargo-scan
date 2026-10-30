@@ -24,6 +24,7 @@ use petgraph::visit::{Bfs, EdgeRef};
 use petgraph::Direction;
 use proc_macro2::{TokenStream, TokenTree};
 use quote::ToTokens;
+use ra_ap_hir::Crate;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -1403,9 +1404,6 @@ pub fn scan_crate_with_sinks(
     let mut scan_results = ScanResults::new();
 
     resolver.with_db(|resolver| {
-        let enabled_cfg =
-            resolver.get_cfg_options_for_crate(&crate_name).unwrap_or_default();
-
         // TODO: For now, only walking through the src dir, but might want to
         //       include others (e.g. might codegen in other dirs)
         // If there is no src_dir, we walk through all .rs files in the crate.
@@ -1417,10 +1415,23 @@ pub fn scan_crate_with_sinks(
             info!("crate has no src dir; scanning all .rs files instead");
             util::fs::walk_files_with_extension(crate_path, "rs")
         };
-        let scan_config =
-            ScanConfig { enabled_cfg: &enabled_cfg, expand_macro, quick_mode };
+        // cfg options only depend on the crate, so compute them once per crate
+        let mut cfg_cache: HashMap<Crate, HashMap<String, Vec<String>>> = HashMap::new();
         // scan every file
         for entry in file_iter {
+            // Scanning with the wrong cfg options would silently scan inactive
+            // code and skip active code, so skip the file with a warning instead.
+            let krate = match resolver.crate_for_file(&entry) {
+                Ok(krate) => krate,
+                Err(err) => {
+                    warn!("Skipping file {:?}: no crate found ({})", entry, err);
+                    continue;
+                }
+            };
+            let enabled_cfg =
+                cfg_cache.entry(krate).or_insert_with(|| resolver.cfg_options(krate));
+            let scan_config = ScanConfig { enabled_cfg, expand_macro, quick_mode };
+
             try_scan_file(
                 &crate_name,
                 entry.as_path(),
