@@ -27,7 +27,8 @@ codegen-units = 16
 anyhow.workspace = true
 assert_cmd = "2.0.12"
 cargo = "0.100.0"
-cargo-lock = { version = "11.0.1", features = ["dependency-tree"] }
+cargo-util = "0.2.32"
+cargo-lock ={ version = "11.0.1", features = ["dependency-tree"] }
 clap = { version = "4.4.8", features = ["derive"] }
 codespan-reporting = "0.13.1"
 colored = "3.1.1"

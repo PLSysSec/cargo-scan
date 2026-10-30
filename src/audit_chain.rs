@@ -284,9 +284,7 @@ impl AuditChain {
     }
 
     fn cargo_toml_path(&self) -> Result<PathBuf> {
-        let mut path = Path::new(&self.crate_path).canonicalize()?;
-        path.push("Cargo.toml");
-        Ok(path)
+        cargo_workspace::manifest_path(&self.crate_path)
     }
 }
 
@@ -464,7 +462,7 @@ fn make_new_audit_file(
         package.name().as_str(),
         package.version()
     ));
-    let package_path = PathBuf::from(crate_path).canonicalize()?;
+    let package_path = cargo_workspace::normalize_path(crate_path)?;
 
     if audit_file_path.is_dir() {
         return Err(anyhow!("Audit path is a directory"));
@@ -656,8 +654,7 @@ pub fn create_new_audit_chain(
 
     create_audit_chain_dirs(&args, crate_download_path)?;
 
-    let mut crate_path_buf = Path::new(&args.crate_path).canonicalize()?;
-    crate_path_buf.push("Cargo.toml");
+    let crate_path_buf = cargo_workspace::manifest_path(Path::new(&args.crate_path))?;
     let cargo_ctx = GlobalContext::default()?;
     let resolution = resolve_workspace(&crate_path_buf, &cargo_ctx, &args.resolve)?;
 

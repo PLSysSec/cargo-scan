@@ -6,7 +6,7 @@
 
 use crate::util::CrateId;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
 use cargo::util::GlobalContext;
 use cargo::workspace::{Package, TargetKind, Workspace};
 use itertools::Itertools;
@@ -52,17 +52,26 @@ impl From<&Package> for PackageInfo {
     }
 }
 
-/// Get the absolute path to the Cargo.toml of the package or workspace in
+/// Make `path` absolute and remove `.` and `..` components, without resolving
+/// symlinks.
+///
+/// This is the normalization Cargo uses, so paths normalized here match the
+/// paths Cargo and rust-analyzer report for the same input. We need this
+/// instead of [`std::fs::canonicalize`] to keep paths consistent and compare
+/// them correctly.
+pub fn normalize_path(path: &Path) -> Result<PathBuf> {
+    Ok(cargo_util::paths::normalize_path(&std::path::absolute(path)?))
+}
+
+/// Get the normalized path to the Cargo.toml of the package or workspace in
 /// `crate_path`.
 pub fn manifest_path(crate_path: &Path) -> Result<PathBuf> {
     if !crate_path.is_dir() {
-        bail!("Path is not a crate; not a directory: {:?}", crate_path);
+        return Err(anyhow!("Path is not a crate; not a directory: {:?}", crate_path));
     }
-    // Symlinks are not resolved, so the path matches what Cargo and
-    // rust-analyzer see for the same input
-    let manifest = std::path::absolute(crate_path.join("Cargo.toml"))?;
+    let manifest = normalize_path(&crate_path.join("Cargo.toml"))?;
     if !manifest.is_file() {
-        bail!("Path is not a crate; missing Cargo.toml: {:?}", crate_path);
+        return Err(anyhow!("Path is not a crate; missing Cargo.toml: {:?}", crate_path));
     }
     Ok(manifest)
 }
@@ -124,6 +133,31 @@ mod tests {
 
     fn package(name: &str, version: &str) -> String {
         format!("[package]\nname = \"{name}\"\nversion = {version}\nedition = \"2021\"\n")
+    }
+
+    #[test]
+    fn test_normalize_path() {
+        let cwd = std::env::current_dir().unwrap();
+        assert_eq!(normalize_path(Path::new("a/./b/../c")).unwrap(), cwd.join("a/c"));
+        assert_eq!(
+            normalize_path(Path::new("../d")).unwrap(),
+            cwd.parent().unwrap().join("d")
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_normalize_path_keeps_symlinks() {
+        let root = TempDir::new().unwrap();
+        let pkg = write_manifest(&root, "real", &package("a", "\"0.1.0\""));
+        let link = root.path().join("link");
+        std::os::unix::fs::symlink(&pkg, &link).unwrap();
+
+        assert_eq!(normalize_path(&link.join("src/../src")).unwrap(), link.join("src"));
+        assert_eq!(manifest_path(&link).unwrap(), link.join("Cargo.toml"));
+        // Cargo keeps the symlinked path too, which is what `normalize_path`
+        // relies on to match it
+        assert_eq!(load_package(&link).unwrap().dir, link);
     }
 
     #[test]

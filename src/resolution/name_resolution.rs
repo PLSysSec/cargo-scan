@@ -5,10 +5,10 @@ use ra_ap_cfg::CfgDiff;
 use ra_ap_ide_db::helpers::get_definition;
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::fs::canonicalize;
 use std::path::Path;
 use std::sync::Arc;
 
+use crate::cargo_workspace::normalize_path;
 use crate::effect::SrcLoc;
 use crate::ident::{CanonicalPath, CanonicalType, Ident};
 use crate::offset_maping::MacroExpansionContext;
@@ -75,8 +75,10 @@ impl Resolver {
             proc_macro_processes: 1,
         };
 
+        // rust-analyzer stores files under the root it is given, so normalize
+        // it the same way as `find_file_id` looks files up
         let (db, vfs, _) = ra_ap_load_cargo::load_workspace_at(
-            crate_path,
+            &normalize_path(crate_path)?,
             cargo_config,
             &load_config,
             progress,
@@ -106,7 +108,8 @@ impl Resolver {
     }
 
     pub fn find_file_id(&self, filepath: &Path) -> Result<FileId> {
-        let abs_path = canonicalize(filepath)?;
+        // Must match how the workspace root was normalized in `Resolver::new`
+        let abs_path = normalize_path(filepath)?;
         let vfs_path = VfsPath::new_real_path(abs_path.display().to_string());
 
         match self.vfs.file_id(&vfs_path) {

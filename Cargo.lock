@@ -485,6 +485,7 @@ dependencies = [
  "assert_cmd",
  "cargo",
  "cargo-lock",
+ "cargo-util",
  "clap",
  "codespan-reporting",
  "colored",
