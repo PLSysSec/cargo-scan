@@ -1,12 +1,7 @@
 use anyhow::{anyhow, Context, Result};
-use cargo::compiler::{CompileKind, RustcTargetData};
-use cargo::ops::WorkspaceResolve;
-use cargo::resolver::{CliFeatures, ForceAllTargets, HasDevUnits};
-use cargo::util::GlobalContext;
-use cargo::workspace::dependency::DepKind;
-use cargo::workspace::{PackageId, PackageIdSpec, Workspace};
 use clap::Args as ClapArgs;
 use log::info;
+use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs::{create_dir_all, remove_file, File};
@@ -16,10 +11,12 @@ use std::path::{Path, PathBuf};
 use toml;
 
 use crate::audit_file::{AuditFile, AuditVersion, DefaultAuditType, EffectTree};
-use crate::cargo_workspace;
+use crate::cargo_workspace::{self, DepGraph, PackageInfo};
 use crate::effect::{EffectInstance, EffectType, DEFAULT_EFFECT_TYPES};
 use crate::ident::{replace_hyphens, CanonicalPath};
 use crate::util::CrateId;
+
+pub use crate::cargo_workspace::ResolveOptions;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AuditChain {
@@ -79,12 +76,11 @@ impl AuditChain {
 
     pub fn add_crate_audit_file(
         &mut self,
-        package: &cargo::workspace::Package,
+        package: &PackageInfo,
         audit_file_loc: PathBuf,
         version: AuditVersion,
     ) {
-        let crate_id = CrateId::from(package);
-        self.crate_policies.insert(crate_id, (audit_file_loc, version));
+        self.crate_policies.insert(chain_key(package), (audit_file_loc, version));
     }
 
     pub fn read_audit_file(&mut self, crate_id: &CrateId) -> Result<Option<AuditFile>> {
@@ -193,41 +189,27 @@ impl AuditChain {
         removed_fns: HashSet<CanonicalPath>,
         updated_crate: &CrateId,
     ) -> Result<HashSet<CanonicalPath>> {
-        let cargo_toml = self.cargo_toml_path()?;
-        let config = GlobalContext::default()?;
-        let resolution =
-            resolve_workspace(&cargo_toml, &config, &ResolveOptions::default())?;
-        self.remove_cross_crate_effects_with_resolve(
-            removed_fns,
-            updated_crate,
-            &resolution.ws_resolve,
-        )
+        let graph = chain_graph(&self.crate_path, &ResolveOptions::default())?;
+        self.remove_cross_crate_effects_with_graph(removed_fns, updated_crate, &graph)
     }
 
-    fn remove_cross_crate_effects_with_resolve(
+    fn remove_cross_crate_effects_with_graph(
         &mut self,
         mut removed_fns: HashSet<CanonicalPath>,
         updated_crate: &CrateId,
-        ws_resolve: &WorkspaceResolve<'_>,
+        graph: &DepGraph,
     ) -> Result<HashSet<CanonicalPath>> {
-        let sorted = ws_resolve.targeted_resolve.sort();
-
-        let idx = sorted
-            .iter()
-            .position(|p| {
-                *p.name() == updated_crate.crate_name
-                    && *p.version() == updated_crate.version
-            })
+        let updated = graph
+            .packages()
+            .find(|&p| chain_key(graph.package(p)) == *updated_crate)
             .ok_or_else(|| anyhow!("No package {} in dependency graph", updated_crate))?;
 
         let audited: HashSet<CrateId> = self.crate_policies.keys().cloned().collect();
-        // Visit nodes in dfs post-order so we don't have to recursively add
-        // packages whose public caller-checked functions have been updated.
-        for p in &sorted[idx..] {
-            // TODO: Only update packages whose dependencies have changed public
-            //       caller-checked lists.
-            let pkg = ws_resolve.pkg_set.get_one(*p)?;
-            let crate_id = CrateId::from(pkg);
+        // Visit the updated crate and its dependents, dependencies first, so we
+        // don't have to recursively add packages whose public caller-checked
+        // functions have been updated.
+        for p in graph.transitive_dependents(updated) {
+            let crate_id = chain_key(graph.package(p));
             if !audited.contains(&crate_id) {
                 continue;
             }
@@ -242,6 +224,9 @@ impl AuditChain {
 
             let removed_effect_instances =
                 crate_audit_file.remove_sinks_from_tree(&removed_fns);
+            // reconstruct invariant before comparing: removing effects only
+            // changes the trees, not the public caller-checked functions
+            crate_audit_file.recalc_pub_caller_checked(&starting_pub_caller_checked);
             let package_pub_fns = crate_audit_file
                 .pub_caller_checked
                 .keys()
@@ -259,8 +244,6 @@ impl AuditChain {
             }
             removed_fns.extend(next_removed_fns);
 
-            // reconstruct invariant
-            crate_audit_file.recalc_pub_caller_checked(&starting_pub_caller_checked);
             crate_audit_file.save_to_file(
                 self.crate_policies
                     .get(&crate_id)
@@ -282,35 +265,20 @@ impl AuditChain {
     pub fn root_crate(&self) -> Result<CrateId> {
         Ok(cargo_workspace::load_package(&self.crate_path)?.id)
     }
-
-    fn cargo_toml_path(&self) -> Result<PathBuf> {
-        cargo_workspace::manifest_path(&self.crate_path)
-    }
 }
 
-/// Options that control how Cargo resolves the dependency graph.
-#[derive(ClapArgs, Debug, Clone, Serialize, Deserialize)]
-pub struct ResolveOptions {
-    /// Activate every optional Cargo feature in every package during dependency
-    /// resolution (cargo --all-features). Maximises analysis coverage.
-    /// Defaults to `true`.
-    #[clap(long, default_value_t = true)]
-    pub all_features: bool,
-
-    /// Specific feature flags to activate (`cargo --features foo,bar/baz`).
-    /// Ignored when `all_features` is `true`.
-    #[clap(long, value_parser, num_args = 0..)]
-    pub features: Vec<String>,
-
-    /// Include `[dev-dependencies]` in the resolved dependency graph.
-    #[clap(long, default_value_t = false)]
-    pub include_dev_deps: bool,
+/// Key of a package in [`AuditChain::crate_policies`]
+fn chain_key(package: &PackageInfo) -> CrateId {
+    let v = &package.id.version;
+    CrateId::new(package.id.crate_name.clone(), Version::new(v.major, v.minor, v.patch))
 }
 
-impl Default for ResolveOptions {
-    fn default() -> Self {
-        Self { all_features: true, features: vec![], include_dev_deps: false }
-    }
+/// Resolve the dependency graph that chain is built on
+fn chain_graph(crate_path: &Path, opts: &ResolveOptions) -> Result<DepGraph> {
+    // TODO: decide whether chains should conditionally include dev-dependencies;
+    // ignore them for now, even if they are set as true
+    let opts = ResolveOptions { include_dev_deps: false, ..opts.clone() };
+    DepGraph::resolve(crate_path, &opts)
 }
 
 #[derive(Clone, ClapArgs, Debug, Serialize, Deserialize)]
@@ -432,12 +400,11 @@ fn create_audit_chain_dirs(args: &Create, crate_download_path: &str) -> Result<(
 
 fn collect_dependency_sinks(
     chain: &mut AuditChain,
-    deps: &[PackageId],
+    deps: &[CrateId],
 ) -> Result<HashSet<CanonicalPath>> {
     let mut sinks = HashSet::new();
-    for dep in deps {
-        let dep_id = CrateId::from(dep);
-        let audit_file = chain.read_audit_file(&dep_id)?.with_context(|| {
+    for dep_id in deps {
+        let audit_file = chain.read_audit_file(dep_id)?.with_context(|| {
             "couldnt read dependency audit file (maybe created it out of order)"
         })?;
         sinks.extend(audit_file.pub_caller_checked());
@@ -450,17 +417,16 @@ fn collect_dependency_sinks(
 /// the saved audit file
 fn make_new_audit_file(
     chain: &mut AuditChain,
-    package: &cargo::workspace::Package,
+    package: &PackageInfo,
     config: &AuditConfig<'_>,
-    crate_path: &Path,
     audit_type: DefaultAuditType,
-    dependencies: Vec<PackageId>,
+    dependencies: &[CrateId],
 ) -> Result<()> {
+    let PackageInfo { id: CrateId { crate_name, version }, dir: crate_path, .. } =
+        package;
     let audit_file_path = PathBuf::from(format!(
         "{}/{}-{}.audit",
-        config.args.audit_path,
-        package.name().as_str(),
-        package.version()
+        config.args.audit_path, crate_name, version
     ));
     let package_path = cargo_workspace::normalize_path(crate_path)?;
 
@@ -473,8 +439,8 @@ fn make_new_audit_file(
         } else {
             info!(
                 "Using existing audit for {} v{} ({}) -- expanding macros: {}",
-                package.name(),
-                package.version(),
+                crate_name,
+                version,
                 audit_file_path.display(),
                 config.expand_macro,
             );
@@ -483,7 +449,7 @@ fn make_new_audit_file(
                     anyhow!("Couldn't read audit: {}", audit_file_path.display())
                 })?;
 
-            let sinks = collect_dependency_sinks(chain, &dependencies)?;
+            let sinks = collect_dependency_sinks(chain, dependencies)?;
             audit_file = audit_file.update_audit_file(
                 crate_path,
                 sinks,
@@ -500,14 +466,9 @@ fn make_new_audit_file(
         }
     }
 
-    info!(
-        "Making new {:?} default audit for {} v{}",
-        audit_type,
-        package.name(),
-        package.version()
-    );
+    info!("Making new {:?} default audit for {} v{}", audit_type, crate_name, version);
 
-    let sinks = collect_dependency_sinks(chain, &dependencies)?;
+    let sinks = collect_dependency_sinks(chain, dependencies)?;
     let audit_file = AuditFile::new_default_with_sinks(
         &package_path,
         sinks,
@@ -529,116 +490,6 @@ struct AuditConfig<'a> {
     expand_macro: bool,
 }
 
-fn dfs_traverse(
-    resolution: &WorkspaceResolution,
-    pkg: &PackageId,
-    visited: &mut HashSet<PackageId>,
-    indent: usize,
-    chain: &mut AuditChain,
-    config: &AuditConfig<'_>,
-) -> Result<()> {
-    if !visited.insert(*pkg) {
-        return Ok(());
-    }
-
-    let mut pkg_dependencies = vec![];
-    let resolve = &resolution.ws_resolve.targeted_resolve;
-    for (dep_pkg_id, dep_set) in resolve.deps(*pkg) {
-        if active_normal_edge(
-            &resolution.ws_resolve,
-            pkg,
-            &dep_pkg_id,
-            dep_set,
-            &resolution.target_data,
-        ) {
-            pkg_dependencies.push(dep_pkg_id);
-            dfs_traverse(resolution, &dep_pkg_id, visited, indent + 1, chain, config)?;
-        }
-    }
-
-    let pkg = resolution.ws_resolve.pkg_set.get_one(*pkg)?;
-    let pkg_path = pkg.manifest_path().parent().ok_or_else(|| {
-        anyhow!(
-            "Package manifest has no parent directory: {}",
-            pkg.manifest_path().display()
-        )
-    })?;
-    let audit_type = if indent > 0 {
-        DefaultAuditType::CallerChecked
-    } else {
-        config.args.root_audit_type
-    };
-
-    make_new_audit_file(chain, pkg, config, pkg_path, audit_type, pkg_dependencies)?;
-
-    Ok(())
-}
-
-fn active_normal_edge<S>(
-    workspace_resolve: &WorkspaceResolve,
-    parent: &PackageId,
-    dep_pkg: &PackageId,
-    dep_set: &HashSet<cargo::workspace::Dependency, S>,
-    target_data: &RustcTargetData,
-) -> bool {
-    let enabled = |dep: &cargo::workspace::Dependency| -> bool {
-        if !dep.is_optional() {
-            return true;
-        }
-        workspace_resolve.targeted_resolve.deps(*parent).any(|(id, _)| id == *dep_pkg)
-    };
-
-    let target = |dep: &cargo::workspace::Dependency| -> bool {
-        target_data.dep_platform_activated(dep, CompileKind::Host)
-    };
-
-    dep_set.iter().any(|d: &cargo::workspace::Dependency| {
-        d.kind() == DepKind::Normal && enabled(d) && target(d)
-    })
-}
-
-pub struct WorkspaceResolution<'ws> {
-    pub ws_resolve: WorkspaceResolve<'ws>,
-    pub target_data: RustcTargetData<'ws>,
-    /// The package the workspace was loaded from, or `None` for a virtual
-    /// workspace
-    pub root: Option<PackageId>,
-}
-
-pub fn resolve_workspace<'ws>(
-    crate_path_buf: &Path,
-    config: &'ws GlobalContext,
-    opts: &ResolveOptions,
-) -> Result<WorkspaceResolution<'ws>> {
-    let workspace = Workspace::new(crate_path_buf, config)?;
-    let root = workspace.current_opt().map(|p| p.package_id());
-    let specs = workspace
-        .members()
-        .map(|p| p.package_id().to_spec())
-        .collect::<Vec<PackageIdSpec>>();
-
-    let cli_features =
-        CliFeatures::from_command_line(&opts.features, opts.all_features, true)?;
-    let mut target_data = RustcTargetData::new(&workspace, &[CompileKind::Host])?;
-    let requested_targets = vec![CompileKind::Host];
-
-    let has_dev_units =
-        if opts.include_dev_deps { HasDevUnits::Yes } else { HasDevUnits::No };
-
-    let ws_resolve = cargo::ops::resolve_ws_with_opts(
-        &workspace,
-        &mut target_data,
-        &requested_targets,
-        &cli_features,
-        &specs,
-        has_dev_units,
-        ForceAllTargets::No,
-        true,
-    )?;
-
-    Ok(WorkspaceResolution { ws_resolve, target_data, root })
-}
-
 pub fn create_new_audit_chain(
     args: Create,
     crate_download_path: &str,
@@ -654,25 +505,33 @@ pub fn create_new_audit_chain(
 
     create_audit_chain_dirs(&args, crate_download_path)?;
 
-    let crate_path_buf = cargo_workspace::manifest_path(Path::new(&args.crate_path))?;
-    let cargo_ctx = GlobalContext::default()?;
-    let resolution = resolve_workspace(&crate_path_buf, &cargo_ctx, &args.resolve)?;
-
-    let root_pkg = resolution.root.ok_or_else(|| {
+    let graph = chain_graph(Path::new(&args.crate_path), &args.resolve)?;
+    let root = graph.root().ok_or_else(|| {
         anyhow!(
             "{} is a virtual workspace; a chain needs a root package",
             args.crate_path
         )
     })?;
 
-    dfs_traverse(
-        &resolution,
-        &root_pkg,
-        &mut HashSet::new(),
-        0,
-        &mut chain,
-        &AuditConfig { args: &args, quick_mode, expand_macro },
-    )?;
+    let config = AuditConfig { args: &args, quick_mode, expand_macro };
+    // Dependencies first, so their audits exist when their dependents' audits
+    // collect sinks from them
+    for pkg in graph.transitive_dependencies(root) {
+        let audit_type = if pkg == root {
+            config.args.root_audit_type
+        } else {
+            DefaultAuditType::CallerChecked
+        };
+        let dependencies: Vec<CrateId> =
+            graph.direct_dependencies(pkg).map(|d| chain_key(graph.package(d))).collect();
+        make_new_audit_file(
+            &mut chain,
+            graph.package(pkg),
+            &config,
+            audit_type,
+            &dependencies,
+        )?;
+    }
 
     info!("Finished creating audit chain");
     Ok(chain)
@@ -699,27 +558,30 @@ pub struct DepRank {
 pub fn collect_propagated_sinks(
     chain: &mut AuditChain,
 ) -> Result<HashMap<EffectInstance, EffectTree>> {
-    let cargo_toml = chain.cargo_toml_path()?;
-    let config = GlobalContext::default()?;
-    let resolution = resolve_workspace(&cargo_toml, &config, &ResolveOptions::default())?;
-    collect_propagated_sinks_with_resolve(chain, &resolution.ws_resolve)
+    let graph = chain_graph(&chain.crate_path, &ResolveOptions::default())?;
+    collect_propagated_sinks_with_graph(chain, &graph)
 }
 
-fn collect_propagated_sinks_with_resolve(
+/// The chain's packages, dependents before dependencies (i.e., root is first)
+fn chain_order(graph: &DepGraph) -> Result<Vec<&PackageInfo>> {
+    let root =
+        graph.root().ok_or_else(|| anyhow!("Chain root is a virtual workspace"))?;
+    let mut order = graph.transitive_dependencies(root);
+    order.reverse();
+    Ok(order.into_iter().map(|p| graph.package(p)).collect())
+}
+
+fn collect_propagated_sinks_with_graph(
     chain: &mut AuditChain,
-    ws_resolve: &WorkspaceResolve<'_>,
+    graph: &DepGraph,
 ) -> Result<HashMap<EffectInstance, EffectTree>> {
     let mut effects = HashMap::new();
     let root_name = chain.root_crate()?;
 
-    let mut pkgs = ws_resolve.targeted_resolve.sort();
-    pkgs.reverse();
-    let pkg_set = &ws_resolve.pkg_set;
     let all_crates: HashSet<CrateId> = chain.crate_policies.keys().cloned().collect();
 
-    for p in pkgs {
-        let pkg = pkg_set.get_one(p)?;
-        let id = CrateId::from(pkg);
+    for pkg in chain_order(graph)? {
+        let id = chain_key(pkg);
         if !all_crates.contains(&id) {
             continue;
         }
@@ -744,25 +606,22 @@ fn collect_propagated_sinks_with_resolve(
 pub fn collect_propagated_sinks_ranked(
     chain: &mut AuditChain,
 ) -> Result<(HashMap<EffectInstance, EffectTree>, Vec<DepRank>)> {
-    let cargo_toml = chain.cargo_toml_path()?;
-    let config = GlobalContext::default()?;
-    let resolution = resolve_workspace(&cargo_toml, &config, &ResolveOptions::default())?;
-    collect_propagated_sinks_ranked_with_resolve(chain, &resolution.ws_resolve)
+    let graph = chain_graph(&chain.crate_path, &ResolveOptions::default())?;
+    collect_propagated_sinks_ranked_with_graph(chain, &graph)
 }
 
-fn collect_propagated_sinks_ranked_with_resolve(
+fn collect_propagated_sinks_ranked_with_graph(
     chain: &mut AuditChain,
-    ws_resolve: &WorkspaceResolve<'_>,
+    graph: &DepGraph,
 ) -> Result<(HashMap<EffectInstance, EffectTree>, Vec<DepRank>)> {
-    let pkgs = ws_resolve.targeted_resolve.sort();
     let mut topo_index: HashMap<String, usize> = HashMap::new();
-    for (idx, p) in pkgs.iter().enumerate() {
-        let mut name = p.name().to_string();
-        replace_hyphens(&mut name);
-        topo_index.insert(name, idx);
+    for (idx, pkg) in chain_order(graph)?.into_iter().rev().enumerate() {
+        for target in &pkg.targets {
+            topo_index.insert(target.crate_name.clone(), idx);
+        }
     }
 
-    let effects = collect_propagated_sinks_with_resolve(chain, ws_resolve)?;
+    let effects = collect_propagated_sinks_with_graph(chain, graph)?;
     let rankings = compute_dep_rankings(&effects, &topo_index);
     Ok((effects, rankings))
 }
